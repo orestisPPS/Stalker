@@ -9,7 +9,7 @@
 #include <typeindex>
 #include <typeinfo>
 #include <stdexcept>
-#include "../STLKR_ArithmeticTypes.h"
+#include "../../STLKR_ArithmeticTypes.h"
 
 #define AVX_DOUBLE_SIZE 4
 #define AVX_FLOAT_SIZE 8
@@ -68,6 +68,7 @@ namespace STLKR_LinearAlgebra {
                     __m256d vb = _mm256_loadu_pd(data2 + i);
                     __m256d vc = _mm256_add_pd(va, vb);
                     _mm256_storeu_pd(result + i, vc);
+                    
                 } else
                     throw std::runtime_error("Unsupported data type for SIMD operations");
             }

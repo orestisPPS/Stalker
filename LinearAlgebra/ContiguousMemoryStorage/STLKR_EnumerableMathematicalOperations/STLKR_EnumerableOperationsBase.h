@@ -4,9 +4,9 @@
 
 #ifndef STALKER_STLKR_ENUMERABLEOPERATIONSBASE_H
 #define STALKER_STLKR_ENUMERABLEOPERATIONSBASE_H
-#include "../../ThreadingOperations/STLKR_ThreadingOperations.h"
+#include "../../../ThreadingOperations/STLKR_ThreadingOperations.h"
 namespace STLKR_LinearAlgebra {
-    template <unsigned size, typename T, unsigned availableThreads = 1>
+    template <typename T, unsigned availableThreads = 1>
     class STLKR_EnumerableOperationsBase {
         
     public:

@@ -1,6 +1,6 @@
 #include <iostream>
 #include "SpatialDiscretization/Node.h"
-#include "LinearAlgebra/ContiguousMemoryStorage/STLKR_SIMD_Operations.h"
+#include "LinearAlgebra/ContiguousMemoryStorage/STLKR_EnumerableMathematicalOperations/STLKR_SIMD_Operations.h"
 #include "LinearAlgebra/ContiguousMemoryStorage/NumericalVector.h"
 int main() {
     std::cout << "Hello, World!" << std::endl;
