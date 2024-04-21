@@ -26,26 +26,40 @@ namespace STLKR_LinearAlgebra {
             return STLKR_ThreadingOperations<availableThreads>::executeParallelJobWithReduction(sumJob, size);
         }
         
-        static constexpr T add(const T* data1, const T* data2) {
-            auto addJob = [data1, data2](unsigned start, unsigned end) {
-                T sum = T(0);
+        static constexpr T add(const T* data1, const T* data2, T* result) {
+            auto addJob = [data1, data2, result](unsigned start, unsigned end) {
                 for (unsigned i = start; i < end; i++) {
-                    sum += data1[i] + data2[i];
+                    result[i] = data1[i] + data2[i];
                 }
-                return sum;
             };
-            return STLKR_ThreadingOperations<availableThreads>::executeParallelJobWithReduction(addJob, size);
+            STLKR_ThreadingOperations<availableThreads>::executeParallelJob(addJob, size);
+
         }
         
-        static constexpr T subtract(const T* data1, const T* data2) {
-            auto subtractJob = [data1, data2](unsigned start, unsigned end) {
-                T sum = T(0);
+        static constexpr T addIntoThis(const T* data1, const T* data2) {
+            auto addJob = [data1, data2](unsigned start, unsigned end) {
                 for (unsigned i = start; i < end; i++) {
-                    sum += data1[i] - data2[i];
+                    data1[i] += data2[i];
                 }
-                return sum;
             };
-            return STLKR_ThreadingOperations<availableThreads>::executeParallelJobWithReduction(subtractJob, size);
+            STLKR_ThreadingOperations<availableThreads>::executeParallelJob(addJob, size);
+        }
+        static constexpr T subtract(const T* data1, const T* data2, T* result) {
+            auto subtractJob = [data1, data2, result](unsigned start, unsigned end) {
+                for (unsigned i = start; i < end; i++) {
+                    result[i] = data1[i] - data2[i];
+                }
+            };
+            STLKR_ThreadingOperations<availableThreads>::executeParallelJob(subtractJob, size);
+        }
+        
+        static constexpr T subtractIntoThis(const T* data1, const T* data2) {
+            auto subtractJob = [data1, data2](unsigned start, unsigned end) {
+                for (unsigned i = start; i < end; i++) {
+                    data1[i] -= data2[i];
+                }
+            };
+            STLKR_ThreadingOperations<availableThreads>::executeParallelJob(subtractJob, size);
         }
         
         static constexpr void scale(T* data, T scalar) {

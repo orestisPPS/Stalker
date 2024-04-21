@@ -25,7 +25,7 @@ namespace SpatialDiscretization {
                 // Calculate parametric coordinates
                 for (unsigned i = 0; i < numberOfNodes; i++) {
                     for (unsigned j = 0; j < dimensions; j++) {
-                        _parametricCoordinates[i * dimensions + j] = j
+                        _parametricCoordinates[i * dimensions + j] = j;
 
                     }
                 }
