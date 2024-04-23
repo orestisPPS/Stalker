@@ -141,7 +141,7 @@ public:
     
 private:
     static_assert(availableThreads > 0, "The number of threads must be greater than 0.");
-    static_assert(availableThreads <= std::thread::hardware_concurrency(), "The number of threads must be less than or equal to the number of available CPU cores.");
+    //static_assert(availableThreads <= std::thread::hardware_concurrency(), "The number of threads must be less than or equal to the number of available CPU cores.");
 };
 
 #endif //UNTITLED_THREADINGOPERATIONS_H
