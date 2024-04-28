@@ -4,8 +4,9 @@
 
 #ifndef STALKER_STLKR_ENUMERABLEBASE_H
 #define STALKER_STLKR_ENUMERABLEBASE_H
-#include "STLKR_SIMD/STLKR_SIMD_DataOperations.h"
 #include "../../../ThreadingOperations/STLKR_ThreadingOperations.h"
+#include "STLKR_SIMD/STLKR_SIMD.h"
+
 #include <cstdio>
 
 namespace STLKR_LinearAlgebra {
@@ -26,7 +27,6 @@ namespace STLKR_LinearAlgebra {
         T* _dataPtr;
         STLKR_SIMD _simdPolicy;
         STLKR_ThreadingOperations<threads> _threading;
-        STLKR_SIMD_DataOperations<T, size> _simdDataOperations;
 
         static_assert(size > 0, "Size must be greater than 0");
         static_assert(threads > 0, "Threads must be greater than 0");

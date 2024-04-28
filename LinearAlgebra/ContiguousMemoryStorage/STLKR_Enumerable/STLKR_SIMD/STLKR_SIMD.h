@@ -10,6 +10,7 @@
 #include <immintrin.h>
 #include <cstddef>
 #include <stdexcept>
+#include <unordered_map>
 
 #define AVX_DOUBLE_SIZE 4
 #define AVX_FLOAT_SIZE 8
@@ -21,7 +22,7 @@ using namespace std;
 
 namespace STLKR_LinearAlgebra {
     
-    static const std::map<std::type_index, unsigned> STLKR_SIMD_DataTypeSize = {
+    static const std::unordered_map<std::type_index, unsigned> STLKR_SIMD_DataTypeSize = {
             {std::type_index(typeid(float)), AVX_FLOAT_SIZE},
             {std::type_index(typeid(double)), AVX_DOUBLE_SIZE},
             {std::type_index(typeid(int)), AVX_INT_SIZE},
@@ -36,7 +37,6 @@ namespace STLKR_LinearAlgebra {
     enum class SIMD_AVXType {
         AVX,     ///< Represents support for AVX with 256-bit wide registers. Useful for operations that benefit from wider data throughput compared to earlier SSE instructions.
         AVX_2,     ///< Represents support for AVX2, an extension to the original AVX, including enhancements such as wider vector integer operations and gathered loads.
-        AVX_512,   ///< Represents support for AVX-512 with 512-bit wide registers. Note: This support is marked as "Not Supported" when the system does not support AVX-512 operations.
         AVX_None   ///< No AVX
     };
 
