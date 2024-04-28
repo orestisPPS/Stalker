@@ -45,7 +45,7 @@ namespace STLKR_Tests{
         }
 
         static void RunPerformanceTestAdd(){
-            const int size = 40000000;
+            const int size = 400000000;
 
             // Use _mm_malloc to allocate memory aligned to 32 bytes for AVX
             auto data1 = static_cast<double*>(_mm_malloc(size * sizeof(double), 32));
@@ -61,33 +61,30 @@ namespace STLKR_Tests{
             auto start = std::chrono::high_resolution_clock::now();
             STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX);
             auto end = std::chrono::high_resolution_clock::now();
-            //duration in microseconds
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
             cout << "AVX [ENABLED ] " << duration.count() << " ms\n";
+            delete resultAVX;
 
             start = std::chrono::high_resolution_clock::now();
             addNoAVX(data1, 1, data2, 1, resultNoAVX, size);
-            //end timer
             end = std::chrono::high_resolution_clock::now();
-            //duration in microseconds
             duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
             cout << "AVX [DISABLED] " << duration.count() << " ms\n";
             
             //check results
             for (int i = 0; i < size; i++) {
                 if (resultAVX[i] != resultNoAVX[i]) {
-                    cout << "ERROR: resultAVX[" << i << "] = " << resultAVX[i] << " | resultNoAVX[" << i << "] = " << resultNoAVX[i] << "\n";
+                   // cout << "ERROR: resultAVX[" << i << "] = " << resultAVX[i] << " | resultNoAVX[" << i << "] = " << resultNoAVX[i] << "\n";
                 }
                //cout << "resultAVX[" << i << "] = " << resultAVX[i] << " | resultNoAVX[" << i << "] = " << resultNoAVX[i] << "\n";
             }
             delete[] data1;
             delete[] data2;
-            delete[] resultAVX;
             delete[] resultNoAVX;
 
         }
     private:
-        static void addNoAVX(double* data1, double c1, double* data2, double c2, double* result, int size){
+        static constexpr inline void addNoAVX(double* data1, double c1, double* data2, double c2, double* result, int size){
             for (int i = 0; i < size; i++) {
                 result[i] = data1[i] * c1 + data2[i] * c2;
             }
