@@ -46,7 +46,7 @@ class Logs {
         
         void storeAndResetAllLogs();
         
-        void exportToCSV(const string &filePath, const string &fileName, STLKR_TimeUnit unit = STLKR_TimeUnit::seconds);
+        void exportToCSV(const string &filePath, const string &fileName);
         
         
     private:
@@ -56,6 +56,11 @@ class Logs {
         unique_ptr<unordered_map<string, list<list<chrono::duration<double>>>>> _multipleObservationTimers;
         unique_ptr<unordered_map<string, list<double>>> _singleObservationData;
         unique_ptr<unordered_map<string, list<list<double>>>> _multipleObservationData;
+        
+        unordered_map<string, short> _singleObservationTimerIndex;
+        unordered_map<string, short> _multipleObservationTimerIndex;
+        unordered_map<string, short> _singleObservationDataIndex;
+        unordered_map<string, short> _multipleObservationDataIndex;
             
         unique_ptr<list<string>> _comments;
             
