@@ -7,9 +7,11 @@ int main() {
     std::cout << "Hello, World!" << std::endl;
 
     
-    auto exportPath = "../Tests/STLKR_PerformanceTests";
+    auto exportPath = "../Tests/STLKR_PerformanceTests/logs";
     auto avxTest = STLKR_Tests::RawPointerAVX_PerformanceTest<4000000>(exportPath);
-    avxTest.runTest();
+    for (int i = 0; i < 20; i++) {
+        avxTest.runTest();
+    }
     
     
 

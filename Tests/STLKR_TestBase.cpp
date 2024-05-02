@@ -10,6 +10,12 @@ namespace STLKR_Tests {
         _welcomeMessage();
     }
 
+    void STLKR_TestBase::runTest(unsigned int iterations) {
+        for (unsigned int i = 0; i < iterations; i++) {
+            runTest();
+        }
+    }
+
     void STLKR_TestBase::printSuccess() {
         std::cout << "\033[1;32m[PASSED ]\033[0m\n";  // This adds a green [PASSED] indicator
     }
@@ -21,4 +27,6 @@ namespace STLKR_Tests {
     void STLKR_TestBase::_welcomeMessage() {
         std::cout << "========" << _testName << "========" << std::endl;
     }
+
+
 } // STLKR_Tests

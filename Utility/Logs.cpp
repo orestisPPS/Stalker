@@ -14,16 +14,27 @@ Logs::Logs(std::string logName) :   _logName(std::move(logName)),
                                     _multipleObservationData(make_unique<unordered_map<string, list<list<double>>>>()),
                                     _singleObservationTimers(make_unique<unordered_map<string, list<chrono::duration<double>>>>()),
                                     _multipleObservationTimers(make_unique<unordered_map<string, list<list<chrono::duration<double>>>>>()),
+                                    _parameters(make_unique<unordered_map<string, string>>()),
                                     _comments(make_unique<list<string>>()),
                                     _singleObservationTimerIndex(unordered_map<string, short>()),
                                     _multipleObservationTimerIndex(unordered_map<string, short>()),
                                     _singleObservationDataIndex(unordered_map<string, short>()),
-                                    _multipleObservationDataIndex(unordered_map<string, short>()){
-    
-}
+                                    _multipleObservationDataIndex(unordered_map<string, short>()),
+                                    _parametersIndex(unordered_map<string, short>()){}
 
 void Logs::addComment(string comment) {
     _comments->push_back(std::move(comment));
+}
+
+
+void Logs::addParameter(const string &parameterName, double value) {
+    _parameters->insert(make_pair(parameterName, to_string(value)));
+    _parametersIndex.emplace(parameterName, _parameters->size());
+}
+
+void Logs::addParameter(const string &parameterName, const string &value) {
+    _parameters->insert(make_pair(parameterName, value));
+    _parametersIndex.emplace(parameterName, _parameters->size());
 }
 
 void Logs::startSingleObservationTimer(const string &logName, STLKR_TimeUnit unit) {
@@ -133,6 +144,7 @@ void Logs::exportToCSV(const string &filePath, const string &fileName) {
         throw std::runtime_error("Unable to open file: " + filename);
     }
     file << std::scientific << std::setprecision(15);
+    
     // Adding comments
     if (!_comments->empty()) {
         file << "#Region: Comments" << std::endl;
@@ -142,6 +154,27 @@ void Logs::exportToCSV(const string &filePath, const string &fileName) {
         file << std::endl;
         file.flush();
     }
+    
+    // Adding parameters
+    if (!_parameters->empty()) {
+        file << "#Region: Parameters" << std::endl;
+        auto listOfData = list<tuple<string, string, unsigned>>();
+        for (const auto &pair : *_parameters) {
+            listOfData.emplace_back(pair.first, pair.second, _parametersIndex.at(pair.first));
+        }
+        listOfData.sort([](const tuple<string, string, unsigned> &a, const tuple<string, string, unsigned> &b) {
+            return std::get<2>(a) < std::get<2>(b);
+        });
+        for (const auto &data : listOfData) {
+            file << "Parameter:" << std::get<0>(data) << std::endl;
+            file << std::get<1>(data) << std::endl;
+            file << std::endl;
+            file.flush();
+        }
+        file << std::endl;
+        file.flush();
+    }
+    
     // Adding single observation Data
     if (!_singleObservationData->empty()) {
         list<tuple<string, list<double>, unsigned>> listOfData = {};
@@ -280,4 +313,7 @@ void Logs::exportToCSV(const string &filePath, const string &fileName) {
     file.flush();
     file.close();
 }
+
+
+
 

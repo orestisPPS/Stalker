@@ -58,6 +58,7 @@ public:
         __m256d vScale1 = _mm256_set1_pd(scale1);
         __m256d vScale2 = _mm256_set1_pd(scale2);
 
+        
         if constexpr (std::is_same_v<double, T>) {
             for (size_t i = 0; i < limit; i += 8) {  // Adjust loop increment based on unrolling factor
                 // Prefetch data that will be needed soon
@@ -92,8 +93,8 @@ public:
         if constexpr (std::is_same_v<double, T>) {
             for (size_t i = 0; i < limit; i += 16) {  // Adjust loop increment based on unrolling factor
                 // Prefetch data that will be needed soon
-                _mm_prefetch((const char*)(data1 + i + 16), _MM_HINT_T0);
-                _mm_prefetch((const char*)(data2 + i + 16), _MM_HINT_T0);
+                _mm_prefetch((const char*)(data1 + i + 64), _MM_HINT_T0);
+                _mm_prefetch((const char*)(data2 + i + 64), _MM_HINT_T0);
 
                 va1 = _mm256_load_pd(data1 + i);
                 va2 = _mm256_load_pd(data1 + i + 4);

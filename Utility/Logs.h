@@ -22,7 +22,9 @@ class Logs {
         
         void addComment(string comment);
         
-        void setLogTimerUnit(STLKR_TimeUnit unit);
+        void addParameter(const string &parameterName, double value);
+        
+        void addParameter(const string &parameterName, const string &value);
         
         //==========================================Timers==========================================
         
@@ -61,7 +63,9 @@ class Logs {
         unordered_map<string, short> _multipleObservationTimerIndex;
         unordered_map<string, short> _singleObservationDataIndex;
         unordered_map<string, short> _multipleObservationDataIndex;
-            
+        unordered_map<string, short> _parametersIndex;
+        
+        unique_ptr<unordered_map<string, string>> _parameters;
         unique_ptr<list<string>> _comments;
             
         string _logName;

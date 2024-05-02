@@ -15,6 +15,8 @@ namespace STLKR_Tests {
     class STLKR_TestBase{
         
             virtual void runTest() = 0;
+            
+            void runTest(unsigned int iterations);
 
         protected:
         
