@@ -31,9 +31,9 @@ namespace STLKR_Tests{
             logs.addParameter("prefetch_1:", "true");
             logs.addParameter("prefetch_2:", "false");
             
-            checkAlignmentSizeAddition(32);
+            //checkAlignmentSizeAddition(32);
             checkAlignmentSizeAddition(64);
-            //checkAlignmentSizeAddition();
+            checkAlignmentSizeAddition();
             
             logs.exportToCSV(_path , "RawPointerAVX_PerformanceTest");
         }
@@ -59,29 +59,31 @@ namespace STLKR_Tests{
                 data1[i] = i;
                 data2[i] = i;
             }
-            logs.startSingleObservationTimer("avx_addition_alignment_" + std::to_string(alignmentSize) + "_unroll2_prefetch", STLKR_TimeUnit::microseconds);
-            STLKR_Operations_SIMD<double, size, 2>::add_unroll2_prefetch(data1, 1, data2, 1, resultAVX);
-            logs.stopSingleObservationTimer("avx_addition_alignment_" + std::to_string(alignmentSize) + "_unroll2_prefetch");
+            if (alignmentSize != 0){
+                logs.startSingleObservationTimer("add_avx_on_align_" + std::to_string(alignmentSize) + "_unroll_2_prefetch", STLKR_TimeUnit::microseconds);
+                STLKR_Operations_SIMD<double, size, 2>::add_unroll2_prefetch(data1, 1, data2, 1, resultAVX);
+                logs.stopSingleObservationTimer("add_avx_on_align_" + std::to_string(alignmentSize) + "_unroll_2_prefetch");
 
-            logs.startSingleObservationTimer("avx_addition_alignment_" + std::to_string(alignmentSize) + "_unroll4_prefetch", STLKR_TimeUnit::microseconds);
-            STLKR_Operations_SIMD<double, size, 2>::add_unroll4_prefetch(data1, 1, data2, 1, resultAVX);
-            logs.stopSingleObservationTimer("avx_addition_alignment_" + std::to_string(alignmentSize) + "_unroll4_prefetch");
+                logs.startSingleObservationTimer("add_avx_on_align_" + std::to_string(alignmentSize) + "_unroll_4_prefetch", STLKR_TimeUnit::microseconds);
+                STLKR_Operations_SIMD<double, size, 2>::add_unroll4_prefetch(data1, 1, data2, 1, resultAVX);
+                logs.stopSingleObservationTimer("add_avx_on_align_" + std::to_string(alignmentSize) + "_unroll_4_prefetch");
 
-            logs.startSingleObservationTimer("avx_addition_alignment_" + std::to_string(alignmentSize) + "_unroll2_no_prefetch", STLKR_TimeUnit::microseconds);
-            STLKR_Operations_SIMD<double, size, 2>::add_unroll2_noPrefetch(data1, 1, data2, 1, resultAVX);
-            logs.stopSingleObservationTimer("avx_addition_alignment_" + std::to_string(alignmentSize) + "_unroll2_no_prefetch");
+                logs.startSingleObservationTimer("add_avx_on_align_" + std::to_string(alignmentSize) + "_unroll_2_no_prefetch", STLKR_TimeUnit::microseconds);
+                STLKR_Operations_SIMD<double, size, 2>::add_unroll2_noPrefetch(data1, 1, data2, 1, resultAVX);
+                logs.stopSingleObservationTimer("add_avx_on_align_" + std::to_string(alignmentSize) + "_unroll_2_no_prefetch");
 
-            logs.startSingleObservationTimer("avx_addition_alignment_" + std::to_string(alignmentSize) + "_unroll4_no_prefetch", STLKR_TimeUnit::microseconds);
-            STLKR_Operations_SIMD<double, size, 2>::add_unroll4_noPrefetch(data1, 1, data2, 1, resultAVX);
-            logs.stopSingleObservationTimer("avx_addition_alignment_" + std::to_string(alignmentSize) + "_unroll4_no_prefetch");
+                logs.startSingleObservationTimer("add_avx_on_align_" + std::to_string(alignmentSize) + "_unroll_4_no_prefetch", STLKR_TimeUnit::microseconds);
+                STLKR_Operations_SIMD<double, size, 2>::add_unroll4_noPrefetch(data1, 1, data2, 1, resultAVX);
+                logs.stopSingleObservationTimer("add_avx_on_align_" + std::to_string(alignmentSize) + "_unroll_4_no_prefetch");
+            }
 
-            logs.startSingleObservationTimer("no_avx_addition_alignment_" + std::to_string(alignmentSize) + "_unroll2", STLKR_TimeUnit::microseconds);
+            logs.startSingleObservationTimer("add_avx_off_align_" + std::to_string(alignmentSize) + "_unroll_2", STLKR_TimeUnit::microseconds);
             addUnroll2NoAVX(data1, 1, data2, 1, resultNoAVX);
-            logs.stopSingleObservationTimer("no_avx_addition_alignment_" + std::to_string(alignmentSize) + "_unroll2");
+            logs.stopSingleObservationTimer("add_avx_off_align_" + std::to_string(alignmentSize) + "_unroll_2");
 
-            logs.startSingleObservationTimer("no_avx_addition_alignment_" + std::to_string(alignmentSize) + "_unroll4", STLKR_TimeUnit::microseconds);
+            logs.startSingleObservationTimer("add_avx_off_align_" + std::to_string(alignmentSize) + "_unroll_4", STLKR_TimeUnit::microseconds);
             addUnroll4NoAVX(data1, 1, data2, 1, resultNoAVX);
-            logs.stopSingleObservationTimer("no_avx_addition_alignment_" + std::to_string(alignmentSize) + "_unroll4");
+            logs.stopSingleObservationTimer("add_avx_off_align_" + std::to_string(alignmentSize) + "_unroll_4");
 
             //logs.storeAndResetCurrentLogs();
             if (alignmentSize != 0){

@@ -10,10 +10,10 @@ int main() {
     auto exportPath = "../Tests/STLKR_PerformanceTests/logs";
     //No memory bugs with 40000000 elements
     auto avxTest = STLKR_Tests::RawPointerAVX_PerformanceTest<400000>(exportPath);
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 1000; i++) {
         avxTest.runTest();
-        cout<<"He not like us, he not like us, he not like us" << endl;
-        cout<<"He not like us, he not like us, he not like us" << endl;
+        //cout<<"He not like us, he not like us, he not like us" << endl;
+        //cout<<"He not like us, he not like us, he not like us" << endl;
     }
     
     

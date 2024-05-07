@@ -52,7 +52,7 @@ public:
     }
 
     constexpr static void add_unroll2_prefetch(double *data1, double scale1, double *data2, double scale2, double *result) {
-        size_t limit = size - (size % (AVX_DOUBLE_SIZE * 4));  // Adjusted for unrolling factor
+        size_t limit = size - (size % (AVX_DOUBLE_SIZE * 2));  // Adjusted for unrolling factor
         __m256d va1, va2, ve1, ve2;
 
         __m256d vScale1 = _mm256_set1_pd(scale1);
@@ -62,8 +62,8 @@ public:
         if constexpr (std::is_same_v<double, T>) {
             for (size_t i = 0; i < limit; i += 8) {  // Adjust loop increment based on unrolling factor
                 // Prefetch data that will be needed soon
-                //_mm_prefetch((const char*)(data1 + i + 16), _MM_HINT_T0);
-                //_mm_prefetch((const char*)(data2 + i + 16), _MM_HINT_T0);
+                _mm_prefetch((const char*)(data1 + i + 16), _MM_HINT_T0);
+                _mm_prefetch((const char*)(data2 + i + 16), _MM_HINT_T0);
 
                 va1 = _mm256_load_pd(data1 + i);
                 va2 = _mm256_load_pd(data1 + i + 4);
@@ -123,7 +123,7 @@ public:
     }
 
     constexpr static void add_unroll2_noPrefetch(double *data1, double scale1, double *data2, double scale2, double *result) {
-        size_t limit = size - (size % (AVX_DOUBLE_SIZE * 4));  // Adjusted for unrolling factor
+        size_t limit = size - (size % (AVX_DOUBLE_SIZE * 2));  // Adjusted for unrolling factor
         __m256d va1, va2, ve1, ve2;
 
         __m256d vScale1 = _mm256_set1_pd(scale1);
@@ -185,8 +185,6 @@ public:
             result[i] = data1[i] * scale1 + data2[i] * scale2;
         }
     }
-
-    
 
 };// STLKR_LinearAlgebra
 #endif //STALKER_STLKR_OPERATIONS_SIMD_H

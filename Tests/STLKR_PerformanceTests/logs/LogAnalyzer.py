@@ -2,6 +2,9 @@ import argparse
 import os
 import pprint
 import statistics
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 
 
 def parse_log_content(content):
@@ -71,19 +74,21 @@ def handle_multiple_files(directory_path):
 
 def analyze_data(data):
     """
-    Analyzes data, computing statistical metrics, ensuring handling if regions are missing.
+    Analyzes data, computing statistical metrics, and ensures handling if regions are missing.
+    All numerical values are stored and printed in scientific notation.
     """
     results = {}
     categories_to_analyze = ['Single Observation Timers', 'Single Observation Data']
     for category in categories_to_analyze:
+        precision = ".3e"
         entries = data.get(category, {})
         results[category] = {}
         for name, values in entries.items():
-            mean_val = statistics.mean(values)
-            median_val = statistics.median(values)
-            std_dev_val = statistics.stdev(values) if len(values) > 1 else 0.0
-            min_val = min(values)
-            max_val = max(values)
+            mean_val = format(statistics.mean(values), precision)
+            median_val = format(statistics.median(values), precision)
+            std_dev_val = format(statistics.stdev(values) if len(values) > 1 else 0.0, precision)
+            min_val = format(min(values), precision)
+            max_val = format(max(values), precision)
 
             results[category][name] = {
                 'mean': mean_val,
@@ -98,32 +103,73 @@ def analyze_data(data):
 def find_maximum_minimum(data):
     """
     Finds the maximum and minimum statistical values across timers and data observations.
+    Handles string representations of scientific notation correctly.
     """
     max_min_stats = {
-        'max_mean': {'value': float('-inf'), 'name': None},
-        'min_mean': {'value': float('inf'), 'name': None},
-        'max_median': {'value': float('-inf'), 'name': None},
-        'min_median': {'value': float('inf'), 'name': None},
-        'max_std_dev': {'value': float('-inf'), 'name': None},
-        'min_std_dev': {'value': float('inf'), 'name': None}
+        'max_mean': {'value': '-inf', 'name': None},
+        'min_mean': {'value': 'inf', 'name': None},
+        'max_median': {'value': '-inf', 'name': None},
+        'min_median': {'value': 'inf', 'name': None},
+        'max_std_dev': {'value': '-inf', 'name': None},
+        'min_std_dev': {'value': 'inf', 'name': None}
     }
 
     categories_to_analyze = ['Single Observation Timers', 'Single Observation Data']
     for category in categories_to_analyze:
         for name, values in data.get(category, {}).items():
-            if values['mean'] > max_min_stats['max_mean']['value']:
+            if float(values['mean']) > float(max_min_stats['max_mean']['value']):
                 max_min_stats['max_mean'].update({'value': values['mean'], 'name': name})
-            if values['mean'] < max_min_stats['min_mean']['value']:
+            if float(values['mean']) < float(max_min_stats['min_mean']['value']):
                 max_min_stats['min_mean'].update({'value': values['mean'], 'name': name})
-            if values['median'] > max_min_stats['max_median']['value']:
+            if float(values['median']) > float(max_min_stats['max_median']['value']):
                 max_min_stats['max_median'].update({'value': values['median'], 'name': name})
-            if values['median'] < max_min_stats['min_median']['value']:
+            if float(values['median']) < float(max_min_stats['min_median']['value']):
                 max_min_stats['min_median'].update({'value': values['median'], 'name': name})
-            if values['std_dev'] > max_min_stats['max_std_dev']['value']:
+            if float(values['std_dev']) > float(max_min_stats['max_std_dev']['value']):
                 max_min_stats['max_std_dev'].update({'value': values['std_dev'], 'name': name})
-            if values['std_dev'] < max_min_stats['min_std_dev']['value']:
+            if float(values['std_dev']) < float(max_min_stats['min_std_dev']['value']):
                 max_min_stats['min_std_dev'].update({'value': values['std_dev'], 'name': name})
     return max_min_stats
+
+
+import numpy as np
+
+def plot_data(data, category):
+    entries = data.get(category, {})
+    names = list(entries.keys())
+    means = [float(entries[name]['mean']) for name in names]
+    medians = [float(entries[name]['median']) for name in names]
+    max_vals = [entries[name]['max'] for name in names]
+
+    x = np.arange(len(names))  # the label locations
+    width = 0.35  # the width of the bars
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    #rects1 = ax.bar(x - width/2, means, width, label='Mean')
+    rects2 = ax.bar(x + width/2, medians, width, label='Median')
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_xlabel('Entries')
+    ax.set_title(f'Medians for {category}')
+    ax.set_xticks(x)
+    ax.set_xticklabels(names, rotation=45, ha="right")
+    ax.legend()
+
+    def autolabel(rects, max_vals):
+        """Attach a text label above each bar displaying the maximum value."""
+        for rect, max_val in zip(rects, max_vals):
+            height = rect.get_height()
+            ax.annotate(f'{max_val}',
+                        xy=(rect.get_x() + rect.get_width() / 2, height),
+                        xytext=(0, 3),  # 3 points vertical offset
+                        textcoords="offset points",
+                        ha='center', va='bottom')
+
+    #autolabel(rects1, max_vals)
+    autolabel(rects2, max_vals)
+
+    fig.tight_layout()
+    plt.show()
 
 
 def main():
@@ -140,6 +186,8 @@ def main():
     # # Find the maximum and minimum values
     max_min_results = find_maximum_minimum(analysis_results)
     pprinter.pprint(max_min_results)
+    for category in ['Single Observation Timers', 'Single Observation Data']:
+        plot_data(analysis_results, category)
 
 
 if __name__ == "__main__":
