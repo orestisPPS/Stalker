@@ -31,9 +31,9 @@ namespace STLKR_Tests{
             logs.addParameter("prefetch_1:", "true");
             logs.addParameter("prefetch_2:", "false");
             
-            //checkAlignmentSizeAddition(32);
+            checkAlignmentSizeAddition(32);
             checkAlignmentSizeAddition(64);
-            checkAlignmentSizeAddition();
+            //checkAlignmentSizeAddition();
             
             logs.exportToCSV(_path , "RawPointerAVX_PerformanceTest");
         }
@@ -84,10 +84,17 @@ namespace STLKR_Tests{
             logs.stopSingleObservationTimer("no_avx_addition_alignment_" + std::to_string(alignmentSize) + "_unroll4");
 
             //logs.storeAndResetCurrentLogs();
-            delete[] data1;
-            delete[] data2;
-            delete[] resultAVX;
-            delete[] resultNoAVX;
+            if (alignmentSize != 0){
+                _mm_free(data1);
+                _mm_free(data2);
+                _mm_free(resultAVX);
+                _mm_free(resultNoAVX);
+            } else {
+                delete[] data1;
+                delete[] data2;
+                delete[] resultAVX;
+                delete[] resultNoAVX;
+            }
             
         }
    
