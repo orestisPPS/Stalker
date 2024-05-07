@@ -314,6 +314,16 @@ void Logs::exportToCSV(const string &filePath, const string &fileName) {
     file.close();
 }
 
+void Logs::clearAllLogs() {
+    _currentTimers->clear();
+    _singleObservationData->clear();
+    _multipleObservationData->clear();
+    _singleObservationTimers->clear();
+    _multipleObservationTimers->clear();
+    _parameters->clear();
+    _comments->clear();
+}
+
 
 
 

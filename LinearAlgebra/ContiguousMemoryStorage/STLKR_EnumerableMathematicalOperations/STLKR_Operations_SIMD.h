@@ -122,6 +122,45 @@ public:
         }
     }
 
+    constexpr static void add_unroll4_prefetch(double *data1, double scale1, double *data2, double scale2, double *result, size_t prefetchDistance) {
+        size_t limit = size - (size % (AVX_DOUBLE_SIZE * 4));  // Adjusted for unrolling factor
+        __m256d va1, va2, va3, va4, ve1, ve2, ve3, ve4, vb1, vb2, vb3, vb4;
+
+        __m256d vScale1 = _mm256_set1_pd(scale1);
+        __m256d vScale2 = _mm256_set1_pd(scale2);
+
+        if constexpr (std::is_same_v<double, T>) {
+            for (size_t i = 0; i < limit; i += 16) {  // Adjust loop increment based on unrolling factor
+                // Prefetch data that will be needed soon
+                _mm_prefetch((const char*)(data1 + i + prefetchDistance), _MM_HINT_T0);
+                _mm_prefetch((const char*)(data2 + i + prefetchDistance), _MM_HINT_T0);
+
+                va1 = _mm256_load_pd(data1 + i);
+                va2 = _mm256_load_pd(data1 + i + 4);
+                va3 = _mm256_load_pd(data1 + i + 8);
+                va4 = _mm256_load_pd(data1 + i + 12);
+                vb1 = _mm256_load_pd(data2 + i);
+                vb2 = _mm256_load_pd(data2 + i + 4);
+                vb3 = _mm256_load_pd(data2 + i + 8);
+                vb4 = _mm256_load_pd(data2 + i + 12);
+
+                ve1 = _mm256_fmadd_pd(va1, vScale1, _mm256_mul_pd(vb1, vScale2));
+                ve2 = _mm256_fmadd_pd(va2, vScale1, _mm256_mul_pd(vb2, vScale2));
+                ve3 = _mm256_fmadd_pd(va3, vScale1, _mm256_mul_pd(vb3, vScale2));
+                ve4 = _mm256_fmadd_pd(va4, vScale1, _mm256_mul_pd(vb4, vScale2));
+
+                _mm256_store_pd(result + i, ve1);
+                _mm256_store_pd(result + i + 4, ve2);
+                _mm256_store_pd(result + i + 8, ve3);
+                _mm256_store_pd(result + i + 12, ve4);
+            }
+        }
+
+        for (size_t i = limit; i < size; i++) {
+            result[i] = data1[i] * scale1 + data2[i] * scale2;
+        }
+    }
+
     constexpr static void add_unroll2_noPrefetch(double *data1, double scale1, double *data2, double scale2, double *result) {
         size_t limit = size - (size % (AVX_DOUBLE_SIZE * 2));  // Adjusted for unrolling factor
         __m256d va1, va2, ve1, ve2;

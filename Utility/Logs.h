@@ -46,6 +46,8 @@ class Logs {
         
         void storeAndResetCurrentLogs();
         
+        void clearAllLogs();
+        
         void storeAndResetAllLogs();
         
         void exportToCSV(const string &filePath, const string &fileName);
