@@ -65,6 +65,7 @@ namespace STLKR_Tests{
             _runPrefetchDistance();
             
             logs.exportToCSV(_path + "/PrefetchDistance", "RawPointerAVX_PerformanceTest_PrefetchDistance");
+            logs.clearAllLogs();
         }
 
         constexpr void _runAlignmentSizeAddition(size_t alignmentSize = 0){
