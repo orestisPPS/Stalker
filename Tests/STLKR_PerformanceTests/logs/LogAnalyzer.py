@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-
 def parse_log_content(content):
     data = {
         "Parameters": {},
@@ -29,11 +28,14 @@ def parse_log_content(content):
         elif line.startswith('LogEntry') or line.startswith('Timer'):
             entry_type, entry_name = line.split(':', 1)
             entry_name = entry_name.strip()
-            entry_value = float(next(line_iter).strip())
-            if current_region == 'Single Observation Timers':
-                data["Single Observation Timers"][entry_name] = entry_value
-            elif current_region == 'Single Observation Data':
-                data["Single Observation Data"][entry_name] = entry_value
+            try:
+                entry_value = float(next(line_iter).strip())
+                if current_region == 'Single Observation Timers':
+                    data["Single Observation Timers"][entry_name] = entry_value
+                elif current_region == 'Single Observation Data':
+                    data["Single Observation Data"][entry_name] = entry_value
+            except ValueError:
+                print(f"Warning: Could not convert value for {entry_name} to float.")
     return data
 
 
@@ -41,9 +43,13 @@ def parse_log_file(file_path):
     """
     Reads and parses a log file at the given path.
     """
-    with open(file_path, 'r') as file:
-        content = file.read()
-    return parse_log_content(content)
+    try:
+        with open(file_path, 'r') as file:
+            content = file.read()
+        return parse_log_content(content)
+    except IOError as e:
+        print(f"Error reading file {file_path}: {e}")
+        return None
 
 
 def handle_multiple_files(directory_path):
@@ -64,27 +70,41 @@ def handle_multiple_files(directory_path):
             file_path = os.path.join(directory_path, file_name)
             print(f"Opening file {file_name}...")
             data = parse_log_file(file_path)
-            print(f"File {file_name} read successfully.")
+            if data:
+                print(f"File {file_name} read successfully.")
 
-            # Handle parameters: Capture only once
-            if not parameters_captured:
-                for entry, value in data["Parameters"].items():
-                    aggregated_data["Parameters"][entry] = value
-                parameters_captured = True  # Set flag after capturing parameters
+                # Handle parameters: Capture only once
+                if not parameters_captured:
+                    for entry, value in data["Parameters"].items():
+                        aggregated_data["Parameters"][entry] = value
+                    parameters_captured = True  # Set flag after capturing parameters
 
-            # Handle other data
-            for key in ['Single Observation Timers', 'Single Observation Data']:
-                for entry, value in data[key].items():
-                    if entry not in aggregated_data[key]:
-                        aggregated_data[key][entry] = []
-                    aggregated_data[key][entry].append(value)
+                # Handle other data
+                for key in ['Single Observation Timers', 'Single Observation Data']:
+                    for entry, value in data[key].items():
+                        if entry not in aggregated_data[key]:
+                            aggregated_data[key][entry] = []
+                        aggregated_data[key][entry].append(value)
+            else:
+                print(f"Failed to read data from {file_name}")
 
     print("All files processed successfully.")
     return aggregated_data
 
 
-
 def compute_stats(values, precision=".4e"):
+    if not values:
+        return {
+            'mean': 'NaN',
+            'median': 'NaN',
+            'std_dev': 'NaN',
+            'min': 'NaN',
+            'max': 'NaN',
+            'range': 'NaN',
+            'variance': 'NaN',
+            'coeff_variation': 'NaN',
+            '95th_percentile': 'NaN'
+        }
     stats = {}
     stats['mean'] = format(statistics.mean(values), precision)
     stats['median'] = format(statistics.median(values), precision)
@@ -145,7 +165,6 @@ def plot_data(data, category, parameters):
     means = [float(entries[name]['mean']) for name in names]
     medians = [float(entries[name]['median']) for name in names]
     std_devs = [float(entries[name]['std_dev']) for name in names]
-    max_vals = [entries[name]['max'] for name in names]
 
     x = np.arange(len(names))  # the label locations
     width = 0.25  # the width of the bars
@@ -158,47 +177,41 @@ def plot_data(data, category, parameters):
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_xlabel('Entries')
     ax.set_ylabel('Values')
-    ax.set_title(f'Statistics for {category}: {parameters}')
+    ax.set_title(f'Parameters {category}: {parameters}', fontsize=9)
     ax.set_xticks(x)
     ax.set_xticklabels(names, rotation=45, ha="right", fontsize=9)
     ax.legend()
 
-    def autolabel(rects, max_vals):
+    def autolabel(rects, values):
         """Attach a text label above each bar in rect, displaying its height in scientific notation."""
-        for rect, max_val in zip(rects, max_vals):
+        for rect, value in zip(rects, values):
             height = rect.get_height()
-            formatted_max_val = f"{float(max_val):.4e}"  # Convert max value to scientific notation with precision 1e-4
-            ax.annotate(formatted_max_val,
+            formatted_value = f"{value:.4e}"  # Convert value to scientific notation with precision 1e-4
+            ax.annotate(formatted_value,
                         xy=(rect.get_x() + rect.get_width() / 2, height),
                         xytext=(0, 3),  # 3 points vertical offset
                         textcoords="offset points",
                         ha='center', va='bottom', fontsize=8)
 
-    def highlight_extremes(rects, values):
-        """Highlight maximum and minimum values with arrows."""
-        max_value = max(values)
+    def highlight_extremes(rects, values, label):
+        """Highlight minimum values with arrows."""
         min_value = min(values)
         for rect, value in zip(rects, values):
-            if value == max_value:
-                ax.annotate('Max', xy=(rect.get_x() + rect.get_width() / 2, value),
+            if value == min_value:
+                ax.annotate(f'Min {label}', xy=(rect.get_x() + rect.get_width() / 2, value),
                             xytext=(0, -15), textcoords="offset points",
-                            arrowprops=dict(facecolor='red', shrink=0.05),
-                            ha='center', va='top')
-            elif value == min_value:
-                ax.annotate('Min', xy=(rect.get_x() + rect.get_width() / 2, value),
-                            xytext=(0, -15), textcoords="offset points",
-                            arrowprops=dict(facecolor='yellow', shrink=0.005),
+                            arrowprops=dict(facecolor='yellow', shrink=0.05),
                             ha='center', va='top', fontsize=8)
 
     # Call autolabel for all sets of bars
-    autolabel(rects1, max_vals)
-    autolabel(rects2, max_vals)
-    autolabel(rects3, max_vals)
+    autolabel(rects1, means)
+    autolabel(rects2, medians)
+    autolabel(rects3, std_devs)
 
-    # Highlight extremes for each set
-    highlight_extremes(rects1, means)
-    highlight_extremes(rects2, medians)
-    highlight_extremes(rects3, std_devs)
+    # Highlight minimum values for each set
+    highlight_extremes(rects1, means, 'Mean')
+    highlight_extremes(rects2, medians, 'Median')
+    highlight_extremes(rects3, std_devs, 'Std Dev')
 
     fig.tight_layout()
 
@@ -220,11 +233,11 @@ def main():
     # Pretty print the results
     pprinter = pprint.PrettyPrinter(indent=4)
     pprinter.pprint(analysis_results)
-    # # Find the maximum and minimum values
+    # Find the maximum and minimum values
     max_min_results = find_maximum_minimum(analysis_results)
     pprinter.pprint(max_min_results)
     for category in ['Single Observation Timers']:
-    #for category in ['Single Observation Timers', 'Single Observation Data']:
+        #for category in ['Single Observation Timers', 'Single Observation Data']:
         plot_data(analysis_results, category, aggregated_data["Parameters"])
 
 

@@ -125,8 +125,7 @@ void Logs::exportToCSV(const string &filePath, const string &fileName) {
     // Get current time
     auto now = std::chrono::system_clock::now();
     auto now_as_time_t = std::chrono::system_clock::to_time_t(now);
-    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
-
+    auto now_ms = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()) % 1000;
     std::tm now_tm = *std::localtime(&now_as_time_t);
 
     // Create a timestamp string with milliseconds

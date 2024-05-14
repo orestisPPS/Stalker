@@ -4,6 +4,8 @@
 
 #ifndef STALKER_AVX_PERFORMANCETEST_H
 #define STALKER_AVX_PERFORMANCETEST_H
+
+#include <cassert>
 #include "../../LinearAlgebra/ContiguousMemoryStorage/STLKR_EnumerableMathematicalOperations/STLKR_Operations_SIMD.h"
 #include "STLKR_PerformanceTestBase.h"
 
@@ -139,30 +141,43 @@ namespace STLKR_Tests{
             data2 = static_cast<double*>(_mm_malloc(size * sizeof(double), 64));
             resultAVX = static_cast<double*>(_mm_malloc(size * sizeof(double), 64));
 
+            assert(reinterpret_cast<uintptr_t>(data1) % 64 == 0);
+            assert(reinterpret_cast<uintptr_t>(data2) % 64 == 0);
+            assert(reinterpret_cast<uintptr_t>(resultAVX) % 64 == 0);
+
             for (int i = 0; i < size; i++) {
                 data1[i] = i;
                 data2[i] = i;
             }
 
-            logs.startSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_4_prefetch_16", STLKR_TimeUnit::microseconds);
-            STLKR_Operations_SIMD<double, size, 2>::add_unroll4_prefetch(data1, 1, data2, 1, resultAVX, 16);
-            logs.stopSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_4_prefetch_16");
+            STLKR_SIMD_Prefetch_Config prefetchConfig;
+            prefetchConfig.hint = STLKR_SIMD_Prefetch_Hint::T0;
+            prefetchConfig.storeType = STLKR_SIMD_Stores::NonTemporal;
+
+            prefetchConfig.distance = STLKR_SIMD_Prefetch_Distance::_32;
+            logs.startSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_16_prefetch_32", STLKR_TimeUnit::nanoseconds);
+            STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
+            logs.stopSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_16_prefetch_32");
             
-            logs.startSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_4_prefetch_32", STLKR_TimeUnit::microseconds);
-            STLKR_Operations_SIMD<double, size, 2>::add_unroll4_prefetch(data1, 1, data2, 1, resultAVX, 32);
-            logs.stopSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_4_prefetch_32");
+            prefetchConfig.distance = STLKR_SIMD_Prefetch_Distance::_64;
+            logs.startSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_16_prefetch_64", STLKR_TimeUnit::nanoseconds);
+            STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
+            logs.stopSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_16_prefetch_64");
             
-            logs.startSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_4_prefetch_64", STLKR_TimeUnit::microseconds);
-            STLKR_Operations_SIMD<double, size, 2>::add_unroll4_prefetch(data1, 1, data2, 1, resultAVX, 64);
-            logs.stopSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_4_prefetch_64");
+            prefetchConfig.distance = STLKR_SIMD_Prefetch_Distance::_128;
+            logs.startSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_16_prefetch_128", STLKR_TimeUnit::nanoseconds);
+            STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
+            logs.stopSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_16_prefetch_128");
             
-            logs.startSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_4_prefetch_128", STLKR_TimeUnit::microseconds);
-            STLKR_Operations_SIMD<double, size, 2>::add_unroll4_prefetch(data1, 1, data2, 1, resultAVX, 128);
-            logs.stopSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_4_prefetch_128");
+            prefetchConfig.distance = STLKR_SIMD_Prefetch_Distance::_256;
+            logs.startSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_16_prefetch_256", STLKR_TimeUnit::nanoseconds);
+            STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
+            logs.stopSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_16_prefetch_256");
             
-            logs.startSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_4_prefetch_256", STLKR_TimeUnit::microseconds);
-            STLKR_Operations_SIMD<double, size, 2>::add_unroll4_prefetch(data1, 1, data2, 1, resultAVX, 256);
-            logs.stopSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_4_prefetch_256");
+            logs.startSingleObservationTimer("add_avx_off_align_" + std::to_string(64) + "_unroll_16", STLKR_TimeUnit::nanoseconds);
+            addUnroll16NoAVX(data1, 1, data2, 1, resultAVX);
+            logs.stopSingleObservationTimer("add_avx_off_align_" + std::to_string(64) + "_unroll_16");
+            
             
             _mm_free(data1);
             _mm_free(data2);
@@ -195,6 +210,27 @@ namespace STLKR_Tests{
                 result[i + 5] = data1[i + 5] * c1 + data2[i + 5] * c2;
                 result[i + 6] = data1[i + 6] * c1 + data2[i + 6] * c2;
                 result[i + 7] = data1[i + 7] * c1 + data2[i + 7] * c2;
+            }
+        }
+
+        static constexpr inline void addUnroll16NoAVX(const double* data1, double c1, const double* data2, double c2, double* result){
+            for (int i = 0; i < size; i += 4) {
+                result[i] = data1[i] * c1 + data2[i] * c2;
+                result[i + 1] = data1[i + 1] * c1 + data2[i + 1] * c2;
+                result[i + 2] = data1[i + 2] * c1 + data2[i + 2] * c2;
+                result[i + 3] = data1[i + 3] * c1 + data2[i + 3] * c2;
+                result[i + 4] = data1[i + 4] * c1 + data2[i + 4] * c2;
+                result[i + 5] = data1[i + 5] * c1 + data2[i + 5] * c2;
+                result[i + 6] = data1[i + 6] * c1 + data2[i + 6] * c2;
+                result[i + 7] = data1[i + 7] * c1 + data2[i + 7] * c2;
+                result[i + 8] = data1[i + 8] * c1 + data2[i + 8] * c2;
+                result[i + 9] = data1[i + 9] * c1 + data2[i + 9] * c2;
+                result[i + 10] = data1[i + 10] * c1 + data2[i + 10] * c2;
+                result[i + 11] = data1[i + 11] * c1 + data2[i + 11] * c2;
+                result[i + 12] = data1[i + 12] * c1 + data2[i + 12] * c2;
+                result[i + 13] = data1[i + 13] * c1 + data2[i + 13] * c2;
+                result[i + 14] = data1[i + 14] * c1 + data2[i + 14] * c2;
+                result[i + 15] = data1[i + 15] * c1 + data2[i + 15] * c2;
             }
         }
         
