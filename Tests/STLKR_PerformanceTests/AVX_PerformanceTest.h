@@ -6,6 +6,7 @@
 #define STALKER_AVX_PERFORMANCETEST_H
 
 #include <cassert>
+#include <thread>
 #include "../../LinearAlgebra/ContiguousMemoryStorage/STLKR_EnumerableMathematicalOperations/STLKR_Operations_SIMD.h"
 #include "STLKR_PerformanceTestBase.h"
 
@@ -24,10 +25,9 @@ namespace STLKR_Tests{
 
             //runAlignmentSizePerformanceTest(32);
             runPrefetchDistancePerformanceTest();
+            //runHintPerformanceTest();
         }
         
-        
-   
     private:
         
         void runAlignmentSizePerformanceTest(){
@@ -56,10 +56,8 @@ namespace STLKR_Tests{
             
             logs.addParameter("threads:", 1);
             logs.addParameter("size:", static_cast<double>(size));
-            logs.addParameter("alignment_2:", 64);
+            logs.addParameter("alignment:", 64);
             logs.addParameter("prefetch_1:", "true");
-            logs.addParameter("prefetch_distance_1:", 16);
-            logs.addParameter("prefetch_distance_2:", 32);
             logs.addParameter("prefetch_distance_3:", 64);
             logs.addParameter("prefetch_distance_4:", 128);
             logs.addParameter("prefetch_distance_5:", 256);
@@ -67,6 +65,27 @@ namespace STLKR_Tests{
             _runPrefetchDistance();
             
             logs.exportToCSV(_path + "/PrefetchDistance", "RawPointerAVX_PerformanceTest_PrefetchDistance");
+            logs.clearAllLogs();
+        }
+
+        void runHintPerformanceTest(){
+            logs.addComment("AVX Addition Performance Test avx hints");
+
+            logs.addParameter("threads:", 1);
+            logs.addParameter("size:", static_cast<double>(size));
+            logs.addParameter("alignment:", 64);
+            logs.addParameter("prefetch_1:", "true");
+            logs.addParameter("prefetch_distance_1:", 64);
+            logs.addParameter("prefetch_distance_2:", 128);
+            logs.addParameter("prefetch_distance_3:", 256);
+            logs.addParameter("hint_1:", "T0");
+            logs.addParameter("hint_2:", "T1");
+            logs.addParameter("hint_3:", "T2");
+
+
+            _runHints();
+
+            logs.exportToCSV(_path + "/Hints", "RawPointerAVX_PerformanceTest_Hints");
             logs.clearAllLogs();
         }
 
@@ -152,33 +171,124 @@ namespace STLKR_Tests{
 
             STLKR_SIMD_Prefetch_Config prefetchConfig;
             prefetchConfig.hint = STLKR_SIMD_Prefetch_Hint::T0;
-            prefetchConfig.storeType = STLKR_SIMD_Stores::NonTemporal;
-
-            prefetchConfig.distance = STLKR_SIMD_Prefetch_Distance::_32;
-            logs.startSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_16_prefetch_32", STLKR_TimeUnit::nanoseconds);
-            STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
-            logs.stopSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_16_prefetch_32");
+            prefetchConfig.storeType = STLKR_SIMD_Stores::Regular;
             
             prefetchConfig.distance = STLKR_SIMD_Prefetch_Distance::_64;
-            logs.startSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_16_prefetch_64", STLKR_TimeUnit::nanoseconds);
+            logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_64", STLKR_TimeUnit::nanoseconds);
             STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
-            logs.stopSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_16_prefetch_64");
+            logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_64");
             
             prefetchConfig.distance = STLKR_SIMD_Prefetch_Distance::_128;
-            logs.startSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_16_prefetch_128", STLKR_TimeUnit::nanoseconds);
+            logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_128", STLKR_TimeUnit::nanoseconds);
             STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
-            logs.stopSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_16_prefetch_128");
+            logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_128");
             
             prefetchConfig.distance = STLKR_SIMD_Prefetch_Distance::_256;
-            logs.startSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_16_prefetch_256", STLKR_TimeUnit::nanoseconds);
+            logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_256", STLKR_TimeUnit::nanoseconds);
             STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
-            logs.stopSingleObservationTimer("add_avx_on_align_" + std::to_string(64) + "_unroll_16_prefetch_256");
+            logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_256");
             
-            logs.startSingleObservationTimer("add_avx_off_align_" + std::to_string(64) + "_unroll_16", STLKR_TimeUnit::nanoseconds);
-            addUnroll16NoAVX(data1, 1, data2, 1, resultAVX);
-            logs.stopSingleObservationTimer("add_avx_off_align_" + std::to_string(64) + "_unroll_16");
+//            logs.startSingleObservationTimer("add_avx_off_unroll_16", STLKR_TimeUnit::nanoseconds);
+//            addUnroll16NoAVX(data1, 1, data2, 1, resultAVX);
+//            logs.stopSingleObservationTimer("add_avx_off_unroll_16");
             
             
+            _mm_free(data1);
+            _mm_free(data2);
+            _mm_free(resultAVX);
+        }
+
+        constexpr void _runHints(){
+            double* data1;
+            double* data2;
+            double* resultAVX;
+
+            data1 = static_cast<double*>(_mm_malloc(size * sizeof(double), 64));
+            data2 = static_cast<double*>(_mm_malloc(size * sizeof(double), 64));
+            resultAVX = static_cast<double*>(_mm_malloc(size * sizeof(double), 64));
+
+            assert(reinterpret_cast<uintptr_t>(data1) % 64 == 0);
+            assert(reinterpret_cast<uintptr_t>(data2) % 64 == 0);
+            assert(reinterpret_cast<uintptr_t>(resultAVX) % 64 == 0);
+
+            for (int i = 0; i < size; i++) {
+                data1[i] = i;
+                data2[i] = i;
+            }
+
+            STLKR_SIMD_Prefetch_Config prefetchConfig;
+            prefetchConfig.storeType = STLKR_SIMD_Stores::NonTemporal;
+
+            prefetchConfig.distance = STLKR_SIMD_Prefetch_Distance::_64;
+            prefetchConfig.hint = STLKR_SIMD_Prefetch_Hint::T0;
+            logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t0", STLKR_TimeUnit::nanoseconds);
+            STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
+            logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t0");
+
+            prefetchConfig.hint = STLKR_SIMD_Prefetch_Hint::T1;
+            logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t1", STLKR_TimeUnit::nanoseconds);
+            STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
+            logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t1");
+
+            prefetchConfig.hint = STLKR_SIMD_Prefetch_Hint::T2;
+            logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t2", STLKR_TimeUnit::nanoseconds);
+            STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
+            logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t2");
+
+            prefetchConfig.distance = STLKR_SIMD_Prefetch_Distance::_64;
+            prefetchConfig.hint = STLKR_SIMD_Prefetch_Hint::T0;
+            logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t0", STLKR_TimeUnit::nanoseconds);
+            STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
+            logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t0");
+
+            prefetchConfig.hint = STLKR_SIMD_Prefetch_Hint::T1;
+            logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t1", STLKR_TimeUnit::nanoseconds);
+            STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
+            logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t1");
+
+            prefetchConfig.hint = STLKR_SIMD_Prefetch_Hint::T2;
+            logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t2", STLKR_TimeUnit::nanoseconds);
+            STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
+            logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t2");
+
+            prefetchConfig.distance = STLKR_SIMD_Prefetch_Distance::_128;
+            prefetchConfig.hint = STLKR_SIMD_Prefetch_Hint::T0;
+            logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_128_hint_t0", STLKR_TimeUnit::nanoseconds);
+            STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
+            logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_128_hint_t0");
+
+            prefetchConfig.hint = STLKR_SIMD_Prefetch_Hint::T1;
+            logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_128_hint_t1", STLKR_TimeUnit::nanoseconds);
+            STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
+            logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_128_hint_t1");
+
+            prefetchConfig.hint = STLKR_SIMD_Prefetch_Hint::T2;
+            logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_128_hint_t2", STLKR_TimeUnit::nanoseconds);
+            STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
+            logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_128_hint_t2");
+
+
+            prefetchConfig.distance = STLKR_SIMD_Prefetch_Distance::_256;
+            prefetchConfig.hint = STLKR_SIMD_Prefetch_Hint::T0;
+            logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_256_hint_t0", STLKR_TimeUnit::nanoseconds);
+            STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
+            logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_256_hint_t0");
+
+            prefetchConfig.hint = STLKR_SIMD_Prefetch_Hint::T1;
+            logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_256_hint_t1", STLKR_TimeUnit::nanoseconds);
+            STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
+            logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_256_hint_t1");
+
+            prefetchConfig.hint = STLKR_SIMD_Prefetch_Hint::T2;
+            logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_256_hint_t2", STLKR_TimeUnit::nanoseconds);
+            STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
+            logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_256_hint_t2");
+
+//            logs.startSingleObservationTimer("add_avx_off_unroll_16", STLKR_TimeUnit::nanoseconds);
+//            addUnroll16NoAVX(data1, 1, data2, 1, resultAVX);
+//            logs.stopSingleObservationTimer("add_avx_off_unroll_16");
+
+
             _mm_free(data1);
             _mm_free(data2);
             _mm_free(resultAVX);

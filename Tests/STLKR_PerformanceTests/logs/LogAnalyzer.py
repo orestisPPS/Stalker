@@ -24,6 +24,10 @@ def parse_log_content(content):
         elif line.startswith('Parameter'):
             entry_name = line.split(':')[1].strip()
             entry_value = next(line_iter).strip()
+            try:
+                entry_value = float(entry_value) if entry_value.replace('.', '', 1).isdigit() else entry_value
+            except ValueError:
+                print(f"Warning: Could not convert value for {entry_name} to float.")
             data["Parameters"][entry_name] = entry_value
         elif line.startswith('LogEntry') or line.startswith('Timer'):
             entry_type, entry_name = line.split(':', 1)
@@ -90,6 +94,24 @@ def handle_multiple_files(directory_path):
 
     print("All files processed successfully.")
     return aggregated_data
+
+
+def validate_numeric_data(data):
+    """
+    Ensure that all entries in the data dictionary are numeric where applicable.
+    """
+    for category in ['Single Observation Timers', 'Single Observation Data']:
+        for entry, values in data[category].items():
+            if not isinstance(values, list):
+                values = [values]
+            numeric_values = []
+            for value in values:
+                try:
+                    numeric_values.append(float(value))
+                except ValueError:
+                    print(f"Warning: Non-numeric value found in {entry}: {value}")
+            data[category][entry] = numeric_values
+    return data
 
 
 def compute_stats(values, precision=".4e"):
@@ -159,7 +181,7 @@ def find_maximum_minimum(data):
     return max_min_stats
 
 
-def plot_data(data, category, parameters):
+def plot_data(data, category, parameters, save_path):
     entries = data.get(category, {})
     names = list(entries.keys())
     means = [float(entries[name]['mean']) for name in names]
@@ -194,31 +216,78 @@ def plot_data(data, category, parameters):
                         ha='center', va='bottom', fontsize=8)
 
     def highlight_extremes(rects, values, label):
-        """Highlight minimum values with arrows."""
+        """Highlight minimum and maximum values with arrows."""
         min_value = min(values)
+        max_value = max(values)
         for rect, value in zip(rects, values):
             if value == min_value:
                 ax.annotate(f'Min {label}', xy=(rect.get_x() + rect.get_width() / 2, value),
                             xytext=(0, -15), textcoords="offset points",
                             arrowprops=dict(facecolor='yellow', shrink=0.05),
                             ha='center', va='top', fontsize=8)
+            if value == max_value:
+                ax.annotate(f'Max {label}', xy=(rect.get_x() + rect.get_width() / 2, value),
+                            xytext=(0, 15), textcoords="offset points",
+                            arrowprops=dict(facecolor='red', shrink=0.05),
+                            ha='center', va='bottom', fontsize=8)
 
     # Call autolabel for all sets of bars
     autolabel(rects1, means)
     autolabel(rects2, medians)
     autolabel(rects3, std_devs)
 
-    # Highlight minimum values for each set
+    # Highlight minimum and maximum values for each set
     highlight_extremes(rects1, means, 'Mean')
     highlight_extremes(rects2, medians, 'Median')
     highlight_extremes(rects3, std_devs, 'Std Dev')
 
     fig.tight_layout()
 
-    path = os.path.join(os.getcwd(), 'plots')
-    if not os.path.exists(path):
-        os.makedirs(path)
-    plt.savefig(os.path.join(path, f'{category}_{datetime.now().strftime("%Y-%m-%d")}.png'))
+    timestamp = datetime.now().strftime("%d_%m_%y_%H_%M_%S")
+    plt.savefig(os.path.join(save_path, f'{category}_{timestamp}.png'))
+    plt.show()
+
+
+def compute_running_statistics(values):
+    running_mean = []
+    running_median = []
+    running_std_dev = []
+    cumulative_values = []
+
+    for value in values:
+        cumulative_values.append(value)
+        running_mean.append(statistics.mean(cumulative_values))
+        running_median.append(statistics.median(cumulative_values))
+        running_std_dev.append(statistics.stdev(cumulative_values) if len(cumulative_values) > 1 else 0.0)
+
+    return running_mean, running_median, running_std_dev
+
+
+def plot_running_statistics(data, category, save_path):
+    entries = data.get(category, {})
+    symbols = ['o', '^', 's']
+    stats_labels = ['Mean', 'Median', 'Std Dev']
+    colors = plt.cm.get_cmap('tab10', len(entries))
+
+    plt.figure(figsize=(20, 10))
+
+    for i, (entry_name, values) in enumerate(entries.items()):
+        running_mean, running_median, running_std_dev = compute_running_statistics(values)
+
+        # Plot only every 100th point
+        step = 10
+        plt.plot(running_mean[::step], label=f'{entry_name} Mean', marker=symbols[0], linestyle='-', color=colors(i), markerfacecolor='none')
+        plt.plot(running_median[::step], label=f'{entry_name} Median', marker=symbols[1], linestyle='--', color=colors(i), markerfacecolor='none')
+        plt.plot(running_std_dev[::step], label=f'{entry_name} Std Dev', marker=symbols[2], linestyle=':', color=colors(i), markerfacecolor='none')
+
+    plt.xlabel('Run Number')
+    plt.ylabel('Value')
+    plt.title(f'Running Statistics for {category}')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    timestamp = datetime.now().strftime("%d_%m_%y_%H_%M_%S")
+    plt.savefig(os.path.join(save_path, f'{category}_running_stats_{timestamp}.png'))
     plt.show()
 
 
@@ -229,6 +298,10 @@ def main():
 
     # Process files in the specified directory
     aggregated_data = handle_multiple_files(args.directory)
+
+    # Validate the data to ensure all values are numeric where applicable
+    aggregated_data = validate_numeric_data(aggregated_data)
+
     analysis_results = analyze_data(aggregated_data)
     # Pretty print the results
     pprinter = pprint.PrettyPrinter(indent=4)
@@ -236,9 +309,18 @@ def main():
     # Find the maximum and minimum values
     max_min_results = find_maximum_minimum(analysis_results)
     pprinter.pprint(max_min_results)
+
+    # Create directory for plots if it does not exist
+    plots_path = os.path.join(args.directory, 'plots')
+    if not os.path.exists(plots_path):
+        os.makedirs(plots_path)
+
+    # Compute and plot running statistics for diagnostics
     for category in ['Single Observation Timers']:
-        #for category in ['Single Observation Timers', 'Single Observation Data']:
-        plot_data(analysis_results, category, aggregated_data["Parameters"])
+        plot_running_statistics(aggregated_data, category, plots_path)
+
+    for category in ['Single Observation Timers']:
+        plot_data(analysis_results, category, aggregated_data["Parameters"], plots_path)
 
 
 if __name__ == "__main__":
