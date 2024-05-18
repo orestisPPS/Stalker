@@ -13,6 +13,11 @@
 #include <string>
 #include <list>
 #include <unordered_map>
+#include <filesystem>
+#include <vector>
+#include <algorithm>
+#include <thread>
+#include <random>
 using namespace std;
 
 class Logs {
@@ -71,6 +76,8 @@ class Logs {
         unique_ptr<list<string>> _comments;
             
         string _logName;
+
+        static string _generateUUID();
 };
 
 

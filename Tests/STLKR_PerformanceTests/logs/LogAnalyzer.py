@@ -6,6 +6,7 @@ from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.ticker import ScalarFormatter
 
 
 def parse_log_content(content):
@@ -135,7 +136,8 @@ def compute_stats(values, precision=".4e"):
     stats['max'] = format(max(values), precision)
     stats['range'] = format(max(values) - min(values), precision)
     stats['variance'] = format(statistics.variance(values) if len(values) > 1 else 0.0, precision)
-    stats['coeff_variation'] = format((statistics.stdev(values) / statistics.mean(values)) if statistics.mean(values) != 0 else 0, precision)
+    stats['coeff_variation'] = format(
+        (statistics.stdev(values) / statistics.mean(values)) if statistics.mean(values) != 0 else 0, precision)
     stats['95th_percentile'] = format(np.percentile(values, 95), precision)
     return stats
 
@@ -191,7 +193,7 @@ def plot_data(data, category, parameters, save_path):
     x = np.arange(len(names))  # the label locations
     width = 0.25  # the width of the bars
 
-    fig, ax = plt.subplots(figsize=(20, 10))
+    fig, ax = plt.subplots(figsize=(19, 9))
     rects1 = ax.bar(x - width, means, width, label='Mean', color='lightblue')
     rects2 = ax.bar(x, medians, width, label='Median', color='lightgreen')
     rects3 = ax.bar(x + width, std_devs, width, label='Std Dev', color='salmon')
@@ -199,39 +201,52 @@ def plot_data(data, category, parameters, save_path):
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_xlabel('Entries')
     ax.set_ylabel('Values')
-    ax.set_title(f'Parameters {category}: {parameters}', fontsize=9)
+    ax.set_title(f'Statistics for {category}')
     ax.set_xticks(x)
-    ax.set_xticklabels(names, rotation=45, ha="right", fontsize=9)
+    ax.set_xticklabels(names, rotation=45, ha="right", fontsize=8)
     ax.legend()
 
+    # Add parameters as a box inside the graph
+    param_text = '\n'.join([f'{key}: {value}' for key, value in parameters.items()])
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    ax.text(1.01, 0.5, param_text, transform=ax.transAxes, fontsize=9,
+            verticalalignment='center', bbox=props)
+
     def autolabel(rects, values):
-        """Attach a text label above each bar in rect, displaying its height in scientific notation."""
+        """Attach a text label above each bar, displaying its height in scientific notation."""
         for rect, value in zip(rects, values):
             height = rect.get_height()
             formatted_value = f"{value:.4e}"  # Convert value to scientific notation with precision 1e-4
             ax.annotate(formatted_value,
                         xy=(rect.get_x() + rect.get_width() / 2, height),
-                        xytext=(0, 3),  # 3 points vertical offset
+                        xytext=(10, 0),
                         textcoords="offset points",
-                        ha='center', va='bottom', fontsize=8)
+                        ha='center', va='bottom', fontsize=7.5, rotation=angle)
 
     def highlight_extremes(rects, values, label):
-        """Highlight minimum and maximum values with arrows."""
+        """Highlight minimum and maximum values with arrows and custom text colors."""
+
         min_value = min(values)
         max_value = max(values)
         for rect, value in zip(rects, values):
+            xytext = (0, 50)  # Move the arrow annotation point higher
+            arrow_style = 'simple,head_length=0.8,head_width=0.8,tail_width=0.4'
+            shrinkB = 30
             if value == min_value:
-                ax.annotate(f'Min {label}', xy=(rect.get_x() + rect.get_width() / 2, value),
-                            xytext=(0, -15), textcoords="offset points",
-                            arrowprops=dict(facecolor='yellow', shrink=0.05),
-                            ha='center', va='top', fontsize=8)
+                ax.annotate('MIN', xy=(rect.get_x() + rect.get_width() / 2, value),
+                            xytext=xytext, textcoords="offset points",
+                            arrowprops=dict(facecolor='green', edgecolor='green', arrowstyle=arrow_style,
+                                            shrinkA=0, shrinkB=shrinkB),
+                            ha='center', va='bottom', fontsize=7, color='green')
             if value == max_value:
-                ax.annotate(f'Max {label}', xy=(rect.get_x() + rect.get_width() / 2, value),
-                            xytext=(0, 15), textcoords="offset points",
-                            arrowprops=dict(facecolor='red', shrink=0.05),
-                            ha='center', va='bottom', fontsize=8)
+                ax.annotate('MAX', xy=(rect.get_x() + rect.get_width() / 2, value),
+                            xytext=xytext, textcoords="offset points",
+                            arrowprops=dict(facecolor='red', edgecolor='red', arrowstyle=arrow_style,
+                                            shrinkA=0, shrinkB=shrinkB),
+                            ha='center', va='bottom', fontsize=7, color='red')
 
     # Call autolabel for all sets of bars
+    angle = 25
     autolabel(rects1, means)
     autolabel(rects2, medians)
     autolabel(rects3, std_devs)
@@ -241,10 +256,15 @@ def plot_data(data, category, parameters, save_path):
     highlight_extremes(rects2, medians, 'Median')
     highlight_extremes(rects3, std_devs, 'Std Dev')
 
-    fig.tight_layout()
+    ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+    ax.yaxis.get_major_formatter().set_scientific(True)
+    ax.yaxis.get_major_formatter().set_powerlimits((-4, 4))
 
+    fig.tight_layout()
+    ax.set_ylim(0, max(max(means), max(medians), max(std_devs)) * 1.2)
+    # Generate a timestamp for the filename
     timestamp = datetime.now().strftime("%d_%m_%y_%H_%M_%S")
-    plt.savefig(os.path.join(save_path, f'{category}_{timestamp}.png'))
+    #plt.savefig(os.path.join(save_path, f'{category}_{timestamp}.png'))
     plt.show()
 
 
@@ -276,9 +296,12 @@ def plot_running_statistics(data, category, save_path):
 
         # Plot only every 100th point
         step = 10
-        plt.plot(running_mean[::step], label=f'{entry_name} Mean', marker=symbols[0], linestyle='-', color=colors(i), markerfacecolor='none')
-        plt.plot(running_median[::step], label=f'{entry_name} Median', marker=symbols[1], linestyle='--', color=colors(i), markerfacecolor='none')
-        plt.plot(running_std_dev[::step], label=f'{entry_name} Std Dev', marker=symbols[2], linestyle=':', color=colors(i), markerfacecolor='none')
+        plt.plot(running_mean[::step], label=f'{entry_name} Mean', marker=symbols[0], linestyle='-', color=colors(i),
+                 markerfacecolor='none')
+        plt.plot(running_median[::step], label=f'{entry_name} Median', marker=symbols[1], linestyle='--',
+                 color=colors(i), markerfacecolor='none')
+        plt.plot(running_std_dev[::step], label=f'{entry_name} Std Dev', marker=symbols[2], linestyle=':',
+                 color=colors(i), markerfacecolor='none')
 
     plt.xlabel('Run Number')
     plt.ylabel('Value')
@@ -316,8 +339,8 @@ def main():
         os.makedirs(plots_path)
 
     # Compute and plot running statistics for diagnostics
-    for category in ['Single Observation Timers']:
-        plot_running_statistics(aggregated_data, category, plots_path)
+    #for category in ['Single Observation Timers']:
+    #plot_running_statistics(aggregated_data, category, plots_path)
 
     for category in ['Single Observation Timers']:
         plot_data(analysis_results, category, aggregated_data["Parameters"], plots_path)

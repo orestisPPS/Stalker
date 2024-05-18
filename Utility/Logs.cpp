@@ -2,9 +2,7 @@
 // Created by hal9000 on 11/21/23.
 //
 
-#include <filesystem>
-#include <vector>
-#include <algorithm>
+
 #include "Logs.h"
 
 
@@ -125,17 +123,16 @@ void Logs::exportToCSV(const string &filePath, const string &fileName) {
     // Get current time
     auto now = std::chrono::system_clock::now();
     auto now_as_time_t = std::chrono::system_clock::to_time_t(now);
-    auto now_ms = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()) % 1000;
+    auto now_ms = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()) % 1000;
     std::tm now_tm = *std::localtime(&now_as_time_t);
-
     // Create a timestamp string with milliseconds
     std::ostringstream timestamp;
     timestamp << std::put_time(&now_tm, "%d%m%Y_%H%M%S_") << std::setfill('0') << std::setw(3) << now_ms.count();
-    // Create a unique filename with timestamp
-    std::string filename = filePath + "/" + fileName + "_" + timestamp.str() + ".csv";
-    if (std::filesystem::exists(filename)) {
-        throw std::runtime_error("File already exists: " + filename);
-    }
+    // Generate a UUID
+    std::string uuid = _generateUUID();
+    // Create a unique filename with timestamp and UUID
+    std::string filename = filePath + "/" + fileName + "_" + timestamp.str() + "_" + uuid + ".csv";
+    // Open file
     std::ofstream file(filename);
 
     // Check if file is opened successfully
@@ -311,6 +308,22 @@ void Logs::exportToCSV(const string &filePath, const string &fileName) {
     }
     file.flush();
     file.close();
+}
+
+
+string Logs::_generateUUID() {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    static std::uniform_int_distribution<uint64_t> dis;
+
+    std::ostringstream oss;
+    oss << std::hex << std::setfill('0')
+        << std::setw(8) << dis(gen) << "-"
+        << std::setw(4) << (dis(gen) & 0xFFFF) << "-"
+        << std::setw(4) << (dis(gen) & 0x0FFF) << "-"
+        << std::setw(4) << (dis(gen) & 0x3FFF | 0x8000) << "-"
+        << std::setw(12) << dis(gen);
+    return oss.str();
 }
 
 void Logs::clearAllLogs() {

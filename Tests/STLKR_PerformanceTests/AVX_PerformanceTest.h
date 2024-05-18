@@ -22,18 +22,16 @@ namespace STLKR_Tests{
         explicit RawPointerAVX_PerformanceTest(const string &path) : STLKR_PerformanceTestBase("RawPointerAVX_PerformanceTest", path) {}
         
         void runTest() override {
-
+            static_assert(size % 4 == 0, "Size must be a multiple of 4");
             //runAlignmentSizePerformanceTest(32);
             runPrefetchDistancePerformanceTest();
             //runHintPerformanceTest();
+            //runHintPerformanceTestDotProduct();
         }
-        
-    private:
-        
         void runAlignmentSizePerformanceTest(){
             logs.addComment("AVX Addition Performance Test for alignment size");
             logs.addComment("Operations are performed with and without prefetching");
-            
+
             logs.addParameter("threads:", 1);
             logs.addParameter("size:", static_cast<double>(size));
             logs.addParameter("alignment_1:", 32);
@@ -45,15 +43,15 @@ namespace STLKR_Tests{
             _runAlignmentSizeAddition(64);
             _runAlignmentSizeAddition(32);
             _runAlignmentSizeAddition();
-            
+
             logs.exportToCSV(_path + "/AlignmentSize", "RawPointerAVX_PerformanceTest_AlignmentSize");
             logs.clearAllLogs();
         }
-        
+
         void runPrefetchDistancePerformanceTest(){
             logs.addComment("AVX Addition Performance Test prefetch distance");
             logs.addComment("Operations are performed with and without prefetching");
-            
+
             logs.addParameter("threads:", 1);
             logs.addParameter("size:", static_cast<double>(size));
             logs.addParameter("alignment:", 64);
@@ -63,12 +61,14 @@ namespace STLKR_Tests{
             logs.addParameter("prefetch_distance_5:", 256);
 
             _runPrefetchDistance();
-            
+
             logs.exportToCSV(_path + "/PrefetchDistance", "RawPointerAVX_PerformanceTest_PrefetchDistance");
             logs.clearAllLogs();
         }
 
         void runHintPerformanceTest(){
+
+
             logs.addComment("AVX Addition Performance Test avx hints");
 
             logs.addParameter("threads:", 1);
@@ -88,7 +88,32 @@ namespace STLKR_Tests{
             logs.exportToCSV(_path + "/Hints", "RawPointerAVX_PerformanceTest_Hints");
             logs.clearAllLogs();
         }
+    
+    private:
+        
 
+
+        void runHintPerformanceTestDotProduct(){
+            logs.addComment("AVX Addition Performance Test avx hints dot product");
+
+            logs.addParameter("threads:", 1);
+            logs.addParameter("size:", static_cast<double>(size));
+            logs.addParameter("alignment:", 64);
+            logs.addParameter("prefetch_1:", "true");
+            logs.addParameter("prefetch_distance_1:", 64);
+            logs.addParameter("prefetch_distance_2:", 128);
+            logs.addParameter("prefetch_distance_3:", 256);
+            logs.addParameter("hint_1:", "T0");
+            logs.addParameter("hint_2:", "T1");
+            logs.addParameter("hint_3:", "T2");
+
+
+            _runHints();
+
+            logs.exportToCSV(_path + "/Hints", "RawPointerAVX_PerformanceTest_Hints");
+            logs.clearAllLogs();
+        }
+        
         constexpr void _runAlignmentSizeAddition(size_t alignmentSize = 0){
             double* data1;
             double* data2;
@@ -188,9 +213,9 @@ namespace STLKR_Tests{
             STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
             logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_256");
             
-//            logs.startSingleObservationTimer("add_avx_off_unroll_16", STLKR_TimeUnit::nanoseconds);
-//            addUnroll16NoAVX(data1, 1, data2, 1, resultAVX);
-//            logs.stopSingleObservationTimer("add_avx_off_unroll_16");
+            logs.startSingleObservationTimer("add_avx_off_unroll_16", STLKR_TimeUnit::nanoseconds);
+            addNoAVX(data1, 1, data2, 1, resultAVX);
+            logs.stopSingleObservationTimer("add_avx_off_unroll_16");
             
             
             _mm_free(data1);
@@ -283,15 +308,26 @@ namespace STLKR_Tests{
             logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_256_hint_t2", STLKR_TimeUnit::nanoseconds);
             STLKR_Operations_SIMD<double, size, 2>::add(data1, 1, data2, 1, resultAVX, prefetchConfig);
             logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_256_hint_t2");
-
-//            logs.startSingleObservationTimer("add_avx_off_unroll_16", STLKR_TimeUnit::nanoseconds);
-//            addUnroll16NoAVX(data1, 1, data2, 1, resultAVX);
-//            logs.stopSingleObservationTimer("add_avx_off_unroll_16");
-
-
+            
+            logs.startSingleObservationTimer("add_avx_off_unroll_0", STLKR_TimeUnit::nanoseconds);
+            addNoAVX2(data1, 1, data2, 1, resultAVX);
+            logs.stopSingleObservationTimer("add_avx_off_unroll_0");
+            
             _mm_free(data1);
             _mm_free(data2);
             _mm_free(resultAVX);
+        }
+        
+        static constexpr inline void addNoAVX(const double* data1, double c1, const double* data2, double c2, double* result){
+            for (int i = 0; i < size; i ++) {
+                result[i] = data1[i] * c1 + data2[i] * c2;
+            }
+        }
+
+        static void addNoAVX2(const double* data1, double c1, const double* data2, double c2, double* result){
+            for (int i = 0; i < size; i ++) {
+                result[i] = data1[i] * c1 + data2[i] * c2;
+            }
         }
         
         static constexpr inline void addUnroll2NoAVX(const double* data1, double c1, const double* data2, double c2, double* result){
