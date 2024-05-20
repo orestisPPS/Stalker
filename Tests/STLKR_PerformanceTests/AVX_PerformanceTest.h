@@ -336,7 +336,7 @@ namespace STLKR_Tests{
                 data2[i] = i;
             }
             
-            double** dataPtr = &data1;
+            double* data[2] = {data1, data2};
             double coefficientsArray[2] = {1,1};
 
             STLKR_SIMD_Prefetch_Config prefetchConfig;
@@ -345,7 +345,7 @@ namespace STLKR_Tests{
             prefetchConfig.distance = STLKR_SIMD_Prefetch_Distance::_64;
             prefetchConfig.hint = STLKR_SIMD_Prefetch_Hint::T0;
             logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t0", STLKR_TimeUnit::nanoseconds);
-            STLKR_Operations_SIMD<double, size, 4>::template addUnrolled<2>(dataPtr, coefficientsArray, resultAVX, prefetchConfig);
+            STLKR_Operations_SIMD<double, size, 4>::template addUnrolled<2>(data, coefficientsArray, resultAVX, prefetchConfig);
             logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t0");
             
 

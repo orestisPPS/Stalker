@@ -127,7 +127,7 @@ public:
 
 
     template<size_t numVectors>
-    static constexpr inline void addUnrolled(double** data, double* scaleFactors, double* result,
+    static constexpr inline void addUnrolled(double* data[], const double scaleFactors[], const double* result,
                                       STLKR_SIMD_Prefetch_Config prefetchConfig) {
         //static_assert(numVectors > 2);
         //Arrays of SIMD data and scalar factors
@@ -143,7 +143,8 @@ public:
         _loadScalarRegisters<numVectors>(scaleFactors, simdScalars);
         
         for (size_t i = 0; i < limit; i += AVX_DOUBLE_SIZE * unrollFactor) {
-//            _loadDoubleVectorsRegisters<numVectors>(data + i, simdData + i);
+            cout << "i: " << i << endl;
+            _loadDoubleVectorsRegisters<numVectors>(data, simdData, i);
 //            _fusedMultiplyAddDoubleVectors<numVectors>(simdData + i, simdScalars, simdResult + i);
             //storeFunction(simdResult + i, result + i);
         }
@@ -173,10 +174,11 @@ private:
     }
 
     template<size_t numVector>
-    static constexpr inline void _loadDoubleVectorsRegisters(const double** data, __m256d *simdData) {
+    static constexpr inline void _loadDoubleVectorsRegisters(double* data[], __m256d *simdData, unsigned int index) {
         if constexpr (numVector > 0) {
-            _loadDoubleRegisters<unrollFactor>(data + numVector - 1, simdData + numVector - 1);
-            _loadDoubleVectorsRegisters<numVector - 1>(data, simdData);
+            cout<<data[numVector - 1]<<endl;
+            _loadDoubleRegisters<unrollFactor>(data[numVector - 1] + index, simdData + numVector - 1 + index);
+            _loadDoubleVectorsRegisters<numVector - 1>(data, simdData, index);
         }
         else return;
     }
