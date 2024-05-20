@@ -12,10 +12,11 @@ int main() {
     auto avxTest = STLKR_Tests::RawPointerAVX_PerformanceTest<40000000>(exportPath);
 
     auto timer = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 1; i++) {
         //avxTest.runTest();
         //avxTest.runPrefetchDistancePerformanceTest();
         avxTest.runHintPerformanceTest();
+        
         
         cout << "Performance Test " << i + 1 << " completed" << endl;
         //std::this_thread::sleep_for(std::chrono::milliseconds(500));

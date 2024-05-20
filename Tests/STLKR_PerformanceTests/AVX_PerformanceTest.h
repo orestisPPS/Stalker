@@ -83,7 +83,7 @@ namespace STLKR_Tests{
             logs.addParameter("hint_3:", "T2");
 
 
-            _runHints();
+            _runHints2();
 
             logs.exportToCSV(_path + "/Hints", "RawPointerAVX_PerformanceTest_Hints");
             logs.clearAllLogs();
@@ -313,6 +313,46 @@ namespace STLKR_Tests{
             addNoAVX2(data1, 1, data2, 1, resultAVX);
             logs.stopSingleObservationTimer("add_avx_off_unroll_0");
             
+            _mm_free(data1);
+            _mm_free(data2);
+            _mm_free(resultAVX);
+        }
+
+        constexpr void _runHints2(){
+            double* data1;
+            double* data2;
+            double* resultAVX;
+
+            data1 = static_cast<double*>(_mm_malloc(size * sizeof(double), 64));
+            data2 = static_cast<double*>(_mm_malloc(size * sizeof(double), 64));
+            resultAVX = static_cast<double*>(_mm_malloc(size * sizeof(double), 64));
+
+            assert(reinterpret_cast<uintptr_t>(data1) % 64 == 0);
+            assert(reinterpret_cast<uintptr_t>(data2) % 64 == 0);
+            assert(reinterpret_cast<uintptr_t>(resultAVX) % 64 == 0);
+
+            for (int i = 0; i < size; i++) {
+                data1[i] = i;
+                data2[i] = i;
+            }
+            
+            double** dataPtr = &data1;
+            double coefficientsArray[2] = {1,1};
+
+            STLKR_SIMD_Prefetch_Config prefetchConfig;
+            prefetchConfig.storeType = STLKR_SIMD_Stores::NonTemporal;
+
+            prefetchConfig.distance = STLKR_SIMD_Prefetch_Distance::_64;
+            prefetchConfig.hint = STLKR_SIMD_Prefetch_Hint::T0;
+            logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t0", STLKR_TimeUnit::nanoseconds);
+            STLKR_Operations_SIMD<double, size, 4>::template addUnrolled<2>(dataPtr, coefficientsArray, resultAVX, prefetchConfig);
+            logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t0");
+            
+
+            logs.startSingleObservationTimer("add_avx_off_unroll_0", STLKR_TimeUnit::nanoseconds);
+            addNoAVX2(data1, 1, data2, 1, resultAVX);
+            logs.stopSingleObservationTimer("add_avx_off_unroll_0");
+
             _mm_free(data1);
             _mm_free(data2);
             _mm_free(resultAVX);
