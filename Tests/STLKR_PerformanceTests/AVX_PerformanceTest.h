@@ -337,7 +337,7 @@ namespace STLKR_Tests{
             }
             
             double* data[2] = {data1, data2};
-            double coefficientsArray[2] = {1,1};
+            double coefficientsArray[2] = {1,5};
 
             STLKR_SIMD_Prefetch_Config prefetchConfig;
             prefetchConfig.storeType = STLKR_SIMD_Stores::NonTemporal;

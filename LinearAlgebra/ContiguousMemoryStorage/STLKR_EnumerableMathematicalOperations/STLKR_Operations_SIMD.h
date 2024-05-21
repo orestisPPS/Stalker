@@ -96,9 +96,9 @@ public:
                     ) {  // Adjust loop increment based on unrolling factor
                 // Prefetch data that will be needed soon
                 if (i + prefetchDistance < size) {
-                    _mm_prefetch((const char*)(data1 + i + prefetchDistance), hint);
-                    _mm_prefetch((const char*)(data2 + i + prefetchDistance), hint);
-                    _mm_prefetch((const char*)(result + i + prefetchDistance), hint);
+//                    _mm_prefetch((const char*)(data1 + i + prefetchDistance), hint);
+//                    _mm_prefetch((const char*)(data2 + i + prefetchDistance), hint);
+//                    _mm_prefetch((const char*)(result + i + prefetchDistance), hint);
                 }
 
                 va1 = _mm256_load_pd(data1 + i);
@@ -127,39 +127,41 @@ public:
 
 
     template<size_t numVectors>
-    static constexpr inline void addUnrolled(double* data[], const double scaleFactors[], const double* result,
+    static constexpr inline void addUnrolled(double** data, double* scaleFactors, double* result,
                                       STLKR_SIMD_Prefetch_Config prefetchConfig) {
-        //static_assert(numVectors > 2);
-        //Arrays of SIMD data and scalar factors
-        __m256d simdData[numVectors * unrollFactor], simdScalars[numVectors], simdResult[numVectors * unrollFactor];
+        __m256d simdData[numVectors * unrollFactor];
+        __m256d simdScalars[numVectors];
+        __m256d simdResult[numVectors * unrollFactor];
+
+        _loadScaleRegisters<numVectors>(scaleFactors, simdScalars);
 
         //Define the type of storage for the result
 //        auto storeFunction = (prefetchConfig.storeType == STLKR_SIMD_Stores::Regular) ?
 //                             _temporalStoreDoubleVectors <numVectors> :
 //                             _nonTemporalStoreDoubleVectors<numVectors>;
-        
+
         size_t limit = size - (size % (AVX_DOUBLE_SIZE * unrollFactor));
 
-        _loadScalarRegisters<numVectors>(scaleFactors, simdScalars);
+        //_loadVectorScaleRegisters<numVectors>(scaleFactors, simdScalars);
         
         for (size_t i = 0; i < limit; i += AVX_DOUBLE_SIZE * unrollFactor) {
             cout << "i: " << i << endl;
             _loadDoubleVectorsRegisters<numVectors>(data, simdData, i);
-//            _fusedMultiplyAddDoubleVectors<numVectors>(simdData + i, simdScalars, simdResult + i);
+            _fusedMultiplyAddDoubleVectors<numVectors>(simdData + i, simdScalars, simdResult + i);
             //storeFunction(simdResult + i, result + i);
         }
-        
         for (size_t i = limit; i < size; i++) {
             //result[i] = *data[i] * *scaleFactors[i];
         }
     }
 private:
 
-    template<size_t numUnroll>
-    static constexpr inline void _loadScalarRegisters(const double* scaleFactors, __m256d *simdScalars) {
-        if constexpr (numUnroll > 0) {
-            simdScalars[numUnroll - 1] = _mm256_set1_pd(scaleFactors[numUnroll - 1]);
-            _loadScalarRegisters<numUnroll - 1>(scaleFactors, simdScalars);
+    template<size_t numVector>
+    static constexpr inline void _loadScaleRegisters(const double* scaleFactors, __m256d *simdScalars) {
+        if constexpr (numVector > 0) {
+            cout<<"scale factor = " <<  *(scaleFactors + numVector - 1) << " index = " << numVector - 1 << endl;
+            simdScalars[numVector - 1] = _mm256_set1_pd(*(scaleFactors + numVector - 1));
+            _loadScaleRegisters<numVector - 1>(scaleFactors, simdScalars);
         }
         else return;
     }
@@ -174,10 +176,10 @@ private:
     }
 
     template<size_t numVector>
-    static constexpr inline void _loadDoubleVectorsRegisters(double* data[], __m256d *simdData, unsigned int index) {
+    static constexpr inline void _loadDoubleVectorsRegisters(double** data, __m256d *simdData, unsigned int index) {
         if constexpr (numVector > 0) {
             cout<<data[numVector - 1]<<endl;
-            _loadDoubleRegisters<unrollFactor>(data[numVector - 1] + index, simdData + numVector - 1 + index);
+            _loadDoubleRegisters<unrollFactor>(data[numVector - 1], simdData + numVector - 1);
             _loadDoubleVectorsRegisters<numVector - 1>(data, simdData, index);
         }
         else return;
