@@ -192,7 +192,7 @@ private:
     static constexpr inline void _loadDoubleVectorsRegisters(double** data, __m256d* simdData, unsigned int index, size_t totalVectors) {
         if constexpr (numVector > 0) {
             //std::cout << "Loading data from data[" << numVector - 1 << "] at index: " << index << std::endl;
-            _loadDoubleRegisters<unrollFactor>(*(data + totalVectors - 1) + index, simdData + (numVector - 1) * unrollFactor);
+            _loadDoubleRegisters<unrollFactor>(*(data + numVector - 1) + index, simdData + (numVector - 1) * unrollFactor);
             _loadDoubleVectorsRegisters<numVector - 1>(data, simdData, index, totalVectors);
         }
     }

@@ -331,10 +331,26 @@ namespace STLKR_Tests{
             assert(reinterpret_cast<uintptr_t>(data2) % 64 == 0);
             assert(reinterpret_cast<uintptr_t>(resultAVX) % 64 == 0);
 
+//            for (int i = 0; i < size; i++) {
+//                data1[i] = 1;
+//                data2[i] = 2;
+//            }
+
             for (int i = 0; i < size; i++) {
-                data1[i] = 1;
-                data2[i] = 1;
+                data1[i] = i;
+                data2[i] = i;
             }
+
+//            for (int i = 0; i < size; i+= 4) {
+//                data1[i] = 1;
+//                data2[i] = 1;
+//                data1[i + 1] = 2;
+//                data2[i + 1] = 2;
+//                data1[i + 2] = 3;
+//                data2[i + 2] = 3;
+//                data1[i + 3] = 4;
+//                data2[i + 3] = 4;
+//            }
             
             double* data[2] = {data1, data2};
             double coefficientsArray[2] = {1,1};
