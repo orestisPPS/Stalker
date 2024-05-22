@@ -183,7 +183,7 @@ private:
     template<size_t numUnroll>
     static constexpr inline void _loadDoubleRegisters(double* data, __m256d* simdData) {
         if constexpr (numUnroll > 0) {
-            simdData[numUnroll - 1] = _mm256_load_pd(data + (numUnroll - 1) * 4);
+            *(simdData + numUnroll - 1) = _mm256_load_pd(data + (numUnroll - 1) * 4);
             _loadDoubleRegisters<numUnroll - 1>(data, simdData);
         }
     }
@@ -196,13 +196,14 @@ private:
             _loadDoubleVectorsRegisters<numVector - 1>(data, simdData, index, totalVectors);
         }
     }
-    
+
     template<size_t iUnroll>
     static constexpr inline void _fusedMultiplyAddDoubles(const __m256d *simdData, const __m256d *scale,
                                                           __m256d *result, size_t iVector) {
         if constexpr (iUnroll > 0) {
-            *(result + iUnroll) = _mm256_fmadd_pd(*(simdData + iUnroll), *(scale),
-                                                  _mm256_mul_pd(*(simdData + (iVector - 1) * unrollFactor + iUnroll), *(scale + (iVector - 1))));
+            *(result + iUnroll - 1) = _mm256_fmadd_pd(*(simdData + iUnroll - 1), *(scale),
+                                                      _mm256_mul_pd(*(simdData + (iVector - 1)* unrollFactor + iUnroll - 1),
+                                                                    *(scale + iVector)));
             _fusedMultiplyAddDoubles<iUnroll - 1>(simdData, scale, result, iVector);
         }
         else return;
@@ -213,7 +214,7 @@ private:
         if constexpr (iVector > 0) {
             _fusedMultiplyAddDoubles<unrollFactor>(simdData + (iVector - 1) * unrollFactor,
                                                    scale,
-                                                   result + (iVector - 1) * unrollFactor, iVector);
+                                                   result + (iVector - 1) * unrollFactor, iVector - 1);
             _fusedMultiplyAddDoubleVectors<iVector - 1>(simdData, scale, result);
         }
         else return;

@@ -337,23 +337,12 @@ namespace STLKR_Tests{
 //            }
 
             for (int i = 0; i < size; i++) {
-                data1[i] = i;
-                data2[i] = i;
+                data1[i] = 1;
+                data2[i] = 1;
             }
-
-//            for (int i = 0; i < size; i+= 4) {
-//                data1[i] = 1;
-//                data2[i] = 1;
-//                data1[i + 1] = 2;
-//                data2[i + 1] = 2;
-//                data1[i + 2] = 3;
-//                data2[i + 2] = 3;
-//                data1[i + 3] = 4;
-//                data2[i + 3] = 4;
-//            }
             
             double* data[2] = {data1, data2};
-            double coefficientsArray[2] = {1,1};
+            double coefficientsArray[2] = {1,0};
 
             STLKR_SIMD_Prefetch_Config prefetchConfig;
             prefetchConfig.storeType = STLKR_SIMD_Stores::NonTemporal;
