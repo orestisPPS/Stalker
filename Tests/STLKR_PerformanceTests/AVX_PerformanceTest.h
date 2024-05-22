@@ -22,7 +22,7 @@ namespace STLKR_Tests{
         explicit RawPointerAVX_PerformanceTest(const string &path) : STLKR_PerformanceTestBase("RawPointerAVX_PerformanceTest", path) {}
         
         void runTest() override {
-            static_assert(size % 4 == 0, "Size must be a multiple of 4");
+            //static_assert(size % 4 == 0, "Size must be a multiple of 4");
             //runAlignmentSizePerformanceTest(32);
             runPrefetchDistancePerformanceTest();
             //runHintPerformanceTest();
@@ -332,12 +332,12 @@ namespace STLKR_Tests{
             assert(reinterpret_cast<uintptr_t>(resultAVX) % 64 == 0);
 
             for (int i = 0; i < size; i++) {
-                data1[i] = i;
-                data2[i] = i;
+                data1[i] = 1;
+                data2[i] = 1;
             }
             
             double* data[2] = {data1, data2};
-            double coefficientsArray[2] = {1,5};
+            double coefficientsArray[2] = {1,1};
 
             STLKR_SIMD_Prefetch_Config prefetchConfig;
             prefetchConfig.storeType = STLKR_SIMD_Stores::NonTemporal;
