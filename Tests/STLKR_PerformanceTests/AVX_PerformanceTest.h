@@ -337,12 +337,13 @@ namespace STLKR_Tests{
 //            }
 
             for (int i = 0; i < size; i++) {
-                data1[i] = 1;
-                data2[i] = 1;
+                data1[i] = i;
+                data2[i] = size - 1 - i;
+                cout << data1[i] << " " << data2[i] << endl;
             }
             
             double* data[2] = {data1, data2};
-            double coefficientsArray[2] = {1,0};
+            double coefficientsArray[2] = {1, 1};
 
             STLKR_SIMD_Prefetch_Config prefetchConfig;
             prefetchConfig.storeType = STLKR_SIMD_Stores::NonTemporal;

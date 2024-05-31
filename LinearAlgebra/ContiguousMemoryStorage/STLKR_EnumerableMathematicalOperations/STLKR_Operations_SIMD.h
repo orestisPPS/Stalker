@@ -132,8 +132,7 @@ public:
                                       STLKR_SIMD_Prefetch_Config prefetchConfig) {
         __m256d simdData[numVectors * unrollFactor];
         __m256d simdScalars[numVectors];
-        __m256d simdResult[numVectors * unrollFactor];
-
+        __m256d simdResult[unrollFactor];
         _loadScaleRegisters<numVectors>(scaleFactors, simdScalars);
 
         //Define the type of storage for the result
@@ -145,26 +144,14 @@ public:
         
         for (size_t i = 0; i < limit; i += AVX_DOUBLE_SIZE * unrollFactor) {
             cout << "i: " << i << endl;
+
             _loadDoubleVectorsRegisters<numVectors>(data, simdData, i, numVectors);
             _fusedMultiplyAddDoubleVectors<numVectors>(simdData, simdScalars, simdResult);
-            //storeFunction(simdResult + i, result + i);
-            for (size_t j = 0; j < numVectors * unrollFactor; ++j) {
-                double temp1[4], temp2[4];
-                _mm256_storeu_pd(temp1, simdData[j]);
-                _mm256_storeu_pd(temp2, simdResult[j]);
-                std::cout << "simdData[" << j << "]: ";
-                for (size_t k = 0; k < 4; ++k) {
-                    std::cout << temp1[k] << " ";
-                }
-                std::cout << " | simdResult[" << j << "]: ";
-                for (size_t k = 0; k < 4; ++k) {
-                    std::cout << temp2[k] << " ";
-                }
-                std::cout << std::endl;
+            
+            //ZEROING OUT THE RESULT
+            for (size_t j = 0; j < unrollFactor; ++j) {
+                simdResult[j] = _mm256_setzero_pd();
             }
-        }
-        for (size_t i = limit; i < size; i++) {
-            cout << "i: " << i << endl;
         }
 }
 
@@ -189,22 +176,18 @@ private:
     }
 
     template<size_t numVector>
-    static constexpr inline void _loadDoubleVectorsRegisters(double** data, __m256d* simdData, unsigned int index, size_t totalVectors) {
+    static constexpr  inline void _loadDoubleVectorsRegisters(double** data, __m256d* simdData, unsigned int index, size_t totalVectors) {
         if constexpr (numVector > 0) {
-            //std::cout << "Loading data from data[" << numVector - 1 << "] at index: " << index << std::endl;
             _loadDoubleRegisters<unrollFactor>(*(data + numVector - 1) + index, simdData + (numVector - 1) * unrollFactor);
             _loadDoubleVectorsRegisters<numVector - 1>(data, simdData, index, totalVectors);
         }
     }
 
     template<size_t iUnroll>
-    static constexpr inline void _fusedMultiplyAddDoubles(const __m256d *simdData, const __m256d *scale,
-                                                          __m256d *result, size_t iVector) {
+    static constexpr inline void _fusedMultiplyAddDoubles(const __m256d *simdData, const __m256d *scale, __m256d *result) {
         if constexpr (iUnroll > 0) {
-            *(result + iUnroll - 1) = _mm256_fmadd_pd(*(simdData + iUnroll - 1), *(scale),
-                                                      _mm256_mul_pd(*(simdData + (iVector - 1)* unrollFactor + iUnroll - 1),
-                                                                    *(scale + iVector)));
-            _fusedMultiplyAddDoubles<iUnroll - 1>(simdData, scale, result, iVector);
+            *(result + iUnroll - 1) = _mm256_fmadd_pd(*(simdData + iUnroll - 1), *scale, *(result + iUnroll - 1));
+            _fusedMultiplyAddDoubles<iUnroll - 1>(simdData, scale, result);
         }
         else return;
     }
@@ -212,9 +195,7 @@ private:
     template<size_t iVector>
     static constexpr inline void _fusedMultiplyAddDoubleVectors(const __m256d *simdData,  const __m256d *scale, __m256d *result) {
         if constexpr (iVector > 0) {
-            _fusedMultiplyAddDoubles<unrollFactor>(simdData + (iVector - 1) * unrollFactor,
-                                                   scale,
-                                                   result + (iVector - 1) * unrollFactor, iVector - 1);
+            _fusedMultiplyAddDoubles<unrollFactor>(simdData + (iVector - 1) * unrollFactor, scale + (iVector - 1), result);
             _fusedMultiplyAddDoubleVectors<iVector - 1>(simdData, scale, result);
         }
         else return;
