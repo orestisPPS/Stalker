@@ -24,7 +24,7 @@ namespace STLKR_Tests {
             
             std::string _testName;
             
-            void _welcomeMessage();
+            //void _welcomeMessage();
             
             virtual void logTestCaseStart(const std::string& name) = 0;
 

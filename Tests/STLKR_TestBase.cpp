@@ -7,7 +7,7 @@
 namespace STLKR_Tests {
     
     STLKR_TestBase::STLKR_TestBase(std::string testName) : _testName(std::move(testName)) {
-        _welcomeMessage();
+        //_welcomeMessage();
     }
 
     void STLKR_TestBase::runTest(unsigned int iterations) {
@@ -24,9 +24,9 @@ namespace STLKR_Tests {
         std::cout << "\033[1;31m[FAILED ]\033[0m\n";  // This adds a red [FAILED] indicator
     }
 
-    void STLKR_TestBase::_welcomeMessage() {
-        std::cout << "========" << _testName << "========" << std::endl;
-    }
+//    void STLKR_TestBase::_welcomeMessage() {
+//        //std::cout << "========" << _testName << "========" << std::endl;
+//    }
 
 
 } // STLKR_Tests

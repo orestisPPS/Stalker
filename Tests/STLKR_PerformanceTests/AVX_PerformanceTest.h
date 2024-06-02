@@ -318,7 +318,7 @@ namespace STLKR_Tests{
             _mm_free(resultAVX);
         }
 
-        constexpr void _runHints2(){
+        void _runHints2(){
             double* data1;
             double* data2;
             double* resultAVX;
@@ -330,23 +330,16 @@ namespace STLKR_Tests{
             assert(reinterpret_cast<uintptr_t>(data1) % 64 == 0);
             assert(reinterpret_cast<uintptr_t>(data2) % 64 == 0);
             assert(reinterpret_cast<uintptr_t>(resultAVX) % 64 == 0);
-
-//            for (int i = 0; i < size; i++) {
-//                data1[i] = 1;
-//                data2[i] = 2;
-//            }
-
-            for (int i = 0; i < size; i++) {
-                data1[i] = i;
-                data2[i] = size - 1 - i;
-                cout << data1[i] << " " << data2[i] << endl;
-            }
             
+            for (int i = 0; i < size; i++) {
+                data1[i] = 1;
+                data2[i] = 1;
+            }
             double* data[2] = {data1, data2};
-            double coefficientsArray[2] = {1, 1};
+            double coefficientsArray[2] = {3 , 7};
 
             STLKR_SIMD_Prefetch_Config prefetchConfig;
-            prefetchConfig.storeType = STLKR_SIMD_Stores::NonTemporal;
+            prefetchConfig.storeType = STLKR_SIMD_Stores::Regular;
 
             prefetchConfig.distance = STLKR_SIMD_Prefetch_Distance::_64;
             prefetchConfig.hint = STLKR_SIMD_Prefetch_Hint::T0;
@@ -354,6 +347,8 @@ namespace STLKR_Tests{
             STLKR_Operations_SIMD<double, size, 4>::template addUnrolled<2>(data, coefficientsArray, resultAVX, prefetchConfig);
             logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t0");
             
+//            for (int i = 0; i < size; i++) 
+//                cout <<  resultAVX[i] << endl;
 
             logs.startSingleObservationTimer("add_avx_off_unroll_0", STLKR_TimeUnit::nanoseconds);
             addNoAVX2(data1, 1, data2, 1, resultAVX);

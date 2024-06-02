@@ -8,7 +8,7 @@ int main() {
     
     auto exportPath = "../Tests/STLKR_PerformanceTests/logs";
     //No memory bugs with 40000000 elements
-    auto avxTest = STLKR_Tests::RawPointerAVX_PerformanceTest<32>(exportPath);
+    auto avxTest = STLKR_Tests::RawPointerAVX_PerformanceTest<34>(exportPath);
     //auto avxTest = STLKR_Tests::RawPointerAVX_PerformanceTest<40000000>(exportPath);
 
     auto timer = std::chrono::high_resolution_clock::now();

@@ -128,32 +128,28 @@ public:
 
 
     template<size_t numVectors>
-    static constexpr inline void addUnrolled(double** data, double* scaleFactors, double* result,
-                                      STLKR_SIMD_Prefetch_Config prefetchConfig) {
+    static constexpr inline void addUnrolled(double** data, double* scaleFactors, double* result, STLKR_SIMD_Prefetch_Config prefetchConfig) {
         __m256d simdData[numVectors * unrollFactor];
         __m256d simdScalars[numVectors];
         __m256d simdResult[unrollFactor];
         _loadScaleRegisters<numVectors>(scaleFactors, simdScalars);
-
-        //Define the type of storage for the result
-//        auto storeFunction = (prefetchConfig.storeType == STLKR_SIMD_Stores::Regular) ?
-//                             _temporalStoreDoubleVectors <numVectors> :
-//                             _nonTemporalStoreDoubleVectors<numVectors>;
+        void (*storeResultRegister)(__m256d*, double*) = (prefetchConfig.storeType == STLKR_SIMD_Stores::Regular) ?
+                _temporalStoreDouble<unrollFactor> : _nonTemporalStoreDouble<unrollFactor>;
 
         size_t limit = size - (size % (AVX_DOUBLE_SIZE * unrollFactor));
         
         for (size_t i = 0; i < limit; i += AVX_DOUBLE_SIZE * unrollFactor) {
-            cout << "i: " << i << endl;
-
-            _loadDoubleVectorsRegisters<numVectors>(data, simdData, i, numVectors);
+            _loadDoubleVectorsRegisters<numVectors>(data, simdData, i);
             _fusedMultiplyAddDoubleVectors<numVectors>(simdData, simdScalars, simdResult);
-            
-            //ZEROING OUT THE RESULT
-            for (size_t j = 0; j < unrollFactor; ++j) {
-                simdResult[j] = _mm256_setzero_pd();
+            storeResultRegister(simdResult, result + i);
+            _zeroOutResultRegisters<unrollFactor>(simdResult);
+        }
+        for (size_t i = limit; i < size; i++) {
+            for (size_t j = 0; j < numVectors; j++) {
+                result[i] += data[j][i] * scaleFactors[j];
             }
         }
-}
+    }
 
 private:
 
@@ -166,21 +162,23 @@ private:
         }
         else return;
     }
-
+    
     template<size_t numUnroll>
     static constexpr inline void _loadDoubleRegisters(double* data, __m256d* simdData) {
         if constexpr (numUnroll > 0) {
             *(simdData + numUnroll - 1) = _mm256_load_pd(data + (numUnroll - 1) * 4);
             _loadDoubleRegisters<numUnroll - 1>(data, simdData);
         }
+        else return;
     }
-
+    
     template<size_t numVector>
-    static constexpr  inline void _loadDoubleVectorsRegisters(double** data, __m256d* simdData, unsigned int index, size_t totalVectors) {
+    static constexpr  inline void _loadDoubleVectorsRegisters(double** data, __m256d* simdData, const unsigned int &index) {
         if constexpr (numVector > 0) {
             _loadDoubleRegisters<unrollFactor>(*(data + numVector - 1) + index, simdData + (numVector - 1) * unrollFactor);
-            _loadDoubleVectorsRegisters<numVector - 1>(data, simdData, index, totalVectors);
+            _loadDoubleVectorsRegisters<numVector - 1>(data, simdData, index);
         }
+        else return;
     }
 
     template<size_t iUnroll>
@@ -201,46 +199,32 @@ private:
         else return;
     }
     
-//    template<size_t iUnroll>
-//    static constexpr inline void _temporalStoreDouble(const __m256d *result, double** destination) {
-//        if constexpr (iUnroll > 0) {
-//            _mm256_store_pd(destination[iUnroll], result[iUnroll]);
-//            _temporalStoreDouble<iUnroll - 1>(result, destination);
-//        }
-//        else return;
-//    }
-//
-//    template<size_t iVector>
-//    static constexpr inline void _temporalStoreDoubleVectors(const __m256d result, double* destination) {
-//        if constexpr (iVector > 0) {
-//            _temporalStoreDouble<unrollFactor>(result + iVector - 1, destination + iVector - 1);
-//            _temporalStoreDoubleVectors<iVector - 1>(result, destination);
-//        }
-//        else return;
-//    }
-//    
-//    template<size_t iUnroll>
-//    static constexpr inline void _nonTemporalStoreDouble(const __m256d result, double* destination) {
-//        if constexpr (iUnroll > 0) {
-//            _mm256_stream_pd(destination[iUnroll], result[iUnroll]);
-//            _nonTemporalStoreDouble<iUnroll - 1>(result, destination);
-//        }
-//        else return;
-//    }
-//    
-//    template<size_t iVector>
-//    static constexpr inline void _nonTemporalStoreDoubleVectors(const __m256d result, double* destination) {
-//        if constexpr (iVector > 0) {
-//            _nonTemporalStoreDouble<unrollFactor>(result + iVector - 1, destination + iVector - 1);
-//            _nonTemporalStoreDoubleVectors<iVector - 1>(result, destination);
-//        }
-//        else return;
-//    }
+    template<size_t iUnroll>
+    static constexpr inline void _temporalStoreDouble( __m256d *result, double *destination) {
+        if constexpr (iUnroll > 0) {
+            _mm256_store_pd(destination + (iUnroll - 1) * AVX_DOUBLE_SIZE, *(result + iUnroll - 1));
+            _temporalStoreDouble<iUnroll - 1>(result, destination);
+        }
+        else return;
+    }
+
+    template<size_t iUnroll>
+    static constexpr inline void _nonTemporalStoreDouble(__m256d *result, double *destination) {
+        if constexpr (iUnroll > 0) {
+            _mm256_stream_pd(destination + (iUnroll - 1) * AVX_DOUBLE_SIZE, *(result + iUnroll - 1));
+            _nonTemporalStoreDouble<iUnroll - 1>(result, destination);
+        }
+        else return;
+    }
+
+    template<size_t iUnroll>
+    static constexpr inline void _zeroOutResultRegisters(__m256d *simdData) {
+        if constexpr (iUnroll > 0) {
+            *(simdData + iUnroll - 1) = _mm256_setzero_pd();
+            _zeroOutResultRegisters<iUnroll - 1>(simdData);
+        }
+        else return;
+    }
     
-
-
-
-
-
 };// STLKR_LinearAlgebra
 #endif //STALKER_STLKR_OPERATIONS_SIMD_H
