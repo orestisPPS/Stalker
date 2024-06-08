@@ -23,12 +23,27 @@ enum class STLKR_SIMD_Stores{
 struct STLKR_Config_SIMD {
 public:
 
-    constexpr inline _mm_hint getHint() const;
-    constexpr inline unsigned getDistance() const;
-    constexpr inline STLKR_SIMD_Stores getStore() const;
-    void setHint(STLKR_SIMD_PrefetchHint hint);
-    void setDistance(unsigned cacheLinesAhead);
-    void setStore(STLKR_SIMD_Stores store);
+    constexpr inline _mm_hint getHint() const {
+        return static_cast<_mm_hint>(_hint);
+    }
+    
+    constexpr inline unsigned getDistance() const{
+        return _distance;
+    }
+    
+    constexpr inline STLKR_SIMD_Stores getStore() const{
+        return _store;
+    }
+    
+    void setHint(STLKR_SIMD_PrefetchHint hint){
+        _hint = hint;
+    }
+    void setDistance(unsigned cacheLinesAhead){
+        _distance = cacheLinesAhead;
+    }
+    void setStore(STLKR_SIMD_Stores store){
+        _store = store;
+    }
 private:
     STLKR_SIMD_PrefetchHint _hint = STLKR_SIMD_PrefetchHint::T0;
     unsigned _distance = 1;

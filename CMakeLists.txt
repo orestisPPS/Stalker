@@ -30,7 +30,6 @@ add_executable(stalker main.cpp
         Tests/STLKR_TestBase.cpp
         Tests/STLKR_TestBase.h
         Tests/STLKR_PerformanceTests/STLKR_PerformanceTestBase.cpp
-        LinearAlgebra/ContiguousMemoryStorage/STLKR_Enumerable/STLKR_SIMD/STLKR_Config_SIMD.cpp
         LinearAlgebra/ContiguousMemoryStorage/STLKR_Enumerable/STLKR_SIMD/STLKR_Config_SIMD.h
         LinearAlgebra/ContiguousMemoryStorage/STLKR_Enumerable/STLKR_SIMD/STLKR_SIMD_MemoryManager.h
 )
