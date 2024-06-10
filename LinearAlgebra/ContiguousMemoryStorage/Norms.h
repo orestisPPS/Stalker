@@ -6,7 +6,7 @@
 #define STALKER_NORMS_H
 
 #include <cmath>
-#include "../../ThreadingOperations/STLKR_ThreadingOperations.h"
+#include "../../STLKR_HighPerformance/STLKR_Threading/STLKR_Thread_Operations.h"
 namespace STLKR_LinearAlgebra {
     enum Norm_Type {
         // L1 (Manhattan / Taxicab) norm
@@ -57,7 +57,7 @@ namespace STLKR_LinearAlgebra {
                 }
                 return sum;
             };
-            return STLKR_ThreadingOperations<availableThreads>::executeParallelJobWithReduction(l1Job, size);
+            return STLKR_Thread_Operations<availableThreads>::executeParallelJobWithReduction(l1Job, size);
         }
         
         T L2() {
@@ -68,7 +68,7 @@ namespace STLKR_LinearAlgebra {
                 }
                 return sum;
             };
-            T sum = STLKR_ThreadingOperations<availableThreads>::executeParallelJobWithReduction(l2Job, size);
+            T sum = STLKR_Thread_Operations<availableThreads>::executeParallelJobWithReduction(l2Job, size);
             return std::sqrt(sum);
         }
         
@@ -82,7 +82,7 @@ namespace STLKR_LinearAlgebra {
                 }
                 return max;
             };
-            return STLKR_ThreadingOperations<availableThreads>::executeParallelJobWithReduction(lInfJob, size);
+            return STLKR_Thread_Operations<availableThreads>::executeParallelJobWithReduction(lInfJob, size);
         }
         
         T Lp(T p) {
@@ -93,7 +93,7 @@ namespace STLKR_LinearAlgebra {
                 }
                 return sum;
             };
-            T sum = STLKR_ThreadingOperations<availableThreads>::executeParallelJobWithReduction(lpJob, size);
+            T sum = STLKR_Thread_Operations<availableThreads>::executeParallelJobWithReduction(lpJob, size);
             return std::pow(sum, 1.0 / p);
         }
         

@@ -12,8 +12,9 @@
 #include <iomanip>
 #include "STLKR_SIMD_MemoryManager.h"
 
-#include "../../../../ThreadingOperations/STLKR_ThreadingOperations.h"
+#include "../STLKR_Threading/STLKR_Thread_Operations.h"
 #include "STLKR_Config_SIMD.h"
+#include "../STLKR_Threading/STLKR_Thread_CacheScheduler.h"
 
 template <unsigned unrollFactor, size_t availableThreads = 1>
 class STLKR_Operations_SIMD {
@@ -95,7 +96,6 @@ public:
             result[i] = data1[i] * scale1 + data2[i] * scale2;
         }
     }
-    
     template<unsigned int numVectors>
     static constexpr inline void _addSIMD(double** data, double* scaleFactors, double* result, unsigned int size, STLKR_Config_SIMD prefetchConfig) {
         __m256d simdData[numVectors * unrollFactor];
@@ -118,6 +118,8 @@ public:
                 result[i] += data[j][i] * scaleFactors[j];
             }
         }
+
+        auto cacheScheduler = STLKR_Thread_CacheScheduler<double, availableThreads>(size, 32, 256, 1024);
     }
 
 private:

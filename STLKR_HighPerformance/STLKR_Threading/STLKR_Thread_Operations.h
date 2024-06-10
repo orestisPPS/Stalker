@@ -14,7 +14,7 @@
 using namespace std;
 
 template<unsigned availableThreads>
-class STLKR_ThreadingOperations {
+class STLKR_Thread_Operations {
 
 public:
     
