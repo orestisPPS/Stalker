@@ -1,3 +1,4 @@
+#include <unordered_set>
 #include "STLKR_Thread_LinuxProcessorSpecsReader.h"
 
 unsigned STLKR_Thread_LinuxProcessorSpecsReader::read_integer_from_file(const std::string& path) {
@@ -58,10 +59,29 @@ void STLKR_Thread_LinuxProcessorSpecsReader::read_cpu_info() {
     std::vector<unsigned> logical_cpus = parse_cpu_list(online_cpus);
 
     num_logical_processors = logical_cpus.size();
+    std::unordered_set<unsigned> processed_cores;
 
     for (unsigned cpu : logical_cpus) {
         std::string core_id_path = "/sys/devices/system/cpu/cpu" + std::to_string(cpu) + "/topology/core_id";
         unsigned core_id = read_integer_from_file(core_id_path);
+
+        if (processed_cores.find(core_id) != processed_cores.end()) {
+            continue;
+        }
+
+        processed_cores.insert(core_id);
+
+        std::vector<unsigned> siblings;
+        for (unsigned sibling_cpu : logical_cpus) {
+            std::string sibling_core_id_path = "/sys/devices/system/cpu/cpu" + std::to_string(sibling_cpu) + "/topology/core_id";
+            unsigned sibling_core_id = read_integer_from_file(sibling_core_id_path);
+
+            if (sibling_core_id == core_id) {
+                siblings.push_back(sibling_cpu);
+            }
+        }
+
+        core_info[core_id] = siblings;
 
         std::string min_freq_path = "/sys/devices/system/cpu/cpu" + std::to_string(cpu) + "/cpufreq/cpuinfo_min_freq";
         std::string max_freq_path = "/sys/devices/system/cpu/cpu" + std::to_string(cpu) + "/cpufreq/cpuinfo_max_freq";
@@ -69,7 +89,6 @@ void STLKR_Thread_LinuxProcessorSpecsReader::read_cpu_info() {
         unsigned min_freq = read_integer_from_file(min_freq_path);
         unsigned max_freq = read_integer_from_file(max_freq_path);
 
-        core_info[core_id].push_back(cpu);
         clock_info[core_id] = {min_freq, max_freq};
     }
 
