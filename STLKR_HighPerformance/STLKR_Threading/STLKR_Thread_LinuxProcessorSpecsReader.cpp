@@ -59,18 +59,20 @@ void STLKR_Thread_LinuxProcessorSpecsReader::read_cpu_info() {
     std::vector<unsigned> logical_cpus = parse_cpu_list(online_cpus);
 
     num_logical_processors = logical_cpus.size();
+    std::unordered_map<unsigned, std::vector<unsigned>> temp_core_info;
+
+    // Temporary set to keep track of already processed logical CPUs
     std::unordered_set<unsigned> processed_cores;
 
     for (unsigned cpu : logical_cpus) {
         std::string core_id_path = "/sys/devices/system/cpu/cpu" + std::to_string(cpu) + "/topology/core_id";
         unsigned core_id = read_integer_from_file(core_id_path);
 
-        if (processed_cores.find(core_id) != processed_cores.end()) {
+        if (processed_cores.find(cpu) != processed_cores.end()) {
             continue;
         }
 
-        processed_cores.insert(core_id);
-
+        // Find all siblings (hyper-threaded or eco threads) that share the same core_id
         std::vector<unsigned> siblings;
         for (unsigned sibling_cpu : logical_cpus) {
             std::string sibling_core_id_path = "/sys/devices/system/cpu/cpu" + std::to_string(sibling_cpu) + "/topology/core_id";
@@ -78,11 +80,13 @@ void STLKR_Thread_LinuxProcessorSpecsReader::read_cpu_info() {
 
             if (sibling_core_id == core_id) {
                 siblings.push_back(sibling_cpu);
+                processed_cores.insert(sibling_cpu);
             }
         }
 
-        core_info[core_id] = siblings;
+        temp_core_info[core_id] = siblings;
 
+        // Read clock frequencies
         std::string min_freq_path = "/sys/devices/system/cpu/cpu" + std::to_string(cpu) + "/cpufreq/cpuinfo_min_freq";
         std::string max_freq_path = "/sys/devices/system/cpu/cpu" + std::to_string(cpu) + "/cpufreq/cpuinfo_max_freq";
 
@@ -92,8 +96,15 @@ void STLKR_Thread_LinuxProcessorSpecsReader::read_cpu_info() {
         clock_info[core_id] = {min_freq, max_freq};
     }
 
+    // Assign a new sequential physical core ID for each unique core_id found
+    unsigned physical_core_id = 0;
+    for (const auto& [core_id, logical_cpus] : temp_core_info) {
+        core_info[physical_core_id++] = logical_cpus;
+    }
+
     num_physical_cores = core_info.size();
 }
+
 
 void STLKR_Thread_LinuxProcessorSpecsReader::read_cache_info() {
     unsigned int level, size_kb, size_bytes;
