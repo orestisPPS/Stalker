@@ -1,0 +1,14 @@
+//
+// Created by hal9000 on 6/15/24.
+//
+
+#ifndef STALKER_STLKR_MACHINE_CACHELEVEL_H
+#define STALKER_STLKR_MACHINE_CACHELEVEL_H
+
+
+class STLKR_Machine_CacheLevel {
+
+};
+
+
+#endif //STALKER_STLKR_MACHINE_CACHELEVEL_H

@@ -8,7 +8,7 @@
 #include <immintrin.h>
 #include <iostream>
 #include "STLKR_Thread_CacheLineInstance.h"
-#include "STLKR_Thread_LinuxProcessorSpecsReader.h"
+#include "../STKR_MachineSetup/STLKR_Machine_CPUEntitiesFactoryLinux.h"
 template <typename T, unsigned physicalCores>
 class STLKR_Thread_CacheScheduler {
 
@@ -28,7 +28,7 @@ public:
                                                                           cacheSizeL1,cacheSizeL2, cacheSizeL3, cacheLineSize);
         }
         
-        auto systemProcessorReader = STLKR_Thread_LinuxProcessorSpecsReader();
+        auto systemProcessorReader = STLKR_Machine_CPUEntitiesFactoryLinux();
         systemProcessorReader.initialize();
         systemProcessorReader.print_processor_specs();
         auto lol =1;
