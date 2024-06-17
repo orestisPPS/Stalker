@@ -9,15 +9,15 @@
 
 class STLKR_Machine_SharedCache {
 public:
-    STLKR_Machine_SharedCache(STLKR_Machine_CacheLevel cacheLeve1, STLKR_Machine_CacheLevel cacheLevel2, STLKR_Machine_CacheLevel cacheLevel3);
-    STLKR_Machine_CacheLevel &getCacheLevel1();
-    STLKR_Machine_CacheLevel &getCacheLevel2();
-    STLKR_Machine_CacheLevel &getCacheLevel3();
-    STLKR_Machine_CacheLevel &getCacheLevel(unsigned level);
+    STLKR_Machine_SharedCache(STLKR_Machine_CacheLevel *cacheLeve1, STLKR_Machine_CacheLevel *cacheLevel2, STLKR_Machine_CacheLevel *cacheLevel3);
+    const STLKR_Machine_CacheLevel *getCacheLevel1() const;
+    const STLKR_Machine_CacheLevel *getCacheLevel2() const;
+    const STLKR_Machine_CacheLevel *getCacheLevel3() const;
+    const STLKR_Machine_CacheLevel *getCacheLevel(unsigned level) const;
 private:
-    STLKR_Machine_CacheLevel _cacheLevel1;
-    STLKR_Machine_CacheLevel _cacheLevel2;
-    STLKR_Machine_CacheLevel _cacheLevel3;
+    STLKR_Machine_CacheLevel *_cacheLevel1;
+    STLKR_Machine_CacheLevel *_cacheLevel2;
+    STLKR_Machine_CacheLevel *_cacheLevel3;
 };
 
 
