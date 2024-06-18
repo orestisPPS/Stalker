@@ -23,7 +23,7 @@ class STLKR_Machine_CPUTopologyLinux {
 
 public:
     explicit STLKR_Machine_CPUTopologyLinux(std::string cpuPath = "/sys/devices/system/cpu/");
-    
+    ~STLKR_Machine_CPUTopologyLinux();
     void print_processor_specs() const;
 
 private:

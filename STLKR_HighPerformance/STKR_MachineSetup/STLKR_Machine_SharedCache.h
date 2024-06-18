@@ -10,6 +10,7 @@
 class STLKR_Machine_SharedCache {
 public:
     STLKR_Machine_SharedCache(STLKR_Machine_CacheLevel *cacheLeve1, STLKR_Machine_CacheLevel *cacheLevel2, STLKR_Machine_CacheLevel *cacheLevel3);
+    ~STLKR_Machine_SharedCache() = default;
     const STLKR_Machine_CacheLevel *getCacheLevel1() const;
     const STLKR_Machine_CacheLevel *getCacheLevel2() const;
     const STLKR_Machine_CacheLevel *getCacheLevel3() const;

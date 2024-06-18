@@ -11,14 +11,18 @@
 class STLKR_Machine_Core {
 public:
     STLKR_Machine_Core(unsigned id, std::vector<STLKR_Machine_Thread*> threads);
-    
+    ~STLKR_Machine_Core() = default;
     unsigned getId() const;
-    
     const std::vector<STLKR_Machine_Thread *> & getThreads() const;
-
+    void setThreadAffinity();
+    
+    
 private:
     unsigned _id;
     std::vector<STLKR_Machine_Thread*> _threads;
+    std::vector<pthread_t> _pThreads;
+    
+    static void* thread_function(void* arg);
 };
 
 

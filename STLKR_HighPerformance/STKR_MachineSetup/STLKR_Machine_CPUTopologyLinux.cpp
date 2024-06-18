@@ -12,75 +12,29 @@ STLKR_Machine_CPUTopologyLinux::STLKR_Machine_CPUTopologyLinux(std::string cpuPa
     
 }
 
-
-//void STLKR_Machine_CPUEntitiesFactoryLinux::getMachineCores() {
-//    std::string online_path = "/sys/devices/system/cpu/online";
-//    std::string online_cpus = read_string_from_file(online_path);
-//    auto logical_cpus = parse_cpu_list(online_cpus);
-//    
-//    num_logical_processors = logical_cpus.size();
-//    std::map<unsigned, std::vector<unsigned>> temp_core_info;
-//
-//    // Temporary set to keep track of already processed logical CPUs
-//    std::unordered_set<unsigned> processed_cores;
-//
-//    for (unsigned cpu : logical_cpus) {
-//        std::string core_id_path = _getThreadPath(cpu) + "/topology/core_id";
-//        unsigned core_id = read_integer_from_file(core_id_path);
-//
-//        if (processed_cores.find(cpu) != processed_cores.end()) {
-//            continue;
-//        }
-//
-//        // Find all siblings (hyper-threaded or eco threads) that share the same core_id
-//        std::vector<unsigned> siblings;
-//        for (unsigned sibling_cpu : logical_cpus) {
-//            std::string sibling_core_id_path = "/sys/devices/system/cpu/cpu" + std::to_string(sibling_cpu) + "/topology/core_id";
-//            unsigned sibling_core_id = read_integer_from_file(sibling_core_id_path);
-//
-//            if (sibling_core_id == core_id) {
-//                siblings.push_back(sibling_cpu);
-//                processed_cores.insert(sibling_cpu);
-//            }
-//        }
-//
-//        temp_core_info[core_id] = siblings;
-//
-//        // Read clock frequencies for each logical processor in the core
-//        unsigned min_freq = 0;
-//        unsigned max_freq = 0;
-//        for (unsigned sibling_cpu : siblings) {
-//            std::string min_freq_path = "/sys/devices/system/cpu/cpu" + std::to_string(sibling_cpu) + "/cpufreq/cpuinfo_min_freq";
-//            std::string max_freq_path = "/sys/devices/system/cpu/cpu" + std::to_string(sibling_cpu) + "/cpufreq/cpuinfo_max_freq";
-//
-//            unsigned sibling_min_freq = read_integer_from_file(min_freq_path);
-//            unsigned sibling_max_freq = read_integer_from_file(max_freq_path);
-//
-//            min_freq = std::min(min_freq, sibling_min_freq);
-//            max_freq = std::max(max_freq, sibling_max_freq);
-//        }
-//
-//        clock_info[core_id] = {min_freq, max_freq};
-//    }
-//
-//    // Assign a new sequential physical core ID for each unique core_id found
-//    unsigned physical_core_id = 0;
-//    for (const auto& [core_id, logical_cpus] : temp_core_info) {
-//        core_info[physical_core_id++] = logical_cpus;
-//    }
-//
-//    num_physical_cores = core_info.size();
-//}
+STLKR_Machine_CPUTopologyLinux::~STLKR_Machine_CPUTopologyLinux() {
+    for (auto core : _physicalCores) {
+        delete core;
+    }
+    for (auto thread : _threads) {
+        delete thread;
+    }
+    for (auto cache : _cacheLevels) {
+        delete cache;
+    }
+    for (auto sharedCache : _sharedCaches) {
+        delete sharedCache;
+    }
+}
 
 void STLKR_Machine_CPUTopologyLinux::readMachineCores() {
-
+    auto start = std::chrono::high_resolution_clock::now();
     unsigned int size_kb = 0, coreTopologyId = 0, threadId = 0;
     std::string type, shared_cpus_str;
 
     // Find the online Threads
     auto onlineThreads = _parseCPUList(_readStringFromFile("/sys/devices/system/cpu/online"));
 
-    _physicalCores = std::vector<STLKR_Machine_Core*>();
     _threads = std::vector<STLKR_Machine_Thread*>(onlineThreads.size());
     _cacheLevels = std::vector<STLKR_Machine_CacheLevel*>();
     _cacheLevels.reserve(2 * onlineThreads.size() + 1); // 2 cache levels per thread + 1 for the L3 cache
@@ -108,20 +62,26 @@ void STLKR_Machine_CPUTopologyLinux::readMachineCores() {
             auto sharedCPUs = _parseCPUList(shared_cpus_str);
             if (cacheMap.find(cache_index) == cacheMap.end())
                 cacheMap[cache_index] = std::map<std::vector<unsigned>, STLKR_Machine_CacheLevel*>();
-            if (cacheMap[cache_index].find(sharedCPUs) == cacheMap[cache_index].end())
+            if (cacheMap[cache_index].find(sharedCPUs) == cacheMap[cache_index].end()){
                 cacheMap[cache_index][sharedCPUs] = new STLKR_Machine_CacheLevel(cache_index, size_kb, sharedCPUs);
+                _cacheLevels.push_back(cacheMap[cache_index][sharedCPUs]);
+            }
             threadToCacheLevels[threadId][cache_index - 1] = cacheMap[cache_index][sharedCPUs];
         }
+        auto sharedCache = new STLKR_Machine_SharedCache(threadToCacheLevels[threadId][0],
+                                                         threadToCacheLevels[threadId][1],
+                                                         threadToCacheLevels[threadId][2]);
+        _sharedCaches.push_back(sharedCache);
         _threads[threadId] = new STLKR_Machine_Thread(threadId,
                                                       _readIntegerFromFile(_getThreadPath(cpu) + "/cpufreq/cpuinfo_min_freq"),
                                                       _readIntegerFromFile(_getThreadPath(cpu) + "/cpufreq/cpuinfo_max_freq"),
-                                                      new STLKR_Machine_SharedCache(threadToCacheLevels[threadId][0],
-                                                                                    threadToCacheLevels[threadId][1],
-                                                                                    threadToCacheLevels[threadId][2]));
+                                                      sharedCache);
         threadId++;
     }
     threadId = 0;
     coreTopologyId = 0;
+    _physicalCores = std::vector<STLKR_Machine_Core*>();
+    _physicalCores.reserve(physicalCoreToThreads.size());
     auto coreThreads = std::vector<STLKR_Machine_Thread*>();
     for (const auto& [coreId, threads] : physicalCoreToThreads) {
         for (auto iThread : threads){
@@ -131,7 +91,8 @@ void STLKR_Machine_CPUTopologyLinux::readMachineCores() {
         coreThreads.clear();
         coreTopologyId++;
     }
-
+    auto end = std::chrono::high_resolution_clock::now();
+    std::cout << "Time to read the machine cores: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " μs" << std::endl;
     std::cout << "Cache info read successfully!" << std::endl;
 }
 

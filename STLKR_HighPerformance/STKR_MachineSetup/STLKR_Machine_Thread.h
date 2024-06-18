@@ -12,7 +12,7 @@ class STLKR_Machine_Thread {
 public:
     STLKR_Machine_Thread() = default;
     STLKR_Machine_Thread(unsigned id, unsigned clockMin, unsigned clockMax, STLKR_Machine_SharedCache *sharedCacheMemory);
-    
+    ~STLKR_Machine_Thread() = default;
     unsigned getId() const;
     unsigned getClockMin() const;
     unsigned getClockMax() const;

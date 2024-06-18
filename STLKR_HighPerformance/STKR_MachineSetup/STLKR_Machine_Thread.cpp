@@ -6,7 +6,6 @@
 
 STLKR_Machine_Thread::  STLKR_Machine_Thread(unsigned id, unsigned clockMin, unsigned clockMax, STLKR_Machine_SharedCache *sharedCacheMemory) 
 : _id(id), _clockMin(clockMin), _clockMax(clockMax), _isRunning(false), _sharedCacheMemory(sharedCacheMemory) {}
-    
 
 unsigned STLKR_Machine_Thread::getId() const{
     return _id;

@@ -15,6 +15,8 @@ public:
         
     STLKR_Machine_CacheLevel() = default;
     
+    ~STLKR_Machine_CacheLevel() = default;
+    
     unsigned getLevel() const;
     unsigned getSize() const;
     unsigned getOccupiedSpace() const;
