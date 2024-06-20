@@ -5,7 +5,7 @@
 #ifndef STALKER_STLKR_MACHINE_CACHELEVEL_H
 #define STALKER_STLKR_MACHINE_CACHELEVEL_H
 
-
+#include <iostream>
 #include <vector>
 
 class STLKR_Machine_CacheLevel {

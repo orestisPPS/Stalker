@@ -44,7 +44,7 @@ public:
     * This method distributes the task across available CPU cores. Each thread operates on a distinct segment
     * of the data and produces a local result. After all threads have completed their work, a reduction step
     * combines these local results into a single global result.
-    * 
+    * t
     * \tparam T The data type of the result (e.g., double, float).
     * \tparam ThreadJob A callable object type (function, lambda, functor).
     *

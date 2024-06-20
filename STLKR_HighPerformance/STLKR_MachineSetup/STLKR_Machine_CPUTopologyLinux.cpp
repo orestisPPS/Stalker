@@ -29,7 +29,7 @@ STLKR_Machine_CPUTopologyLinux::~STLKR_Machine_CPUTopologyLinux() {
 
 void STLKR_Machine_CPUTopologyLinux::readMachineCores() {
     auto start = std::chrono::high_resolution_clock::now();
-    unsigned int size_kb = 0, coreTopologyId = 0, threadId = 0;
+    unsigned int size_kb = 0, coreTopologyId = 0;
     std::string type, shared_cpus_str;
 
     // Find the online Threads
@@ -44,21 +44,21 @@ void STLKR_Machine_CPUTopologyLinux::readMachineCores() {
     auto threadToClockSpeed = std::unordered_map<unsigned, std::pair<unsigned, unsigned>>();
     auto cacheMap = std::map<unsigned, std::map<std::vector<unsigned>, STLKR_Machine_CacheLevel*>>(); //Key is the cache level, value is a map of the shared CPUs and the cache level
     auto threadToCacheLevels = std::unordered_map<unsigned, STLKR_Machine_CacheLevel*[3]>();
-    for (unsigned cpu : onlineThreads) {
+    for (unsigned iThread : onlineThreads) {
         //Read the core id of the thread
         coreTopologyId = _readIntegerFromFile(
-                _getThreadPath(cpu) + "/topology/core_id");
-        auto threadSiblings = _parseCPUList(_readStringFromFile(_getThreadPath(cpu) + "/topology/thread_siblings_list"));
+                _getThreadPath(iThread) + "/topology/core_id");
+        auto threadSiblings = _parseCPUList(_readStringFromFile(_getThreadPath(iThread) + "/topology/thread_siblings_list"));
         if (physicalCoreToThreads.find(coreTopologyId) == physicalCoreToThreads.end())
             physicalCoreToThreads[coreTopologyId] = std::move(threadSiblings);
         
         //Read the cache levels of the thread
         for (unsigned cache_index = 1; cache_index <= 3; ++cache_index) { // Iterate over 1, 2, and 3
             size_kb = (cache_index == 1)
-                      ? _readIntegerFromFile(_getCacheLevelPath(cpu, 0) + "/size") + _readIntegerFromFile(_getCacheLevelPath(cpu, 1) + "/size")
-                      : _readIntegerFromFile(_getCacheLevelPath(cpu, cache_index) + "/size");
+                      ? _readIntegerFromFile(_getCacheLevelPath(iThread, 0) + "/size") + _readIntegerFromFile(_getCacheLevelPath(iThread, 1) + "/size")
+                      : _readIntegerFromFile(_getCacheLevelPath(iThread, cache_index) + "/size");
             
-            shared_cpus_str = _readStringFromFile(_getCacheLevelPath(cpu, cache_index) + "/shared_cpu_list");
+            shared_cpus_str = _readStringFromFile(_getCacheLevelPath(iThread, cache_index) + "/shared_cpu_list");
             auto sharedCPUs = _parseCPUList(shared_cpus_str);
             if (cacheMap.find(cache_index) == cacheMap.end())
                 cacheMap[cache_index] = std::map<std::vector<unsigned>, STLKR_Machine_CacheLevel*>();
@@ -66,31 +66,30 @@ void STLKR_Machine_CPUTopologyLinux::readMachineCores() {
                 cacheMap[cache_index][sharedCPUs] = new STLKR_Machine_CacheLevel(cache_index, size_kb, sharedCPUs);
                 _cacheLevels.push_back(cacheMap[cache_index][sharedCPUs]);
             }
-            threadToCacheLevels[threadId][cache_index - 1] = cacheMap[cache_index][sharedCPUs];
+            threadToCacheLevels[iThread][cache_index - 1] = cacheMap[cache_index][sharedCPUs];
         }
-        auto sharedCache = new STLKR_Machine_SharedCache(threadToCacheLevels[threadId][0],
-                                                         threadToCacheLevels[threadId][1],
-                                                         threadToCacheLevels[threadId][2]);
+        auto sharedCache = new STLKR_Machine_SharedCache(threadToCacheLevels[iThread][0],
+                                                         threadToCacheLevels[iThread][1],
+                                                         threadToCacheLevels[iThread][2]);
         _sharedCaches.push_back(sharedCache);
-        _threads[threadId] = new STLKR_Machine_Thread(threadId,
-                                                      _readIntegerFromFile(_getThreadPath(cpu) + "/cpufreq/cpuinfo_min_freq"),
-                                                      _readIntegerFromFile(_getThreadPath(cpu) + "/cpufreq/cpuinfo_max_freq"),
+        _threads[iThread] = new STLKR_Machine_Thread(iThread,
+                                                      _readIntegerFromFile(_getThreadPath(iThread) + "/cpufreq/cpuinfo_min_freq"),
+                                                      _readIntegerFromFile(_getThreadPath(iThread) + "/cpufreq/cpuinfo_max_freq"),
                                                       sharedCache);
-        threadId++;
     }
-    threadId = 0;
-    coreTopologyId = 0;
     _physicalCores = std::vector<STLKR_Machine_Core*>();
     _physicalCores.reserve(physicalCoreToThreads.size());
     auto coreThreads = std::vector<STLKR_Machine_Thread*>();
     for (const auto& [coreId, threads] : physicalCoreToThreads) {
-        for (auto iThread : threads){
-            coreThreads.push_back(_threads[iThread]);
-        }
-        _physicalCores.emplace_back(new STLKR_Machine_Core(coreTopologyId, coreThreads));
+        for (auto threadID : threads)
+            coreThreads.push_back(_threads[threadID]);
+        _physicalCores.emplace_back(new STLKR_Machine_Core(coreId, coreThreads));
         coreThreads.clear();
-        coreTopologyId++;
     }
+    //sort the cores by id
+    std::sort(_physicalCores.begin(), _physicalCores.end(), [](const STLKR_Machine_Core* a, const STLKR_Machine_Core* b) {
+        return a->getId() < b->getId();
+    });
     auto end = std::chrono::high_resolution_clock::now();
     std::cout << "Time to read the machine cores: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " μs" << std::endl;
     std::cout << "Cache info read successfully!" << std::endl;

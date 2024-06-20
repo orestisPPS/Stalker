@@ -8,7 +8,7 @@
 #include <immintrin.h>
 #include <iostream>
 #include "STLKR_Thread_CacheLineInstance.h"
-#include "../STKR_MachineSetup/STLKR_Machine_CPUTopologyLinux.h"
+#include "../STLKR_MachineSetup/STLKR_Machine_CPUTopologyLinux.h"
 template <typename T, unsigned physicalCores>
 class STLKR_Thread_CacheScheduler {
 

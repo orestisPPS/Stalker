@@ -34,14 +34,16 @@ add_executable(stalker main.cpp
         STLKR_HighPerformance/STLKR_SIMD/STLKR_SIMD_MemoryManager.h
         STLKR_HighPerformance/STLKR_Threading/STLKR_Thread_CacheScheduler.h
         STLKR_HighPerformance/STLKR_Threading/STLKR_Thread_CacheLineInstance.h
-        STLKR_HighPerformance/STKR_MachineSetup/STLKR_Machine_CPUTopologyLinux.cpp
-        STLKR_HighPerformance/STKR_MachineSetup/STLKR_Machine_CPUTopologyLinux.h
-        STLKR_HighPerformance/STKR_MachineSetup/STLKR_Machine_Core.cpp
-        STLKR_HighPerformance/STKR_MachineSetup/STLKR_Machine_Core.h
-        STLKR_HighPerformance/STKR_MachineSetup/STLKR_Machine_CacheLevel.cpp
-        STLKR_HighPerformance/STKR_MachineSetup/STLKR_Machine_CacheLevel.h
-        STLKR_HighPerformance/STKR_MachineSetup/STLKR_Machine_Thread.cpp
-        STLKR_HighPerformance/STKR_MachineSetup/STLKR_Machine_Thread.h
-        STLKR_HighPerformance/STKR_MachineSetup/STLKR_Machine_SharedCache.cpp
-        STLKR_HighPerformance/STKR_MachineSetup/STLKR_Machine_SharedCache.h
+        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_CPUTopologyLinux.cpp
+        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_CPUTopologyLinux.h
+        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_Core.cpp
+        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_Core.h
+        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_CacheLevel.cpp
+        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_CacheLevel.h
+        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_Thread.cpp
+        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_Thread.h
+        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_SharedCache.cpp
+        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_SharedCache.h
+        STLKR_HighPerformance/STLKR_Threading/STLKR_Thread_OperationsLinux.cpp
+        STLKR_HighPerformance/STLKR_Threading/STLKR_Thread_OperationsLinux.h
 )
