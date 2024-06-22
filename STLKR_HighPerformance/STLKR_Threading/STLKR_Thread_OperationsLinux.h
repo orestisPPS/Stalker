@@ -4,23 +4,28 @@
 
 #ifndef STALKER_STLKR_THREAD_OPERATIONSLINUX_H
 #define STALKER_STLKR_THREAD_OPERATIONSLINUX_H
-#include <pthread.h>
 #include "../STLKR_MachineSetup/STLKR_Machine_Core.h"
-
+#include "STLKR_Threading_JobArguments.h"
 class STLKR_Thread_OperationsLinux {
 public:
-    template<typename threadJob>
-    static inline void executeJob(threadJob job, unsigned size, const std::vector<STLKR_Machine_Core *> &cores, bool enableHyperThreading = false) {
-        unsigned availableThreads = 0;
-        for (const auto &core : cores)
-            availableThreads += core->getThreadCount(enableHyperThreading);
-        availableThreads = std::min(availableThreads, size);
-        unsigned blockSize = size / cores.size();
 
-        for (int iPhysicalCore = 0; iPhysicalCore < cores.size(); ++iPhysicalCore) {
-            auto startIndex = iPhysicalCore * blockSize;
-            auto endIndex = (iPhysicalCore + 1 == cores.size() ? size : (iPhysicalCore + 1) * blockSize);
-            cores[iPhysicalCore]->executeJob(job, startIndex, endIndex, enableHyperThreading);
+
+    template <typename threadJob>
+    static inline void executeJob(threadJob job, unsigned size, std::vector<STLKR_Machine_Core *> &cores, bool enableHyperThreading = false) {
+
+        unsigned coreBlockSize = size / cores.size();
+
+        for (int i = 0; i < cores.size(); ++i) {
+            cores[i]->setHyperThreading(enableHyperThreading);
+            //cores[i]->setThreadAffinity();
+            unsigned startIndex = i * coreBlockSize;
+            unsigned endIndex = (i == cores.size() - 1 ? size : startIndex + coreBlockSize);
+            std::cout << "Core: " << cores[i]->getId() << " Start: " << startIndex << " End: " << endIndex << std::endl;
+            cores[i]->distributeJobToThreads(job, startIndex, endIndex);
+        }
+        
+        for (auto &core : cores) {
+            core->joinThreads();
         }
     }
 

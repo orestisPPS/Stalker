@@ -129,6 +129,22 @@ void STLKR_Machine_CPUTopologyLinux::print_processor_specs() const {
 //    }
 }
 
+std::vector<STLKR_Machine_Core*> STLKR_Machine_CPUTopologyLinux::getPhysicalCores() const {
+    return _physicalCores;
+}
+
+std::vector<STLKR_Machine_Thread*> STLKR_Machine_CPUTopologyLinux::getThreads() const {
+    return _threads;
+}
+
+std::vector<STLKR_Machine_CacheLevel*> STLKR_Machine_CPUTopologyLinux::getCacheLevels() const {
+    return _cacheLevels;
+}
+
+std::vector<STLKR_Machine_SharedCache*> STLKR_Machine_CPUTopologyLinux::getSharedCaches() const {
+    return _sharedCaches;
+}
+
 unsigned STLKR_Machine_CPUTopologyLinux::_readIntegerFromFile(const std::string& path) {
     std::ifstream file(path);
     if (!file.is_open()) {

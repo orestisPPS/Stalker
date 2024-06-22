@@ -25,6 +25,10 @@ public:
     explicit STLKR_Machine_CPUTopologyLinux(std::string cpuPath = "/sys/devices/system/cpu/");
     ~STLKR_Machine_CPUTopologyLinux();
     void print_processor_specs() const;
+    std::vector<STLKR_Machine_Core*> getPhysicalCores() const;
+    std::vector<STLKR_Machine_Thread*> getThreads() const;
+    std::vector<STLKR_Machine_CacheLevel*> getCacheLevels() const;
+    std::vector<STLKR_Machine_SharedCache*> getSharedCaches() const;
 
 private:
     std::string _cpuPath;

@@ -6,9 +6,10 @@
 #define STALKER_STLKR_MACHINE_THREAD_H
 
 #include "STLKR_Machine_SharedCache.h"
+#include <pthread.h>
 
 
-class STLKR_Machine_Thread {
+class STLKR_Machine_Thread{
 public:
     STLKR_Machine_Thread() = default;
     STLKR_Machine_Thread(unsigned id, unsigned clockMin, unsigned clockMax, STLKR_Machine_SharedCache *sharedCacheMemory);
@@ -18,12 +19,44 @@ public:
     unsigned getClockMax() const;
     bool isRunning() const;
     const STLKR_Machine_SharedCache *getSharedCacheMemory();
+    static void addToCoreSet(unsigned coreId, cpu_set_t &coreSet);
+    void setThreadAffinity(cpu_set_t &coreSet);
+    void resetThreadAffinity();
+    void join() const;
+
+    template<typename threadJob>
+    void executeJob(threadJob job, unsigned startIndex, unsigned endIndex) {
+        auto jobArgs = new JobArgs<threadJob>{job, startIndex, endIndex};
+        pthread_create(&_pThread, &_pThreadAttribute, _jobWrapper<threadJob>, jobArgs);
+    }
+
 private:
+
+    template<typename threadJob>
+    struct JobArgs {
+        threadJob job;
+        unsigned startIndex;
+        unsigned endIndex;
+    };
+
+    template<typename threadJob>
+    static void* _jobWrapper(void* args) {
+        auto jobArgs = static_cast<JobArgs<threadJob>*>(args);
+        jobArgs->job(jobArgs->startIndex, jobArgs->endIndex);
+        delete jobArgs;  // Clean up dynamically allocated memory
+        return nullptr;
+    }
+
     unsigned _id;
     unsigned _clockMin;
     unsigned _clockMax;
     bool _isRunning;
     STLKR_Machine_SharedCache *_sharedCacheMemory;
+    pthread_t _pThread;
+    pthread_attr_t _pThreadAttribute{};
+
+    static inline void _initializeAttribute(pthread_attr_t& attribute);
+    static inline void _destroyAttribute(pthread_attr_t& attribute);
 };
 
 

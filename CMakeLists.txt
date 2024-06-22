@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.27)
 project(stalker)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2 -mfma -O0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2 -mfma -O3")
 
 add_executable(stalker main.cpp
         SpatialDiscretization/Node.h
@@ -46,4 +46,5 @@ add_executable(stalker main.cpp
         STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_SharedCache.h
         STLKR_HighPerformance/STLKR_Threading/STLKR_Thread_OperationsLinux.cpp
         STLKR_HighPerformance/STLKR_Threading/STLKR_Thread_OperationsLinux.h
+        STLKR_HighPerformance/STLKR_Threading/STLKR_Threading_JobArguments.h
 )
