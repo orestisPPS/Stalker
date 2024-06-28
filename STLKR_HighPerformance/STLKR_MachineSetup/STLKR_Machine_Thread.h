@@ -19,7 +19,7 @@ public:
     unsigned getClockMax() const;
     bool isRunning() const;
     const STLKR_Machine_SharedCache *getSharedCacheMemory();
-    void setThreadAffinity(cpu_set_t &coreSet, unsigned coreId);
+    void setThreadAffinity(cpu_set_t &coreSet);
     void resetThreadAffinity();
     void join() const;
 

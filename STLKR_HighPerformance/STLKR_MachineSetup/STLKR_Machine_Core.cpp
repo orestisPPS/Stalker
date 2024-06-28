@@ -36,9 +36,15 @@ void STLKR_Machine_Core::setThreadAffinity() {
     CPU_ZERO(&_thisCoreSet);
     auto availableThreads = _isHyperThreaded ? _threads.size() : 1;
     for (int i = 0; i < availableThreads; ++i) {
-        _threads[i]->setThreadAffinity(_thisCoreSet, 0);
+        _threads[i]->setThreadAffinity(_thisCoreSet);
     }
-    printCPUSet(false);
+}
+
+void STLKR_Machine_Core::setThreadAffinity(cpu_set_t &coreSet) {
+    auto availableThreads = _isHyperThreaded ? _threads.size() : 1;
+    for (int i = 0; i < availableThreads; ++i) {
+        _threads[i]->setThreadAffinity(coreSet);
+    }
 }
 
 void STLKR_Machine_Core::resetThreadAffinity() {

@@ -16,6 +16,7 @@ public:
     std::vector<STLKR_Machine_Thread *> getThreads() const;
     unsigned getThreadCount() const;
     void setThreadAffinity();
+    void setThreadAffinity(cpu_set_t &coreSet);
     void resetThreadAffinity();
     unsigned getId() const;
     void joinThreads() const;

@@ -26,10 +26,10 @@ int main() {
     auto cores = cpuTopology.getPhysicalCores();
     //auto singleCore = std::vector<STLKR_Machine_Core*>{cores[0], cores[1]};
     //auto singleCore = std::vector<STLKR_Machine_Core*>{cores[0]};
-    auto singleCore = std::vector<STLKR_Machine_Core*>{cores[0], cores[1], cores[2], cores[3]};
+    auto singleCore = std::vector<STLKR_Machine_Core*>{cores[0], cores[1], cores[2], cores[3], cores[4], cores[5]};
 
     auto start = std::chrono::high_resolution_clock::now();
-    STLKR_Thread_OperationsLinux::executeJob(additionJob, size, singleCore, true);
+    STLKR_Thread_OperationsLinux::executeJob(additionJob, size, singleCore, false);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "MultiThread Total time taken: " << duration << " ms" << std::endl;

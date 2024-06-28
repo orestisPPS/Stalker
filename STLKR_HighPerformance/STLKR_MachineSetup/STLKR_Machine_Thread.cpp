@@ -35,7 +35,7 @@ const STLKR_Machine_SharedCache *STLKR_Machine_Thread::getSharedCacheMemory(){
 }
 
 
-void STLKR_Machine_Thread::setThreadAffinity(cpu_set_t &coreSet, unsigned coreId) {
+void STLKR_Machine_Thread::setThreadAffinity(cpu_set_t &coreSet) {
     _initializeAttribute(_pThreadAttribute);
     CPU_SET(_id, &coreSet);
     int result = pthread_attr_setaffinity_np(&_pThreadAttribute, sizeof(cpu_set_t), &coreSet);
