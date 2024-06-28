@@ -34,14 +34,13 @@ const STLKR_Machine_SharedCache *STLKR_Machine_Thread::getSharedCacheMemory(){
     return _sharedCacheMemory;
 }
 
-void STLKR_Machine_Thread::addToCoreSet(unsigned coreId, cpu_set_t &coreSet){
-    CPU_SET(coreId, &coreSet);
-}
 
-void STLKR_Machine_Thread::setThreadAffinity(cpu_set_t &coreSet){
+void STLKR_Machine_Thread::setThreadAffinity(cpu_set_t &coreSet, unsigned coreId) {
     _initializeAttribute(_pThreadAttribute);
+    CPU_SET(_id, &coreSet);
     int result = pthread_attr_setaffinity_np(&_pThreadAttribute, sizeof(cpu_set_t), &coreSet);
     if (result != 0) std::cerr << "Error setting affinity for thread " << _id << std::endl;
+    _isRunning = true;
 }
 
 void STLKR_Machine_Thread::resetThreadAffinity(){

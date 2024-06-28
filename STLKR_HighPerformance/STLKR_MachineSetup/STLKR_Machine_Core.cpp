@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <cstring>
+#include <bitset>
 #include "STLKR_Machine_Core.h"
 
 STLKR_Machine_Core::STLKR_Machine_Core(unsigned id, std::vector<STLKR_Machine_Thread*> threads) {
@@ -33,28 +34,43 @@ unsigned STLKR_Machine_Core::getThreadCount() const{
 
 void STLKR_Machine_Core::setThreadAffinity() {
     CPU_ZERO(&_thisCoreSet);
-    if (_isHyperThreaded)
-        for (const auto &thread : _threads){
-            thread->setThreadAffinity(_thisCoreSet);
-            thread->addToCoreSet(_id, _thisCoreSet);
-        }
-    else{
-        _threads[0]->setThreadAffinity(_thisCoreSet);
-        _threads[0]->addToCoreSet(_id, _thisCoreSet);
+    auto availableThreads = _isHyperThreaded ? _threads.size() : 1;
+    for (int i = 0; i < availableThreads; ++i) {
+        _threads[i]->setThreadAffinity(_thisCoreSet, 0);
     }
+    printCPUSet(false);
 }
 
 void STLKR_Machine_Core::resetThreadAffinity() {
-    if (_isHyperThreaded){
-        for (const auto &thread : _threads)
-            thread->resetThreadAffinity(); 
-    }
-    else{
-        _threads[0]->resetThreadAffinity();
+    auto availableThreads = _isHyperThreaded ? _threads.size() : 1;
+    for (int i = 0; i < availableThreads; ++i) {
+        _threads[i]->resetThreadAffinity();
     }
 }
 
 void STLKR_Machine_Core::joinThreads() const {
     for (const auto &thread : _threads)
         thread->join();
+}
+
+void STLKR_Machine_Core::printCPUSet(bool printBitSet) const {
+    std::cout << "CPU Set for core " << _id << ": " << std::endl;
+
+    if (printBitSet) {
+        std::bitset<sizeof(cpu_set_t) * 8> bits(*reinterpret_cast<const unsigned long*>(&_thisCoreSet));
+        std::string bitString = bits.to_string();
+        for (size_t i = 0; i < bitString.size(); i += 8) {
+            std::cout << bitString.substr(i, 8) << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    // Print the CPUs that are part of the set
+    std::cout << "CPUs included in the set: ";
+    for (int i = 0; i < CPU_SETSIZE; ++i) {
+        if (CPU_ISSET(i, &_thisCoreSet)) {
+            std::cout << i << " ";
+        }
+    }
+    std::cout << std::endl;
 }

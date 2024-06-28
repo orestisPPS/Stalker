@@ -19,20 +19,22 @@ public:
     void resetThreadAffinity();
     unsigned getId() const;
     void joinThreads() const;
+    void printCPUSet(bool printBitSet) const;
 
     template <typename threadJob>
     void distributeJobToThreads(threadJob job, unsigned startIndex, unsigned endIndex) {
         unsigned totalRange = endIndex - startIndex;
         unsigned threadBlockSize = totalRange / _threads.size();
+        auto availableThreads = _isHyperThreaded ? _threads : std::vector<STLKR_Machine_Thread*>{_threads[0]};
 
-        for (int i = 0; i < _threads.size(); ++i) {
+        for (int i = 0; i < availableThreads.size(); ++i) {
             unsigned threadStartIndex = startIndex + i * threadBlockSize;
-            unsigned threadEndIndex = (i == _threads.size() - 1) ? endIndex : threadStartIndex + threadBlockSize;
+            unsigned threadEndIndex = (i == availableThreads.size() - 1) ? endIndex : threadStartIndex + threadBlockSize;
 
             //std::cout << "Thread: " << _threads[i]->getId() << " Start: " << threadStartIndex << " End: " << threadEndIndex << std::endl;
-            _threads[i]->executeJob(job, threadStartIndex, threadEndIndex);
+            availableThreads[i]->executeJob(job, threadStartIndex, threadEndIndex, _thisCoreSet);
         }
-        for (const auto &thread : _threads)
+        for (const auto &thread : availableThreads)
             thread->join();
     }
 
@@ -45,6 +47,8 @@ private:
     cpu_set_t _thisCoreSet{};
     bool _isThreadAffinitySet = false;
     bool _isHyperThreaded = false;
+    
+    
     
 };
 #endif //STALKER_STLKR_MACHINE_CORE_H

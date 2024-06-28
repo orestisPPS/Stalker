@@ -4,29 +4,52 @@
 
 #ifndef STALKER_STLKR_THREAD_OPERATIONSLINUX_H
 #define STALKER_STLKR_THREAD_OPERATIONSLINUX_H
+
+#include <list>
 #include "../STLKR_MachineSetup/STLKR_Machine_Core.h"
 #include "STLKR_Threading_JobArguments.h"
 class STLKR_Thread_OperationsLinux {
 public:
 
-
     template <typename threadJob>
     static inline void executeJob(threadJob job, unsigned size, std::vector<STLKR_Machine_Core *> &cores, bool enableHyperThreading = false) {
-
-        unsigned coreBlockSize = size / cores.size();
-
-        for (int i = 0; i < cores.size(); ++i) {
-            cores[i]->setHyperThreading(enableHyperThreading);
-            //cores[i]->setThreadAffinity();
-            unsigned startIndex = i * coreBlockSize;
-            unsigned endIndex = (i == cores.size() - 1 ? size : startIndex + coreBlockSize);
-            std::cout << "Core: " << cores[i]->getId() << " Start: " << startIndex << " End: " << endIndex << std::endl;
-            cores[i]->distributeJobToThreads(job, startIndex, endIndex);
+        
+        auto threadPool = std::vector<STLKR_Machine_Thread*>();
+        cpu_set_t thisJobCoreSet;
+        CPU_ZERO(&thisJobCoreSet);
+        for (const auto &core : cores) {
+            core->setHyperThreading(enableHyperThreading);
+            auto coreThreads = core->getThreads();
+            for (const auto &thread : coreThreads) {
+                threadPool.push_back(thread);
+                thread->setThreadAffinity(thisJobCoreSet, thread->getId());
+            }
+        }
+        unsigned threadBlockSize = (size + threadPool.size() - 1) / threadPool.size();
+        unsigned startIndex, endIndex;
+        for (int iThread = 0; iThread < threadPool.size(); ++iThread) {
+            startIndex = iThread * threadBlockSize;
+            endIndex = std::min((iThread + 1) * threadBlockSize, size);
+            //std::cout << "Core: " << cores[iThread]->getId() << " Start: " << startIndex << " End: " << endIndex << std::endl;
+            threadPool[iThread]->executeJob(job, startIndex, endIndex, thisJobCoreSet);
+        }
+        for (const auto &thread : threadPool) {
+            thread->join();
+            thread->resetThreadAffinity();
         }
         
-        for (auto &core : cores) {
-            core->joinThreads();
+    }
+    
+private:
+    static std::list<STLKR_Machine_Thread*> _getThreadPool(const std::vector<STLKR_Machine_Core *> &cores) {
+        std::list<STLKR_Machine_Thread*> threadPool;
+        for (const auto &core : cores) {
+            auto coreThreads = core->getThreads();
+            for (const auto &thread : coreThreads) {
+                threadPool.push_back(thread);
+            }
         }
+        return threadPool;
     }
 
 };

@@ -19,16 +19,16 @@ public:
     unsigned getClockMax() const;
     bool isRunning() const;
     const STLKR_Machine_SharedCache *getSharedCacheMemory();
-    static void addToCoreSet(unsigned coreId, cpu_set_t &coreSet);
-    void setThreadAffinity(cpu_set_t &coreSet);
+    void setThreadAffinity(cpu_set_t &coreSet, unsigned coreId);
     void resetThreadAffinity();
     void join() const;
 
     template<typename threadJob>
-    void executeJob(threadJob job, unsigned startIndex, unsigned endIndex) {
-        auto jobArgs = new JobArgs<threadJob>{job, startIndex, endIndex};
+    void executeJob(threadJob job, unsigned startIndex, unsigned endIndex, cpu_set_t coreSet) {
+        auto jobArgs = new JobArgs<threadJob>{job, startIndex, endIndex, coreSet};
         pthread_create(&_pThread, &_pThreadAttribute, _jobWrapper<threadJob>, jobArgs);
     }
+
 
 private:
 
@@ -37,11 +37,13 @@ private:
         threadJob job;
         unsigned startIndex;
         unsigned endIndex;
+        cpu_set_t coreSet;
     };
 
     template<typename threadJob>
     static void* _jobWrapper(void* args) {
         auto jobArgs = static_cast<JobArgs<threadJob>*>(args);
+        pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &jobArgs->coreSet);  // Set thread affinity
         jobArgs->job(jobArgs->startIndex, jobArgs->endIndex);
         delete jobArgs;  // Clean up dynamically allocated memory
         return nullptr;
