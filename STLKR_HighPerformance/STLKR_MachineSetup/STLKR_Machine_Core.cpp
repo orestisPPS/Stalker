@@ -28,6 +28,16 @@ std::vector<STLKR_Machine_Thread *> STLKR_Machine_Core::getThreads() const{
         return std::vector<STLKR_Machine_Thread*>{_threads[0]};
 }
 
+std::vector<STLKR_Machine_Thread *> STLKR_Machine_Core::getSlaveThreads() const{
+    auto slaveThreads = std::vector<STLKR_Machine_Thread*>(_threads.size() - 1);
+    std::copy(_threads.begin(), _threads.end() - 1, slaveThreads.begin());
+    return slaveThreads;
+}
+
+std::vector<STLKR_Machine_Thread *> STLKR_Machine_Core::getStokerThreads() const{
+    return std::vector<STLKR_Machine_Thread*>{_threads[_threads.size() - 1]};
+}
+
 unsigned STLKR_Machine_Core::getThreadCount() const{
     return _threads.size();
 }

@@ -5,11 +5,12 @@
 #ifndef STALKER_STLKR_SIMD_MEMORYMANAGER_H
 #define STALKER_STLKR_SIMD_MEMORYMANAGER_H
 
-#define DOUBLE_AVX_REGISTER_SIZE 4
-#define FLOAT_AVX_REGISTER_SIZE 8
-#define INT_AVX_REGISTER_SIZE 8
-#define SHORT_AVX_REGISTER_SIZE 16
-#define UNSIGNED_AVX_REGISTER_SIZE 8
+// AVX register sizes in terms of elements per register
+#define DOUBLE_AVX_REGISTER_SIZE 4     // 256 bits / 64 bits per double
+#define FLOAT_AVX_REGISTER_SIZE 8      // 256 bits / 32 bits per float
+#define INT_AVX_REGISTER_SIZE 8        // 256 bits / 32 bits per int
+#define SHORT_AVX_REGISTER_SIZE 16     // 256 bits / 16 bits per short
+#define UNSIGNED_AVX_REGISTER_SIZE 8   // 256 bits / 32 bits per unsigned int
 
 #include <cstdlib>
 #include <immintrin.h>

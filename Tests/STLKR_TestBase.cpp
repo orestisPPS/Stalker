@@ -24,6 +24,10 @@ namespace STLKR_Tests {
         std::cout << "\033[1;31m[FAILED ]\033[0m\n";  // This adds a red [FAILED] indicator
     }
 
+    std::string STLKR_TestBase::boolToOnOff(bool value, const std::string& name) {
+        return value ? name + "_on" : name + "_off";
+    }
+
 //    void STLKR_TestBase::_welcomeMessage() {
 //        //std::cout << "========" << _testName << "========" << std::endl;
 //    }

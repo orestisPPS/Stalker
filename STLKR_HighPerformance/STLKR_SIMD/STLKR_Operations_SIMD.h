@@ -12,9 +12,8 @@
 #include <iomanip>
 #include "STLKR_SIMD_MemoryManager.h"
 
-#include "../STLKR_Threading/STLKR_Thread_Operations.h"
+#include "../STLKR_Threading/STLKR_Thread_OperationsLinux.h"
 #include "STLKR_Config_SIMD.h"
-#include "../STLKR_Threading/STLKR_Thread_CacheScheduler.h"
 
 template <unsigned unrollFactor, size_t availableThreads = 1>
 class STLKR_Operations_SIMD {
@@ -119,33 +118,49 @@ public:
             }
         }
 
-        auto cacheScheduler = STLKR_Thread_CacheScheduler<double, availableThreads>(size, 32, 256, 1024);
     }
 
-    template<unsigned int numVectors>
-    static constexpr inline void _addSIMDThreadJob (double** data, double* scaleFactors, double* result, unsigned int size, STLKR_Config_SIMD prefetchConfig) {
-        __m256d simdData[numVectors * unrollFactor];
-        __m256d simdScalars[numVectors];
-        __m256d simdResult[unrollFactor];
-        void (*storeResultRegister)(__m256d*, double*) = (prefetchConfig.getStore() == STLKR_SIMD_Stores::Temporal) ?
-                                                         STLKR_SIMD_MemoryManager::storeTemporalData<double, __m256d, unrollFactor> :
-                                                         STLKR_SIMD_MemoryManager::storeNonTemporalData<double, __m256d, unrollFactor>;
-        size_t limit = size - (size % (DOUBLE_AVX_REGISTER_SIZE * unrollFactor));
+    template<unsigned int numVectors, unsigned numPhysicalCores>
+    static constexpr inline void add(double** data, double* scaleFactors, double* result, unsigned int size, STLKR_Config_SIMD prefetchConfig) {
 
+        __m256d simdScalars[numVectors];
         STLKR_SIMD_MemoryManager::broadcastScalars<double,__m256d, numVectors>(scaleFactors, simdScalars);
-        for (size_t i = 0; i < limit; i += DOUBLE_AVX_REGISTER_SIZE * unrollFactor) {
-            STLKR_SIMD_MemoryManager::loadMultipleDataRegisters<double, __m256d, unrollFactor, numVectors>(data, simdData, unrollFactor, i);
-            _fusedMultiplyAddDoubleVectors<numVectors>(simdData, simdScalars, simdResult);
-            storeResultRegister(simdResult, result + i);
-            STLKR_SIMD_MemoryManager::setZero<double, __m256d, unrollFactor>(simdResult);
+        
+        pair<unsigned, unsigned> threadLimits[numPhysicalCores];
+        unsigned simdBlockSize = DOUBLE_AVX_REGISTER_SIZE * unrollFactor;
+        unsigned totalSimdBlocks = (size + simdBlockSize - 1) / simdBlockSize;
+        unsigned threadBlockSize = (totalSimdBlocks + numPhysicalCores - 1) / numPhysicalCores;
+        unsigned startBlock = 0, endBlock = 0;
+        for (size_t i = 0; i < numPhysicalCores; i++) {
+            startBlock = i * threadBlockSize;
+            endBlock = std::min(startBlock + threadBlockSize, totalSimdBlocks);
+            threadLimits[i].first = startBlock * simdBlockSize;
+            threadLimits[i].second = std::min(endBlock * simdBlockSize, size);
         }
-        for (size_t i = limit; i < size; i++) {
+        
+        auto addThreadJob = [&](unsigned startIndex, unsigned endIndex) {
+            __m256d simdData[numVectors * unrollFactor];
+            __m256d simdResult[unrollFactor];
+            void (*storeResultRegister)(__m256d*, double*) = (prefetchConfig.getStore() == STLKR_SIMD_Stores::Temporal) ?
+                                                             STLKR_SIMD_MemoryManager::storeTemporalData<double, __m256d, unrollFactor> :
+                                                             STLKR_SIMD_MemoryManager::storeNonTemporalData<double, __m256d, unrollFactor>;
+            
+            size_t limit = endIndex - (endIndex % (DOUBLE_AVX_REGISTER_SIZE * unrollFactor));
+            for (size_t i = startIndex; i < limit; i += DOUBLE_AVX_REGISTER_SIZE * unrollFactor) {
+                STLKR_SIMD_MemoryManager::loadMultipleDataRegisters<double, __m256d, unrollFactor, numVectors>(data, simdData, unrollFactor, i);
+                _fusedMultiplyAddDoubleVectors<numVectors>(simdData, simdScalars, simdResult);
+                storeResultRegister(simdResult, result + i);
+                STLKR_SIMD_MemoryManager::setZero<double, __m256d, unrollFactor>(simdResult);
+            }
+        };
+        
+        
+        
+        for (size_t i = threadLimits[numPhysicalCores - 1].second; i < size; i++) {
             for (size_t j = 0; j < numVectors; j++) {
                 result[i] += data[j][i] * scaleFactors[j];
             }
         }
-
-        auto cacheScheduler = STLKR_Thread_CacheScheduler<double, availableThreads>(size, 32, 256, 1024);
     }
     
     

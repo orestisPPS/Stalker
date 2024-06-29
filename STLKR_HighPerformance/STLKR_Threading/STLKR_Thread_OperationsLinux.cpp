@@ -3,5 +3,3 @@
 //
 
 #include "STLKR_Thread_OperationsLinux.h"
-
-template <typename threadJob>

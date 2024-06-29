@@ -14,6 +14,8 @@ public:
     ~STLKR_Machine_Core() = default;
     void setHyperThreading(bool isHyperThreaded);
     std::vector<STLKR_Machine_Thread *> getThreads() const;
+    std::vector<STLKR_Machine_Thread *> getSlaveThreads() const;
+    std::vector<STLKR_Machine_Thread *> getStokerThreads() const;
     unsigned getThreadCount() const;
     void setThreadAffinity();
     void setThreadAffinity(cpu_set_t &coreSet);

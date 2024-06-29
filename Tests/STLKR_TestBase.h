@@ -31,6 +31,8 @@ namespace STLKR_Tests {
             static void printSuccess();
 
             static void printFailure();
+            
+            static std::string boolToOnOff(bool value, const std::string& name);
 
     };
 
