@@ -13,7 +13,7 @@
 
 namespace STLKR_Tests{
     
-    template<size_t size, size_t physicalCores = 2>
+    template<size_t size, size_t physicalCores = 4>
     class ThreadingPerformanceTest : public STLKR_PerformanceTestBase {
     public:
         ThreadingPerformanceTest(const std::string &path) :
@@ -100,7 +100,7 @@ namespace STLKR_Tests{
             auto name = "add_threads_" + std::to_string(numCores) +"_" +
                                   boolToOnOff(enableHyperThreading, "hyperThreading") + boolToOnOff(aligned, "alignment");
             logs.startSingleObservationTimer(name, STLKR_TimeUnit::microseconds);
-            STLKR_Thread_OperationsLinux::executeJob(additionJob, size, availableCores, enableHyperThreading);
+            STLKR_Thread_OperationsLinux::executeSlaveStokerJob(additionJob, size, availableCores, enableHyperThreading);
             logs.stopSingleObservationTimer(name);
             
             for (size_t i = 0; i < size; i++) {

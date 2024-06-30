@@ -11,7 +11,7 @@ int main() {
     auto exportPath = "../Tests/STLKR_PerformanceTests/logs/Threading";
     auto threadingTest = STLKR_Tests::ThreadingPerformanceTest<400000, 2>(exportPath);
 
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 0; i < 10; i++) {
         threadingTest.runTest();
     }
 

@@ -46,6 +46,32 @@ public:
     }
 
     template <typename threadJob>
+    static inline void executeSlaveStokerJob(threadJob job, unsigned size, std::vector<STLKR_Machine_Core *> &cores, bool enableHyperThreading = false) {
+        auto slaveThreadPool = std::vector<STLKR_Machine_Thread*>();
+        auto stokerThreadPool = std::vector<STLKR_Machine_Thread*>();
+        for (const auto &core : cores) {
+            core->setThreadAffinity();
+            auto coreSlaves = core->getSlaveThreads();
+            //auto coreStokers = core->getStokerThreads();
+            for (const auto &thread : coreSlaves)
+                slaveThreadPool.push_back(thread);
+//            for (const auto &thread : coreStokers)
+//                stokerThreadPool.push_back(thread);
+        }
+        unsigned threadBlockSize = (size + slaveThreadPool.size() - 1) / slaveThreadPool.size();
+        unsigned startIndex, endIndex;
+        for (int iThread = 0; iThread < slaveThreadPool.size(); ++iThread) {
+            startIndex = iThread * threadBlockSize;
+            endIndex = std::min((iThread + 1) * threadBlockSize, size);
+            slaveThreadPool[iThread]->executeJob(job, startIndex, endIndex, slaveThreadPool[iThread]->getCoreSet());
+        }
+        for (const auto &thread : slaveThreadPool) {
+            thread->join();
+            thread->resetThreadAffinity();
+        }
+    }
+
+    template <typename threadJob>
     static inline void executeJobSIMD(threadJob job, unsigned size, std::vector<STLKR_Machine_Core *> &cores, std::pair<unsigned, unsigned>* threadRange) {
         cpu_set_t slaveCoreSet, stokerCoreSet;
         CPU_ZERO(&slaveCoreSet);

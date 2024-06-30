@@ -21,6 +21,7 @@ public:
     const STLKR_Machine_SharedCache *getSharedCacheMemory();
     void setThreadAffinity(cpu_set_t &coreSet);
     void resetThreadAffinity();
+    cpu_set_t getCoreSet() const;
     void join() const;
 
     template<typename threadJob>
@@ -56,6 +57,7 @@ private:
     STLKR_Machine_SharedCache *_sharedCacheMemory;
     pthread_t _pThread;
     pthread_attr_t _pThreadAttribute{};
+    cpu_set_t _coreSet{};
 
     static inline void _initializeAttribute(pthread_attr_t& attribute);
     static inline void _destroyAttribute(pthread_attr_t& attribute);

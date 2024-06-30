@@ -41,14 +41,18 @@ void STLKR_Machine_Thread::setThreadAffinity(cpu_set_t &coreSet) {
     int result = pthread_attr_setaffinity_np(&_pThreadAttribute, sizeof(cpu_set_t), &coreSet);
     if (result != 0) std::cerr << "Error setting affinity for thread " << _id << std::endl;
     _isRunning = true;
+    _coreSet = coreSet;
 }
 
 void STLKR_Machine_Thread::resetThreadAffinity(){
-    cpu_set_t zeroSet;
-    CPU_ZERO(&zeroSet);
-    int result = pthread_attr_setaffinity_np(&_pThreadAttribute, sizeof(cpu_set_t), &zeroSet);
+    CPU_ZERO(&_coreSet);
+    int result = pthread_attr_setaffinity_np(&_pThreadAttribute, sizeof(cpu_set_t), &_coreSet);
     if (result != 0) std::cerr << "Error resetting affinity for thread " << _id << std::endl;
     _destroyAttribute(_pThreadAttribute);
+}
+
+cpu_set_t STLKR_Machine_Thread::getCoreSet() const{
+    return _coreSet;
 }
 
 unsigned STLKR_Machine_Thread::getId() const{

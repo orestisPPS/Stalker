@@ -264,7 +264,7 @@ def plot_data(data, category, parameters, save_path):
     ax.set_ylim(0, max(max(means), max(medians), max(std_devs)) * 1.2)
     # Generate a timestamp for the filename
     timestamp = datetime.now().strftime("%d_%m_%y_%H_%M_%S")
-    #plt.savefig(os.path.join(save_path, f'{category}_{timestamp}.png'))
+    plt.savefig(os.path.join(save_path, f'{category}_{timestamp}.png'))
     plt.show()
 
 
