@@ -2,20 +2,20 @@
 // Created by hal9000 on 6/15/24.
 //
 
-#ifndef STALKER_STLKR_MACHINE_CACHELEVEL_H
-#define STALKER_STLKR_MACHINE_CACHELEVEL_H
+#ifndef STALKER_CACHELEVEL_H
+#define STALKER_CACHELEVEL_H
 
 #include <iostream>
 #include <vector>
 
-class STLKR_Machine_CacheLevel {
+class CacheLevel {
     
 public:
-    STLKR_Machine_CacheLevel(unsigned level, unsigned size , const std::vector<unsigned> &threads);
+    CacheLevel(unsigned level, unsigned size , const std::vector<unsigned> &threads);
         
-    STLKR_Machine_CacheLevel() = default;
+    CacheLevel() = default;
     
-    ~STLKR_Machine_CacheLevel() = default;
+    ~CacheLevel() = default;
     
     unsigned getLevel() const;
     unsigned getSize() const;
@@ -33,4 +33,4 @@ private:
 };
 
 
-#endif //STALKER_STLKR_MACHINE_CACHELEVEL_H
+#endif //STALKER_CACHELEVEL_H

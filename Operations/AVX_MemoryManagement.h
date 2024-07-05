@@ -2,8 +2,8 @@
 // Created by hal9000 on 6/7/24.
 //
 
-#ifndef STALKER_STLKR_SIMD_MEMORYMANAGER_H
-#define STALKER_STLKR_SIMD_MEMORYMANAGER_H
+#ifndef STALKER_AVX_MEMORYMANAGEMENT_H
+#define STALKER_AVX_MEMORYMANAGEMENT_H
 
 // AVX register sizes in terms of elements per register
 #define DOUBLE_AVX_REGISTER_SIZE 4     // 256 bits / 64 bits per double
@@ -19,9 +19,8 @@
 #include <functional>
 #include <typeindex>
 
-#include "STLKR_Config_SIMD.h"
 
-class STLKR_SIMD_MemoryManager {
+class AVX_MemoryManagement {
 
 //    using PrefetchFunction = std::function<void(T*)>;
 //
@@ -215,4 +214,4 @@ class STLKR_SIMD_MemoryManager {
 };
 
 
-#endif //STALKER_STLKR_SIMD_MEMORYMANAGER_H
+#endif //STALKER_AVX_MEMORYMANAGEMENT_H

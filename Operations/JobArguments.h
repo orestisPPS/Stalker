@@ -2,8 +2,8 @@
 // Created by hal9000 on 6/21/24.
 //
 
-#ifndef STALKER_STLKR_THREADING_JOBARGUMENTS_H
-#define STALKER_STLKR_THREADING_JOBARGUMENTS_H
+#ifndef STALKER_JOBARGUMENTS_H
+#define STALKER_JOBARGUMENTS_H
 template <typename threadJob>
 struct DistributedJobArgs {
     threadJob job;
@@ -17,4 +17,4 @@ struct JobArgs {
 };
 
 
-#endif //STALKER_STLKR_THREADING_JOBARGUMENTS_H
+#endif //STALKER_JOBARGUMENTS_H

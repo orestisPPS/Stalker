@@ -8,8 +8,7 @@
 #include <cassert>
 #include "STLKR_PerformanceTestBase.h"
 #include "../../Utility/Timer.h"
-#include "../../STLKR_HighPerformance/STLKR_SIMD/STLKR_Operations_SIMD.h"
-#include "../../STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_CPUTopologyLinux.h"
+#include "../../MachineTopology/CPUTopologyLinux.h"
 
 namespace STLKR_Tests{
     
@@ -20,7 +19,7 @@ namespace STLKR_Tests{
             STLKR_PerformanceTestBase("ThreadingPerformanceTest", path),
             _data1(nullptr),
             _data2(nullptr),
-            _cpuTopology(STLKR_Machine_CPUTopologyLinux()){
+            _cpuTopology(CPUTopologyLinux()){
 
         }
         
@@ -35,48 +34,79 @@ namespace STLKR_Tests{
                 totalThreads += core->getThreads().size();
             }
             logs.addParameter("logical_cpus", std::to_string(totalThreads));
+            _runAdditionThreadTestAVX();
+            //_runAdditionThreadTest();
             
-            //Non Aligned Data
-            _data1 = new double[size];
-            _data2 = new double[size];
+            logs.exportToCSV(_path, "ThreadingTest");
+            logs.clearAllLogs();
+        }
+    private:
+        CPUTopologyLinux _cpuTopology;
+        double* _data1;
+        double* _data2;
+        
+        void _runAdditionThreadTestAVX(){
+
+            _data1 = static_cast<double*>(_mm_malloc(size * sizeof(double), 64));
+            _data2 = static_cast<double*>(_mm_malloc(size * sizeof(double), 64));
+            auto result = static_cast<double*>(_mm_malloc(size * sizeof(double), 64));
             for (size_t i = 0; i < size; i++) {
                 _data1[i] = static_cast<double>(i);
                 _data2[i] = static_cast<double>(i);
             }
-            stdSingleThreadAddition(false);
+            _stdSingleThreadAddition(true);
+
+            auto name = "avx_addition_threads_1";
+            logs.startSingleObservationTimer(name, STLKR_TimeUnit::microseconds);
+            auto simdConfig = AVX_Config();
+            double * data[2] = {_data1, _data2};
+            double coefficients[2] = {1E0, 1E0};
+            AVX_Operations<2>::template add<2, 1>(data, coefficients, result, size, simdConfig);
+            logs.stopSingleObservationTimer(name);
+
+            for (size_t i = 0; i < size; i++) {
+                if (result[i] != _data1[i] + _data2[i]) {
+                    std::cerr << "Error at index: " << i <<"Expected: " << _data1[i] + _data2[i] << "Computed: " << result[i] << std::endl;
+                    break;
+                }
+            }
+            _mm_free(_data1);
+            _mm_free(_data2);
+            _mm_free(result);
+        }
+        
+        void _runAdditionThreadTest(){
+            _data1 = new double[size];
+            _data2 = new double[size];
+            auto result = new double[size];
+            for (size_t i = 0; i < size; i++) {
+                _data1[i] = static_cast<double>(i);
+                _data2[i] = static_cast<double>(i);
+            }
+            _stdSingleThreadAddition(false);
             //hyper-threading enabled
-            multiThreadAddition(physicalCores, true, false);
+            _multiThreadAddition(physicalCores, true, false);
             //hyper-threading disabled
-            multiThreadAddition(physicalCores, false, false);
-            
+            _multiThreadAddition(physicalCores, false, false);
+
             //Aligned Data
             delete[] _data1;
             delete[] _data2;
             _data1 = static_cast<double*>(_mm_malloc(size * sizeof(double), 64));
             _data2 = static_cast<double*>(_mm_malloc(size * sizeof(double), 64));
-        
+
             for (size_t i = 0; i < size; i++) {
                 _data1[i] = static_cast<double>(i);
                 _data2[i] = static_cast<double>(i);
             }
-            stdSingleThreadAddition(true);
+            _stdSingleThreadAddition(true);
             //hyper-threading enabled
-            multiThreadAddition(physicalCores, true, true);
+            _multiThreadAddition(physicalCores, true, true);
             //hyper-threading disabled
-            multiThreadAddition(physicalCores, false, true);
-            
-            logs.exportToCSV(_path, "ThreadingTest");
-            logs.clearAllLogs();
-            _mm_free(_data1);
-            _mm_free(_data2);
+            _multiThreadAddition(physicalCores, false, true);
         }
-    private:
-        STLKR_Machine_CPUTopologyLinux _cpuTopology;
-        double* _data1;
-        double* _data2;
-
         
-        void stdSingleThreadAddition(bool aligned = false) {
+        void _stdSingleThreadAddition(bool aligned = false) {
             auto result = aligned ? static_cast<double*>(_mm_malloc(size * sizeof(double), 64)) : new double[size];
             auto name = "std_addition_threads_1_" + boolToOnOff(aligned, "alignment");
             logs.startSingleObservationTimer(name, STLKR_TimeUnit::microseconds);
@@ -87,7 +117,7 @@ namespace STLKR_Tests{
             delete[] result;
         }
 
-        void multiThreadAddition(unsigned  numCores, bool enableHyperThreading, bool aligned) {
+        void _multiThreadAddition(unsigned  numCores, bool enableHyperThreading, bool aligned) {
             auto result = aligned ? static_cast<double*>(_mm_malloc(size * sizeof(double), 64)) : new double[size];
             assert(numCores <= _cpuTopology.getPhysicalCores().size());
             auto additionJob = [&](unsigned startIndex, unsigned endIndex) {
@@ -96,11 +126,11 @@ namespace STLKR_Tests{
                 }
             };
             auto machineCores = _cpuTopology.getPhysicalCores();
-            auto availableCores = std::vector<STLKR_Machine_Core*>(machineCores.begin(), machineCores.begin() + numCores);
+            auto availableCores = std::vector<Core*>(machineCores.begin(), machineCores.begin() + numCores);
             auto name = "add_threads_" + std::to_string(numCores) +"_" +
-                                  boolToOnOff(enableHyperThreading, "hyperThreading") + boolToOnOff(aligned, "alignment");
+                                  boolToOnOff(enableHyperThreading, "hyperThreading") + "_" + boolToOnOff(aligned, "alignment");
             logs.startSingleObservationTimer(name, STLKR_TimeUnit::microseconds);
-            STLKR_Thread_OperationsLinux::executeSlaveStokerJob(additionJob, size, availableCores, enableHyperThreading);
+            Thread_Operations::executeSlaveStokerJob(additionJob, size, availableCores, enableHyperThreading);
             logs.stopSingleObservationTimer(name);
             
             for (size_t i = 0; i < size; i++) {

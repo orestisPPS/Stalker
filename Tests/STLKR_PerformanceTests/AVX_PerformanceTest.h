@@ -7,10 +7,10 @@
 
 #include <cassert>
 #include <thread>
-#include "../../STLKR_HighPerformance/STLKR_Threading/STLKR_Thread_Operations.h"
+#include "../../Operations/Thread_Operations.h"
 #include "STLKR_PerformanceTestBase.h"
-#include "../../STLKR_HighPerformance/STLKR_SIMD/STLKR_Config_SIMD.h"
-#include "../../STLKR_HighPerformance/STLKR_SIMD/STLKR_Operations_SIMD.h"
+#include "../../Operations/AVX_Config.h"
+#include "../../Operations/AVX_Operations.h"
 
 
 //Notes: Unroll 2 is one order of magnitude slower than unroll 4.
@@ -340,13 +340,13 @@ namespace STLKR_Tests{
             double* data[2] = {data1, data2};
             double coefficientsArray[2] = {3 , 7};
 
-            STLKR_Config_SIMD prefetchConfig;
+            AVX_Config prefetchConfig;
             prefetchConfig.setStore(STLKR_SIMD_Stores::Temporal);
 
             prefetchConfig.setDistance(64);
             prefetchConfig.setHint(STLKR_SIMD_PrefetchHint::T0);
             logs.startSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t0", STLKR_TimeUnit::nanoseconds);
-            STLKR_Operations_SIMD<4, 4>::template _addSIMD<2>(data, coefficientsArray, resultAVX, size, prefetchConfig);
+            AVX_Operations<4, 4>::template _addSIMD<2>(data, coefficientsArray, resultAVX, size, prefetchConfig);
             logs.stopSingleObservationTimer("add_avx_on_unroll_16_prefetch_64_hint_t0");
             
 //            for (int i = 0; i < size; i++) 

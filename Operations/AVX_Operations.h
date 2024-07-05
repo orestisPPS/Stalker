@@ -2,21 +2,20 @@
 // Created by hal9000 on 4/21/24.
 //
 
-#ifndef STALKER_STLKR_OPERATIONS_SIMD_H
-#define STALKER_STLKR_OPERATIONS_SIMD_H
+#ifndef STALKER_AVX_OPERATIONS_H
+#define STALKER_AVX_OPERATIONS_H
 #include <immintrin.h>
 #include <map>
 #include <typeindex>
 #include <typeinfo>
 #include <stdexcept>
 #include <iomanip>
-#include "STLKR_SIMD_MemoryManager.h"
-
-#include "../STLKR_Threading/STLKR_Thread_OperationsLinux.h"
-#include "STLKR_Config_SIMD.h"
+#include "AVX_MemoryManagement.h"
+#include "AVX_Config.h"
+#include "Thread_Operations.h"
 
 template <unsigned unrollFactor, size_t availableThreads = 1>
-class STLKR_Operations_SIMD {
+class AVX_Operations {
 
 public:
     
@@ -52,7 +51,7 @@ public:
 //    }
 
 
-    constexpr static void add(double *data1, double scale1, double *data2, double scale2, double *result, unsigned size,STLKR_Config_SIMD prefetchConfig) {
+    constexpr static void add(double *data1, double scale1, double *data2, double scale2, double *result, unsigned size, AVX_Config prefetchConfig) {
         size_t limit = size - (size % (DOUBLE_AVX_REGISTER_SIZE * 4));  // Adjusted for unrolling factor
         __m256d va1, va2, va3, va4, ve1, ve2, ve3, ve4, vb1, vb2, vb3, vb4;
 
@@ -96,21 +95,21 @@ public:
         }
     }
     template<unsigned int numVectors>
-    static constexpr inline void _addSIMD(double** data, double* scaleFactors, double* result, unsigned int size, STLKR_Config_SIMD prefetchConfig) {
+    static constexpr inline void _addSIMD(double** data, double* scaleFactors, double* result, unsigned int size, AVX_Config prefetchConfig) {
         __m256d simdData[numVectors * unrollFactor];
         __m256d simdScalars[numVectors];
         __m256d simdResult[unrollFactor];
         void (*storeResultRegister)(__m256d*, double*) = (prefetchConfig.getStore() == STLKR_SIMD_Stores::Temporal) ?
-            STLKR_SIMD_MemoryManager::storeTemporalData<double, __m256d, unrollFactor> :
-            STLKR_SIMD_MemoryManager::storeNonTemporalData<double, __m256d, unrollFactor>;
+            AVX_MemoryManagement::storeTemporalData<double, __m256d, unrollFactor> :
+            AVX_MemoryManagement::storeNonTemporalData<double, __m256d, unrollFactor>;
         size_t limit = size - (size % (DOUBLE_AVX_REGISTER_SIZE * unrollFactor));
 
-        STLKR_SIMD_MemoryManager::broadcastScalars<double,__m256d, numVectors>(scaleFactors, simdScalars);
+        AVX_MemoryManagement::broadcastScalars<double,__m256d, numVectors>(scaleFactors, simdScalars);
         for (size_t i = 0; i < limit; i += DOUBLE_AVX_REGISTER_SIZE * unrollFactor) {
-            STLKR_SIMD_MemoryManager::loadMultipleDataRegisters<double, __m256d, unrollFactor, numVectors>(data, simdData, unrollFactor, i);
+            AVX_MemoryManagement::loadMultipleDataRegisters<double, __m256d, unrollFactor, numVectors>(data, simdData, unrollFactor, i);
             _fusedMultiplyAddDoubleVectors<numVectors>(simdData, simdScalars, simdResult);
             storeResultRegister(simdResult, result + i);
-            STLKR_SIMD_MemoryManager::setZero<double, __m256d, unrollFactor>(simdResult);
+            AVX_MemoryManagement::setZero<double, __m256d, unrollFactor>(simdResult);
         }
         for (size_t i = limit; i < size; i++) {
             for (size_t j = 0; j < numVectors; j++) {
@@ -121,12 +120,12 @@ public:
     }
 
     template<unsigned int numVectors, unsigned numPhysicalCores>
-    static constexpr inline void add(double** data, double* scaleFactors, double* result, unsigned int size, STLKR_Config_SIMD prefetchConfig) {
+    static constexpr inline void add(double** data, double* scaleFactors, double* result, unsigned int size, AVX_Config prefetchConfig) {
 
         __m256d simdScalars[numVectors];
-        STLKR_SIMD_MemoryManager::broadcastScalars<double,__m256d, numVectors>(scaleFactors, simdScalars);
+        AVX_MemoryManagement::broadcastScalars<double,__m256d, numVectors>(scaleFactors, simdScalars);
         
-        pair<unsigned, unsigned> threadLimits[numPhysicalCores];
+        std::pair<unsigned, unsigned> threadLimits[numPhysicalCores];
         unsigned simdBlockSize = DOUBLE_AVX_REGISTER_SIZE * unrollFactor;
         unsigned totalSimdBlocks = (size + simdBlockSize - 1) / simdBlockSize;
         unsigned threadBlockSize = (totalSimdBlocks + numPhysicalCores - 1) / numPhysicalCores;
@@ -142,20 +141,19 @@ public:
             __m256d simdData[numVectors * unrollFactor];
             __m256d simdResult[unrollFactor];
             void (*storeResultRegister)(__m256d*, double*) = (prefetchConfig.getStore() == STLKR_SIMD_Stores::Temporal) ?
-                                                             STLKR_SIMD_MemoryManager::storeTemporalData<double, __m256d, unrollFactor> :
-                                                             STLKR_SIMD_MemoryManager::storeNonTemporalData<double, __m256d, unrollFactor>;
+                                                             AVX_MemoryManagement::storeTemporalData<double, __m256d, unrollFactor> :
+                                                             AVX_MemoryManagement::storeNonTemporalData<double, __m256d, unrollFactor>;
             
             size_t limit = endIndex - (endIndex % (DOUBLE_AVX_REGISTER_SIZE * unrollFactor));
             for (size_t i = startIndex; i < limit; i += DOUBLE_AVX_REGISTER_SIZE * unrollFactor) {
-                STLKR_SIMD_MemoryManager::loadMultipleDataRegisters<double, __m256d, unrollFactor, numVectors>(data, simdData, unrollFactor, i);
+                AVX_MemoryManagement::loadMultipleDataRegisters<double, __m256d, unrollFactor, numVectors>(data, simdData, unrollFactor, i);
                 _fusedMultiplyAddDoubleVectors<numVectors>(simdData, simdScalars, simdResult);
                 storeResultRegister(simdResult, result + i);
-                STLKR_SIMD_MemoryManager::setZero<double, __m256d, unrollFactor>(simdResult);
+                AVX_MemoryManagement::setZero<double, __m256d, unrollFactor>(simdResult);
             }
         };
         
-        
-        
+        Thread_Operations::executeJobSIMD(addThreadJob, size, threadLimits);
         for (size_t i = threadLimits[numPhysicalCores - 1].second; i < size; i++) {
             for (size_t j = 0; j < numVectors; j++) {
                 result[i] += data[j][i] * scaleFactors[j];
@@ -188,5 +186,5 @@ private:
     
     
 };// STLKR_LinearAlgebra
-#endif //STALKER_STLKR_OPERATIONS_SIMD_H
+#endif //STALKER_AVX_OPERATIONS_H
  

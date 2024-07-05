@@ -2,8 +2,6 @@
 #include "Tests/STLKR_PerformanceTests/AVX_PerformanceTest.h"
 #include "Tests/STLKR_PerformanceTests/ThreadingPerformanceTest.h"
 #include "LinearAlgebra/ContiguousMemoryStorage/NumericalVector.h"
-#include "STLKR_HighPerformance/STLKR_Threading/STLKR_Thread_OperationsLinux.h"
-#include "STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_CPUTopologyLinux.h"
 #include <chrono>
 
 int main() {

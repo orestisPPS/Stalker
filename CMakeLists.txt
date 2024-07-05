@@ -11,7 +11,6 @@ add_executable(stalker main.cpp
         SpatialDiscretization/MeshSpecs.cpp
         SpatialDiscretization/MeshSpecs.h
         SpatialDiscretization/MeshFactory.h
-        STLKR_HighPerformance/STLKR_Threading/STLKR_Thread_Operations.h
         Tests/NumericalVectorTest.h
         LinearAlgebra/ContiguousMemoryStorage/VectorOperations.h
         LinearAlgebra/ContiguousMemoryStorage/Norms.cpp
@@ -19,7 +18,7 @@ add_executable(stalker main.cpp
         LinearAlgebra/ContiguousMemoryStorage/STLKR_EnumerableMathematicalOperations/STLKR_EnumerableAlgebraicOperations.h
         LinearAlgebra/ContiguousMemoryStorage/STLKR_EnumerableMathematicalOperations/STLKR_Operations.h
         LinearAlgebra/STLKR_ArithmeticTypes.h
-        STLKR_HighPerformance/STLKR_SIMD/STLKR_Operations_SIMD.h
+        Operations/AVX_Operations.h
         Tests/STLKR_PerformanceTests/AVX_PerformanceTest.h
         Tests/TestBase.h
         Utility/Timer.cpp
@@ -30,20 +29,20 @@ add_executable(stalker main.cpp
         Tests/STLKR_TestBase.cpp
         Tests/STLKR_TestBase.h
         Tests/STLKR_PerformanceTests/STLKR_PerformanceTestBase.cpp
-        STLKR_HighPerformance/STLKR_SIMD/STLKR_Config_SIMD.h
-        STLKR_HighPerformance/STLKR_SIMD/STLKR_SIMD_MemoryManager.h
-        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_CPUTopologyLinux.cpp
-        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_CPUTopologyLinux.h
-        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_Core.cpp
-        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_Core.h
-        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_CacheLevel.cpp
-        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_CacheLevel.h
-        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_Thread.cpp
-        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_Thread.h
-        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_SharedCache.cpp
-        STLKR_HighPerformance/STLKR_MachineSetup/STLKR_Machine_SharedCache.h
-        STLKR_HighPerformance/STLKR_Threading/STLKR_Thread_OperationsLinux.cpp
-        STLKR_HighPerformance/STLKR_Threading/STLKR_Thread_OperationsLinux.h
-        STLKR_HighPerformance/STLKR_Threading/STLKR_Threading_JobArguments.h
+        Operations/AVX_MemoryManagement.h
+        MachineTopology/CPUTopologyLinux.cpp
+        MachineTopology/CPUTopologyLinux.h
+        MachineTopology/Core.cpp
+        MachineTopology/Core.h
+        MachineTopology/CacheLevel.cpp
+        MachineTopology/CacheLevel.h
+        MachineTopology/Thread.cpp
+        MachineTopology/Thread.h
+        MachineTopology/SharedCache.cpp
+        MachineTopology/SharedCache.h
+        Operations/Thread_Operations.h
+        Operations/JobArguments.h
         Tests/STLKR_PerformanceTests/ThreadingPerformanceTest.h
+        Operations/CPU_Manager.cpp
+        Operations/CPU_Manager.h
 )

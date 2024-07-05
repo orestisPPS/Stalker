@@ -2,23 +2,26 @@
 // Created by hal9000 on 6/16/24.
 //
 
-#ifndef STALKER_STLKR_MACHINE_THREAD_H
-#define STALKER_STLKR_MACHINE_THREAD_H
+#ifndef STALKER_THREAD_H
+#define STALKER_THREAD_H
 
-#include "STLKR_Machine_SharedCache.h"
+#include "SharedCache.h"
 #include <pthread.h>
 
 
-class STLKR_Machine_Thread{
+class Thread{
 public:
-    STLKR_Machine_Thread() = default;
-    STLKR_Machine_Thread(unsigned id, unsigned clockMin, unsigned clockMax, STLKR_Machine_SharedCache *sharedCacheMemory);
-    ~STLKR_Machine_Thread() = default;
+    Thread() = default;
+    Thread(unsigned id, unsigned parentId, unsigned clockMin, unsigned clockMax, SharedCache *sharedCacheMemory);
+
+
+    ~Thread() = default;
     unsigned getId() const;
+    unsigned getParentId() const;
     unsigned getClockMin() const;
     unsigned getClockMax() const;
     bool isRunning() const;
-    const STLKR_Machine_SharedCache *getSharedCacheMemory();
+    const SharedCache *getSharedCacheMemory();
     void setThreadAffinity(cpu_set_t &coreSet);
     void resetThreadAffinity();
     cpu_set_t getCoreSet() const;
@@ -51,10 +54,11 @@ private:
     }
 
     unsigned _id;
+    unsigned _parentId;
     unsigned _clockMin;
     unsigned _clockMax;
     bool _isRunning;
-    STLKR_Machine_SharedCache *_sharedCacheMemory;
+    SharedCache *_sharedCacheMemory;
     pthread_t _pThread;
     pthread_attr_t _pThreadAttribute{};
     cpu_set_t _coreSet{};
@@ -64,4 +68,4 @@ private:
 };
 
 
-#endif //STALKER_STLKR_MACHINE_THREAD_H
+#endif //STALKER_THREAD_H

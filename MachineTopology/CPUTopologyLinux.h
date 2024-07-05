@@ -2,8 +2,8 @@
 // Created by hal9000 on 6/10/24.
 //
 
-#ifndef STALKER_STLKR_MACHINE_CPUTOPOLOGYLINUX_H
-#define STALKER_STLKR_MACHINE_CPUTOPOLOGYLINUX_H
+#ifndef STALKER_CPUTOPOLOGYLINUX_H
+#define STALKER_CPUTOPOLOGYLINUX_H
 
 #include <iostream>
 #include <fstream>
@@ -16,26 +16,26 @@
 #include <dirent.h>
 #include <chrono>
 #include <unordered_map>
-#include "STLKR_Machine_Core.h"
-#include "STLKR_Machine_CacheLevel.h"
+#include "Core.h"
+#include "CacheLevel.h"
 
-class STLKR_Machine_CPUTopologyLinux {
+class CPUTopologyLinux {
 
 public:
-    explicit STLKR_Machine_CPUTopologyLinux(std::string cpuPath = "/sys/devices/system/cpu/");
-    ~STLKR_Machine_CPUTopologyLinux();
+    explicit CPUTopologyLinux(std::string cpuPath = "/sys/devices/system/cpu/");
+    ~CPUTopologyLinux();
     void print_processor_specs() const;
-    std::vector<STLKR_Machine_Core*> getPhysicalCores() const;
-    std::vector<STLKR_Machine_Thread*> getThreads() const;
-    std::vector<STLKR_Machine_CacheLevel*> getCacheLevels() const;
-    std::vector<STLKR_Machine_SharedCache*> getSharedCaches() const;
+    std::vector<Core*> getPhysicalCores() const;
+    std::vector<Thread*> getThreads() const;
+    std::vector<CacheLevel*> getCacheLevels() const;
+    std::vector<SharedCache*> getSharedCaches() const;
 
 private:
     std::string _cpuPath;
-    std::vector<STLKR_Machine_Core*> _physicalCores;
-    std::vector<STLKR_Machine_Thread*> _threads;
-    std::vector<STLKR_Machine_CacheLevel*> _cacheLevels;
-    std::vector<STLKR_Machine_SharedCache*> _sharedCaches;
+    std::vector<Core*> _physicalCores;
+    std::vector<Thread*> _threads;
+    std::vector<CacheLevel*> _cacheLevels;
+    std::vector<SharedCache*> _sharedCaches;
     void _readThreads();
     void _readCores();
     void _readCacheLevels();
@@ -54,4 +54,4 @@ private:
 };
 
 
-#endif //STALKER_STLKR_MACHINE_CPUTOPOLOGYLINUX_H
+#endif //STALKER_CPUTOPOLOGYLINUX_H

@@ -5,44 +5,44 @@
 #include <iostream>
 #include <cstring>
 #include <bitset>
-#include "STLKR_Machine_Core.h"
+#include "Core.h"
 
-STLKR_Machine_Core::STLKR_Machine_Core(unsigned id, std::vector<STLKR_Machine_Thread*> threads) {
+Core::Core(unsigned id, std::vector<Thread*> threads) {
     _id = id;
     _threads = std::move(threads);
     _thisCoreSet = {};
 }
 
-unsigned STLKR_Machine_Core::getId() const{
+unsigned Core::getId() const{
     return _id;
 }
 
-void STLKR_Machine_Core::setHyperThreading(bool isHyperThreaded) {
+void Core::setHyperThreading(bool isHyperThreaded) {
     _isHyperThreaded = isHyperThreaded;
 }
 
-std::vector<STLKR_Machine_Thread *> STLKR_Machine_Core::getThreads() const{
+std::vector<Thread *> Core::getThreads() const{
     if (_isHyperThreaded)
         return _threads;
     else
-        return std::vector<STLKR_Machine_Thread*>{_threads[0]};
+        return std::vector<Thread*>{_threads[0]};
 }
 
-std::vector<STLKR_Machine_Thread *> STLKR_Machine_Core::getSlaveThreads() const{
-    auto slaveThreads = std::vector<STLKR_Machine_Thread*>(_threads.size() - 1);
+std::vector<Thread *> Core::getSlaveThreads() const{
+    auto slaveThreads = std::vector<Thread*>(_threads.size() - 1);
     std::copy(_threads.begin(), _threads.end() - 1, slaveThreads.begin());
     return slaveThreads;
 }
 
-std::vector<STLKR_Machine_Thread *> STLKR_Machine_Core::getStokerThreads() const{
-    return std::vector<STLKR_Machine_Thread*>{_threads[_threads.size() - 1]};
+std::vector<Thread *> Core::getStokerThreads() const{
+    return std::vector<Thread*>{_threads[_threads.size() - 1]};
 }
 
-unsigned STLKR_Machine_Core::getThreadCount() const{
+unsigned Core::getThreadCount() const{
     return _threads.size();
 }
 
-void STLKR_Machine_Core::setThreadAffinity() {
+void Core::setThreadAffinity() {
     CPU_ZERO(&_thisCoreSet);
     auto availableThreads = _isHyperThreaded ? _threads.size() : 1;
     for (int i = 0; i < availableThreads; ++i) {
@@ -50,26 +50,26 @@ void STLKR_Machine_Core::setThreadAffinity() {
     }
 }
 
-void STLKR_Machine_Core::setThreadAffinity(cpu_set_t &coreSet) {
+void Core::setThreadAffinity(cpu_set_t &coreSet) {
     auto availableThreads = _isHyperThreaded ? _threads.size() : 1;
     for (int i = 0; i < availableThreads; ++i) {
         _threads[i]->setThreadAffinity(coreSet);
     }
 }
 
-void STLKR_Machine_Core::resetThreadAffinity() {
+void Core::resetThreadAffinity() {
     auto availableThreads = _isHyperThreaded ? _threads.size() : 1;
     for (int i = 0; i < availableThreads; ++i) {
         _threads[i]->resetThreadAffinity();
     }
 }
 
-void STLKR_Machine_Core::joinThreads() const {
+void Core::joinThreads() const {
     for (const auto &thread : _threads)
         thread->join();
 }
 
-void STLKR_Machine_Core::printCPUSet(bool printBitSet) const {
+void Core::printCPUSet(bool printBitSet) const {
     std::cout << "CPU Set for core " << _id << ": " << std::endl;
 
     if (printBitSet) {

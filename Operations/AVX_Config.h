@@ -2,8 +2,8 @@
 // Created by hal9000 on 6/3/24.
 //
 
-#ifndef STALKER_STLKR_CONFIG_SIMD_H
-#define STALKER_STLKR_CONFIG_SIMD_H
+#ifndef STALKER_AVX_CONFIG_H
+#define STALKER_AVX_CONFIG_H
 
 #include <immintrin.h>
 
@@ -20,7 +20,7 @@ enum class STLKR_SIMD_Stores{
     NonTemporal = 1
 };
 
-struct STLKR_Config_SIMD {
+struct AVX_Config {
 public:
 
     constexpr inline _mm_hint getHint() const {
@@ -51,4 +51,4 @@ private:
 };
 
 
-#endif //STALKER_STLKR_CONFIG_SIMD_H
+#endif //STALKER_AVX_CONFIG_H

@@ -6,7 +6,9 @@
 #define STALKER_NORMS_H
 
 #include <cmath>
-#include "../../STLKR_HighPerformance/STLKR_Threading/STLKR_Thread_Operations.h"
+#include "../../Operations/Thread_Operations.h"
+#include "../../Operations/AVX_Operations.h"
+
 namespace STLKR_LinearAlgebra {
     enum Norm_Type {
         // L1 (Manhattan / Taxicab) norm
