@@ -67,3 +67,7 @@ void Thread::_initializeAttribute(pthread_attr_t &attribute) {
 void Thread::_destroyAttribute(pthread_attr_t &attribute) {
     pthread_attr_destroy(&attribute);
 }
+
+unsigned Thread::getParentId() const {
+    return _parentId;
+}

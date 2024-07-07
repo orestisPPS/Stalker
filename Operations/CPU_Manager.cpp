@@ -3,7 +3,6 @@
 //
 
 #include <cassert>
-#include <mutex>
 #include "CPU_Manager.h"
 
 CPU_Manager::CPU_Manager() {
@@ -28,8 +27,8 @@ CPU_Manager::CPU_Manager() {
     }
 }
 
-std::vector<const Core*> CPU_Manager::getCores(unsigned numCores) {
-    std::vector<const Core*> cores;
+std::vector<Core *> CPU_Manager::getCores(unsigned numCores) {
+    std::vector<Core*> cores;
     cores.reserve(numCores);
     for (const auto &core : _corePool) {
         if (core.second) {
@@ -100,6 +99,8 @@ std::vector<const Core*> CPU_Manager::getEcoCores(unsigned numCores) {
 }
 
 std::vector<const Thread*> CPU_Manager::getThreads(unsigned numThreads) {
+    if (numThreads > _threads.size() || numThreads == 0)
+        throw std::runtime_error("Invalid number of threads requested");
     std::vector<const Thread*> threads;
     threads.reserve(numThreads);
     for (const auto &thread : _threadPool) {
@@ -120,16 +121,32 @@ std::vector<const Thread*> CPU_Manager::getThreads(unsigned numThreads) {
 }
 
 Thread* CPU_Manager::getThread() {
-    for (const auto &thread : _threadPool) {
-        if (thread.second) {
-            _threadPool[thread.first] = false;
-            const auto parentCore = _cores[thread.first->getParentId()];
-            _corePool[parentCore] = false;
-            if (parentCore->getThreads().size() > 1)
-                _hyperThreadCorePool[parentCore] = false;
-            else
-                _ecoCorePool[parentCore] = false;
-            return thread.first;
+    if (!_ecoCorePool.empty()) {
+        for (const auto &thread : _threadPool) {
+            if (thread.second) {
+                _threadPool[thread.first] = false;
+                const auto parentCore = _cores[thread.first->getParentId()];
+                _corePool[parentCore] = false;
+                if (parentCore->getThreads().size() > 1)
+                    _hyperThreadCorePool[parentCore] = false;
+                else
+                    _ecoCorePool[parentCore] = false;
+                return thread.first;
+            }
+        }
+    }
+    else {
+        for (const auto &thread : _threadPool) {
+            if (thread.second) {
+                _threadPool[thread.first] = false;
+                const auto parentCore = _cores[thread.first->getParentId()];
+                _corePool[parentCore] = false;
+                if (parentCore->getThreads().size() > 1)
+                    _hyperThreadCorePool[parentCore] = false;
+                else
+                    _ecoCorePool[parentCore] = false;
+                return thread.first;
+            }
         }
     }
     return nullptr;

@@ -17,15 +17,24 @@ namespace STLKR_Tests {
     }
 
     void STLKR_TestBase::printSuccess() {
-        std::cout << "\033[1;32m[PASSED ]\033[0m\n";  // This adds a green [PASSED] indicator
+        std::cout << "\033[1;32m[PASSED]\033[0m";
     }
 
     void STLKR_TestBase::printFailure() {
-        std::cout << "\033[1;31m[FAILED ]\033[0m\n";  // This adds a red [FAILED] indicator
+        std::cout << "\033[1;31m[FAILED]\033[0m";
     }
 
     std::string STLKR_TestBase::boolToOnOff(bool value, const std::string& name) {
         return value ? name + "_on" : name + "_off";
+    }
+
+    void STLKR_TestBase::printTestCaseResult(bool success, const std::string& name) {
+        if (success)
+            printSuccess();
+        else
+            printFailure();
+
+        std::cout << " " << name << std::endl;
     }
 
 //    void STLKR_TestBase::_welcomeMessage() {

@@ -1,22 +1,24 @@
 #include <iostream>
 #include "Tests/STLKR_PerformanceTests/AVX_PerformanceTest.h"
 #include "Tests/STLKR_PerformanceTests/ThreadingPerformanceTest.h"
-#include "LinearAlgebra/ContiguousMemoryStorage/NumericalVector.h"
+#include "Tests/StalkerPerformanceVectorTest.h"
 #include <chrono>
 
 int main() {
     
     auto exportPath = "../Tests/STLKR_PerformanceTests/logs/Threading";
-    auto threadingTest = STLKR_Tests::ThreadingPerformanceTest<400000, 2>(exportPath);
-
+    //auto threadingTest = STLKR_Tests::ThreadingPerformanceTest<400000, 2>(exportPath);
+    
     for (int i = 0; i < 10; i++) {
-        threadingTest.runTest();
+        //threadingTest.runTest();
     }
 
+    auto vectorTest = STLKR_Tests::StalkerPerformanceVectorTest<2>();
+    vectorTest.runTest();
 
  
     //No memory bugs with 40000000 elements
-    cout << "ΔΩΣΕ ΓΚΑΖΙ ΜΩΡΗ ΑΝΑΠΗΡΗ!!!!!!!!!" << endl;
+    std::cout << "ΔΩΣΕ ΓΚΑΖΙ ΜΩΡΗ ΑΝΑΠΗΡΗ!!!!!!!!!" << std::endl;
 //    
 //    auto avxTest = STLKR_Tests::RawPointerAVX_PerformanceTest<4000>(exportPath);
 //    //auto avxTest = STLKR_Tests::RawPointerAVX_PerformanceTest<40000000>(exportPath);

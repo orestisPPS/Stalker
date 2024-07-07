@@ -6,11 +6,12 @@
 #define STALKER_CPU_MANAGER_H
 #include "../MachineTopology/CPUTopologyLinux.h"
 #include <unordered_map>
+#include <mutex>
 
 class CPU_Manager {
 public:
     CPU_Manager();
-    std::vector<const Core*> getCores(unsigned numCores);
+    std::vector<Core *> getCores(unsigned numCores);
     Core* getCore(bool hyperThread = false);
     std::vector<const Core*> getHyperThreadCores(unsigned numCores);
     std::vector<const Core*> getEcoCores(unsigned numCores);

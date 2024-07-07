@@ -26,8 +26,8 @@ namespace STLKR_Tests {
             
             //void _welcomeMessage();
             
-            virtual void logTestCaseStart(const std::string& name) = 0;
-
+            static void printTestCaseResult(bool success, const std::string& name);
+            
             static void printSuccess();
 
             static void printFailure();

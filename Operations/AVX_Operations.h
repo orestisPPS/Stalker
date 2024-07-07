@@ -95,11 +95,11 @@ public:
         }
     }
     template<unsigned int numVectors>
-    static constexpr inline void _addSIMD(double** data, double* scaleFactors, double* result, unsigned int size, AVX_Config prefetchConfig) {
+    static constexpr inline void _addSIMD(double** data, double* scaleFactors, double* result, unsigned int size, bool temporalStore = false) {
         __m256d simdData[numVectors * unrollFactor];
         __m256d simdScalars[numVectors];
         __m256d simdResult[unrollFactor];
-        void (*storeResultRegister)(__m256d*, double*) = (prefetchConfig.getStore() == STLKR_SIMD_Stores::Temporal) ?
+        void (*storeResultRegister)(__m256d*, double*) = temporalStore ?
             AVX_MemoryManagement::storeTemporalData<double, __m256d, unrollFactor> :
             AVX_MemoryManagement::storeNonTemporalData<double, __m256d, unrollFactor>;
         size_t limit = size - (size % (DOUBLE_AVX_REGISTER_SIZE * unrollFactor));
@@ -120,7 +120,7 @@ public:
     }
 
     template<unsigned int numVectors, unsigned numPhysicalCores>
-    static constexpr inline void add(double** data, double* scaleFactors, double* result, unsigned int size, AVX_Config prefetchConfig) {
+    static constexpr inline void add(double** data, double* scaleFactors, double* result, unsigned int size, bool temporalStore = false) {
 
         __m256d simdScalars[numVectors];
         AVX_MemoryManagement::broadcastScalars<double,__m256d, numVectors>(scaleFactors, simdScalars);
@@ -140,9 +140,9 @@ public:
         auto addThreadJob = [&](unsigned startIndex, unsigned endIndex) {
             __m256d simdData[numVectors * unrollFactor];
             __m256d simdResult[unrollFactor];
-            void (*storeResultRegister)(__m256d*, double*) = (prefetchConfig.getStore() == STLKR_SIMD_Stores::Temporal) ?
-                                                             AVX_MemoryManagement::storeTemporalData<double, __m256d, unrollFactor> :
-                                                             AVX_MemoryManagement::storeNonTemporalData<double, __m256d, unrollFactor>;
+            void (*storeResultRegister)(__m256d*, double*) = temporalStore ?
+                 AVX_MemoryManagement::storeTemporalData<double, __m256d, unrollFactor> :
+                 AVX_MemoryManagement::storeNonTemporalData<double, __m256d, unrollFactor>;
             
             size_t limit = endIndex - (endIndex % (DOUBLE_AVX_REGISTER_SIZE * unrollFactor));
             for (size_t i = startIndex; i < limit; i += DOUBLE_AVX_REGISTER_SIZE * unrollFactor) {
@@ -153,7 +153,7 @@ public:
             }
         };
         
-        Thread_Operations::executeJobSIMD(addThreadJob, size, threadLimits);
+        Thread_Operations::executeJob(addThreadJob, size, threadLimits);
         for (size_t i = threadLimits[numPhysicalCores - 1].second; i < size; i++) {
             for (size_t j = 0; j < numVectors; j++) {
                 result[i] += data[j][i] * scaleFactors[j];

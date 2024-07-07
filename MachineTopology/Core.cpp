@@ -25,7 +25,21 @@ std::vector<Thread *> Core::getThreads() const{
     if (_isHyperThreaded)
         return _threads;
     else
-        return std::vector<Thread*>{_threads[0]};
+        return {_threads[0]};
+}
+
+void Core::getThreads(std::vector<Thread*> &threads) const{
+    if (_isHyperThreaded)
+        threads = _threads;
+    else
+        threads = {_threads[0]};
+}
+
+void Core::addThreadsToPool(std::list<Thread*> &threadPool) const {
+    if (_isHyperThreaded)
+        threadPool.insert(threadPool.end(), _threads.begin(), _threads.end());
+    else
+        threadPool.push_back(_threads[0]);
 }
 
 std::vector<Thread *> Core::getSlaveThreads() const{
@@ -34,8 +48,25 @@ std::vector<Thread *> Core::getSlaveThreads() const{
     return slaveThreads;
 }
 
+void Core::getSlaveThreads(std::vector<Thread*> &threads) const{
+    threads = std::vector<Thread*>(_threads.size() - 1);
+    std::copy(_threads.begin(), _threads.end() - 1, threads.begin());
+}
+
+void Core::addSlaveThreadsToPool(std::list<Thread*> &threadPool) const {
+    threadPool.insert(threadPool.end(), _threads.begin(), _threads.end() - 1);
+}
+
 std::vector<Thread *> Core::getStokerThreads() const{
     return std::vector<Thread*>{_threads[_threads.size() - 1]};
+}
+
+void Core::getStokerThreads(std::vector<Thread*> &threads) const{
+    threads = std::vector<Thread*>{_threads[_threads.size() - 1]};
+}
+
+void Core::addStokerThreadsToPool(std::list<Thread*> &threadPool) const {
+    threadPool.push_back(_threads[_threads.size() - 1]);
 }
 
 unsigned Core::getThreadCount() const{

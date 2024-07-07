@@ -6,6 +6,7 @@
 #define STALKER_CORE_H
 
 #include <vector>
+#include <list>
 #include "Thread.h"
 
 class Core{
@@ -14,8 +15,14 @@ public:
     ~Core() = default;
     void setHyperThreading(bool isHyperThreaded);
     std::vector<Thread *> getThreads() const;
+    void getThreads(std::vector<Thread*> &threads) const;
+    void addThreadsToPool(std::list<Thread*> &threadPool) const;
     std::vector<Thread *> getSlaveThreads() const;
+    void getSlaveThreads(std::vector<Thread*> &threads) const;
+    void addSlaveThreadsToPool(std::list<Thread*> &threadPool) const;
     std::vector<Thread *> getStokerThreads() const;
+    void getStokerThreads(std::vector<Thread*> &threads) const;
+    void addStokerThreadsToPool(std::list<Thread*> &threadPool) const;
     unsigned getThreadCount() const;
     void setThreadAffinity();
     void setThreadAffinity(cpu_set_t &coreSet);

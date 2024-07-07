@@ -9,7 +9,4 @@ namespace STLKR_Tests {
                                                                                    logs(Logs(testName)),
                                                                                    _path(path){}
                                                                                    
-    void STLKR_PerformanceTestBase::logTestCaseStart(const std::string& name) {
-        cout << "running performance test case: " << name << "..." << endl;
-    }
 } // STLKR_Tests

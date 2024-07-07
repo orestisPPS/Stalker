@@ -12,11 +12,8 @@ add_executable(stalker main.cpp
         SpatialDiscretization/MeshSpecs.h
         SpatialDiscretization/MeshFactory.h
         Tests/NumericalVectorTest.h
-        LinearAlgebra/ContiguousMemoryStorage/VectorOperations.h
         LinearAlgebra/ContiguousMemoryStorage/Norms.cpp
         LinearAlgebra/ContiguousMemoryStorage/Norms.h
-        LinearAlgebra/ContiguousMemoryStorage/STLKR_EnumerableMathematicalOperations/STLKR_EnumerableAlgebraicOperations.h
-        LinearAlgebra/ContiguousMemoryStorage/STLKR_EnumerableMathematicalOperations/STLKR_Operations.h
         LinearAlgebra/STLKR_ArithmeticTypes.h
         Operations/AVX_Operations.h
         Tests/STLKR_PerformanceTests/AVX_PerformanceTest.h
@@ -45,4 +42,7 @@ add_executable(stalker main.cpp
         Tests/STLKR_PerformanceTests/ThreadingPerformanceTest.h
         Operations/CPU_Manager.cpp
         Operations/CPU_Manager.h
+        LinearAlgebra/ContiguousMemoryStorage/StalkerPerformanceVector.h
+        Tests/StalkerPerformanceVectorTest.h
+        LinearAlgebra/ContiguousMemoryStorage/ContiguousMemoryIterator.h
 )

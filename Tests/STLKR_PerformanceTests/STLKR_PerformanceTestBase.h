@@ -20,8 +20,6 @@ namespace STLKR_Tests {
             
         protected:
             std::string _path;
-
-            void logTestCaseStart(const std::string& name) override;
             
     };
 }
