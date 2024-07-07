@@ -25,19 +25,19 @@ namespace STLKR_Tests {
             printTestCaseResult(_testSize(), "Size");
             printTestCaseResult(_testSizeInCacheLinesDouble(), "Size in cache lines (double)");
             printTestCaseResult(_testSizeInAVXRegistersDouble(), "Size in AVX registers (double)");
-            printTestCaseResult(_testAVX2RegisterSizeDouble(), "AVX2 register size (double)");
+            printTestCaseResult(_testavxRegisterSizeDouble(), "avx register size (double)");
             printTestCaseResult(_testSizeInCacheLinesFloat(), "Size in cache lines (float)");
             printTestCaseResult(_testSizeInAVXRegistersFloat(), "Size in AVX registers (float)");
-            printTestCaseResult(_testAVX2RegisterSizeFloat(), "AVX2 register size (float)");
+            printTestCaseResult(_testavxRegisterSizeFloat(), "avx register size (float)");
             printTestCaseResult(_testSizeInCacheLinesInt(), "Size in cache lines (int)");
             printTestCaseResult(_testSizeInAVXRegistersInt(), "Size in AVX registers (int)");
-            printTestCaseResult(_testAVX2RegisterSizeInt(), "AVX2 register size (int)");
+            printTestCaseResult(_testavxRegisterSizeInt(), "avx register size (int)");
             printTestCaseResult(_testSizeInCacheLinesShort(), "Size in cache lines (short)");
             printTestCaseResult(_testSizeInAVXRegistersShort(), "Size in AVX registers (short)");
-            printTestCaseResult(_testAVX2RegisterSizeShort(), "AVX2 register size (short)");
+            printTestCaseResult(_testavxRegisterSizeShort(), "avx register size (short)");
             printTestCaseResult(_testSizeInCacheLinesUnsigned(), "Size in cache lines (unsigned)");
             printTestCaseResult(_testSizeInAVXRegistersUnsigned(), "Size in AVX registers (unsigned)");
-            printTestCaseResult(_testAVX2RegisterSizeUnsigned(), "AVX2 register size (unsigned)");
+            printTestCaseResult(_testavxRegisterSizeUnsigned(), "avx register size (unsigned)");
             printTestCaseResult(_testAlignment(), "Alignment");
             printTestCaseResult(_testElementAccessNonConst(), "Element access non-const");
             printTestCaseResult(_testElementAccessConst(), "Element access const");
@@ -46,6 +46,9 @@ namespace STLKR_Tests {
             printTestCaseResult(_testBeginConst(), "Iterator begin const");
             printTestCaseResult(_testEndConst(), "Iterator end const");
             printTestCaseResult(_testRange(), "Custom Range Iterator");
+
+
+            printTestCaseResult(_testDeepCopySIMD(), "Deep copy SIMD");
         }
 
     protected:
@@ -128,9 +131,9 @@ namespace STLKR_Tests {
             return vec.sizeInAVXRegisters() == 9;
         }
 
-        static bool _testAVX2RegisterSizeDouble() {
+        static bool _testavxRegisterSizeDouble() {
             StalkerPerformanceVector<double, unrollFactor> vec(32, 5.0); // Assuming DOUBLE_AVX_REGISTER_SIZE = 4
-            return vec.AVX2RegisterSize() == DOUBLE_AVX_REGISTER_SIZE;
+            return vec.avxRegisterSize() == DOUBLE_AVX_REGISTER_SIZE;
         }
 
         static bool _testSizeInCacheLinesFloat() {
@@ -143,9 +146,9 @@ namespace STLKR_Tests {
             return vec.sizeInAVXRegisters() == 5;
         }
 
-        static bool _testAVX2RegisterSizeFloat() {
+        static bool _testavxRegisterSizeFloat() {
             StalkerPerformanceVector<float, unrollFactor> vec(32, 5.0f); // Assuming FLOAT_AVX_REGISTER_SIZE = 8
-            return vec.AVX2RegisterSize() == FLOAT_AVX_REGISTER_SIZE;
+            return vec.avxRegisterSize() == FLOAT_AVX_REGISTER_SIZE;
         }
 
         static bool _testSizeInCacheLinesInt() {
@@ -158,9 +161,9 @@ namespace STLKR_Tests {
             return vec.sizeInAVXRegisters() == 5;
         }
 
-        static bool _testAVX2RegisterSizeInt() {
+        static bool _testavxRegisterSizeInt() {
             StalkerPerformanceVector<int, unrollFactor> vec(32, 5); // Assuming INT_AVX_REGISTER_SIZE = 8
-            return vec.AVX2RegisterSize() == INT_AVX_REGISTER_SIZE;
+            return vec.avxRegisterSize() == INT_AVX_REGISTER_SIZE;
         }
 
         static bool _testSizeInCacheLinesShort() {
@@ -173,9 +176,9 @@ namespace STLKR_Tests {
             return vec.sizeInAVXRegisters() == 3;
         }
 
-        static bool _testAVX2RegisterSizeShort() {
+        static bool _testavxRegisterSizeShort() {
             StalkerPerformanceVector<short, unrollFactor> vec(32, 5); // Assuming SHORT_AVX_REGISTER_SIZE = 16
-            return vec.AVX2RegisterSize() == SHORT_AVX_REGISTER_SIZE;
+            return vec.avxRegisterSize() == SHORT_AVX_REGISTER_SIZE;
         }
 
         static bool _testSizeInCacheLinesUnsigned() {
@@ -188,9 +191,9 @@ namespace STLKR_Tests {
             return vec.sizeInAVXRegisters() == 5;
         }
 
-        static bool _testAVX2RegisterSizeUnsigned() {
+        static bool _testavxRegisterSizeUnsigned() {
             StalkerPerformanceVector<unsigned, unrollFactor> vec(32, 5u); // Assuming UNSIGNED_AVX_REGISTER_SIZE = 8
-            return vec.AVX2RegisterSize() == UNSIGNED_AVX_REGISTER_SIZE;
+            return vec.avxRegisterSize() == UNSIGNED_AVX_REGISTER_SIZE;
         }
 
         static bool _testAlignment() {
@@ -243,6 +246,20 @@ namespace STLKR_Tests {
             bool distanceCorrect = std::distance(range.first, range.second) == 4;
 
             return startCorrect && endCorrect && distanceCorrect;
+        }
+        
+        static bool _testDeepCopySIMD() {
+            StalkerPerformanceVector<double, unrollFactor> vec1(666, 0);
+            StalkerPerformanceVector<double, unrollFactor> vec2(666, 0);
+            for (unsigned i = 0; i < vec1.size(); ++i) {
+                vec2[i] = i;
+            }
+            vec1.deepCopy(vec2);
+            for (unsigned i = 0; i < vec1.size(); ++i) {
+                if (vec1[i] != vec2[i]) return false;
+                std::cout << vec1[i] << " " << vec2[i] << std::endl;
+            }
+            return true;
         }
 
     };

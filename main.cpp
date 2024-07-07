@@ -12,7 +12,7 @@ int main() {
     for (int i = 0; i < 10; i++) {
         //threadingTest.runTest();
     }
-
+    //auto testVector = StalkerPerformanceVector<double, 2>(40, 0);
     auto vectorTest = STLKR_Tests::StalkerPerformanceVectorTest<2>();
     vectorTest.runTest();
 

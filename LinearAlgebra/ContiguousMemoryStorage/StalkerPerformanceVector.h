@@ -12,30 +12,42 @@
 #include <typeindex>
 #include <cstring>
 #include "../../Operations/AVX_MemoryManagement.h"
+#include "../../Operations/AVX_Operations.h"
 #include "ContiguousMemoryIterator.h"
 
 template <typename T, unsigned unrollFactor>
 class StalkerPerformanceVector {
+    
     static_assert( AVX_MemoryManagement::checkInputType<T>(), "Invalid data type. Supported types are float, double, int, short, and unsigned.");
+    
     using Traits = AVX_Traits<T, unrollFactor>;
-    using AVXRegister = typename Traits::AVXRegister;
+    using avxRegister = typename Traits::AVXRegister;
+    using avxData = typename Traits::AVXRegister*;
+    
 public:
-    explicit StalkerPerformanceVector(unsigned size, T value = 0){
+    explicit StalkerPerformanceVector(unsigned size, T value = 0)
+            : _avxTraits() {
         _size = size;
         _alignment = 64;
         _sizeInCacheLines = (size * sizeof(T) + 63) / 64;
-        _AVX2RegisterSize = Traits::AVXRegisterSize;
-        _sizeInAVXRegisters = (size + _AVX2RegisterSize - 1) / _AVX2RegisterSize;
+        _avxRegisterSize = _avxTraits.AVXRegisterSize;
+        _sizeInAVXRegisters = (size + _avxRegisterSize - 1) / _avxRegisterSize;
         _data = AVX_MemoryManagement::allocate<T>(size, _alignment);
         std::fill(_data, _data + size, value);
+        
+        auto lol =1 ;
+    }
+    
+    void deepCopy(const StalkerPerformanceVector& other) {
+        AVX_Operations<T, unrollFactor>::deepcopy(_data, other._data, _size, false);
     }
 
     StalkerPerformanceVector(T* data, unsigned size) {
         _size = size;
         _alignment = 64;
         _sizeInCacheLines = (size * sizeof(T) + 63) / 64; // Adding 63 ensures any remainder gets an extra cache line
-        _AVX2RegisterSize = Traits::AVXRegisterSize;
-        _sizeInAVXRegisters = (size + _AVX2RegisterSize - 1) / _AVX2RegisterSize; // Adding register size - 1 ensures any remainder gets an extra register
+        _avxRegisterSize = Traits::AVXRegisterSize;
+        _sizeInAVXRegisters = (size + _avxRegisterSize - 1) / _avxRegisterSize; // Adding register size - 1 ensures any remainder gets an extra register
         _data = AVX_MemoryManagement::allocate<T>(size, _alignment);
         std::memcpy(_data, data, size * sizeof(T));
     }
@@ -45,7 +57,7 @@ public:
     StalkerPerformanceVector(const StalkerPerformanceVector& other)
             : _size(other._size), _alignment(other._alignment),
               _sizeInCacheLines(other._sizeInCacheLines),
-              _AVX2RegisterSize(other._AVX2RegisterSize),
+              _avxRegisterSize(other._avxRegisterSize),
               _sizeInAVXRegisters(other._sizeInAVXRegisters) {
         _data = AVX_MemoryManagement::allocate<T>(_size, _alignment);
         std::memcpy(_data, other._data, _size * sizeof(T));
@@ -62,7 +74,7 @@ public:
                 _size = other._size;
                 _alignment = other._alignment;
                 _sizeInCacheLines = other._sizeInCacheLines;
-                _AVX2RegisterSize = other._AVX2RegisterSize;
+                _avxRegisterSize = other._avxRegisterSize;
                 _sizeInAVXRegisters = other._sizeInAVXRegisters;
             } else {
                 std::memcpy(_data, other._data, _size * sizeof(T));
@@ -75,13 +87,13 @@ public:
     StalkerPerformanceVector(StalkerPerformanceVector&& other) noexcept
             : _size(other._size), _alignment(other._alignment),
               _sizeInCacheLines(other._sizeInCacheLines),
-              _AVX2RegisterSize(other._AVX2RegisterSize),
+              _avxRegisterSize(other._avxRegisterSize),
               _sizeInAVXRegisters(other._sizeInAVXRegisters),
               _data(other._data) {
         other._data = nullptr;
         other._size = 0;
         other._sizeInCacheLines = 0;
-        other._AVX2RegisterSize = 0;
+        other._avxRegisterSize = 0;
         other._sizeInAVXRegisters = 0;
     }
 
@@ -93,13 +105,13 @@ public:
             _size = other._size;
             _alignment = other._alignment;
             _sizeInCacheLines = other._sizeInCacheLines;
-            _AVX2RegisterSize = other._AVX2RegisterSize;
+            _avxRegisterSize = other._avxRegisterSize;
             _sizeInAVXRegisters = other._sizeInAVXRegisters;
 
             other._data = nullptr;
             other._size = 0;
             other._sizeInCacheLines = 0;
-            other._AVX2RegisterSize = 0;
+            other._avxRegisterSize = 0;
             other._sizeInAVXRegisters = 0;
         }
         return *this;
@@ -161,8 +173,8 @@ public:
         return _sizeInAVXRegisters;
     }
 
-    [[nodiscard]] inline unsigned AVX2RegisterSize() const{
-        return _AVX2RegisterSize;
+    [[nodiscard]] inline unsigned avxRegisterSize() const{
+        return _avxRegisterSize;
     }
 
     [[nodiscard]] inline unsigned alignment() const{
@@ -172,13 +184,14 @@ public:
 
 private:
     T* _data;
-    AVXRegister _avxData[unrollFactor];
+    typename Traits::AVXRegister _avxData[unrollFactor];
     unsigned _size;
     unsigned _sizeInCacheLines;
-    unsigned _AVX2RegisterSize;
+    unsigned _avxRegisterSize;
     unsigned _sizeInAVXRegisters;
     unsigned _alignment;
-    AVX_Traits<T, unrollFactor> _AVXTraits;
+    AVX_Traits<T, unrollFactor> _avxTraits;
+    typename Traits::AVXRegister* avxArray; // Pointer to AVX registers
 
 
 

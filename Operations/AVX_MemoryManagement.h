@@ -26,20 +26,26 @@ struct AVX_Traits;
 template<unsigned int unrollFactor>
 struct AVX_Traits<float, unrollFactor> {
     using AVXRegister = __m256;
-    using AVXRegisterType = float;
+    using DataType = float;
     static constexpr unsigned AVXRegisterSize = FLOAT_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(float);
     static constexpr unsigned UnrollFactor = unrollFactor;
+    AVXRegister avxArray[UnrollFactor];
+    
+    constexpr inline AVXRegister* getAVXRegister() {
+        return avxArray;
+    }
+    
 
-    static constexpr inline void loadAVXRegister(const AVXRegisterType* source, AVXRegister* destination) {
+    static constexpr inline void loadAVXRegister(const DataType* source, AVXRegister* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void storeAVXRegisterTemporal(const AVXRegister* source, DataType* destination) {
         _storeAVXRegisterTemporal<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterNonTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void storeAVXRegisterNonTemporal(const AVXRegister* source, DataType* destination) {
         _storeAVXRegisterNonTemporal<UnrollFactor>(source, destination);
     }
 
@@ -53,7 +59,7 @@ struct AVX_Traits<float, unrollFactor> {
 
 private:
     template <unsigned iUnroll>
-    static constexpr inline void _loadAVXRegister(const AVXRegisterType* source, AVXRegister* destination) {
+    static constexpr inline void _loadAVXRegister(const DataType* source, AVXRegister* destination) {
         if constexpr (iUnroll > 0) {
             *(destination + iUnroll - 1) = _mm256_load_ps(source + (iUnroll - 1) * FLOAT_AVX_REGISTER_SIZE);
             _loadAVXRegister<iUnroll - 1>(source, destination);
@@ -61,7 +67,7 @@ private:
     }
 
     template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void _storeAVXRegisterTemporal(const AVXRegister* source, DataType* destination) {
         if constexpr (iUnroll > 0) {
             _mm256_store_ps(destination + (iUnroll - 1) * FLOAT_AVX_REGISTER_SIZE, *(source + iUnroll - 1));
             _storeAVXRegisterTemporal<iUnroll - 1>(source, destination);
@@ -69,7 +75,7 @@ private:
     }
 
     template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterNonTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void _storeAVXRegisterNonTemporal(const AVXRegister* source, DataType* destination) {
         if constexpr (iUnroll > 0) {
             _mm256_stream_ps(destination + (iUnroll - 1) * FLOAT_AVX_REGISTER_SIZE, *(source + iUnroll - 1));
             _storeAVXRegisterNonTemporal<iUnroll - 1>(source, destination);
@@ -97,20 +103,26 @@ private:
 template<unsigned int unrollFactor>
 struct AVX_Traits<double, unrollFactor> {
     using AVXRegister = __m256d;
-    using AVXRegisterType = double;
+    using DataType = double;
     static constexpr unsigned AVXRegisterSize = DOUBLE_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(double);
     static constexpr unsigned UnrollFactor = unrollFactor;
+    AVXRegister avxArray[UnrollFactor];
+    
+    
+    constexpr inline AVXRegister* getAVXRegister() {
+        return avxArray;
+    }
 
-    static constexpr inline void loadAVXRegister(const AVXRegisterType* source, AVXRegister* destination) {
+    static constexpr inline void loadAVXRegister(const DataType* source, AVXRegister* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void storeAVXRegisterTemporal(const AVXRegister* source, DataType* destination) {
         _storeAVXRegisterTemporal<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterNonTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void storeAVXRegisterNonTemporal(const AVXRegister* source, DataType* destination) {
         _storeAVXRegisterNonTemporal<UnrollFactor>(source, destination);
     }
 
@@ -123,8 +135,9 @@ struct AVX_Traits<double, unrollFactor> {
     }
 
 private:
+    
     template <unsigned iUnroll>
-    static constexpr inline void _loadAVXRegister(const AVXRegisterType* source, AVXRegister* destination) {
+    static constexpr inline void _loadAVXRegister(const DataType* source, AVXRegister* destination) {
         if constexpr (iUnroll > 0) {
             *(destination + iUnroll - 1) = _mm256_load_pd(source + (iUnroll - 1) * DOUBLE_AVX_REGISTER_SIZE);
             _loadAVXRegister<iUnroll - 1>(source, destination);
@@ -132,7 +145,7 @@ private:
     }
 
     template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void _storeAVXRegisterTemporal(const AVXRegister* source, DataType* destination) {
         if constexpr (iUnroll > 0) {
             _mm256_store_pd(destination + (iUnroll - 1) * DOUBLE_AVX_REGISTER_SIZE, *(source + iUnroll - 1));
             _storeAVXRegisterTemporal<iUnroll - 1>(source, destination);
@@ -140,7 +153,7 @@ private:
     }
 
     template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterNonTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void _storeAVXRegisterNonTemporal(const AVXRegister* source, DataType* destination) {
         if constexpr (iUnroll > 0) {
             _mm256_stream_pd(destination + (iUnroll - 1) * DOUBLE_AVX_REGISTER_SIZE, *(source + iUnroll - 1));
             _storeAVXRegisterNonTemporal<iUnroll - 1>(source, destination);
@@ -168,20 +181,25 @@ private:
 template<unsigned int unrollFactor>
 struct AVX_Traits<int, unrollFactor> {
     using AVXRegister = __m256i;
-    using AVXRegisterType = int;
+    using DataType = int;
     static constexpr unsigned AVXRegisterSize = INT_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(int);
     static constexpr unsigned UnrollFactor = unrollFactor;
+    AVXRegister avxArray[UnrollFactor];
 
-    static constexpr inline void loadAVXRegister(const AVXRegisterType* source, AVXRegister* destination) {
+    constexpr inline __m256i* getAVXRegister() {
+        return avxArray;
+    }
+    
+    static constexpr inline void loadAVXRegister(const DataType* source, AVXRegister* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void storeAVXRegisterTemporal(const AVXRegister* source, DataType* destination) {
         _storeAVXRegisterTemporal<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterNonTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void storeAVXRegisterNonTemporal(const AVXRegister* source, DataType* destination) {
         _storeAVXRegisterNonTemporal<UnrollFactor>(source, destination);
     }
 
@@ -195,7 +213,7 @@ struct AVX_Traits<int, unrollFactor> {
     
 private:
     template <unsigned iUnroll>
-    static constexpr inline void _loadAVXRegister(const AVXRegisterType* source, AVXRegister* destination) {
+    static constexpr inline void _loadAVXRegister(const DataType* source, AVXRegister* destination) {
         if constexpr (iUnroll > 0) {
             *(destination + iUnroll - 1) = _mm256_load_si256((__m256i *)(source + (iUnroll - 1) * INT_AVX_REGISTER_SIZE));
             _loadAVXRegister<iUnroll - 1>(source, destination);
@@ -203,7 +221,7 @@ private:
     }
 
     template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void _storeAVXRegisterTemporal(const AVXRegister* source, DataType* destination) {
         if constexpr (iUnroll > 0) {
             _mm256_store_si256((__m256i*)(destination + (iUnroll - 1) * INT_AVX_REGISTER_SIZE), *(source + iUnroll - 1));
             _storeAVXRegisterTemporal<iUnroll - 1>(source, destination);
@@ -211,7 +229,7 @@ private:
     }
 
     template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterNonTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void _storeAVXRegisterNonTemporal(const AVXRegister* source, DataType* destination) {
         if constexpr (iUnroll > 0) {
             _mm256_stream_si256((__m256i*)(destination + (iUnroll - 1) * INT_AVX_REGISTER_SIZE), *(source + iUnroll - 1));
             _storeAVXRegisterNonTemporal<iUnroll - 1>(source, destination);
@@ -238,20 +256,25 @@ private:
 template<unsigned int unrollFactor>
 struct AVX_Traits<short, unrollFactor> {
     using AVXRegister = __m256i;
-    using AVXRegisterType = short;
+    using DataType = short;
     static constexpr unsigned AVXRegisterSize = SHORT_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(short);
     static constexpr unsigned UnrollFactor = unrollFactor;
+    AVXRegister avxArray[UnrollFactor];
 
-    static constexpr inline void loadAVXRegister(const AVXRegisterType* source, AVXRegister* destination) {
+    constexpr inline AVXRegister* getAVXRegister() {
+        return avxArray;
+    }
+
+    static constexpr inline void loadAVXRegister(const DataType* source, AVXRegister* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void storeAVXRegisterTemporal(const AVXRegister* source, DataType* destination) {
         _storeAVXRegisterTemporal<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterNonTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void storeAVXRegisterNonTemporal(const AVXRegister* source, DataType* destination) {
         _storeAVXRegisterNonTemporal<UnrollFactor>(source, destination);
     }
 
@@ -265,7 +288,7 @@ struct AVX_Traits<short, unrollFactor> {
     
 private:
     template <unsigned iUnroll>
-    static constexpr inline void _loadAVXRegister(const AVXRegisterType* source, AVXRegister* destination) {
+    static constexpr inline void _loadAVXRegister(const DataType* source, AVXRegister* destination) {
         if constexpr (iUnroll > 0) {
             *(destination + iUnroll - 1) = _mm256_load_si256((__m256i *)(source + (iUnroll - 1) * SHORT_AVX_REGISTER_SIZE));
             _loadAVXRegister<iUnroll - 1>(source, destination);
@@ -273,7 +296,7 @@ private:
     }
 
     template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void _storeAVXRegisterTemporal(const AVXRegister* source, DataType* destination) {
         if constexpr (iUnroll > 0) {
             _mm256_store_si256((__m256i*)(destination + (iUnroll - 1) * SHORT_AVX_REGISTER_SIZE), *(source + iUnroll - 1));
             _storeAVXRegisterTemporal<iUnroll - 1>(source, destination);
@@ -281,7 +304,7 @@ private:
     }
 
     template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterNonTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void _storeAVXRegisterNonTemporal(const AVXRegister* source, DataType* destination) {
         if constexpr (iUnroll > 0) {
             _mm256_stream_si256((__m256i*)(destination + (iUnroll - 1) * SHORT_AVX_REGISTER_SIZE), *(source + iUnroll - 1));
             _storeAVXRegisterNonTemporal<iUnroll - 1>(source, destination);
@@ -308,20 +331,25 @@ private:
 template<unsigned int unrollFactor>
 struct AVX_Traits<unsigned, unrollFactor> {
     using AVXRegister = __m256i;
-    using AVXRegisterType = unsigned;
+    using DataType = unsigned;
     static constexpr unsigned AVXRegisterSize = UNSIGNED_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(unsigned);
     static constexpr unsigned UnrollFactor = unrollFactor;
+    AVXRegister avxArray[UnrollFactor];
 
-    static constexpr inline void loadAVXRegister(const AVXRegisterType* source, AVXRegister* destination) {
+    constexpr inline AVXRegister* getAVXRegister() {
+        return avxArray;
+    }
+
+    static constexpr inline void loadAVXRegister(const DataType* source, AVXRegister* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void storeAVXRegisterTemporal(const AVXRegister* source, DataType* destination) {
         _storeAVXRegisterTemporal<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterNonTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void storeAVXRegisterNonTemporal(const AVXRegister* source, DataType* destination) {
         _storeAVXRegisterNonTemporal<UnrollFactor>(source, destination);
     }
 
@@ -335,7 +363,7 @@ struct AVX_Traits<unsigned, unrollFactor> {
     
 private:
     template <unsigned iUnroll>
-    static constexpr inline void _loadAVXRegister(const AVXRegisterType* source, AVXRegister* destination) {
+    static constexpr inline void _loadAVXRegister(const DataType* source, AVXRegister* destination) {
         if constexpr (iUnroll > 0) {
             *(destination + iUnroll - 1) = _mm256_load_si256((__m256i *)(source + (iUnroll - 1) * UNSIGNED_AVX_REGISTER_SIZE));
             _loadAVXRegister<iUnroll - 1>(source, destination);
@@ -343,7 +371,7 @@ private:
     }
 
     template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void _storeAVXRegisterTemporal(const AVXRegister* source, DataType* destination) {
         if constexpr (iUnroll > 0) {
             _mm256_store_si256((__m256i*)(destination + (iUnroll - 1) * UNSIGNED_AVX_REGISTER_SIZE), *(source + iUnroll - 1));
             _storeAVXRegisterTemporal<iUnroll - 1>(source, destination);
@@ -351,7 +379,7 @@ private:
     }
 
     template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterNonTemporal(const AVXRegister* source, AVXRegisterType* destination) {
+    static constexpr inline void _storeAVXRegisterNonTemporal(const AVXRegister* source, DataType* destination) {
         if constexpr (iUnroll > 0) {
             _mm256_stream_si256((__m256i*)(destination + (iUnroll - 1) * UNSIGNED_AVX_REGISTER_SIZE), *(source + iUnroll - 1));
             _storeAVXRegisterNonTemporal<iUnroll - 1>(source, destination);
