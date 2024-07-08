@@ -30,11 +30,6 @@ struct AVX_Traits<float, unrollFactor> {
     static constexpr unsigned AVXRegisterSize = FLOAT_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(float);
     static constexpr unsigned UnrollFactor = unrollFactor;
-    AVXRegister avxArray[UnrollFactor];
-    
-    constexpr inline AVXRegister* getAVXRegister() {
-        return avxArray;
-    }
     
 
     static constexpr inline void loadAVXRegister(const DataType* source, AVXRegister* destination) {
@@ -107,12 +102,6 @@ struct AVX_Traits<double, unrollFactor> {
     static constexpr unsigned AVXRegisterSize = DOUBLE_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(double);
     static constexpr unsigned UnrollFactor = unrollFactor;
-    AVXRegister avxArray[UnrollFactor];
-    
-    
-    constexpr inline AVXRegister* getAVXRegister() {
-        return avxArray;
-    }
 
     static constexpr inline void loadAVXRegister(const DataType* source, AVXRegister* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);
@@ -185,11 +174,6 @@ struct AVX_Traits<int, unrollFactor> {
     static constexpr unsigned AVXRegisterSize = INT_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(int);
     static constexpr unsigned UnrollFactor = unrollFactor;
-    AVXRegister avxArray[UnrollFactor];
-
-    constexpr inline __m256i* getAVXRegister() {
-        return avxArray;
-    }
     
     static constexpr inline void loadAVXRegister(const DataType* source, AVXRegister* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);
@@ -260,11 +244,6 @@ struct AVX_Traits<short, unrollFactor> {
     static constexpr unsigned AVXRegisterSize = SHORT_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(short);
     static constexpr unsigned UnrollFactor = unrollFactor;
-    AVXRegister avxArray[UnrollFactor];
-
-    constexpr inline AVXRegister* getAVXRegister() {
-        return avxArray;
-    }
 
     static constexpr inline void loadAVXRegister(const DataType* source, AVXRegister* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);
@@ -335,11 +314,6 @@ struct AVX_Traits<unsigned, unrollFactor> {
     static constexpr unsigned AVXRegisterSize = UNSIGNED_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(unsigned);
     static constexpr unsigned UnrollFactor = unrollFactor;
-    AVXRegister avxArray[UnrollFactor];
-
-    constexpr inline AVXRegister* getAVXRegister() {
-        return avxArray;
-    }
 
     static constexpr inline void loadAVXRegister(const DataType* source, AVXRegister* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);
@@ -421,9 +395,10 @@ class AVX_MemoryManagement {
 
     template <typename T>
     static constexpr inline T* allocate(unsigned size, unsigned alignment) {
-        void *allocatedData = aligned_alloc(alignment, size * sizeof(T));
-        if (allocatedData == nullptr)
+        void* allocatedData = _mm_malloc(size * sizeof(T), alignment);
+        if (allocatedData == nullptr) {
             throw std::runtime_error("Memory allocation failed.");
+        }
         return static_cast<T*>(allocatedData);
     }
 
@@ -488,19 +463,19 @@ class AVX_MemoryManagement {
         }
         else return;
     }
-    
-    template<typename T, typename avxData, unsigned iScalar = 1>
-    static constexpr inline void broadcastScalars(const double *source, avxData *avxDestination) {
-        if constexpr (iScalar > 0) {
+
+    template<typename T, typename avxData, unsigned iUnroll = 1>
+    static constexpr inline void broadcastScalars(const T scalar, avxData *avxDestination) {
+        if constexpr (iUnroll > 0) {
             if constexpr (_isDouble<T>())
-                *(avxDestination + iScalar - 1) = _mm256_set1_pd(*(source + iScalar - 1));
+                *(avxDestination + iUnroll - 1) = _mm256_set1_pd(scalar);
             else if constexpr (_isFloat<T>())
-                *(avxDestination + iScalar - 1) = _mm256_set1_ps(*(source + iScalar - 1));
+                *(avxDestination + iUnroll - 1) = _mm256_set1_ps(scalar);
             else if constexpr (_isInt<T>() || _isUnsigned<T>())
-                *(avxDestination + iScalar - 1) = _mm256_set1_epi32(*(source + iScalar - 1));
+                *(avxDestination + iUnroll - 1) = _mm256_set1_epi32(scalar);
             else if constexpr (_isShort<T>())
-                *(avxDestination + iScalar - 1) = _mm256_set1_epi16(*(source + iScalar - 1));
-            broadcastScalars<T, avxData, iScalar - 1>(source, avxDestination);
+                *(avxDestination + iUnroll - 1) = _mm256_set1_epi16(scalar);
+            broadcastScalars<T, avxData, iUnroll - 1>(scalar, avxDestination);
         }
         else return;
     }

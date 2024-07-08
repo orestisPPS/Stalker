@@ -16,6 +16,13 @@ namespace STLKR_Tests {
         explicit StalkerPerformanceVectorTest() : STLKR_TestBase("Stalker Performance Vector Test") {}
 
         void runTest() override {
+            //_runGeneralVectorCases();
+            _runSIMDVectorCases();
+        }
+
+    protected:
+        
+        static void _runGeneralVectorCases(){
             printTestCaseResult(_testConstructorWithSize(), "Constructor with size");
             printTestCaseResult(_testConstructorWithData(), "Constructor with data");
             printTestCaseResult(_testCopyConstructor(), "Copy constructor");
@@ -46,13 +53,8 @@ namespace STLKR_Tests {
             printTestCaseResult(_testBeginConst(), "Iterator begin const");
             printTestCaseResult(_testEndConst(), "Iterator end const");
             printTestCaseResult(_testRange(), "Custom Range Iterator");
-
-
-            printTestCaseResult(_testDeepCopySIMD(), "Deep copy SIMD");
         }
-
-    protected:
-
+        
         static bool _testConstructorWithSize() {
             StalkerPerformanceVector<int, unrollFactor> vec(10, 5);
             if (vec.size() != 10) return false;
@@ -248,20 +250,57 @@ namespace STLKR_Tests {
             return startCorrect && endCorrect && distanceCorrect;
         }
         
-        static bool _testDeepCopySIMD() {
-            StalkerPerformanceVector<double, unrollFactor> vec1(666, 0);
-            StalkerPerformanceVector<double, unrollFactor> vec2(666, 0);
-            for (unsigned i = 0; i < vec1.size(); ++i) {
-                vec2[i] = i;
+        static void _runSIMDVectorCases(){
+//            auto vectorTest = StalkerPerformanceVector<float, unrollFactor>(8, 5);
+//            vectorTest.setValue(5);
+//            for (unsigned i = 0; i < vectorTest.size(); ++i) {
+//                std::cout << vectorTest[i] << " ";
+//            }
+            try{
+                printTestCaseResult(_testDeepCopySIMD<double>(), "Deep copy SIMD (double)");
+                printTestCaseResult(_testDeepCopySIMD<float>(), "Deep copy SIMD (float)");
+                printTestCaseResult(_testDeepCopySIMD<int>(), "Deep copy SIMD (int)");
+                 printTestCaseResult(_testDeepCopySIMD<short>(), "Deep copy SIMD (short)");
+                printTestCaseResult(_testDeepCopySIMD<unsigned>(), "Deep copy SIMD (unsigned)");
+
+                printTestCaseResult(_testSetValueSIMD<double>(), "Set value SIMD (double)");
+                printTestCaseResult(_testSetValueSIMD<float>(), "Set value SIMD (float)");
+                printTestCaseResult(_testSetValueSIMD<int>(), "Set value SIMD (int)");
+                printTestCaseResult(_testSetValueSIMD<short>(), "Set value SIMD (short)");
+                printTestCaseResult(_testSetValueSIMD<unsigned>(), "Set value SIMD (unsigned)");
+            } catch (std::exception &e) {
+                std::cerr << "Exception thrown: " << e.what() << std::endl;
             }
-            vec1.deepCopy(vec2);
+            
+        }
+
+        template<typename T>
+        static bool _testDeepCopySIMD() {
+            StalkerPerformanceVector<T, unrollFactor> vec1(666, 0);
+            StalkerPerformanceVector<T, unrollFactor> vec2(666, 0);
+            for (unsigned i = 0; i < vec1.size(); ++i) {
+                vec1[i] = i;
+            }
+            vec2.deepCopy(vec1);
             for (unsigned i = 0; i < vec1.size(); ++i) {
                 if (vec1[i] != vec2[i]) return false;
-                std::cout << vec1[i] << " " << vec2[i] << std::endl;
             }
             return true;
         }
 
+        template<typename T>
+        static bool _testSetValueSIMD() {
+            StalkerPerformanceVector<T, unrollFactor> vec(666, 0);
+            vec.setValue(5);
+            for (unsigned i = 0; i < vec.size(); ++i) {
+                if (vec[i] != 5) return false;
+            }
+            return true;
+        }
+        
+        
+
+        
     };
 
 } // STLKR_Tests

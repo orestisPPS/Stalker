@@ -43,6 +43,31 @@ public:
             destination[i] = source[i];
         }
     }
+
+    constexpr inline static void setValue(T *destination, T  value, unsigned size, bool temporalStore = false) {
+
+        auto avxTraits = AVX_Traits<T, unrollFactor>();
+        using dataType = typename AVX_Traits<T, unrollFactor>::DataType;
+        using avxRegisterType = typename AVX_Traits<T, unrollFactor>::AVXRegister;
+
+
+        avxRegisterType simdData[unrollFactor];
+        void (*storeResultRegister)(avxRegisterType*, dataType*) = temporalStore ?
+            AVX_MemoryManagement::storeTemporalData<dataType, avxRegisterType, unrollFactor> :
+            AVX_MemoryManagement::storeNonTemporalData<dataType, avxRegisterType, unrollFactor>;
+
+        auto registerSize = avxTraits.AVXRegisterSize;
+        auto limit = size - (size % registerSize);
+
+        for (size_t i = 0; i < limit; i += registerSize * unrollFactor) {
+            AVX_MemoryManagement::broadcastScalars<dataType, avxRegisterType, unrollFactor>(value, simdData);
+            storeResultRegister(simdData, destination + i);
+        }
+        for (size_t i = limit; i < size; i++) {
+            destination[i] = value;
+        }
+    }
+
     
 //    constexpr static void add(double *data1, double scale1, double *data2, double scale2, double *result, unsigned size, AVX_Config prefetchConfig) {
 //        size_t limit = size - (size % (DOUBLE_AVX_REGISTER_SIZE * 4));  // Adjusted for unrolling factor

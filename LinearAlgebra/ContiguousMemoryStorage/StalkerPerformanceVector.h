@@ -41,6 +41,10 @@ public:
     void deepCopy(const StalkerPerformanceVector& other) {
         AVX_Operations<T, unrollFactor>::deepcopy(_data, other._data, _size, false);
     }
+    
+    void setValue(T value) {
+        AVX_Operations<T, unrollFactor>::setValue(_data, value, _size);
+    }
 
     StalkerPerformanceVector(T* data, unsigned size) {
         _size = size;
@@ -120,6 +124,7 @@ public:
     // Destructor
     ~StalkerPerformanceVector() {
         std::free(_data);
+        _data = nullptr;
     }
 
     inline T& operator[](unsigned index) {
@@ -184,17 +189,12 @@ public:
 
 private:
     T* _data;
-    typename Traits::AVXRegister _avxData[unrollFactor];
     unsigned _size;
     unsigned _sizeInCacheLines;
     unsigned _avxRegisterSize;
     unsigned _sizeInAVXRegisters;
     unsigned _alignment;
     AVX_Traits<T, unrollFactor> _avxTraits;
-    typename Traits::AVXRegister* avxArray; // Pointer to AVX registers
-
-
-
 };
 
 #endif //STALKER_STALKERPERFORMANCEVECTOR_H
