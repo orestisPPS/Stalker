@@ -20,9 +20,9 @@ class StalkerPerformanceVector {
     
     static_assert( AVX_MemoryManagement::checkInputType<T>(), "Invalid data type. Supported types are float, double, int, short, and unsigned.");
     
-    using Traits = AVX_Traits<T, unrollFactor>;
-    using avxRegister = typename Traits::AVXRegister;
-    using avxData = typename Traits::AVXRegister*;
+    using Traits = AVX_MemoryTraits<T, unrollFactor>;
+    using avxRegister = typename Traits::AVXRegisterType;
+    using avxData = typename Traits::AVXRegisterType*;
     
 public:
     explicit StalkerPerformanceVector(unsigned size, T value = 0)
@@ -34,17 +34,8 @@ public:
         _sizeInAVXRegisters = (size + _avxRegisterSize - 1) / _avxRegisterSize;
         _data = AVX_MemoryManagement::allocate<T>(size, _alignment);
         std::fill(_data, _data + size, value);
-        
-        auto lol =1 ;
     }
-    
-    void deepCopy(const StalkerPerformanceVector& other) {
-        AVX_Operations<T, unrollFactor>::deepcopy(_data, other._data, _size, false);
-    }
-    
-    void setValue(T value) {
-        AVX_Operations<T, unrollFactor>::setValue(_data, value, _size);
-    }
+
 
     StalkerPerformanceVector(T* data, unsigned size) {
         _size = size;
@@ -187,6 +178,24 @@ public:
     }
 
 
+
+    void deepCopy(const StalkerPerformanceVector& other) {
+        AVX_Operations<T, unrollFactor>::deepcopy(_data, other._data, _size, false);
+    }
+
+    void setValue(T value) {
+        AVX_Operations<T, unrollFactor>::setValue(_data, value, _size);
+    }
+    
+    bool areEqual(const StalkerPerformanceVector& other) {
+//        for (unsigned i = 0; i < _size; ++i) {
+//            if (_data[i] != other._data[i]) {
+//                return false;
+//            }
+//        }
+        return AVX_Operations<T, unrollFactor>::areEqual(_data, other._data, _size);
+    }
+
 private:
     T* _data;
     unsigned _size;
@@ -194,7 +203,7 @@ private:
     unsigned _avxRegisterSize;
     unsigned _sizeInAVXRegisters;
     unsigned _alignment;
-    AVX_Traits<T, unrollFactor> _avxTraits;
+    AVX_MemoryTraits<T, unrollFactor> _avxTraits;
 };
 
 #endif //STALKER_STALKERPERFORMANCEVECTOR_H

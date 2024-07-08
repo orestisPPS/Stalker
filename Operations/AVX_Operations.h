@@ -21,21 +21,19 @@ public:
 
     constexpr inline static void deepcopy(T *destination, T  *source, unsigned size, bool temporalStore = false) {
 
-        auto avxTraits = AVX_Traits<T, unrollFactor>();
-        using dataType = typename AVX_Traits<T, unrollFactor>::DataType;
-        using avxRegisterType = typename AVX_Traits<T, unrollFactor>::AVXRegister;
+        auto avxTraits = AVX_MemoryTraits<T, unrollFactor>();
+        using dataType = typename AVX_MemoryTraits<T, unrollFactor>::DataType;
+        using avxRegisterType = typename AVX_MemoryTraits<T, unrollFactor>::AVXRegisterType;
         
         
         avxRegisterType simdData[unrollFactor];
-        void (*storeResultRegister)(avxRegisterType*, dataType*) = temporalStore ?
-            AVX_MemoryManagement::storeTemporalData<dataType, avxRegisterType, unrollFactor> :
-            AVX_MemoryManagement::storeNonTemporalData<dataType, avxRegisterType, unrollFactor>;
-        
-        auto registerSize = avxTraits.AVXRegisterSize;
-        auto limit = size - (size % registerSize);
-        
-        for (size_t i = 0; i < limit; i += registerSize * unrollFactor) {
-            AVX_MemoryManagement::loadDataRegister<dataType, avxRegisterType, unrollFactor>(source + i, simdData);
+        void (*storeResultRegister)(const avxRegisterType*, dataType*) = temporalStore ?
+                avxTraits.storeAVXRegisterTemporal : avxTraits.storeAVXRegisterNonTemporal;
+        auto blockSize = avxTraits.AVXRegisterSize * unrollFactor;
+        auto limit = size - (size % (blockSize));
+
+        for (size_t i = 0; i < limit; i += blockSize) {
+            avxTraits.loadAVXRegister(source + i, simdData);
             storeResultRegister(simdData, destination + i);
         }
         
@@ -46,26 +44,50 @@ public:
 
     constexpr inline static void setValue(T *destination, T  value, unsigned size, bool temporalStore = false) {
 
-        auto avxTraits = AVX_Traits<T, unrollFactor>();
-        using dataType = typename AVX_Traits<T, unrollFactor>::DataType;
-        using avxRegisterType = typename AVX_Traits<T, unrollFactor>::AVXRegister;
+        auto avxTraits = AVX_MemoryTraits<T, unrollFactor>();
+        using dataType = typename AVX_MemoryTraits<T, unrollFactor>::DataType;
+        using avxRegisterType = typename AVX_MemoryTraits<T, unrollFactor>::AVXRegisterType;
 
 
         avxRegisterType simdData[unrollFactor];
-        void (*storeResultRegister)(avxRegisterType*, dataType*) = temporalStore ?
-            AVX_MemoryManagement::storeTemporalData<dataType, avxRegisterType, unrollFactor> :
-            AVX_MemoryManagement::storeNonTemporalData<dataType, avxRegisterType, unrollFactor>;
+        void (*storeResultRegister)(const avxRegisterType*, dataType*) = temporalStore ?
+            avxTraits.storeAVXRegisterTemporal : avxTraits.storeAVXRegisterNonTemporal;
 
-        auto registerSize = avxTraits.AVXRegisterSize;
-        auto limit = size - (size % registerSize);
+        auto blockSize = avxTraits.AVXRegisterSize * unrollFactor;
+        auto limit = size - (size % (blockSize));
 
-        for (size_t i = 0; i < limit; i += registerSize * unrollFactor) {
-            AVX_MemoryManagement::broadcastScalars<dataType, avxRegisterType, unrollFactor>(value, simdData);
+        for (size_t i = 0; i < limit; i += blockSize) {
+            avxTraits.setValue(simdData, value);
             storeResultRegister(simdData, destination + i);
         }
         for (size_t i = limit; i < size; i++) {
             destination[i] = value;
         }
+    }
+
+    constexpr inline static bool areEqual(const T *a, const T *b, unsigned size){
+        auto avxTraits = AVX_MemoryTraits<T, unrollFactor>();
+        using dataType = typename AVX_MemoryTraits<T, unrollFactor>::DataType;
+        using avxRegisterType = typename AVX_MemoryTraits<T, unrollFactor>::AVXRegisterType;
+
+        avxRegisterType simdDataA[unrollFactor];
+        avxRegisterType simdDataB[unrollFactor];
+       
+        auto blockSize = avxTraits.AVXRegisterSize * unrollFactor;
+        auto limit = size - (size % (blockSize));
+        bool result = true;
+        for (size_t i = 0; i < limit; i += blockSize) {
+            avxTraits.loadAVXRegister(a + i, simdDataA);
+            avxTraits.loadAVXRegister(b + i, simdDataB);
+            result = avxTraits.areEqual(simdDataA, simdDataB);
+            if (avxTraits.areEqual(simdDataA, simdDataB) == false)
+                return false;
+        }
+        for (size_t i = limit; i < size; i++) {
+            if (a[i] != b[i])
+                return false;
+        }
+        return true;
     }
 
     
