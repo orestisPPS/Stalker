@@ -180,7 +180,16 @@ public:
 
 
     void deepCopy(const StalkerPerformanceVector& other) {
-        AVX_Operations<T, unrollFactor>::deepcopy(_data, other._data, _size, false);
+        //AVX_Operations<T, unrollFactor>::deepcopy(_data, other._data, _size, false);
+        auto manager = CPU_Manager();
+        auto threads = manager.getHyperThreadCores(2);
+        AVX_Operations<T, unrollFactor>::deepcopy(_data, other._data, _size, 2, manager, true);
+    }
+    
+    void deepCopyMultithreaded(const StalkerPerformanceVector& other) {
+//        auto cpu = CPU_Manager();
+//        auto threads = cpu.getHyperThreadCores(2);
+//        AVX_Operations<T, unrollFactor>::deepcopy(_data, other._data, _size, 2, true);
     }
 
     void setValue(T value) {

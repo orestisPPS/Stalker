@@ -16,19 +16,20 @@
 #include <dirent.h>
 #include <chrono>
 #include <unordered_map>
+#include <mutex>
 #include "Core.h"
 #include "CacheLevel.h"
 
 class CPUTopologyLinux {
 
 public:
-    explicit CPUTopologyLinux(std::string cpuPath = "/sys/devices/system/cpu/");
+    CPUTopologyLinux(std::string cpuPath = "/sys/devices/system/cpu/");
     ~CPUTopologyLinux();
     void print_processor_specs() const;
-    std::vector<Core*> getPhysicalCores() const;
-    std::vector<Thread*> getThreads() const;
-    std::vector<CacheLevel*> getCacheLevels() const;
-    std::vector<SharedCache*> getSharedCaches() const;
+    const std::vector<Core*> &getCores(unsigned numCores = 0) const;
+    const std::vector<Thread *> &getThreads() const;
+    const std::vector<CacheLevel*> &getCacheLevels() const;
+    const std::vector<SharedCache*> &getSharedCaches() const;
 
 private:
     std::string _cpuPath;
@@ -36,9 +37,13 @@ private:
     std::vector<Thread*> _threads;
     std::vector<CacheLevel*> _cacheLevels;
     std::vector<SharedCache*> _sharedCaches;
-    void _readThreads();
-    void _readCores();
-    void _readCacheLevels();
+    
+    std::unordered_map<Core*, bool> _corePool;
+    std::unordered_map<Core*, bool> _hyperThreadCorePool;
+    std::unordered_map<Core*, bool> _ecoCorePool;
+    std::unordered_map<Thread*, bool> _threadPool;
+
+    //std::mutex _mutex;
 
     //------------------------------------------------------------------
     //Reader functions
@@ -48,7 +53,7 @@ private:
     static std::vector<unsigned> _parseCPUList(const std::string& cpu_list);
     std::string _getThreadPath(unsigned &threadId) const;
     std::string _getCacheLevelPath(unsigned threadId, unsigned cacheIndex) const;
-    void readMachineCores();
+    void _readMachineTopology();
     void _readCacheInfo();
 
 };

@@ -8,8 +8,7 @@
 
 CPUTopologyLinux::CPUTopologyLinux(std::string cpuPath){
     _cpuPath = std::move(cpuPath);
-    readMachineCores();
-    
+    _readMachineTopology();
 }
 
 CPUTopologyLinux::~CPUTopologyLinux() {
@@ -27,7 +26,7 @@ CPUTopologyLinux::~CPUTopologyLinux() {
     }
 }
 
-void CPUTopologyLinux::readMachineCores() {
+void CPUTopologyLinux::_readMachineTopology() {
     auto start = std::chrono::high_resolution_clock::now();
     unsigned int size_kb = 0, coreTopologyId = 0;
     std::string type, shared_cpus_str;
@@ -79,12 +78,17 @@ void CPUTopologyLinux::readMachineCores() {
     }
     _physicalCores = std::vector<Core*>();
     _physicalCores.reserve(physicalCoreToThreads.size());
-    auto coreThreads = std::vector<Thread*>();
+   
     for (const auto& [coreId, threads] : physicalCoreToThreads) {
-        for (auto threadID : threads)
+        auto coreThreads = std::vector<Thread*>();
+        for (auto threadID : threads){
             coreThreads.push_back(_threads[threadID]);
-        _physicalCores.emplace_back(new Core(coreId, coreThreads));
-        coreThreads.clear();
+            _threadPool.insert({_threads[threadID], true});
+        }
+        auto core = new Core(coreId, std::move(coreThreads));
+        core->setHyperThreading(true);
+        core->getAvailableThreadsCount() > 1 ? _hyperThreadCorePool.insert({core, true}) : _ecoCorePool.insert({core, true});
+        _physicalCores.emplace_back(core);
     }
     //sort the cores by id
     std::sort(_physicalCores.begin(), _physicalCores.end(), [](const Core* a, const Core* b) {
@@ -129,19 +133,19 @@ void CPUTopologyLinux::print_processor_specs() const {
 //    }
 }
 
-std::vector<Core*> CPUTopologyLinux::getPhysicalCores() const {
+const std::vector<Core*> &CPUTopologyLinux::getCores(unsigned numCores) const {
     return _physicalCores;
 }
 
-std::vector<Thread*> CPUTopologyLinux::getThreads() const {
+const std::vector<Thread *> &CPUTopologyLinux::getThreads() const {
     return _threads;
 }
 
-std::vector<CacheLevel*> CPUTopologyLinux::getCacheLevels() const {
+const std::vector<CacheLevel*> &CPUTopologyLinux::getCacheLevels() const {
     return _cacheLevels;
 }
 
-std::vector<SharedCache*> CPUTopologyLinux::getSharedCaches() const {
+const std::vector<SharedCache*> &CPUTopologyLinux::getSharedCaches() const {
     return _sharedCaches;
 }
 

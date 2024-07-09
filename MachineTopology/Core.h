@@ -23,7 +23,7 @@ public:
     std::vector<Thread *> getStokerThreads() const;
     void getStokerThreads(std::vector<Thread*> &threads) const;
     void addStokerThreadsToPool(std::list<Thread*> &threadPool) const;
-    unsigned getThreadCount() const;
+    unsigned getAvailableThreadsCount() const;
     void setThreadAffinity();
     void setThreadAffinity(cpu_set_t &coreSet);
     void resetThreadAffinity();

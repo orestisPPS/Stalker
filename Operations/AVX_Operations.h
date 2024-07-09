@@ -42,6 +42,79 @@ public:
         }
     }
 
+    constexpr inline static void deepcopy(T *destination, T  *source, unsigned size, unsigned cores, CPU_Manager &manager, bool temporalStore = false) {
+        
+        auto avxTraits = AVX_MemoryTraits<T, unrollFactor>();
+        using dataType = typename AVX_MemoryTraits<T, unrollFactor>::DataType;
+        using avxRegisterType = typename AVX_MemoryTraits<T, unrollFactor>::AVXRegisterType;
+        
+        auto threadLimits = new std::pair<unsigned, unsigned>[cores];
+        auto blockSize = avxTraits.AVXRegisterSize * unrollFactor;
+        auto totalBlocks = (size + blockSize - 1) / blockSize;
+        auto threadBlockSize = (totalBlocks + cores - 1) / cores;
+        auto startBlock = 0, endBlock = 0;
+        for (size_t i = 0; i < cores; i++) {
+            startBlock = i * threadBlockSize;
+            endBlock = std::min(startBlock + threadBlockSize, totalBlocks);
+            threadLimits[i].first = startBlock * blockSize;
+            threadLimits[i].second = std::min(endBlock * blockSize, size);
+        }
+        
+        auto deepcopyThreadJob = [&](unsigned startIndex, unsigned endIndex) {
+            avxRegisterType simdData[unrollFactor];
+            void (*storeResultRegister)(const avxRegisterType*, dataType*) = temporalStore ?
+                avxTraits.storeAVXRegisterTemporal : avxTraits.storeAVXRegisterNonTemporal;
+            auto limit = endIndex - (endIndex % blockSize);
+            for (size_t i = startIndex; i < limit; i += blockSize) {
+                avxTraits.loadAVXRegister(source + i, simdData);
+                storeResultRegister(simdData, destination + i);
+            }
+            for (size_t i = limit; i < endIndex; i++) {
+                destination[i] = source[i];
+            }
+        };
+        Thread_Operations::executeJob(deepcopyThreadJob, size, 2, threadLimits, manager);
+    }
+
+    //    template<unsigned int numVectors, unsigned numPhysicalCores>
+//    static constexpr inline void add(double** data, double* scaleFactors, double* result, unsigned int size, bool temporalStore = false) {
+
+//        std::pair<unsigned, unsigned> threadLimits[numPhysicalCores];
+//        unsigned simdBlockSize = DOUBLE_AVX_REGISTER_SIZE * unrollFactor;
+//        unsigned totalSimdBlocks = (size + simdBlockSize - 1) / simdBlockSize;
+//        unsigned threadBlockSize = (totalSimdBlocks + numPhysicalCores - 1) / numPhysicalCores;
+//        unsigned startBlock = 0, endBlock = 0;
+//        for (size_t i = 0; i < numPhysicalCores; i++) {
+//            startBlock = i * threadBlockSize;
+//            endBlock = std::min(startBlock + threadBlockSize, totalSimdBlocks);
+//            threadLimits[i].first = startBlock * simdBlockSize;
+//            threadLimits[i].second = std::min(endBlock * simdBlockSize, size);
+//        }
+//        
+//        auto addThreadJob = [&](unsigned startIndex, unsigned endIndex) {
+//            __m256d simdData[numVectors * unrollFactor];
+//            __m256d simdResult[unrollFactor];
+//            void (*storeResultRegister)(__m256d*, double*) = temporalStore ?
+//                 AVX_MemoryManagement::storeTemporalData<double, __m256d, unrollFactor> :
+//                 AVX_MemoryManagement::storeNonTemporalData<double, __m256d, unrollFactor>;
+//            
+//            size_t limit = endIndex - (endIndex % (DOUBLE_AVX_REGISTER_SIZE * unrollFactor));
+//            for (size_t i = startIndex; i < limit; i += DOUBLE_AVX_REGISTER_SIZE * unrollFactor) {
+//                AVX_MemoryManagement::loadMultipleDataRegisters<double, __m256d, unrollFactor, numVectors>(data, simdData, unrollFactor, i);
+//                _fusedMultiplyAddDoubleVectors<numVectors>(simdData, simdScalars, simdResult);
+//                storeResultRegister(simdResult, result + i);
+//                AVX_MemoryManagement::setZero<double, __m256d, unrollFactor>(simdResult);
+//            }
+//        };
+//        
+//        Thread_Operations::executeJob(addThreadJob, size, threadLimits);
+//        for (size_t i = threadLimits[numPhysicalCores - 1].second; i < size; i++) {
+//            for (size_t j = 0; j < numVectors; j++) {
+//                result[i] += data[j][i] * scaleFactors[j];
+//            }
+//        }
+//    }
+
     constexpr inline static void setValue(T *destination, T  value, unsigned size, bool temporalStore = false) {
 
         auto avxTraits = AVX_MemoryTraits<T, unrollFactor>();
@@ -204,14 +277,7 @@ public:
     
 
 private:
-    template<size_t iUnroll>
-    static constexpr inline void _deepCopy(const __m256d *simdData) {
-        if constexpr (iUnroll > 0) {
-            
-            _deepCopy<iUnroll - 1>(simdData);
-        }
-        else return;
-    }
+
 
     template<size_t iUnroll>
     static constexpr inline void _fusedMultiplyAddDoubles(const __m256d *simdData, const __m256d *scale, __m256d *result) {

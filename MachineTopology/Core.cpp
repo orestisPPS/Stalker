@@ -9,7 +9,7 @@
 
 Core::Core(unsigned id, std::vector<Thread*> threads) {
     _id = id;
-    _threads = std::move(threads);
+    _threads = threads;
     _thisCoreSet = {};
 }
 
@@ -69,8 +69,11 @@ void Core::addStokerThreadsToPool(std::list<Thread*> &threadPool) const {
     threadPool.push_back(_threads[_threads.size() - 1]);
 }
 
-unsigned Core::getThreadCount() const{
-    return _threads.size();
+unsigned Core::getAvailableThreadsCount() const{
+    if (_isHyperThreaded)
+        return _threads.size();
+    else
+        return 1;
 }
 
 void Core::setThreadAffinity() {

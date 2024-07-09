@@ -86,7 +86,7 @@ private:
         }
         else return;
     }
-
+    
     template <unsigned iUnroll>
     static constexpr inline void _setValue(AVXRegisterType* destination, DataType value) {
         if constexpr (iUnroll > 0) {

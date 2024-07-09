@@ -46,4 +46,5 @@ add_executable(stalker main.cpp
         Tests/StalkerPerformanceVectorTest.h
         LinearAlgebra/ContiguousMemoryStorage/ContiguousMemoryIterator.h
         Operations/AVX_MemoryTraits.h
+        Operations/AVX_MathTraits.h
 )

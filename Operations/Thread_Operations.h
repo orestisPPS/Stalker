@@ -7,7 +7,9 @@
 
 #include <list>
 #include "JobArguments.h"
+#include "../MachineTopology/CPUTopologyLinux.h"
 #include "CPU_Manager.h"
+
 
 class Thread_Operations {
 public:
