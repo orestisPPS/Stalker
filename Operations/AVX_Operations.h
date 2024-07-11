@@ -18,29 +18,7 @@ class AVX_Operations {
 
  
 public:
-
-    constexpr inline static void deepcopy(T *destination, T  *source, unsigned size, bool temporalStore = false) {
-
-        auto avxTraits = AVX_MemoryTraits<T, unrollFactor>();
-        using dataType = typename AVX_MemoryTraits<T, unrollFactor>::DataType;
-        using avxRegisterType = typename AVX_MemoryTraits<T, unrollFactor>::AVXRegisterType;
-        
-        
-        avxRegisterType simdData[unrollFactor];
-        void (*storeResultRegister)(const avxRegisterType*, dataType*) = temporalStore ?
-                avxTraits.storeAVXRegisterTemporal : avxTraits.storeAVXRegisterNonTemporal;
-        auto blockSize = avxTraits.AVXRegisterSize * unrollFactor;
-        auto limit = size - (size % (blockSize));
-
-        for (size_t i = 0; i < limit; i += blockSize) {
-            avxTraits.loadAVXRegister(source + i, simdData);
-            storeResultRegister(simdData, destination + i);
-        }
-        
-        for (size_t i = limit; i < size; i++) {
-            destination[i] = source[i];
-        }
-    }
+    
 
     constexpr inline static void deepcopy(T *destination, T  *source, unsigned size, unsigned cores, CPU_Manager &manager, bool temporalStore = false) {
         
@@ -73,7 +51,81 @@ public:
                 destination[i] = source[i];
             }
         };
-        Thread_Operations::executeJob(deepcopyThreadJob, size, 2, threadLimits, manager);
+        Thread_Operations::executeJob(deepcopyThreadJob, size, cores, threadLimits, manager);
+    }
+
+    constexpr inline static void setValue(T *destination, T  value, unsigned size, unsigned cores, CPU_Manager &manager, bool temporalStore = false) {
+
+        auto avxTraits = AVX_MemoryTraits<T, unrollFactor>();
+        using dataType = typename AVX_MemoryTraits<T, unrollFactor>::DataType;
+        using avxRegisterType = typename AVX_MemoryTraits<T, unrollFactor>::AVXRegisterType;
+
+        auto threadLimits = new std::pair<unsigned, unsigned>[cores];
+        auto blockSize = avxTraits.AVXRegisterSize * unrollFactor;
+        auto totalBlocks = (size + blockSize - 1) / blockSize;
+        auto threadBlockSize = (totalBlocks + cores - 1) / cores;
+        auto startBlock = 0, endBlock = 0;
+        for (size_t i = 0; i < cores; i++) {
+            startBlock = i * threadBlockSize;
+            endBlock = std::min(startBlock + threadBlockSize, totalBlocks);
+            threadLimits[i].first = startBlock * blockSize;
+            threadLimits[i].second = std::min(endBlock * blockSize, size);
+        }
+        
+        auto setValueThreadJob = [&](unsigned startIndex, unsigned endIndex) {
+            avxRegisterType simdData[unrollFactor];
+            void (*storeResultRegister)(const avxRegisterType*, dataType*) = temporalStore ?
+                avxTraits.storeAVXRegisterTemporal : avxTraits.storeAVXRegisterNonTemporal;
+            auto limit = endIndex - (endIndex % blockSize);
+            for (size_t i = startIndex; i < limit; i += blockSize) {
+                avxTraits.setValue(simdData, value);
+                storeResultRegister(simdData, destination + i);
+            }
+            for (size_t i = limit; i < endIndex; i++) {
+                destination[i] = value;
+            }
+        };
+        
+        Thread_Operations::executeJob(setValueThreadJob, size, cores, threadLimits, manager);
+    }
+    
+    constexpr inline static bool areEqual(const T *a, const T *b, unsigned size, unsigned cores, CPU_Manager &manager){
+        auto avxTraits = AVX_MemoryTraits<T, unrollFactor>();
+        using dataType = typename AVX_MemoryTraits<T, unrollFactor>::DataType;
+        using avxRegisterType = typename AVX_MemoryTraits<T, unrollFactor>::AVXRegisterType;
+
+        auto threadLimits = new std::pair<unsigned, unsigned>[cores];
+        auto blockSize = avxTraits.AVXRegisterSize * unrollFactor;
+        auto totalBlocks = (size + blockSize - 1) / blockSize;
+        auto threadBlockSize = (totalBlocks + cores - 1) / cores;
+        auto startBlock = 0, endBlock = 0;
+        for (size_t i = 0; i < cores; i++) {
+            startBlock = i * threadBlockSize;
+            endBlock = std::min(startBlock + threadBlockSize, totalBlocks);
+            threadLimits[i].first = startBlock * blockSize;
+            threadLimits[i].second = std::min(endBlock * blockSize, size);
+        }
+        bool result = true;
+        auto areEqualThreadJob = [&](unsigned startIndex, unsigned endIndex) {
+            avxRegisterType simdDataA[unrollFactor];
+            avxRegisterType simdDataB[unrollFactor];
+            auto limit = endIndex - (endIndex % blockSize);
+            for (size_t i = startIndex; i < limit; i += blockSize) {
+                avxTraits.loadAVXRegister(a + i, simdDataA);
+                avxTraits.loadAVXRegister(b + i, simdDataB);
+                result = avxTraits.areEqual(simdDataA, simdDataB);
+                if (result == false)
+                    return;
+            }
+            for (size_t i = limit; i < endIndex; i++) {
+                if (a[i] != b[i]) {
+                    result = false;
+                    return;
+                }
+            }
+        };
+        Thread_Operations::executeJob(areEqualThreadJob, size, cores, threadLimits, manager);
+        return result;
     }
 
     //    template<unsigned int numVectors, unsigned numPhysicalCores>

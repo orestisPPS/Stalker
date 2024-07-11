@@ -8,18 +8,21 @@
 #include <utility>
 #include <string>
 #include <iostream>
+#include "Test_PrimitivesTraits.h"
+#include "../Operations/CPU_Manager.h"
 
 
 namespace STLKR_Tests {
 
     class STLKR_TestBase{
-        
             virtual void runTest() = 0;
             
             void runTest(unsigned int iterations);
 
         protected:
-        
+
+            CPU_Manager _manager;
+
             explicit STLKR_TestBase(std::string testName);
             
             std::string _testName;
@@ -33,7 +36,30 @@ namespace STLKR_Tests {
             static void printFailure();
             
             static std::string boolToOnOff(bool value, const std::string& name);
+            
+            Test_PrimitivesTraits<float> _floatTraits;
+            Test_PrimitivesTraits<double> _doubleTraits;
+            Test_PrimitivesTraits<int> _intTraits;
+            Test_PrimitivesTraits<short> _shortTraits;
+            Test_PrimitivesTraits<unsigned> _unsignedTraits;
 
+
+            template<typename T>
+            static std::string getTypeString(){
+                if (std::is_same<T, float>::value) {
+                    return "float";
+                } else if (std::is_same<T, double>::value) {
+                    return "double";
+                } else if (std::is_same<T, int>::value) {
+                    return "int";
+                } else if (std::is_same<T, short>::value) {
+                    return "short";
+                } else if (std::is_same<T, unsigned>::value) {
+                    return "unsigned";
+                } else {
+                    return "unknown";
+                }
+            }
     };
 
 } // STLKR_Tests

@@ -10,17 +10,18 @@
 #include "../MachineTopology/CPUTopologyLinux.h"
 #include "CPU_Manager.h"
 
+enum class WorkDistributionPolicy{
+    Slave_Stoker,
+    Slave_Slave,
+    Slave,
+    Stoker,
+    Master
+};
 
 class Thread_Operations {
 public:
 
-    enum class WorkDistributionPolicy{
-        SlaveAndStoker,
-        SlaveAndMaster,
-        Slave,
-        Stoker,
-        Master
-    };
+
 
     template <typename threadJob>
     static inline void executeJob(threadJob job, unsigned size, unsigned numCores, bool enableHyperThreading, CPU_Manager &manager) {
@@ -79,7 +80,7 @@ public:
 
         auto slaveThreadPool = std::list<Thread*>();
         auto stokerThreadPool = std::list<Thread*>();
-        auto cores = std::move(manager.getCores(numCores));
+        auto cores = manager.getCores(numCores);
         for (const auto &core : cores) {
             core->addSlaveThreadsToPool(slaveThreadPool);
             core->addStokerThreadsToPool(stokerThreadPool);

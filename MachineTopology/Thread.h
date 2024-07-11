@@ -29,6 +29,7 @@ public:
 
     template<typename threadJob>
     void executeJob(threadJob job, unsigned startIndex, unsigned endIndex, cpu_set_t coreSet) {
+        //std::cout << "Thread " << _id << "launching job on core " << CPU_ISSET(_id, &coreSet) << std::endl;
         auto jobArgs = new JobArgs<threadJob>{job, startIndex, endIndex, coreSet};
         pthread_create(&_pThread, &_pThreadAttribute, _jobWrapper<threadJob>, jobArgs);
     }

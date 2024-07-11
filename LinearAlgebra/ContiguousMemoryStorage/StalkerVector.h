@@ -2,8 +2,8 @@
 // Created by hal9000 on 7/6/24.
 //
 
-#ifndef STALKER_STALKERPERFORMANCEVECTOR_H
-#define STALKER_STALKERPERFORMANCEVECTOR_H
+#ifndef STALKER_STALKERVECTOR_H
+#define STALKER_STALKERVECTOR_H
 #include <cstdlib>
 #include <immintrin.h>
 #include <stdexcept>
@@ -15,51 +15,60 @@
 #include "../../Operations/AVX_Operations.h"
 #include "ContiguousMemoryIterator.h"
 
+struct VectorThreadingConfig{
+    unsigned numCores = 2;
+    bool enableHyperThreading = false;
+    WorkDistributionPolicy workDistributionPolicy;
+};
+
 template <typename T, unsigned unrollFactor>
-class StalkerPerformanceVector {
+class StalkerVector {
     
     static_assert( AVX_MemoryManagement::checkInputType<T>(), "Invalid data type. Supported types are float, double, int, short, and unsigned.");
     
-    using Traits = AVX_MemoryTraits<T, unrollFactor>;
-    using avxRegister = typename Traits::AVXRegisterType;
-    using avxData = typename Traits::AVXRegisterType*;
-    
 public:
-    explicit StalkerPerformanceVector(unsigned size, T value = 0)
-            : _avxTraits() {
+
+    explicit StalkerVector(unsigned size, CPU_Manager &manager)
+            : _avxTraits(), _manager(manager)  {
         _size = size;
         _alignment = 64;
         _sizeInCacheLines = (size * sizeof(T) + 63) / 64;
-        _avxRegisterSize = _avxTraits.AVXRegisterSize;
-        _sizeInAVXRegisters = (size + _avxRegisterSize - 1) / _avxRegisterSize;
+        _data = AVX_MemoryManagement::allocate<T>(size, _alignment);
+        std::fill(_data, _data + size, 0);
+    }
+
+    explicit StalkerVector(unsigned size, T value , CPU_Manager &manager)
+            : _avxTraits(), _manager(manager) {
+        _size = size;
+        _alignment = 64;
+        _sizeInCacheLines = (size * sizeof(T) + 63) / 64;
         _data = AVX_MemoryManagement::allocate<T>(size, _alignment);
         std::fill(_data, _data + size, value);
     }
-
-
-    StalkerPerformanceVector(T* data, unsigned size) {
+    
+    StalkerVector(T* data, unsigned size, CPU_Manager &manager)
+            : _avxTraits(), _manager(manager)  {
         _size = size;
         _alignment = 64;
-        _sizeInCacheLines = (size * sizeof(T) + 63) / 64; // Adding 63 ensures any remainder gets an extra cache line
-        _avxRegisterSize = Traits::AVXRegisterSize;
-        _sizeInAVXRegisters = (size + _avxRegisterSize - 1) / _avxRegisterSize; // Adding register size - 1 ensures any remainder gets an extra register
+        _sizeInCacheLines = (size * sizeof(T) + 63) / 64; // Adding 63 ensures any remainder gets an extra cache line_sizeInAVXRegisters = (size + _avxRegisterSize - 1) / _avxRegisterSize; // Adding register size - 1 ensures any remainder gets an extra register
         _data = AVX_MemoryManagement::allocate<T>(size, _alignment);
         std::memcpy(_data, data, size * sizeof(T));
     }
 
 
     // Copy constructor
-    StalkerPerformanceVector(const StalkerPerformanceVector& other)
-            : _size(other._size), _alignment(other._alignment),
-              _sizeInCacheLines(other._sizeInCacheLines),
-              _avxRegisterSize(other._avxRegisterSize),
-              _sizeInAVXRegisters(other._sizeInAVXRegisters) {
+    StalkerVector(const StalkerVector& other)
+        : _size(other._size),
+          _alignment(other._alignment),
+          _sizeInCacheLines(other._sizeInCacheLines),
+          _avxTraits(other._avxTraits),
+          _manager(other._manager){
         _data = AVX_MemoryManagement::allocate<T>(_size, _alignment);
         std::memcpy(_data, other._data, _size * sizeof(T));
     }
 
     // Copy assignment operator
-    StalkerPerformanceVector& operator=(const StalkerPerformanceVector& other) {
+    StalkerVector& operator=(const StalkerVector& other) {
         if (this != &other) {
             if (_size != other._size) {
                 T* newData = AVX_MemoryManagement::allocate<T>(other._size, other._alignment);
@@ -69,51 +78,44 @@ public:
                 _size = other._size;
                 _alignment = other._alignment;
                 _sizeInCacheLines = other._sizeInCacheLines;
-                _avxRegisterSize = other._avxRegisterSize;
-                _sizeInAVXRegisters = other._sizeInAVXRegisters;
             } else {
                 std::memcpy(_data, other._data, _size * sizeof(T));
             }
+            _manager = other._manager;
         }
         return *this;
     }
 
     // Move constructor
-    StalkerPerformanceVector(StalkerPerformanceVector&& other) noexcept
+    StalkerVector(StalkerVector&& other) noexcept
             : _size(other._size), _alignment(other._alignment),
               _sizeInCacheLines(other._sizeInCacheLines),
-              _avxRegisterSize(other._avxRegisterSize),
-              _sizeInAVXRegisters(other._sizeInAVXRegisters),
-              _data(other._data) {
+              _data(other._data),
+              _manager(other._manager){
         other._data = nullptr;
         other._size = 0;
         other._sizeInCacheLines = 0;
-        other._avxRegisterSize = 0;
-        other._sizeInAVXRegisters = 0;
     }
 
     // Move assignment operator
-    StalkerPerformanceVector& operator=(StalkerPerformanceVector&& other) noexcept {
+    StalkerVector& operator=(StalkerVector&& other) noexcept {
         if (this != &other) {
             std::free(_data);
             _data = other._data;
             _size = other._size;
             _alignment = other._alignment;
             _sizeInCacheLines = other._sizeInCacheLines;
-            _avxRegisterSize = other._avxRegisterSize;
-            _sizeInAVXRegisters = other._sizeInAVXRegisters;
+            _manager = other._manager;
 
             other._data = nullptr;
             other._size = 0;
             other._sizeInCacheLines = 0;
-            other._avxRegisterSize = 0;
-            other._sizeInAVXRegisters = 0;
         }
         return *this;
     }
 
     // Destructor
-    ~StalkerPerformanceVector() {
+    ~StalkerVector() {
         std::free(_data);
         _data = nullptr;
     }
@@ -160,59 +162,44 @@ public:
         return _size;
     }
     
-
     [[nodiscard]] inline unsigned sizeInCacheLines() const{
         return _sizeInCacheLines;
     }
 
-    [[nodiscard]] inline unsigned sizeInAVXRegisters() const{
-        return _sizeInAVXRegisters;
+    
+    [[nodiscard]] inline unsigned getAVXRegisterSize() const{
+        return _avxTraits.AVXRegisterSize;
     }
-
-    [[nodiscard]] inline unsigned avxRegisterSize() const{
-        return _avxRegisterSize;
-    }
-
+    
     [[nodiscard]] inline unsigned alignment() const{
         return _alignment;
     }
-
-
-
-    void deepCopy(const StalkerPerformanceVector& other) {
-        //AVX_Operations<T, unrollFactor>::deepcopy(_data, other._data, _size, false);
-        auto manager = CPU_Manager();
-        auto threads = manager.getHyperThreadCores(2);
-        AVX_Operations<T, unrollFactor>::deepcopy(_data, other._data, _size, 2, manager, true);
-    }
     
-    void deepCopyMultithreaded(const StalkerPerformanceVector& other) {
-//        auto cpu = CPU_Manager();
-//        auto threads = cpu.getHyperThreadCores(2);
-//        AVX_Operations<T, unrollFactor>::deepcopy(_data, other._data, _size, 2, true);
+    void setAvailableCores(unsigned numCores) {
+        _numCores = numCores;
     }
+
+    void deepCopy(const StalkerVector& other) {
+        AVX_Operations<T, unrollFactor>::deepcopy(_data, other._data, _size, _numCores, _manager, true);
+    }
+
 
     void setValue(T value) {
-        AVX_Operations<T, unrollFactor>::setValue(_data, value, _size);
+        AVX_Operations<T, unrollFactor>::setValue(_data, value, _size, _numCores, _manager, true);
     }
     
-    bool areEqual(const StalkerPerformanceVector& other) {
-//        for (unsigned i = 0; i < _size; ++i) {
-//            if (_data[i] != other._data[i]) {
-//                return false;
-//            }
-//        }
-        return AVX_Operations<T, unrollFactor>::areEqual(_data, other._data, _size);
+    bool areEqual(const StalkerVector& other) {
+        return AVX_Operations<T, unrollFactor>::areEqual(_data, other._data, _size, _numCores, _manager);
     }
 
 private:
     T* _data;
     unsigned _size;
     unsigned _sizeInCacheLines;
-    unsigned _avxRegisterSize;
-    unsigned _sizeInAVXRegisters;
     unsigned _alignment;
     AVX_MemoryTraits<T, unrollFactor> _avxTraits;
+    CPU_Manager &_manager;
+    unsigned _numCores = 2;
 };
 
-#endif //STALKER_STALKERPERFORMANCEVECTOR_H
+#endif //STALKER_STALKERVECTOR_H
