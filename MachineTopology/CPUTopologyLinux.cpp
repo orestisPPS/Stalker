@@ -102,36 +102,54 @@ void CPUTopologyLinux::_readMachineTopology() {
 
 
 void CPUTopologyLinux::print_processor_specs() const {
-//    // Print Physical Cores and Logical Processors
-//    std::cout << "Physical Cores and Logical Processors:\n";
-//    for (const auto& core : core_info) {
-//        std::cout << "Core " << core.first << ": ";
-//        for (auto cpu : core.second) {
-//            std::cout << cpu << " ";
-//        }
-//        std::cout << "\n";
-//    }
-//
-//    // Print Clock Information
-//    std::cout << "\nClock Information:\n";
-//    for (const auto& clock : clock_info) {
-//        std::cout << "Core " << clock.first << ": Min Frequency = " << clock.second.first << " kHz, Max Frequency = " << clock.second.second << " kHz\n";
-//    }
-//
-//    // Print Cache Information
-//    std::cout << "\nCache Information:\n";
-//    for (const auto& core_cache : cache_info) {
-//        std::cout << "Core " << core_cache.first << ":\n";
-//        for (const auto& cache_level : core_cache.second) {
-//            auto& cache = cache_level.second;
-//            std::cout << "  L" << cache_level.first << " Cache: Size = " << cache.first / 1024 << " KB, Shared with CPUs = ";
-//            for (auto cpu : cache.second) {
-//                std::cout << cpu << " ";
-//            }
-//            std::cout << "\n";
-//        }
-//    }
+    // Print Physical Cores and Logical Processors
+    std::cout << "Physical Cores and Logical Processors:\n";
+    for (const auto& core : _physicalCores) {
+        std::cout << "Core " << core->getId() << ": ";
+        const auto& threads = core->getThreads();
+        for (const auto& thread : threads) {
+            std::cout << "Thread " << thread->getId() << " ";
+        }
+        std::cout << "\n";
+    }
+
+    // Print Clock Information
+    std::cout << "\nClock Information:\n";
+    for (const auto& thread : _threads) {
+        if (thread != nullptr) {
+            std::cout << "Thread " << thread->getId() << ": Min Frequency = "
+                      << thread->getClockMin() << " kHz, Max Frequency = "
+                      << thread->getClockMax () << " kHz\n";
+        }
+    }
+
+    // Print Cache Information
+    std::cout << "\nCache Information:\n";
+    for (const auto& cacheLevel : _cacheLevels) {
+        if (cacheLevel != nullptr) {
+            std::cout << "L" << cacheLevel->getLevel() << " Cache: Size = "
+                      << cacheLevel->getSize() << " KB, Shared with CPUs = ";
+            const auto& sharedCPUs = cacheLevel->getThreads();
+            for (auto cpu : sharedCPUs) {
+                std::cout << cpu << " ";
+            }
+            std::cout << "\n";
+        }
+    }
+
+    // Print Shared Cache Information
+    std::cout << "\nShared Cache Information:\n";
+    for (const auto& sharedCache : _sharedCaches) {
+        if (sharedCache != nullptr) {
+            std::cout << "Shared Cache: L1 Size = " << sharedCache->getCacheLevel1()->getSize() << " KB, "
+                      << "L2 Size = " << sharedCache->getCacheLevel2()->getSize() << " KB, "
+                      << "L3 Size = " << sharedCache->getCacheLevel3()->getSize() << " KB\n";
+        }
+    }
+
+    std::cout << "\n";
 }
+
 
 const std::vector<Core*> &CPUTopologyLinux::getCores(unsigned numCores) const {
     return _physicalCores;

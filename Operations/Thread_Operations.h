@@ -6,6 +6,7 @@
 #define STALKER_THREAD_OPERATIONS_H
 
 #include <list>
+#include <numeric>
 #include "JobArguments.h"
 #include "../MachineTopology/CPUTopologyLinux.h"
 #include "CPU_Manager.h"
@@ -96,6 +97,32 @@ public:
             thread->resetThreadAffinity();
         }
         manager.release(std::move(cores));
+    }
+
+    template <typename T, typename threadJob>
+    static inline T executeJobWithReduction(threadJob job, unsigned size, unsigned numCores,
+                                  std::pair<unsigned, unsigned>* threadRange, CPU_Manager &manager) {
+
+        auto slaveThreadPool = std::list<Thread*>();
+        auto stokerThreadPool = std::list<Thread*>();
+        auto cores = manager.getCores(numCores);
+        for (const auto &core : cores) {
+            core->addSlaveThreadsToPool(slaveThreadPool);
+            core->addStokerThreadsToPool(stokerThreadPool);
+            core->setThreadAffinity();
+        }
+        int iThread = 0;
+        auto reducedResult = std::vector<T>(numCores, 0);
+        for (const auto &thread : slaveThreadPool){
+            thread->executeJobWithReduction<T>(job, threadRange[iThread].first, threadRange[iThread].second, reducedResult[iThread], thread->getCoreSet());
+            iThread++;
+        }
+        for (const auto &thread : slaveThreadPool) {
+            thread->join();
+            thread->resetThreadAffinity();
+        }
+        manager.release(std::move(cores));
+        return std::accumulate(reducedResult.begin(), reducedResult.end(), 0);
     }
     
 private:

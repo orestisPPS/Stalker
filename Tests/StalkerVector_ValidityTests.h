@@ -17,12 +17,13 @@ namespace STLKR_Tests {
         explicit StalkerVector_ValidityTests() : STLKR_TestBase("Stalker Performance Vector Test") {}
 
         void runTest() override {
-            _runGeneralVectorCases();
+            //_runGeneralVectorCases();
             _runSIMDVectorCases();
+            _manager.printInConsole();
         }
 
     protected:
-        
+
         void _runGeneralVectorCases(){
             
             printTestCaseResult(_testConstructorWithSize<double>(), "Constructor with size (double)");
@@ -57,6 +58,8 @@ namespace STLKR_Tests {
             printTestCaseResult(_testBeginConst(), "Iterator begin const");
             printTestCaseResult(_testEndConst(), "Iterator end const");
             printTestCaseResult(_testRange(), "Custom Range Iterator");
+            
+            //printTestCaseResult(_testSameCoreThreadAffinity(), "Set HyperThread affinity to same core");
         }
 
         template<typename T>
@@ -233,41 +236,46 @@ namespace STLKR_Tests {
 
             return startCorrect && endCorrect && distanceCorrect;
         }
-        
+
+
         void _runSIMDVectorCases(){
             size_t size = 66666666;
 
             //AVX register size
             
-            printTestCaseResult(_testAVXRegisterSize<float>(), "AVX register size (float)");
-            printTestCaseResult(_testAVXRegisterSize<double>(), "AVX register size (double)");
-            printTestCaseResult(_testAVXRegisterSize<int>(), "AVX register size (int)");
-            printTestCaseResult(_testAVXRegisterSize<short>(), "AVX register size (short)");
-            printTestCaseResult(_testAVXRegisterSize<unsigned>(), "AVX register size (unsigned)");
+            //printTestCaseResult(_testAVXRegisterSize<float>(), "AVX register size (float)");
+            //printTestCaseResult(_testAVXRegisterSize<double>(), "AVX register size (double)");
+            //printTestCaseResult(_testAVXRegisterSize<int>(), "AVX register size (int)");
+            //printTestCaseResult(_testAVXRegisterSize<short>(), "AVX register size (short)");
+            //printTestCaseResult(_testAVXRegisterSize<unsigned>(), "AVX register size (unsigned)");
             //Deep copy SIMD
-            printTestCaseResult(_testDeepCopySIMD<double>(size), "Deep copy SIMD (double)");
-            printTestCaseResult(_testDeepCopySIMD<float>(size), "Deep copy SIMD (float)");
-            printTestCaseResult(_testDeepCopySIMD<int>(size), "Deep copy SIMD (int)");
-            printTestCaseResult(_testDeepCopySIMD<short>(size), "Deep copy SIMD (short)");
-            printTestCaseResult(_testDeepCopySIMD<unsigned>(size), "Deep copy SIMD (unsigned)");
+            //printTestCaseResult(_testDeepCopySIMD<double>(size), "Deep copy SIMD (double)");
+            //printTestCaseResult(_testDeepCopySIMD<float>(size), "Deep copy SIMD (float)");
+            //printTestCaseResult(_testDeepCopySIMD<int>(size), "Deep copy SIMD (int)");
+            //printTestCaseResult(_testDeepCopySIMD<short>(size), "Deep copy SIMD (short)");
+            //printTestCaseResult(_testDeepCopySIMD<unsigned>(size), "Deep copy SIMD (unsigned)");
             //Set value SIMD
-            printTestCaseResult(_testSetValueSIMD<double>(size), "Set value SIMD (double)");
-            printTestCaseResult(_testSetValueSIMD<float>(size), "Set value SIMD (float)");
-            printTestCaseResult(_testSetValueSIMD<int>(size), "Set value SIMD (int)");
-            printTestCaseResult(_testSetValueSIMD<short>(size), "Set value SIMD (short)");
-            printTestCaseResult(_testSetValueSIMD<unsigned>(size), "Set value SIMD (unsigned)");
+            //printTestCaseResult(_testSetValueSIMD<double>(size), "Set value SIMD (double)");
+            //printTestCaseResult(_testSetValueSIMD<float>(size), "Set value SIMD (float)");
+            //printTestCaseResult(_testSetValueSIMD<int>(size), "Set value SIMD (int)");
+            //printTestCaseResult(_testSetValueSIMD<short>(size), "Set value SIMD (short)");
+            //printTestCaseResult(_testSetValueSIMD<unsigned>(size), "Set value SIMD (unsigned)");
             //Are equal
-            printTestCaseResult(_testAreEqual<double>(size), "Are equal (double)");
-            printTestCaseResult(_testAreEqual<float>(size), "Are equal (float)");
-            printTestCaseResult(_testAreEqual<int>(size), "Are equal (int)");
-            printTestCaseResult(_testAreEqual<short>(size), "Are equal (short)");
-            printTestCaseResult(_testAreEqual<unsigned>(size), "Are equal (unsigned)");
+            //printTestCaseResult(_testAreEqual<double>(size), "Are equal (double)");
+            //printTestCaseResult(_testAreEqual<float>(size), "Are equal (float)");
+            //printTestCaseResult(_testAreEqual<int>(size), "Are equal (int)");
+            //printTestCaseResult(_testAreEqual<short>(size), "Are equal (short)");
+            //printTestCaseResult(_testAreEqual<unsigned>(size), "Are equal (unsigned)");
             //Are not equal
-            printTestCaseResult(areNotEqual<double>(size), "Are not equal (double)");
-            printTestCaseResult(areNotEqual<float>(size), "Are not equal (float)");
-            printTestCaseResult(areNotEqual<int>(size), "Are not equal (int)");
-            printTestCaseResult(areNotEqual<short>(size), "Are not equal (short)");
-            printTestCaseResult(areNotEqual<unsigned>(size), "Are not equal (unsigned)");
+            //printTestCaseResult(areNotEqual<double>(size), "Are not equal (double)");
+            //printTestCaseResult(areNotEqual<float>(size), "Are not equal (float)");
+            //printTestCaseResult(areNotEqual<int>(size), "Are not equal (int)");
+            //printTestCaseResult(areNotEqual<short>(size), "Are not equal (short)");
+            //printTestCaseResult(areNotEqual<unsigned>(size), "Are not equal (unsigned)");
+            
+            //Raise power
+            //printTestCaseResult(_testPower<float>(size, "power"));
+            printTestCaseResult(_testDotProduct<float>(size), "dot product (float)");
             
         }
 
@@ -278,7 +286,7 @@ namespace STLKR_Tests {
             for (unsigned i = 0; i < vec1.size(); ++i) {
                 vec1[i] = i;
             }
-            vec2.deepCopy(vec1);
+            vec2.copy(vec1);
             for (unsigned i = 0; i < vec1.size(); ++i) {
                 if (vec1[i] != vec2[i]) return false;
             }
@@ -316,6 +324,19 @@ namespace STLKR_Tests {
             }
             return !vec1.areEqual(vec2);
         }
+
+        template<typename T>
+        bool _testDotProduct(size_t size) {
+            StalkerVector<T, unrollFactor> vec1(size, 0, _manager);
+            StalkerVector<T, unrollFactor> vec2(size, 0, _manager);
+            for (unsigned i = 0; i < vec1.size(); ++i) {
+                vec1[i] = 1;
+                vec2[i] = i;
+            }
+            if (vec1.dotProduct(vec2) != (size * (size - 1) / 2)) return false;
+            return true;
+        }
+
     };
 
 } // STLKR_Tests

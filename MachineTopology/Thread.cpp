@@ -37,7 +37,7 @@ const SharedCache *Thread::getSharedCacheMemory(){
 
 
 void Thread::setThreadAffinity(cpu_set_t &coreSet) {
-    _initializeAttribute(_pThreadAttribute);
+    pthread_attr_init(&_pThreadAttribute);
     CPU_SET(_id, &coreSet);
     int result = pthread_attr_setaffinity_np(&_pThreadAttribute, sizeof(cpu_set_t), &coreSet);
     if (result != 0) std::cerr << "Error setting affinity for thread " << _id << std::endl;
@@ -60,9 +60,6 @@ unsigned Thread::getId() const{
     return _id;
 }
 
-void Thread::_initializeAttribute(pthread_attr_t &attribute) {
-    pthread_attr_init(&attribute);
-}
 
 void Thread::_destroyAttribute(pthread_attr_t &attribute) {
     pthread_attr_destroy(&attribute);

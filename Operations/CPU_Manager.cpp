@@ -187,6 +187,10 @@ void CPU_Manager::release(std::vector<Thread*> threads) {
     }
 }
 
+void CPU_Manager::printInConsole() {
+    _cpu->print_processor_specs();
+}
+
         
 
 

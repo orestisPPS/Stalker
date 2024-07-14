@@ -21,6 +21,7 @@ public:
     Thread* getThread();
     void release(const std::vector<Core*>& cores);
     void release(std::vector<Thread*> threads);
+    void printInConsole();
     
     
 private:
