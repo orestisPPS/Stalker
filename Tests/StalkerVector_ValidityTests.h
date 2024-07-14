@@ -19,7 +19,7 @@ namespace STLKR_Tests {
         void runTest() override {
             //_runGeneralVectorCases();
             _runSIMDVectorCases();
-            _manager.printInConsole();
+            //_manager.printInConsole();
         }
 
     protected:
@@ -239,7 +239,7 @@ namespace STLKR_Tests {
 
 
         void _runSIMDVectorCases(){
-            size_t size = 66666666;
+            size_t size = 666;
 
             //AVX register size
             
@@ -273,10 +273,26 @@ namespace STLKR_Tests {
             //printTestCaseResult(areNotEqual<short>(size), "Are not equal (short)");
             //printTestCaseResult(areNotEqual<unsigned>(size), "Are not equal (unsigned)");
             
-            //Raise power
-            //printTestCaseResult(_testPower<float>(size, "power"));
-            printTestCaseResult(_testDotProduct<float>(size), "dot product (float)");
+            //add
+            //printTestCaseResult(_testAdd<float>(size), "add (float)");
+            //printTestCaseResult(_testAdd<double>(size), "add (double)");
+            //printTestCaseResult(_testAdd<int>(size), "add (int)");
+            //printTestCaseResult(_testAdd<short>(size), "add (short)");
+            //printTestCaseResult(_testAdd<unsigned>(size), "add (unsigned)");
             
+            //subtract
+            printTestCaseResult(_testSubtract<float>(size), "subtract (float)");
+            printTestCaseResult(_testSubtract<double>(size), "subtract (double)");
+            printTestCaseResult(_testSubtract<int>(size), "subtract (int)");
+            printTestCaseResult(_testSubtract<short>(size), "subtract (short)");
+            printTestCaseResult(_testSubtract<unsigned>(size), "subtract (unsigned)");
+
+            //multiply
+            printTestCaseResult(_testMultiply<float>(size), "multiply (float)");
+            printTestCaseResult(_testMultiply<double>(size), "multiply (double)");
+            printTestCaseResult(_testMultiply<int>(size), "multiply (int)");
+            printTestCaseResult(_testMultiply<short>(size), "multiply (short)");
+            printTestCaseResult(_testMultiply<unsigned>(size), "multiply (unsigned)");
         }
 
         template<typename T>
@@ -326,14 +342,80 @@ namespace STLKR_Tests {
         }
 
         template<typename T>
-        bool _testDotProduct(size_t size) {
+        bool _testAdd(size_t size) {
             StalkerVector<T, unrollFactor> vec1(size, 0, _manager);
             StalkerVector<T, unrollFactor> vec2(size, 0, _manager);
+            StalkerVector<T, unrollFactor> result(size, 0, _manager);
+            
             for (unsigned i = 0; i < vec1.size(); ++i) {
                 vec1[i] = 1;
-                vec2[i] = i;
+                vec2[i] = 1;
             }
-            if (vec1.dotProduct(vec2) != (size * (size - 1) / 2)) return false;
+
+            if (std::is_same<T, float>::value || std::is_same<T, double>::value){
+                vec1.add(vec2, result, 0.5, 1.5);
+                for (unsigned i = 0; i < vec1.size(); ++i)
+                    if (result[i] != 2) return false;
+                
+            }
+            if (std::is_same<T, int>::value || std::is_same<T, short>::value || std::is_same<T, unsigned>::value){
+                vec1.add(vec2, result, 0, 3);
+                for (unsigned i = 0; i < vec1.size(); ++i)
+                    if (result[i] != 3) return false;
+                
+            }
+            return true;
+        }
+
+        template<typename T>
+        bool _testSubtract(size_t size) {
+            StalkerVector<T, unrollFactor> vec1(size, 0, _manager);
+            StalkerVector<T, unrollFactor> vec2(size, 0, _manager);
+            StalkerVector<T, unrollFactor> result(size, 0, _manager);
+
+            for (unsigned i = 0; i < vec1.size(); ++i) {
+                vec1[i] = 1;
+                vec2[i] = 1;
+            }
+
+            if (std::is_same<T, float>::value || std::is_same<T, double>::value){
+                vec1.subtract(vec2, result, 0.5, -1.5);
+                for (unsigned i = 0; i < vec1.size(); ++i)
+                    if (result[i] != 2) return false;
+
+            }
+            if (std::is_same<T, int>::value || std::is_same<T, short>::value || std::is_same<T, unsigned>::value){
+                vec1.subtract(vec2, result, 0, -3);
+                for (unsigned i = 0; i < vec1.size(); ++i)
+                    if (result[i] != 3) return false;
+
+            }
+            return true;
+        }
+        
+        template<typename T>
+        bool _testMultiply(size_t size) {
+            StalkerVector<T, unrollFactor> vec1(size, 0, _manager);
+            StalkerVector<T, unrollFactor> vec2(size, 0, _manager);
+            StalkerVector<T, unrollFactor> result(size, 0, _manager);
+
+            for (unsigned i = 0; i < vec1.size(); ++i) {
+                vec1[i] = 1;
+                vec2[i] = 1;
+            }
+
+            if (std::is_same<T, float>::value || std::is_same<T, double>::value){
+                vec1.multiply(vec2, result, 0.5, 1.5);
+                for (unsigned i = 0; i < vec1.size(); ++i)
+                    if (result[i] != 0.75) return false;
+
+            }
+            if (std::is_same<T, int>::value || std::is_same<T, short>::value || std::is_same<T, unsigned>::value){
+                vec1.multiply(vec2, result, 333, 2);
+                for (unsigned i = 0; i < vec1.size(); ++i)
+                    if (result[i] != 666) return false;
+
+            }
             return true;
         }
 

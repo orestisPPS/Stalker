@@ -193,12 +193,16 @@ public:
         return AVX_Operations<T, unrollFactor>::areEqual(_data, other._data, _size, _numCores, _manager);
     }
     
-    T sum(){
-        return AVX_Operations<T, unrollFactor>::sum(_data, _size, _numCores, _manager);
+    void add(const StalkerVector& other, StalkerVector& result, T scale1, T scale2) {
+        AVX_Operations<T, unrollFactor>::add(_data, other._data, result._data, scale1, scale2, _size, _numCores, _manager, true);
     }
-
-    T dotProduct(const StalkerVector& other){
-        return AVX_Operations<T, unrollFactor>::dotProduct(_data, other._data, _size, _numCores, _manager);
+    
+    void subtract(const StalkerVector& other, StalkerVector& result, T scale1, T scale2) {
+        AVX_Operations<T, unrollFactor>::subtract(_data, other._data, result._data, scale1, scale2, _size, _numCores, _manager, true);
+    }
+    
+    void multiply(const StalkerVector& other, StalkerVector& result, T scale1, T scale2) {
+        AVX_Operations<T, unrollFactor>::multiply(_data, other._data, result._data, scale1, scale2, _size, _numCores, _manager, true);
     }
     
 //    template<unsigned powerValue>
