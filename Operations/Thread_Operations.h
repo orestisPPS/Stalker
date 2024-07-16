@@ -83,6 +83,7 @@ public:
         auto stokerThreadPool = std::list<Thread*>();
         auto cores = manager.getCores(numCores);
         for (const auto &core : cores) {
+            core->setHyperThreading(false);
             core->addSlaveThreadsToPool(slaveThreadPool);
             core->addStokerThreadsToPool(stokerThreadPool);
             core->setThreadAffinity();
@@ -114,7 +115,7 @@ public:
         int iThread = 0;
         auto reducedResult = std::vector<T>(numCores, 0);
         for (const auto &thread : slaveThreadPool){
-            thread->executeJobWithReduction<T>(job, threadRange[iThread].first, threadRange[iThread].second, reducedResult[iThread], thread->getCoreSet());
+            thread->executeJobWithReduction<threadJob, T>(job, threadRange[iThread].first, threadRange[iThread].second, &reducedResult[iThread], thread->getCoreSet());
             iThread++;
         }
         for (const auto &thread : slaveThreadPool) {

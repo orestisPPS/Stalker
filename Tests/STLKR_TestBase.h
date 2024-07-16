@@ -8,6 +8,7 @@
 #include <utility>
 #include <string>
 #include <iostream>
+#include <limits.h>
 #include "Test_PrimitivesTraits.h"
 #include "../Operations/CPU_Manager.h"
 

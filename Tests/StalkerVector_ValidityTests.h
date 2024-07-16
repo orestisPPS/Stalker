@@ -274,25 +274,47 @@ namespace STLKR_Tests {
             //printTestCaseResult(areNotEqual<unsigned>(size), "Are not equal (unsigned)");
             
             //add
-            //printTestCaseResult(_testAdd<float>(size), "add (float)");
-            //printTestCaseResult(_testAdd<double>(size), "add (double)");
-            //printTestCaseResult(_testAdd<int>(size), "add (int)");
-            //printTestCaseResult(_testAdd<short>(size), "add (short)");
-            //printTestCaseResult(_testAdd<unsigned>(size), "add (unsigned)");
+            printTestCaseResult(_testAdd<float>(size), "add (float)");
+            printTestCaseResult(_testAdd<double>(size), "add (double)");
+            printTestCaseResult(_testAdd<int>(size), "add (int)");
+            printTestCaseResult(_testAdd<short>(30000), "add (short)");
+            printTestCaseResult(_testAdd<unsigned>(size), "add (unsigned)");
             
             //subtract
             printTestCaseResult(_testSubtract<float>(size), "subtract (float)");
             printTestCaseResult(_testSubtract<double>(size), "subtract (double)");
             printTestCaseResult(_testSubtract<int>(size), "subtract (int)");
-            printTestCaseResult(_testSubtract<short>(size), "subtract (short)");
+            printTestCaseResult(_testSubtract<short>(30000), "subtract (short)");
             printTestCaseResult(_testSubtract<unsigned>(size), "subtract (unsigned)");
 
             //multiply
             printTestCaseResult(_testMultiply<float>(size), "multiply (float)");
             printTestCaseResult(_testMultiply<double>(size), "multiply (double)");
             printTestCaseResult(_testMultiply<int>(size), "multiply (int)");
-            printTestCaseResult(_testMultiply<short>(size), "multiply (short)");
+            printTestCaseResult(_testMultiply<short>(30000), "multiply (short)");
             printTestCaseResult(_testMultiply<unsigned>(size), "multiply (unsigned)");
+
+            //scale
+            printTestCaseResult(_scaleMultiply<float>(size), "scale (float)");
+            printTestCaseResult(_scaleMultiply<double>(size), "scale (double)");
+            printTestCaseResult(_scaleMultiply<int>(size), "scale (int)");
+            printTestCaseResult(_scaleMultiply<short>(30000), "scale (short)");
+            printTestCaseResult(_scaleMultiply<unsigned>(size), "scale (unsigned)");
+            
+            //sum of elements
+            printTestCaseResult(_testSumOfElements<float>(size), "Sum of elements (float)");
+            printTestCaseResult(_testSumOfElements<double>(size), "Sum of elements (double)");
+            printTestCaseResult(_testSumOfElements<int>(size), "Sum of elements (int)");
+            printTestCaseResult(_testSumOfElements<short>(30000), "Sum of elements (short)");
+            printTestCaseResult(_testSumOfElements<unsigned>(size), "Sum of elements (unsigned)");
+            
+            //dot product
+            printTestCaseResult(_testDotProduct<float>(333), "Dot product (float)");
+            printTestCaseResult(_testDotProduct<double>(666666), "Dot product (double)");
+            printTestCaseResult(_testDotProduct<int>(66666666), "Dot product (int)");
+            printTestCaseResult(_testDotProduct<short>(66), "Dot product (short)");
+            printTestCaseResult(_testDotProduct<unsigned>(66666666), "Dot product (unsigned)");
+            
         }
 
         template<typename T>
@@ -417,6 +439,55 @@ namespace STLKR_Tests {
 
             }
             return true;
+        }
+        
+        template<typename T>
+        bool _scaleMultiply(size_t size) {
+            StalkerVector<T, unrollFactor> vec1(size, 0, _manager);
+
+            for (unsigned i = 0; i < vec1.size(); ++i) {
+                vec1[i] = 1;
+            }
+
+            if (std::is_same<T, float>::value || std::is_same<T, double>::value){
+                vec1.scale(0.5);
+                for (unsigned i = 0; i < vec1.size(); ++i)
+                    if (vec1[i] != 0.5) return false;
+
+            }
+            if (std::is_same<T, int>::value || std::is_same<T, short>::value || std::is_same<T, unsigned>::value){
+                vec1.scale(333);
+                for (unsigned i = 0; i < vec1.size(); ++i)
+                    if (vec1[i] != 333) return false;
+
+            }
+            return true;
+        }
+        
+        template<typename T>
+        bool _testSumOfElements(size_t size) {
+            StalkerVector<T, unrollFactor> vec(size, 0, _manager);
+            T sum = 0;
+            for (unsigned i = 0; i < vec.size(); ++i) {
+                vec[i] = i;
+                sum += i;
+            }
+            return vec.sum() == sum;
+        }
+        
+        template<typename T>
+        bool _testDotProduct(size_t size) {
+            StalkerVector<T, unrollFactor> vec1(size, 0, _manager);
+            StalkerVector<T, unrollFactor> vec2(size, 0, _manager);
+            T dotProduct = 0;
+            for (unsigned i = 0; i < vec1.size(); ++i) {
+                vec1[i] = i;
+                vec2[i] = i;
+                dotProduct += i * i;
+            }
+            auto result = vec1.dotProduct(vec2);
+            std::cout<< "Expected: " << dotProduct << " Computed: " << result << std::endl;
+            return vec1.dotProduct(vec2) == dotProduct;
         }
 
     };

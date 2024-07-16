@@ -36,33 +36,27 @@ const SharedCache *Thread::getSharedCacheMemory(){
 }
 
 
-void Thread::setThreadAffinity(cpu_set_t &coreSet) {
-    pthread_attr_init(&_pThreadAttribute);
-    CPU_SET(_id, &coreSet);
-    int result = pthread_attr_setaffinity_np(&_pThreadAttribute, sizeof(cpu_set_t), &coreSet);
-    if (result != 0) std::cerr << "Error setting affinity for thread " << _id << std::endl;
-    _isRunning = true;
+void Thread::setThreadAffinity(const cpu_set_t &coreSet){
     _coreSet = coreSet;
+    pthread_attr_init(&_pThreadAttribute);
+    CPU_SET(_id, &_coreSet);
+    int result = pthread_attr_setaffinity_np(&_pThreadAttribute, sizeof(cpu_set_t), &_coreSet);
+    if (result != 0) std::cerr << "Error setting affinity for thread " << _id << std::endl;
 }
 
 void Thread::resetThreadAffinity(){
     CPU_ZERO(&_coreSet);
     int result = pthread_attr_setaffinity_np(&_pThreadAttribute, sizeof(cpu_set_t), &_coreSet);
     if (result != 0) std::cerr << "Error resetting affinity for thread " << _id << std::endl;
-    _destroyAttribute(_pThreadAttribute);
+    pthread_attr_destroy(&_pThreadAttribute);
 }
 
-cpu_set_t Thread::getCoreSet() const{
+cpu_set_t & Thread::getCoreSet(){
     return _coreSet;
 }
 
 unsigned Thread::getId() const{
     return _id;
-}
-
-
-void Thread::_destroyAttribute(pthread_attr_t &attribute) {
-    pthread_attr_destroy(&attribute);
 }
 
 unsigned Thread::getParentId() const {

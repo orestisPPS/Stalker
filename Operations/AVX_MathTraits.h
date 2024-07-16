@@ -6,6 +6,8 @@
 #define STALKER_AVX_MATHTRAITS_H
 #include "AVX_MemoryTraits.h"
 #include <immintrin.h>
+#include <algorithm>
+#include <numeric>
 
 template<typename T, unsigned int unrollFactor>
 struct AVX_MathTraits;
@@ -28,6 +30,18 @@ struct AVX_MathTraits<float, unrollFactor> {
 
     static constexpr inline void multiply(const AVXRegisterType* a, const AVXRegisterType* b, AVXRegisterType* result, AVXRegisterType* scale1, AVXRegisterType* scale2) {
         _unrollMultiply<unrollFactor>(a, b, result, scale1, scale2);
+    }
+    
+    static constexpr inline void scale(AVXRegisterType* Data, AVXRegisterType* scale){
+        _scale<unrollFactor>(Data, scale);
+    }
+
+    static constexpr inline void sum(AVXRegisterType* Data, DataType * result){
+        _sum<unrollFactor>(Data, result);
+    }
+
+    static constexpr inline void dotProduct(AVXRegisterType* a, AVXRegisterType* b, DataType * result){;
+        _dotProduct<unrollFactor>(a, b, result);
     }
 
 private:
@@ -54,6 +68,50 @@ private:
             _unrollMultiply<iUnroll - 1>(a, b, result, scale1, scale2);
         }
     }
+    
+    template<unsigned iUnroll>
+    static constexpr inline void _scale(AVXRegisterType* Data, AVXRegisterType* scale){
+        if constexpr (iUnroll > 0) {
+            *(Data + iUnroll - 1) = _mm256_mul_ps(*(Data + iUnroll - 1), *scale);
+            _scale<iUnroll - 1>(Data, scale);
+        }
+    }
+
+    template<unsigned iUnroll>
+    static constexpr inline void _sum(const AVXRegisterType* Data, DataType* result) {
+        if constexpr (iUnroll > 0) {
+            __m128 hi = _mm256_extractf128_ps(*(Data + iUnroll - 1), 1);
+            __m128 lo = _mm256_castps256_ps128(*(Data + iUnroll - 1));
+            __m128 sum128 = _mm_add_ps(lo, hi);
+
+            // Horizontal add to get the sum of all elements in the 128-bit lanes
+            sum128 = _mm_hadd_ps(sum128, sum128);
+            sum128 = _mm_hadd_ps(sum128, sum128);
+
+            *result += _mm_cvtss_f32(sum128);
+            _sum<iUnroll - 1>(Data, result);
+        }
+    }
+
+    template<unsigned iUnroll>
+    static constexpr inline void _dotProduct(const AVXRegisterType* a, const AVXRegisterType* b, DataType* result) {
+        if constexpr (iUnroll > 0) {
+            AVXRegisterType temp = _mm256_mul_ps(*(a + iUnroll - 1), *(b + iUnroll - 1));
+
+            __m128 hi = _mm256_extractf128_ps(temp, 1);
+            __m128 lo = _mm256_castps256_ps128(temp);
+            __m128 sum128 = _mm_add_ps(lo, hi);
+
+            // Horizontal add to get the sum of all elements in the 128-bit lanes
+            sum128 = _mm_hadd_ps(sum128, sum128);
+            sum128 = _mm_hadd_ps(sum128, sum128);
+
+            *result += _mm_cvtss_f32(sum128);
+            _dotProduct<iUnroll - 1>(a, b, result);
+        }
+    }
+
+    
 };
 
 // Double Specialization
@@ -74,6 +132,18 @@ struct AVX_MathTraits<double, unrollFactor> {
 
     static constexpr inline void multiply(const AVXRegisterType* a, const AVXRegisterType* b, AVXRegisterType* result, AVXRegisterType* scale1, AVXRegisterType* scale2) {
         _unrollMultiply<unrollFactor>(a, b, result, scale1, scale2);
+    }
+    
+    static constexpr inline void scale(AVXRegisterType* Data, AVXRegisterType* scale){
+        _scale<unrollFactor>(Data, scale);
+    }
+    
+    static constexpr inline void sum(AVXRegisterType* Data, DataType * result){
+        _sum<unrollFactor>(Data, result);
+    }
+    
+    static constexpr inline void dotProduct(AVXRegisterType* a, AVXRegisterType* b, DataType * result){;
+        _dotProduct<unrollFactor>(a, b, result);
     }
 
 private:
@@ -100,6 +170,47 @@ private:
             _unrollMultiply<iUnroll - 1>(a, b, result, scale1, scale2);
         }
     }
+    
+    template<unsigned iUnroll>
+    static constexpr inline void _scale(AVXRegisterType* Data, AVXRegisterType* scale){
+        if constexpr (iUnroll > 0) {
+            *(Data + iUnroll - 1) = _mm256_mul_pd(*(Data + iUnroll - 1), *scale);
+            _scale<iUnroll - 1>(Data, scale);
+        }
+    }
+
+    template<unsigned iUnroll>
+    static constexpr inline void _sum(const AVXRegisterType* Data, DataType* result) {
+        if constexpr (iUnroll > 0) {
+            __m128d hi = _mm256_extractf128_pd(*(Data + iUnroll - 1), 1);
+            __m128d lo = _mm256_castpd256_pd128(*(Data + iUnroll - 1));
+            __m128d sum128 = _mm_add_pd(lo, hi);
+
+            // Horizontal add to get the sum of all elements in the 128-bit lanes
+            sum128 = _mm_hadd_pd(sum128, sum128);
+
+            *result += _mm_cvtsd_f64(sum128);
+            _sum<iUnroll - 1>(Data, result);
+        }
+    }
+
+    template<unsigned iUnroll>
+    static constexpr inline void _dotProduct(const AVXRegisterType* a, const AVXRegisterType* b, DataType* result) {
+        if constexpr (iUnroll > 0) {
+            AVXRegisterType temp = _mm256_mul_pd(*(a + iUnroll - 1), *(b + iUnroll - 1));
+
+            __m128d hi = _mm256_extractf128_pd(temp, 1);
+            __m128d lo = _mm256_castpd256_pd128(temp);
+            __m128d sum128 = _mm_add_pd(lo, hi);
+
+            // Horizontal add to get the sum of all elements in the 128-bit lanes
+            sum128 = _mm_hadd_pd(sum128, sum128);
+
+            *result += _mm_cvtsd_f64(sum128);
+            _dotProduct<iUnroll - 1>(a, b, result);
+        }
+    }
+
 };
 
 // Int Specialization
@@ -121,6 +232,18 @@ struct AVX_MathTraits<int, unrollFactor> {
     static constexpr inline void multiply(const AVXRegisterType* a, const AVXRegisterType* b, AVXRegisterType* result, AVXRegisterType* scale1, AVXRegisterType* scale2) {
         _unrollMultiply<unrollFactor>(a, b, result, scale1, scale2);
     }
+    
+    static constexpr inline void scale(AVXRegisterType* Data, AVXRegisterType* scale){
+        _scale<unrollFactor>(Data, scale);
+    }
+    
+    static constexpr inline void sum(AVXRegisterType* Data, DataType * result){
+        _sum<unrollFactor>(Data, result);
+    }
+
+    static constexpr inline void dotProduct(AVXRegisterType* a, AVXRegisterType* b, DataType * result){;
+        _dotProduct<unrollFactor>(a, b, result);
+    }
 
 private:
     template<unsigned iUnroll>
@@ -146,6 +269,50 @@ private:
             _unrollMultiply<iUnroll - 1>(a, b, result, scale1, scale2);
         }
     }
+    
+    template<unsigned iUnroll>
+    static constexpr inline void _scale(AVXRegisterType* Data, AVXRegisterType* scale){
+        if constexpr (iUnroll > 0) {
+            *(Data + iUnroll - 1) = _mm256_mullo_epi32(*(Data + iUnroll - 1), *scale);
+            _scale<iUnroll - 1>(Data, scale);
+        }
+    }
+
+    template<unsigned iUnroll>
+    static constexpr inline void _sum(const AVXRegisterType* Data, DataType* result) {
+        if constexpr (iUnroll > 0) {
+            // Extract the high and low 128-bit lanes
+            __m128i hi = _mm256_extracti128_si256(*(Data + iUnroll - 1), 1);
+            __m128i lo = _mm256_castsi256_si128(*(Data + iUnroll - 1));
+            __m128i sum128 = _mm_add_epi32(lo, hi);
+
+            // Horizontal add to get the sum of all elements in the 128-bit lanes
+            sum128 = _mm_hadd_epi32(sum128, sum128);
+            sum128 = _mm_hadd_epi32(sum128, sum128);
+
+            *result += _mm_cvtsi128_si32(sum128);
+            _sum<iUnroll - 1>(Data, result);
+        }
+    }
+
+    template<unsigned iUnroll>
+    static constexpr inline void _dotProduct(const AVXRegisterType* a, const AVXRegisterType* b, DataType* result) {
+        if constexpr (iUnroll > 0) {
+            AVXRegisterType temp = _mm256_mullo_epi32(*(a + iUnroll - 1), *(b + iUnroll - 1));
+
+            __m128i hi = _mm256_extracti128_si256(temp, 1);
+            __m128i lo = _mm256_castsi256_si128(temp);
+            __m128i sum128 = _mm_add_epi32(lo, hi);
+
+            // Horizontal add to get the sum of all elements in the 128-bit lanes
+            sum128 = _mm_hadd_epi32(sum128, sum128);
+            sum128 = _mm_hadd_epi32(sum128, sum128);
+
+            *result += _mm_cvtsi128_si32(sum128);
+            _dotProduct<iUnroll - 1>(a, b, result);
+        }
+    }
+
 };
 
 // Unsigned Specialization
@@ -167,7 +334,20 @@ struct AVX_MathTraits<unsigned, unrollFactor> {
     static constexpr inline void multiply(const AVXRegisterType* a, const AVXRegisterType* b, AVXRegisterType* result, AVXRegisterType* scale1, AVXRegisterType* scale2) {
         _unrollMultiply<unrollFactor>(a, b, result, scale1, scale2);
     }
-
+    
+    static constexpr inline void scale(AVXRegisterType* Data, AVXRegisterType* scale){
+        _scale<unrollFactor>(Data, scale);
+    }
+    
+    static constexpr inline void sum(AVXRegisterType* Data, DataType * result){
+        _sum<unrollFactor>(Data, result);
+    }
+    
+    static constexpr inline void dotProduct(AVXRegisterType* a, AVXRegisterType* b, DataType * result){;
+        _dotProduct<unrollFactor>(a, b, result);
+    }
+    
+    
 private:
     template<unsigned iUnroll>
     static constexpr inline void _unrollAdd(const AVXRegisterType* a, const AVXRegisterType* b, AVXRegisterType* result, AVXRegisterType* scale1, AVXRegisterType* scale2) {
@@ -192,6 +372,50 @@ private:
             _unrollMultiply<iUnroll - 1>(a, b, result, scale1, scale2);
         }
     }
+    
+    template<unsigned iUnroll>
+    static constexpr inline void _scale(AVXRegisterType* Data, AVXRegisterType* scale){
+        if constexpr (iUnroll > 0) {
+            *(Data + iUnroll - 1) = _mm256_mullo_epi32(*(Data + iUnroll - 1), *scale);
+            _scale<iUnroll - 1>(Data, scale);
+        }
+    }
+
+    template<unsigned iUnroll>
+    static constexpr inline void _sum(const AVXRegisterType* Data, DataType* result) {
+        if constexpr (iUnroll > 0) {
+            // Extract the high and low 128-bit lanes
+            __m128i hi = _mm256_extracti128_si256(*(Data + iUnroll - 1), 1);
+            __m128i lo = _mm256_castsi256_si128(*(Data + iUnroll - 1));
+            __m128i sum128 = _mm_add_epi32(lo, hi);
+
+            // Horizontal add to get the sum of all elements in the 128-bit lanes
+            sum128 = _mm_hadd_epi32(sum128, sum128);
+            sum128 = _mm_hadd_epi32(sum128, sum128);
+
+            *result += _mm_cvtsi128_si32(sum128);
+            _sum<iUnroll - 1>(Data, result);
+        }
+    }
+
+    template<unsigned iUnroll>
+    static constexpr inline void _dotProduct(const AVXRegisterType* a, const AVXRegisterType* b, DataType* result) {
+        if constexpr (iUnroll > 0) {
+            AVXRegisterType temp = _mm256_mullo_epi32(*(a + iUnroll - 1), *(b + iUnroll - 1));
+
+            __m128i hi = _mm256_extracti128_si256(temp, 1);
+            __m128i lo = _mm256_castsi256_si128(temp);
+            __m128i sum128 = _mm_add_epi32(lo, hi);
+
+            // Horizontal add to get the sum of all elements in the 128-bit lanes
+            sum128 = _mm_hadd_epi32(sum128, sum128);
+            sum128 = _mm_hadd_epi32(sum128, sum128);
+
+            *result += static_cast<DataType>(_mm_cvtsi128_si32(sum128));
+            _dotProduct<iUnroll - 1>(a, b, result);
+        }
+    }
+
 };
 
 // Short Specialization
@@ -212,6 +436,18 @@ struct AVX_MathTraits<short, unrollFactor> {
 
     static constexpr inline void multiply(const AVXRegisterType* a, const AVXRegisterType* b, AVXRegisterType* result, AVXRegisterType* scale1, AVXRegisterType* scale2) {
         _unrollMultiply<unrollFactor>(a, b, result, scale1, scale2);
+    }
+    
+    static constexpr inline void scale(AVXRegisterType* Data, AVXRegisterType* scale){
+        _scale<unrollFactor>(Data, scale);
+    }
+    
+    static constexpr inline void sum(AVXRegisterType* Data, DataType * result){
+        _sum<unrollFactor>(Data, result);
+    }
+
+    static constexpr inline void dotProduct(AVXRegisterType* a, AVXRegisterType* b, DataType * result){;
+        _dotProduct<unrollFactor>(a, b, result);
     }
 
 private:
@@ -238,5 +474,53 @@ private:
             _unrollMultiply<iUnroll - 1>(a, b, result, scale1, scale2);
         }
     }
+    
+    template<unsigned iUnroll>
+    static constexpr inline void _scale(AVXRegisterType* Data, AVXRegisterType* scale){
+        if constexpr (iUnroll > 0) {
+            *(Data + iUnroll - 1) = _mm256_mullo_epi16(*(Data + iUnroll - 1), *scale);
+            _scale<iUnroll - 1>(Data, scale);
+        }
+    }
+
+    template<unsigned iUnroll>
+    static constexpr inline void _sum(const AVXRegisterType* Data, DataType* result) {
+        if constexpr (iUnroll > 0) {
+            // Extract the high and low 128-bit lanes
+            __m128i hi = _mm256_extracti128_si256(*(Data + iUnroll - 1), 1);
+            __m128i lo = _mm256_castsi256_si128(*(Data + iUnroll - 1));
+
+            // Horizontal add within each 128-bit lane
+            __m128i sum128 = _mm_add_epi16(lo, hi);
+            sum128 = _mm_hadd_epi16(sum128, sum128);
+            sum128 = _mm_hadd_epi16(sum128, sum128);
+            sum128 = _mm_hadd_epi16(sum128, sum128);
+
+            // Extract the lower 16 bits of sum128 and add to the result
+            *result += _mm_extract_epi16(sum128, 0);
+
+            _sum<iUnroll - 1>(Data, result);
+        }
+    }
+
+    template<unsigned iUnroll>
+    static constexpr inline void _dotProduct(const AVXRegisterType* a, const AVXRegisterType* b, DataType* result) {
+        if constexpr (iUnroll > 0) {
+            AVXRegisterType temp = _mm256_mullo_epi16(*(a + iUnroll - 1), *(b + iUnroll - 1));
+
+            __m128i hi = _mm256_extracti128_si256(temp, 1);
+            __m128i lo = _mm256_castsi256_si128(temp);
+            __m128i sum128 = _mm_add_epi16(lo, hi);
+
+            // Horizontal add to get the sum of all elements in the 128-bit lanes
+            sum128 = _mm_hadd_epi16(sum128, sum128);
+            sum128 = _mm_hadd_epi16(sum128, sum128);
+            sum128 = _mm_hadd_epi16(sum128, sum128);
+
+            *result += _mm_extract_epi16(sum128, 0);
+            _dotProduct<iUnroll - 1>(a, b, result);
+        }
+    }
+
 };
 #endif //STALKER_AVX_MATHTRAITS_H
