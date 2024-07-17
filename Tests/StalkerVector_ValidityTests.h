@@ -243,35 +243,35 @@ namespace STLKR_Tests {
 
             //AVX register size
             
-            //printTestCaseResult(_testAVXRegisterSize<float>(), "AVX register size (float)");
-            //printTestCaseResult(_testAVXRegisterSize<double>(), "AVX register size (double)");
-            //printTestCaseResult(_testAVXRegisterSize<int>(), "AVX register size (int)");
-            //printTestCaseResult(_testAVXRegisterSize<short>(), "AVX register size (short)");
-            //printTestCaseResult(_testAVXRegisterSize<unsigned>(), "AVX register size (unsigned)");
+            printTestCaseResult(_testAVXRegisterSize<float>(), "AVX register size (float)");
+            printTestCaseResult(_testAVXRegisterSize<double>(), "AVX register size (double)");
+            printTestCaseResult(_testAVXRegisterSize<int>(), "AVX register size (int)");
+            printTestCaseResult(_testAVXRegisterSize<short>(), "AVX register size (short)");
+            printTestCaseResult(_testAVXRegisterSize<unsigned>(), "AVX register size (unsigned)");
             //Deep copy SIMD
-            //printTestCaseResult(_testDeepCopySIMD<double>(size), "Deep copy SIMD (double)");
-            //printTestCaseResult(_testDeepCopySIMD<float>(size), "Deep copy SIMD (float)");
-            //printTestCaseResult(_testDeepCopySIMD<int>(size), "Deep copy SIMD (int)");
-            //printTestCaseResult(_testDeepCopySIMD<short>(size), "Deep copy SIMD (short)");
-            //printTestCaseResult(_testDeepCopySIMD<unsigned>(size), "Deep copy SIMD (unsigned)");
+            printTestCaseResult(_testDeepCopySIMD<double>(size), "Deep copy SIMD (double)");
+            printTestCaseResult(_testDeepCopySIMD<float>(size), "Deep copy SIMD (float)");
+            printTestCaseResult(_testDeepCopySIMD<int>(size), "Deep copy SIMD (int)");
+            printTestCaseResult(_testDeepCopySIMD<short>(size), "Deep copy SIMD (short)");
+            printTestCaseResult(_testDeepCopySIMD<unsigned>(size), "Deep copy SIMD (unsigned)");
             //Set value SIMD
-            //printTestCaseResult(_testSetValueSIMD<double>(size), "Set value SIMD (double)");
-            //printTestCaseResult(_testSetValueSIMD<float>(size), "Set value SIMD (float)");
-            //printTestCaseResult(_testSetValueSIMD<int>(size), "Set value SIMD (int)");
-            //printTestCaseResult(_testSetValueSIMD<short>(size), "Set value SIMD (short)");
-            //printTestCaseResult(_testSetValueSIMD<unsigned>(size), "Set value SIMD (unsigned)");
+            printTestCaseResult(_testSetValueSIMD<double>(size), "Set value SIMD (double)");
+            printTestCaseResult(_testSetValueSIMD<float>(size), "Set value SIMD (float)");
+            printTestCaseResult(_testSetValueSIMD<int>(size), "Set value SIMD (int)");
+            printTestCaseResult(_testSetValueSIMD<short>(size), "Set value SIMD (short)");
+            printTestCaseResult(_testSetValueSIMD<unsigned>(size), "Set value SIMD (unsigned)");
             //Are equal
-            //printTestCaseResult(_testAreEqual<double>(size), "Are equal (double)");
-            //printTestCaseResult(_testAreEqual<float>(size), "Are equal (float)");
-            //printTestCaseResult(_testAreEqual<int>(size), "Are equal (int)");
-            //printTestCaseResult(_testAreEqual<short>(size), "Are equal (short)");
-            //printTestCaseResult(_testAreEqual<unsigned>(size), "Are equal (unsigned)");
+            printTestCaseResult(_testAreEqual<double>(size), "Are equal (double)");
+            printTestCaseResult(_testAreEqual<float>(size), "Are equal (float)");
+            printTestCaseResult(_testAreEqual<int>(size), "Are equal (int)");
+            printTestCaseResult(_testAreEqual<short>(size), "Are equal (short)");
+            printTestCaseResult(_testAreEqual<unsigned>(size), "Are equal (unsigned)");
             //Are not equal
-            //printTestCaseResult(areNotEqual<double>(size), "Are not equal (double)");
-            //printTestCaseResult(areNotEqual<float>(size), "Are not equal (float)");
-            //printTestCaseResult(areNotEqual<int>(size), "Are not equal (int)");
-            //printTestCaseResult(areNotEqual<short>(size), "Are not equal (short)");
-            //printTestCaseResult(areNotEqual<unsigned>(size), "Are not equal (unsigned)");
+            printTestCaseResult(areNotEqual<double>(size), "Are not equal (double)");
+            printTestCaseResult(areNotEqual<float>(size), "Are not equal (float)");
+            printTestCaseResult(areNotEqual<int>(size), "Are not equal (int)");
+            printTestCaseResult(areNotEqual<short>(size), "Are not equal (short)");
+            printTestCaseResult(areNotEqual<unsigned>(size), "Are not equal (unsigned)");
             
             //add
             printTestCaseResult(_testAdd<float>(size), "add (float)");
@@ -310,10 +310,17 @@ namespace STLKR_Tests {
             
             //dot product
             printTestCaseResult(_testDotProduct<float>(333), "Dot product (float)");
-            printTestCaseResult(_testDotProduct<double>(666666), "Dot product (double)");
+            printTestCaseResult(_testDotProduct<double>(333), "Dot product (double)");
             printTestCaseResult(_testDotProduct<int>(66666666), "Dot product (int)");
             printTestCaseResult(_testDotProduct<short>(66), "Dot product (short)");
             printTestCaseResult(_testDotProduct<unsigned>(66666666), "Dot product (unsigned)");
+
+            //magnitude
+            printTestCaseResult(_testMagnitude<float>(333), "Magnitude (float)");
+            printTestCaseResult(_testMagnitude<double>(333), "Magnitude (double)");
+            printTestCaseResult(_testMagnitude<int>(66666666), "Magnitude (int)");
+            printTestCaseResult(_testMagnitude<short>(66), "Magnitude (short)");
+            printTestCaseResult(_testMagnitude<unsigned>(66666666), "Magnitude (unsigned)");
             
         }
 
@@ -334,7 +341,7 @@ namespace STLKR_Tests {
         template<typename T>
         bool _testSetValueSIMD(size_t size) {
             StalkerVector<T, unrollFactor> vec(size, 0, _manager);
-            vec.setValue(5);
+            vec.fill(5);
             for (unsigned i = 0; i < vec.size(); ++i) {
                 if (vec[i] != 5) return false;
             }
@@ -486,8 +493,21 @@ namespace STLKR_Tests {
                 dotProduct += i * i;
             }
             auto result = vec1.dotProduct(vec2);
-            std::cout<< "Expected: " << dotProduct << " Computed: " << result << std::endl;
-            return vec1.dotProduct(vec2) == dotProduct;
+            if (result != dotProduct) {
+                std::cout << "Result: " << result << " Dot product: " << dotProduct << std::endl;
+            }
+            return result == dotProduct;
+        }
+        
+        template<typename T>
+        bool _testMagnitude(size_t size) {
+            StalkerVector<T, unrollFactor> vec(size, 0, _manager);
+            T sum = 0;
+            for (unsigned i = 0; i < vec.size(); ++i) {
+                vec[i] = i;
+                sum += i * i;
+            }
+            return vec.magnitude() == std::sqrt(sum);
         }
 
     };

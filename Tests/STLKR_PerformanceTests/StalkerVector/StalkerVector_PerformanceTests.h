@@ -4,15 +4,15 @@
 
 #ifndef STALKER_STALKERVECTOR_PERFORMANCETESTS_H
 #define STALKER_STALKERVECTOR_PERFORMANCETESTS_H
-#include "STLKR_PerformanceTestBase.h"
-#include "../../LinearAlgebra/ContiguousMemoryStorage/StalkerVector.h"
+#include "../STLKR_PerformanceTestBase.h"
+#include "../../../LinearAlgebra/ContiguousMemoryStorage/StalkerVector.h"
 
 namespace STLKR_Tests{
     
     template<typename T,unsigned size, unsigned unrollFactor>
     class StalkerVector_PerformanceTests : public STLKR_PerformanceTestBase {
     public:
-        StalkerVector_PerformanceTests(const std::string &path) :
+        explicit StalkerVector_PerformanceTests(const std::string &path) :
             STLKR_PerformanceTestBase("StalkerVector", path){}
         
         
@@ -38,28 +38,21 @@ namespace STLKR_Tests{
             v1.setAvailableCores(1);
             logs.startSingleObservationTimer("SIMD_cores1", STLKR_TimeUnit::microseconds);
             v1.copy(source);
-            logs.stopSingleObservationTimer("SIMD_cores1");
+            logs.stopSingleObservationTimer("SIMD_cores1", STLKR_TimeUnit::seconds);
 
             StalkerVector<T, unrollFactor> v2(size, _manager);
             source.setAvailableCores(2);
             v2.setAvailableCores(2);
             logs.startSingleObservationTimer("SIMD_cores2", STLKR_TimeUnit::microseconds);
             v2.copy(source);
-            logs.stopSingleObservationTimer("SIMD_cores2");
+            logs.stopSingleObservationTimer("SIMD_cores2", STLKR_TimeUnit::seconds);
 
             StalkerVector<T, unrollFactor> v3(size, _manager);
             source.setAvailableCores(4);
             v3.setAvailableCores(4);
             logs.startSingleObservationTimer("SIMD_cores4", STLKR_TimeUnit::microseconds);
             v3.copy(source);
-            logs.stopSingleObservationTimer("SIMD_cores4");
-            
-            
-//            auto copyJob = [&](size_t start, size_t end){
-//                for (size_t i = start; i < end; i++) {
-//                    data4[i] = data2[i];
-//                }
-//            };
+            logs.stopSingleObservationTimer("SIMD_cores4", STLKR_TimeUnit::seconds);
 
             T* data1 = new T[size];
             T* data2 = new T[size];
@@ -68,7 +61,7 @@ namespace STLKR_Tests{
             }
             logs.startSingleObservationTimer("memcpy_noSIMD", STLKR_TimeUnit::microseconds);
             std::memcpy(data1, data2, size * sizeof(T));
-            logs.stopSingleObservationTimer("memcpy_noSIMD");
+            logs.stopSingleObservationTimer("memcpy_noSIMD", STLKR_TimeUnit::seconds);
             delete[] data1;
             delete[] data2;
             
@@ -78,7 +71,7 @@ namespace STLKR_Tests{
             for (size_t i = 0; i < size; i++) {
                 data3[i] = data4[i];
             }
-            logs.stopSingleObservationTimer("loopCopy_noSIMD");
+            logs.stopSingleObservationTimer("loopCopy_noSIMD", STLKR_TimeUnit::seconds);
             
             delete[] data3;
             delete[] data4;

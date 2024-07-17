@@ -48,5 +48,6 @@ add_executable(stalker main.cpp
         Operations/AVX_MemoryTraits.h
         Operations/AVX_MathTraits.h
         Tests/Test_PrimitivesTraits.h
-        Tests/STLKR_PerformanceTests/StalkerVector_PerformanceTests.h
+        Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_PerformanceTests.h
+        Tests/STLKR_PerformanceTests/StalkerVector/SingleThreadPerformance/SingleThreadOperationsPerformanceTest.h
 )

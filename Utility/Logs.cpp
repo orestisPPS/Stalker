@@ -43,7 +43,7 @@ void Logs::startSingleObservationTimer(const string &logName, STLKR_TimeUnit uni
     _currentTimers->at(logName).start();
 }
 
-void Logs::stopSingleObservationTimer(const std::string &logName) {
+void Logs::stopSingleObservationTimer(const string &logName, STLKR_TimeUnit unit) {
     if (_currentTimers->find(logName) == _currentTimers->end())
         throw std::runtime_error("Logs::stopSingleObservationTimer: Timer " + logName + " does not exist.");
 

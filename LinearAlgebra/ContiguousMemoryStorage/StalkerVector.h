@@ -4,17 +4,45 @@
 
 #ifndef STALKER_STALKERVECTOR_H
 #define STALKER_STALKERVECTOR_H
-#include <cstdlib>
-#include <immintrin.h>
-#include <stdexcept>
-#include <unordered_map>
-#include <functional>
-#include <typeindex>
+
 #include <cstring>
+#include <valarray>
 #include "../../Operations/AVX_MemoryManagement.h"
 #include "../../Operations/AVX_Operations.h"
 #include "ContiguousMemoryIterator.h"
 #include "../../Operations/AVX_MathTraits.h"
+
+
+enum UnrollFactor {
+    UNROLL_1,
+    UNROLL_2,
+    UNROLL_4,
+    UNROLL_8,
+    UNROLL_16,
+    UNROLL_32,
+    UNROLL_64,
+};
+
+static constexpr unsigned int getUnrollFactor(UnrollFactor unrollFactor) {
+    switch (unrollFactor) {
+        case UNROLL_1:
+            return 1;
+        case UNROLL_2:
+            return 2;
+        case UNROLL_4:
+            return 4;
+        case UNROLL_8:
+            return 8;
+        case UNROLL_16:
+            return 16;
+        case UNROLL_32:
+            return 32;
+        case UNROLL_64:
+            return 64;
+        default:
+            return 1;
+    }
+}
 
 struct VectorThreadingConfig{
     unsigned numCores = 2;
@@ -185,7 +213,7 @@ public:
     }
 
 
-    void setValue(T value) {
+    void fill(T value) {
         AVX_Operations<T, unrollFactor>::setValue(_data, value, _size, _numCores, _manager, true);
     }
     
@@ -216,6 +244,74 @@ public:
     T dotProduct(const StalkerVector& other) {
         return AVX_Operations<T, unrollFactor>::dotProduct(_data, other._data, _size, _numCores, _manager);
     }
+    
+    double magnitude() {
+        if constexpr (std::is_same<T, int>::value || std::is_same<T, short>::value ||
+                      std::is_same<T, unsigned>::value || std::is_same<T, float>::value)
+            return sqrt(static_cast<double>(dotProduct(*this)));
+        else if constexpr (std::is_same<T, double>::value)
+            return sqrt(dotProduct(*this));
+    }
+    
+    double average() {
+        return static_cast<double>(sum()) / _size;
+    }
+    
+
+
+    void printVertically(const std::string& name = " "){
+        std::cout << " name = [ " << std::endl;
+        for (auto &value: *_data){
+            std::cout << value << std::endl;
+        }
+        std::cout << " ] " << std::endl;
+    }
+
+    void printVerticallyWithIndex(const std::string& name = " "){
+        std::cout << name << " = [ " << std::endl;
+        for (unsigned i = 0; i < _size - 1; ++i){
+            std::cout << i << " : " << (*_data)[i] << std::endl;
+        }
+        std::cout << _size - 1 << " : " << (*_data)[_size - 1] << " ] " << std::endl;
+    }
+
+
+    void printHorizontally(const std::string& name = " "){
+        std::ostream os (std::cout.rdbuf());
+        os << name << " = [ ";
+        for (const auto &value: *_data){
+            os << value << " ";
+        }
+        os << " ] " << "\n" << std::endl;
+    }
+
+    void printHorizontallyWithIndex(const std::string& name = " "){
+        std::ostream os (std::cout.rdbuf());
+        os << name << " = [ ";
+        for (unsigned i = 0; i < _size; ++i){
+            os << i << " : " << (*_data)[i] << " ";
+        }
+        os << " ] " << "\n" << std::endl;
+    }
+
+
+    void exportCSV(const std::string& filePath, const std::string& fileName) const {
+        std::ofstream file;
+        std::string fullPath = filePath + "/" + fileName + ".csv";
+        std::cout << "Exporting to " << fullPath << std::endl;
+
+        file.open(fullPath);
+        if (!file.is_open()) {
+            throw std::runtime_error("Could not open file.");
+        }
+
+        for (unsigned i = 0; i < _size; ++i) {
+            file << (*_data)[i] << '\n';  // Write each value in a new line
+        }
+
+        file.close();
+    }
+            
     
 //    template<unsigned powerValue>
 //    void raisePower(){

@@ -35,7 +35,7 @@ class Logs {
         
         void startSingleObservationTimer(const string &logName, STLKR_TimeUnit unit = STLKR_TimeUnit::seconds);
         
-        void stopSingleObservationTimer(const string &logName);
+        void stopSingleObservationTimer(const string &logName, STLKR_TimeUnit unit);
         
         void startMultipleObservationsTimer(const string &logNameSTLKR_TimeUnit, STLKR_TimeUnit unit = STLKR_TimeUnit::seconds);
         

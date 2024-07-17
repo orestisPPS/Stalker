@@ -110,7 +110,6 @@ private:
             _dotProduct<iUnroll - 1>(a, b, result);
         }
     }
-
     
 };
 
@@ -210,7 +209,7 @@ private:
             _dotProduct<iUnroll - 1>(a, b, result);
         }
     }
-
+    
 };
 
 // Int Specialization
@@ -244,7 +243,7 @@ struct AVX_MathTraits<int, unrollFactor> {
     static constexpr inline void dotProduct(AVXRegisterType* a, AVXRegisterType* b, DataType * result){;
         _dotProduct<unrollFactor>(a, b, result);
     }
-
+    
 private:
     template<unsigned iUnroll>
     static constexpr inline void _unrollAdd(const AVXRegisterType* a, const AVXRegisterType* b, AVXRegisterType* result, AVXRegisterType* scale1, AVXRegisterType* scale2) {
@@ -312,7 +311,7 @@ private:
             _dotProduct<iUnroll - 1>(a, b, result);
         }
     }
-
+    
 };
 
 // Unsigned Specialization
@@ -346,8 +345,7 @@ struct AVX_MathTraits<unsigned, unrollFactor> {
     static constexpr inline void dotProduct(AVXRegisterType* a, AVXRegisterType* b, DataType * result){;
         _dotProduct<unrollFactor>(a, b, result);
     }
-    
-    
+
 private:
     template<unsigned iUnroll>
     static constexpr inline void _unrollAdd(const AVXRegisterType* a, const AVXRegisterType* b, AVXRegisterType* result, AVXRegisterType* scale1, AVXRegisterType* scale2) {
