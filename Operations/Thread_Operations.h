@@ -7,7 +7,7 @@
 
 #include <list>
 #include <numeric>
-#include "JobArguments.h"
+#include "ThreadJob.h"
 #include "../MachineTopology/CPUTopologyLinux.h"
 #include "CPU_Manager.h"
 
@@ -36,11 +36,12 @@ public:
             core->setThreadAffinity(thisJobCoreSet);
         }
         unsigned threadBlockSize = (size + threadPool.size() - 1) / threadPool.size();
-        unsigned startIndex, endIndex, iThread;
+        unsigned startIndex, endIndex, iThread, cacheSize;
         for (const auto &thread : threadPool) {
             startIndex = iThread * threadBlockSize;
             endIndex = std::min((iThread + 1) * threadBlockSize, size);
-            thread->executeJob(job, startIndex, endIndex, thisJobCoreSet);
+            cacheSize = thread->getSharedCacheMemory()->getCacheLevel1()->getSize();
+            thread->executeJob(job, startIndex, endIndex, cacheSize);
             iThread++;
         }
         for (const auto &thread : threadPool) {
@@ -61,11 +62,12 @@ public:
             core->addStokerThreadsToPool(stokerThreadPool);
         }
         unsigned threadBlockSize = (size + slaveThreadPool.size() - 1) / slaveThreadPool.size();
-        unsigned startIndex, endIndex, iThread;
+        unsigned startIndex, endIndex, iThread , cacheSize;
         for (const auto &thread : slaveThreadPool) {
             startIndex = iThread * threadBlockSize;
             endIndex = std::min((iThread + 1) * threadBlockSize, size);
-            thread->executeJob(job, startIndex, endIndex, thread->getCoreSet());
+            cacheSize = thread->getSharedCacheMemory()->getCacheLevel1()->getSize();
+            thread->executeJob(job, startIndex, endIndex, cacheSize);
             iThread++;
         }
         for (const auto &thread : slaveThreadPool) {
@@ -90,7 +92,8 @@ public:
         }
         unsigned iThread = 0;
         for (const auto &thread : slaveThreadPool) {
-            thread->executeJob(job, threadRange[iThread].first, threadRange[iThread].second, thread->getCoreSet());
+            thread->executeJob(job, threadRange[iThread].first, threadRange[iThread].second ,
+                               thread->getSharedCacheMemory()->getCacheLevel1()->getSize());
             iThread++;
         }
         for (const auto &thread : slaveThreadPool) {
@@ -115,7 +118,8 @@ public:
         int iThread = 0;
         auto reducedResult = std::vector<T>(numCores, 0);
         for (const auto &thread : slaveThreadPool){
-            thread->executeJobWithReduction<threadJob, T>(job, threadRange[iThread].first, threadRange[iThread].second, &reducedResult[iThread], thread->getCoreSet());
+            thread->executeJobWithReduction<threadJob, T>(job, threadRange[iThread].first, threadRange[iThread].second, &reducedResult[iThread], 
+                                                           thread->getSharedCacheMemory()->getCacheLevel1()->getSize());
             iThread++;
         }
         for (const auto &thread : slaveThreadPool) {

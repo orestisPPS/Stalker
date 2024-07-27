@@ -19,15 +19,11 @@ public:
     
     unsigned getLevel() const;
     unsigned getSize() const;
-    unsigned getOccupiedSpace() const;
-    unsigned getOccupiedSpacePerCent() const;
-    unsigned getFreeSpace() const;
-    unsigned getFreeSpacePerCent() const;
+    constexpr unsigned getSizeInCacheLines() const;
     const std::vector<unsigned> &getThreads() const;
 private:
     unsigned _level;
     unsigned _size;
-    unsigned _occupiedSpace;
     std::vector<unsigned> _threads;
 
 };

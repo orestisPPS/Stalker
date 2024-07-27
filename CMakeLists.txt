@@ -38,7 +38,7 @@ add_executable(stalker main.cpp
         MachineTopology/SharedCache.cpp
         MachineTopology/SharedCache.h
         Operations/Thread_Operations.h
-        Operations/JobArguments.h
+        Operations/ThreadJob.h
         Tests/STLKR_PerformanceTests/ThreadingPerformanceTest.h
         Operations/CPU_Manager.cpp
         Operations/CPU_Manager.h

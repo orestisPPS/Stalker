@@ -7,7 +7,6 @@
 CacheLevel::CacheLevel(unsigned level, unsigned size, const std::vector<unsigned> &threads) {
     _level = level;
     _size = size;
-    _occupiedSpace = 0;
     _threads = threads;
 }
 
@@ -19,23 +18,10 @@ unsigned CacheLevel::getSize() const{
     return _size;
 }
 
-unsigned CacheLevel::getOccupiedSpace() const{
-    return _occupiedSpace;
+constexpr unsigned CacheLevel::getSizeInCacheLines() const{
+    return (_size + 63) / 64;
 }
 
-unsigned CacheLevel::getOccupiedSpacePerCent() const{
-    return _occupiedSpace * 100 / _size;
-}
-
-unsigned CacheLevel::getFreeSpace() const{
-    return _size - _occupiedSpace;
-}
-
-unsigned CacheLevel::getFreeSpacePerCent() const{
-    return ( _size - _occupiedSpace ) * 100 / _size;
-}
-
-const std::vector<unsigned> &CacheLevel::getThreads() const{
+const std::vector<unsigned> &CacheLevel::getThreads() const {
     return _threads;
 }
-
