@@ -42,7 +42,7 @@ void CPUTopologyLinux::_readMachineTopology() {
     auto physicalCoreToThreads = std::unordered_map<unsigned, std::vector<unsigned>>();
     auto threadToClockSpeed = std::unordered_map<unsigned, std::pair<unsigned, unsigned>>();
     auto cacheMap = std::map<unsigned, std::map<std::vector<unsigned>, CacheLevel*>>(); //Key is the cache level, value is a map of the shared CPUs and the cache level
-    auto threadToCacheLevels = std::unordered_map<unsigned, CacheLevel*[3]>();
+    auto threadToCacheLevels = std::unordered_map<unsigned, CacheLevel*[4]>();
     for (unsigned iThread : onlineThreads) {
         //Read the core id of the thread
         coreTopologyId = _readIntegerFromFile(
@@ -52,29 +52,27 @@ void CPUTopologyLinux::_readMachineTopology() {
             physicalCoreToThreads[coreTopologyId] = std::move(threadSiblings);
         
         //Read the cache levels of the thread
-        for (unsigned cache_index = 1; cache_index <= 3; ++cache_index) { // Iterate over 1, 2, and 3
-            size_kb = (cache_index == 1)
-                      ? _readIntegerFromFile(_getCacheLevelPath(iThread, 0) + "/size") + _readIntegerFromFile(_getCacheLevelPath(iThread, 1) + "/size")
-                      : _readIntegerFromFile(_getCacheLevelPath(iThread, cache_index) + "/size");
-            
+        for (unsigned cache_index = 0; cache_index <= 3; ++cache_index) { // Iterate over 1, 2, and 3
+            size_kb = _readIntegerFromFile(_getCacheLevelPath(iThread, cache_index) + "/size");
+            type = _readStringFromFile(_getCacheLevelPath(iThread, cache_index) + "/type");
             shared_cpus_str = _readStringFromFile(_getCacheLevelPath(iThread, cache_index) + "/shared_cpu_list");
             auto sharedCPUs = _parseCPUList(shared_cpus_str);
             if (cacheMap.find(cache_index) == cacheMap.end())
                 cacheMap[cache_index] = std::map<std::vector<unsigned>, CacheLevel*>();
+            unsigned level = 0;
             if (cacheMap[cache_index].find(sharedCPUs) == cacheMap[cache_index].end()){
-                cacheMap[cache_index][sharedCPUs] = new CacheLevel(cache_index, size_kb, sharedCPUs);
+                level = (cache_index == 0 || cache_index == 1) ? 1 : cache_index;
+                cacheMap[cache_index][sharedCPUs] = new CacheLevel(level, size_kb, sharedCPUs, _getCacheLevelType(type));
                 _cacheLevels.push_back(cacheMap[cache_index][sharedCPUs]);
             }
-            threadToCacheLevels[iThread][cache_index - 1] = cacheMap[cache_index][sharedCPUs];
+            threadToCacheLevels[iThread][cache_index] = cacheMap[cache_index][sharedCPUs];
         }
-        auto sharedCache = new SharedCache(threadToCacheLevels[iThread][0],
-                                                         threadToCacheLevels[iThread][1],
-                                                         threadToCacheLevels[iThread][2]);
-        _sharedCaches.push_back(sharedCache);
+        _sharedCaches.push_back(new SharedCache(threadToCacheLevels[iThread][0], threadToCacheLevels[iThread][1],
+                                                threadToCacheLevels[iThread][2], threadToCacheLevels[iThread][3]));
         _threads[iThread] = new Thread(iThread, coreTopologyId,
                                                       _readIntegerFromFile(_getThreadPath(iThread) + "/cpufreq/cpuinfo_min_freq"),
                                                       _readIntegerFromFile(_getThreadPath(iThread) + "/cpufreq/cpuinfo_max_freq"),
-                                                      sharedCache);
+                                                        _sharedCaches.back());
     }
     _physicalCores = std::vector<Core*>();
     _physicalCores.reserve(physicalCoreToThreads.size());
@@ -141,7 +139,8 @@ void CPUTopologyLinux::print_processor_specs() const {
     std::cout << "\nShared Cache Information:\n";
     for (const auto& sharedCache : _sharedCaches) {
         if (sharedCache != nullptr) {
-            std::cout << "Shared Cache: L1 Size = " << sharedCache->getCacheLevel1()->getSize() << " KB, "
+            std::cout << "Shared Cache: L1_Data Size = " << sharedCache->getCacheLevel1Data()->getSize() << " KB, "
+                      << "L1_Instruction Size = " << sharedCache->getCacheLevel1Instructions()->getSize() << " KB, "
                       << "L2 Size = " << sharedCache->getCacheLevel2()->getSize() << " KB, "
                       << "L3 Size = " << sharedCache->getCacheLevel3()->getSize() << " KB\n";
         }
@@ -215,6 +214,19 @@ std::string CPUTopologyLinux::_getThreadPath(unsigned int &threadId) const {
 
 std::string CPUTopologyLinux::_getCacheLevelPath(unsigned int threadId, unsigned int cacheIndex) const {
     return _cpuPath + "cpu" + std::to_string(threadId) + "/cache/index" + std::to_string(cacheIndex);
+}
+
+CacheLevelType CPUTopologyLinux::_getCacheLevelType(const std::string &type) const {
+    switch (type[0]) {
+        case 'I':
+            return CacheLevelType::INSTRUCTIONS;
+        case 'D':
+            return CacheLevelType::DATA;
+        case 'U':
+            return CacheLevelType::UNIFIED;
+        default:
+            throw std::runtime_error("Invalid cache type: " + type);
+    }
 }
 
 

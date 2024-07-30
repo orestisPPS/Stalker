@@ -4,11 +4,8 @@
 
 #include "CacheLevel.h"
 
-CacheLevel::CacheLevel(unsigned level, unsigned size, const std::vector<unsigned> &threads) {
-    _level = level;
-    _size = size;
-    _threads = threads;
-}
+CacheLevel::CacheLevel(unsigned level, unsigned size, const std::vector<unsigned> &threads, CacheLevelType type) : 
+        _level(level), _size(size), _threads(threads), _type(type) {}
 
 unsigned CacheLevel::getLevel() const{
     return _level;
@@ -24,4 +21,8 @@ constexpr unsigned CacheLevel::getSizeInCacheLines() const{
 
 const std::vector<unsigned> &CacheLevel::getThreads() const {
     return _threads;
+}
+
+const CacheLevelType CacheLevel::getType() const {
+    return _type;
 }

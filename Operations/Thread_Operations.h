@@ -40,7 +40,7 @@ public:
         for (const auto &thread : threadPool) {
             startIndex = iThread * threadBlockSize;
             endIndex = std::min((iThread + 1) * threadBlockSize, size);
-            cacheSize = thread->getSharedCacheMemory()->getCacheLevel1()->getSize();
+            cacheSize = thread->getSharedCacheMemory()->getCacheLevel1Data()->getSize();
             thread->executeJob(job, startIndex, endIndex, cacheSize);
             iThread++;
         }
@@ -66,7 +66,7 @@ public:
         for (const auto &thread : slaveThreadPool) {
             startIndex = iThread * threadBlockSize;
             endIndex = std::min((iThread + 1) * threadBlockSize, size);
-            cacheSize = thread->getSharedCacheMemory()->getCacheLevel1()->getSize();
+            cacheSize = thread->getSharedCacheMemory()->getCacheLevel1Data()->getSize();
             thread->executeJob(job, startIndex, endIndex, cacheSize);
             iThread++;
         }
@@ -93,7 +93,7 @@ public:
         unsigned iThread = 0;
         for (const auto &thread : slaveThreadPool) {
             thread->executeJob(job, threadRange[iThread].first, threadRange[iThread].second ,
-                               thread->getSharedCacheMemory()->getCacheLevel1()->getSize());
+                               thread->getSharedCacheMemory()->getCacheLevel1Data()->getSize());
             iThread++;
         }
         for (const auto &thread : slaveThreadPool) {
@@ -119,7 +119,7 @@ public:
         auto reducedResult = std::vector<T>(numCores, 0);
         for (const auto &thread : slaveThreadPool){
             thread->executeJobWithReduction<threadJob, T>(job, threadRange[iThread].first, threadRange[iThread].second, &reducedResult[iThread], 
-                                                           thread->getSharedCacheMemory()->getCacheLevel1()->getSize());
+                                                           thread->getSharedCacheMemory()->getCacheLevel1Data()->getSize());
             iThread++;
         }
         for (const auto &thread : slaveThreadPool) {

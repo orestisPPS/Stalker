@@ -50,4 +50,5 @@ add_executable(stalker main.cpp
         Tests/Test_PrimitivesTraits.h
         Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_PerformanceTests.h
         Tests/STLKR_PerformanceTests/StalkerVector/SingleThreadPerformance/SingleThreadOperationsPerformanceTest.h
+        Operations/Prefetch_Operations.h
 )

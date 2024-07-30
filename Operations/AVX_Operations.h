@@ -7,6 +7,7 @@
 #include "AVX_MemoryManagement.h"
 #include "AVX_MathTraits.h"
 #include "Thread_Operations.h"
+#include "Prefetch_Operations.h"
 
 template <typename T, unsigned unrollFactor>
 class AVX_Operations {
@@ -31,8 +32,7 @@ public:
             threadLimits[i].second = std::min(endBlock * blockSize, size);
         }
         
-        auto deepcopyThreadJob = [&](unsigned startIndex, unsigned endIndex, unsigned L0CacheSize) {
-            
+        auto copyThreadJob = [&](unsigned startIndex, unsigned endIndex, unsigned L0CacheSize) {
             avxRegisterType simdData[unrollFactor];
             void (*storeResultRegister)(const avxRegisterType*, dataType*) = temporalStore ?
                 avxMemoryTraits.storeAVXRegisterTemporal : avxMemoryTraits.storeAVXRegisterNonTemporal;
@@ -45,7 +45,7 @@ public:
                 destination[i] = source[i];
             }
         };
-        Thread_Operations::executeJob(deepcopyThreadJob, size, cores, threadLimits, manager);
+        Thread_Operations::executeJob(copyThreadJob, size, cores, threadLimits, manager);
         
         delete[] threadLimits;
     }

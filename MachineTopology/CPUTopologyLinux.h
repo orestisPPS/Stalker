@@ -55,7 +55,7 @@ private:
     std::string _getCacheLevelPath(unsigned threadId, unsigned cacheIndex) const;
     void _readMachineTopology();
     void _readCacheInfo();
-
+    CacheLevelType _getCacheLevelType(const std::string &type) const;
 };
 
 
