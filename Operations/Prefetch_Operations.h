@@ -16,11 +16,11 @@ enum PrefetchConfig {
 class Prefetch_Operations {
 public:
     template<typename T, unsigned numVectors>
-    static constexpr inline void fillCacheLevel(T** data, unsigned cacheSize, double cacheThreshold, PrefetchConfig prefetchConfig) {
+    static constexpr inline void fillCacheLevel(T** data, unsigned cacheSizeKB, double cacheThreshold, PrefetchConfig prefetchConfig) {
         if (cacheThreshold < 0 || cacheThreshold > 1)
             cacheThreshold = 0.8;
         auto elementsPerCacheLine = 64 / sizeof(T);
-        auto cacheSizeInCacheLines = static_cast<unsigned>(cacheThreshold * cacheSize / 64);
+        auto cacheSizeInCacheLines = static_cast<unsigned>(cacheThreshold * cacheSizeKB * 1024 / 64);
         auto cacheLinesToPrefetch = cacheSizeInCacheLines / numVectors;
         switch (prefetchConfig) {
             case PrefetchToL1:
@@ -31,6 +31,24 @@ public:
                 break;
             case PrefetchToL3:
                 _prefetch_L3<T, numVectors>(data, elementsPerCacheLine, cacheLinesToPrefetch);
+                break;
+        }
+    }
+
+    template<typename T, unsigned numVectors>
+    static constexpr inline void prefetchCacheLines(T** data, unsigned cacheSize, double cacheThreshold, PrefetchConfig prefetchConfig, unsigned numOfCacheLines) {
+        if (cacheThreshold < 0 || cacheThreshold > 1)
+            cacheThreshold = 0.8;
+        auto elementsPerCacheLine = 64 / sizeof(T);
+        switch (prefetchConfig) {
+            case PrefetchToL1:
+                _prefetch_L1<T, numVectors>(data, elementsPerCacheLine, numOfCacheLines);
+                break;
+            case PrefetchToL2:
+                _prefetch_L2<T, numVectors>(data, elementsPerCacheLine, numOfCacheLines);
+                break;
+            case PrefetchToL3:
+                _prefetch_L3<T, numVectors>(data, elementsPerCacheLine, numOfCacheLines);
                 break;
         }
     }

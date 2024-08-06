@@ -24,8 +24,8 @@ struct AVX_MemoryTraits<float, unrollFactor> {
     static constexpr unsigned AVXRegisterSize = FLOAT_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(float);
     static constexpr unsigned UnrollFactor = unrollFactor;
-    static constexpr unsigned processedCacheLinesPerIteration = AVXRegisterSize * UnrollFactor / elementsPerCacheLine;
-
+    static constexpr unsigned cacheLinesProcessed = (unrollFactor * AVXRegisterSize) / elementsPerCacheLine;
+    
     static constexpr inline void loadAVXRegister(const DataType* source, AVXRegisterType* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);
     }
@@ -116,6 +116,7 @@ struct AVX_MemoryTraits<double, unrollFactor> {
     static constexpr unsigned AVXRegisterSize = DOUBLE_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(double);
     static constexpr unsigned UnrollFactor = unrollFactor;
+    static constexpr unsigned cacheLinesProcessed = (unrollFactor * AVXRegisterSize) / elementsPerCacheLine;
 
     static constexpr inline void loadAVXRegister(const DataType* source, AVXRegisterType* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);
@@ -203,7 +204,8 @@ struct AVX_MemoryTraits<int, unrollFactor> {
     static constexpr unsigned AVXRegisterSize = INT_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(int);
     static constexpr unsigned UnrollFactor = unrollFactor;
-
+    static constexpr unsigned cacheLinesProcessed = (unrollFactor * AVXRegisterSize) / elementsPerCacheLine;
+    
     static constexpr inline void loadAVXRegister(const DataType* source, AVXRegisterType* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);
     }
@@ -288,6 +290,7 @@ struct AVX_MemoryTraits<short, unrollFactor> {
     static constexpr unsigned AVXRegisterSize = SHORT_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(short);
     static constexpr unsigned UnrollFactor = unrollFactor;
+    static constexpr unsigned cacheLinesProcessed = (unrollFactor * AVXRegisterSize) / elementsPerCacheLine;
 
     static constexpr inline void loadAVXRegister(const DataType* source, AVXRegisterType* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);
@@ -373,6 +376,7 @@ struct AVX_MemoryTraits<unsigned, unrollFactor> {
     static constexpr unsigned AVXRegisterSize = UNSIGNED_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(unsigned);
     static constexpr unsigned UnrollFactor = unrollFactor;
+    static constexpr unsigned cacheLinesProcessed = (unrollFactor * AVXRegisterSize) / elementsPerCacheLine;
 
     static constexpr inline void loadAVXRegister(const DataType* source, AVXRegisterType* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);

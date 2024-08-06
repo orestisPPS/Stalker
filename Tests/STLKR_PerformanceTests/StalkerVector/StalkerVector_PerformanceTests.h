@@ -22,6 +22,7 @@ namespace STLKR_Tests{
             logs.addParameter("type", getTypeString<T>());
             logs.addParameter("operation", "copy");
             logs.addParameter("unrollFactor", unrollFactor);
+            logs.addParameter("prefetch", "enabled");
             _runDeepCopyTest();
             logs.exportToCSV(_path, "StalkerVectorTest");
             logs.clearAllLogs();
