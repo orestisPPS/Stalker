@@ -1,17 +1,14 @@
 #include <iostream>
-#include "Tests/STLKR_PerformanceTests/AVX_PerformanceTest.h"
-#include "Tests/STLKR_PerformanceTests/ThreadingPerformanceTest.h"
 #include "Tests/StalkerVector_ValidityTests.h"
 #include "Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_PerformanceTests.h"
 #include "Tests/STLKR_PerformanceTests/StalkerVector/SingleThreadPerformance/SingleThreadOperationsPerformanceTest.h"
 #include <chrono>
 
 int main() {
+    //std::cout << "SLET" << std::endl;//    auto vectorTest = STLKR_Tests::StalkerVector_ValidityTests<2>();
+//    vectorTest.runTest();
     
-    //auto vectorTest = STLKR_Tests::StalkerVector_ValidityTests<2>();
-    //vectorTest.runTest();
-    
-auto exportPath = "../Tests/STLKR_PerformanceTests/StalkerVector/logs";
+auto exportPath = "/home/hal9000/code/stalker/Tests/STLKR_PerformanceTests/StalkerVector/logs";
 //auto singleThreadUnrollFactorTest = STLKR_Tests::SingleThreadOperationsPerformanceTest<40000000>(exportPath);
 //for (size_t i = 0; i < 20; i++) {
 //    if (i % 2 == 0) cout << "Iteration: " << i << endl;

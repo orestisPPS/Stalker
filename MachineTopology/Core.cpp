@@ -10,6 +10,7 @@
 Core::Core(unsigned id, std::vector<Thread*> threads) {
     _id = id;
     _threads = threads;
+    _isHyperThreaded = _threads.size() > 1;
     _thisCoreSet = {};
 }
 
@@ -17,76 +18,40 @@ unsigned Core::getId() const{
     return _id;
 }
 
-void Core::setHyperThreading(bool isHyperThreaded) {
-    _isHyperThreaded = isHyperThreaded;
-}
-
 std::vector<Thread *> Core::getThreads() const{
-    if (_isHyperThreaded)
-        return _threads;
-    else
-        return {_threads[0]};
+    return _threads;
 }
 
 void Core::getThreads(std::vector<Thread*> &threads) const{
-    if (_isHyperThreaded)
-        threads = _threads;
-    else
-        threads = {_threads[0]};
+    threads = _threads;
 }
 
-void Core::addThreadsToPool(std::list<Thread*> &threadPool) const {
-    if (_isHyperThreaded)
+void Core::addThreadsToPool(std::list<Thread*> &threadPool, bool hyperThreaded) const {
+    if (hyperThreaded)
         threadPool.insert(threadPool.end(), _threads.begin(), _threads.end());
     else
         threadPool.push_back(_threads[0]);
 }
 
-std::vector<Thread *> Core::getSlaveThreads() const{
-    auto slaveThreads = std::vector<Thread*>(_threads.size() - 1);
-    std::copy(_threads.begin(), _threads.end() - 1, slaveThreads.begin());
-    return slaveThreads;
+void Core::addThreadsToPool(std::list<Thread *> &slaveThreadPool, std::list<Thread *> &stokerThreadPool) const {
+    slaveThreadPool.insert(slaveThreadPool.end(), _threads.begin(), _threads.end() - 1);
+    stokerThreadPool.insert(stokerThreadPool.end(), _threads.begin(), _threads.end() - 1);
 }
 
-void Core::getSlaveThreads(std::vector<Thread*> &threads) const{
-    threads = std::vector<Thread*>(_threads.size() - 1);
-    std::copy(_threads.begin(), _threads.end() - 1, threads.begin());
-}
-
-void Core::addSlaveThreadsToPool(std::list<Thread*> &threadPool) const {
-    threadPool.insert(threadPool.end(), _threads.begin(), _threads.end() - 1);
-}
-
-std::vector<Thread *> Core::getStokerThreads() const{
-    return std::vector<Thread*>{_threads[_threads.size() - 1]};
-}
-
-void Core::getStokerThreads(std::vector<Thread*> &threads) const{
-    threads = std::vector<Thread*>{_threads[_threads.size() - 1]};
-}
-
-void Core::addStokerThreadsToPool(std::list<Thread*> &threadPool) const {
-    threadPool.push_back(_threads[_threads.size() - 1]);
-}
 
 unsigned Core::getAvailableThreadsCount() const{
-    if (_isHyperThreaded)
-        return _threads.size();
-    else
-        return 1;
+    return _threads.size();
 }
 
 void Core::setThreadAffinity() {
     CPU_ZERO(&_thisCoreSet);
-    auto availableThreads = _isHyperThreaded ? _threads.size() : 1;
-    for (int i = 0; i < availableThreads; ++i) {
-        _threads[i]->setThreadAffinity(_thisCoreSet);
+    for (auto & _thread : _threads) {
+        _thread->setThreadAffinity(_thisCoreSet);
     }
 }
 
 void Core::setThreadAffinity(cpu_set_t &coreSet) {
-    auto availableThreads = _isHyperThreaded ? _threads.size() : 1;
-    for (int i = 0; i < availableThreads; ++i) {
+    for (int i = 0; i < _threads.size(); ++i) {
         _threads[i]->setThreadAffinity(coreSet);
     }
 }
@@ -124,3 +89,4 @@ void Core::printCPUSet(bool printBitSet) const {
     }
     std::cout << std::endl;
 }
+

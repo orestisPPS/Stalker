@@ -13,14 +13,8 @@ public:
     CPU_Manager();
     
     ~CPU_Manager();
-    std::vector<Core *> getCores(unsigned numCores);
-    Core* getCore(bool hyperThread = false);
-    std::vector<const Core*> getHyperThreadCores(unsigned numCores);
-    std::vector<const Core*> getEcoCores(unsigned numCores);
-    std::vector<const Thread*> getThreads(unsigned numThreads);
-    Thread* getThread();
+    std::vector<Core *> getCores(unsigned numCores, bool areHyperThreads);
     void release(const std::vector<Core*>& cores);
-    void release(std::vector<Thread*> threads);
     void printInConsole();
     
     

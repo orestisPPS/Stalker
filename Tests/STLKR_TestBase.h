@@ -9,7 +9,6 @@
 #include <string>
 #include <iostream>
 #include <limits.h>
-#include "Test_PrimitivesTraits.h"
 #include "../Operations/CPU_Manager.h"
 
 
@@ -36,15 +35,6 @@ namespace STLKR_Tests {
 
             static void printFailure();
             
-            static std::string boolToOnOff(bool value, const std::string& name);
-            
-            Test_PrimitivesTraits<float> _floatTraits;
-            Test_PrimitivesTraits<double> _doubleTraits;
-            Test_PrimitivesTraits<int> _intTraits;
-            Test_PrimitivesTraits<short> _shortTraits;
-            Test_PrimitivesTraits<unsigned> _unsignedTraits;
-
-
             template<typename T>
             static std::string getTypeString(){
                 if (std::is_same<T, float>::value) {

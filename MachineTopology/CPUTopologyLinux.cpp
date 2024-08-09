@@ -84,7 +84,6 @@ void CPUTopologyLinux::_readMachineTopology() {
             _threadPool.insert({_threads[threadID], true});
         }
         auto core = new Core(coreId, std::move(coreThreads));
-        core->setHyperThreading(true);
         core->getAvailableThreadsCount() > 1 ? _hyperThreadCorePool.insert({core, true}) : _ecoCorePool.insert({core, true});
         _physicalCores.emplace_back(core);
     }

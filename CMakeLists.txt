@@ -16,7 +16,6 @@ add_executable(stalker main.cpp
         LinearAlgebra/ContiguousMemoryStorage/Norms.h
         LinearAlgebra/STLKR_ArithmeticTypes.h
         Operations/AVX_Operations.h
-        Tests/STLKR_PerformanceTests/AVX_PerformanceTest.h
         Tests/TestBase.h
         Utility/Timer.cpp
         Utility/Timer.h
@@ -39,7 +38,6 @@ add_executable(stalker main.cpp
         MachineTopology/SharedCache.h
         Operations/Thread_Operations.h
         Operations/ThreadJob.h
-        Tests/STLKR_PerformanceTests/ThreadingPerformanceTest.h
         Operations/CPU_Manager.cpp
         Operations/CPU_Manager.h
         LinearAlgebra/ContiguousMemoryStorage/StalkerVector.h
@@ -47,7 +45,6 @@ add_executable(stalker main.cpp
         LinearAlgebra/ContiguousMemoryStorage/ContiguousMemoryIterator.h
         Operations/AVX_MemoryTraits.h
         Operations/AVX_MathTraits.h
-        Tests/Test_PrimitivesTraits.h
         Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_PerformanceTests.h
         Tests/STLKR_PerformanceTests/StalkerVector/SingleThreadPerformance/SingleThreadOperationsPerformanceTest.h
         Operations/Prefetch_Operations.h

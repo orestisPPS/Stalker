@@ -22,7 +22,8 @@ namespace STLKR_Tests{
             logs.addParameter("type", getTypeString<T>());
             logs.addParameter("operation", "copy");
             logs.addParameter("unrollFactor", unrollFactor);
-            logs.addParameter("prefetch", "enabled");
+            logs.addParameter("prefetch", "disabled");
+            logs.addParameter("compiler flag", "-o0");
             _runDeepCopyTest();
             logs.exportToCSV(_path, "StalkerVectorTest");
             logs.clearAllLogs();
@@ -39,21 +40,21 @@ namespace STLKR_Tests{
             v1.setAvailableCores(1);
             logs.startSingleObservationTimer("SIMD_cores1", STLKR_TimeUnit::microseconds);
             v1.copy(source);
-            logs.stopSingleObservationTimer("SIMD_cores1", STLKR_TimeUnit::seconds);
+            logs.stopSingleObservationTimer("SIMD_cores1", STLKR_TimeUnit::microseconds);
 
             StalkerVector<T, unrollFactor> v2(size, _manager);
             source.setAvailableCores(2);
             v2.setAvailableCores(2);
             logs.startSingleObservationTimer("SIMD_cores2", STLKR_TimeUnit::microseconds);
             v2.copy(source);
-            logs.stopSingleObservationTimer("SIMD_cores2", STLKR_TimeUnit::seconds);
+            logs.stopSingleObservationTimer("SIMD_cores2", STLKR_TimeUnit::microseconds);
 
             StalkerVector<T, unrollFactor> v3(size, _manager);
             source.setAvailableCores(4);
             v3.setAvailableCores(4);
             logs.startSingleObservationTimer("SIMD_cores4", STLKR_TimeUnit::microseconds);
             v3.copy(source);
-            logs.stopSingleObservationTimer("SIMD_cores4", STLKR_TimeUnit::seconds);
+            logs.stopSingleObservationTimer("SIMD_cores4", STLKR_TimeUnit::microseconds);
 
             T* data1 = new T[size];
             T* data2 = new T[size];

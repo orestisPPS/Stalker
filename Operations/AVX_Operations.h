@@ -32,8 +32,6 @@ public:
             threadLimits[i].second = std::min(endBlock * blockSize, size);
         }
         auto copyThreadJob = [&](unsigned startIndex, unsigned endIndex, unsigned L1CacheSize) {
-            T* data[2] = { destination + startIndex, source + startIndex };
-            //Prefetch_Operations::fillCacheLevel<T, 2>(data, L1CacheSize, 0.8, PrefetchToL1);
             avxRegisterType simdData[unrollFactor];
             void (*storeResultRegister)(const avxRegisterType*, dataType*) = temporalStore ?
                 memory.storeAVXRegisterTemporal : memory.storeAVXRegisterNonTemporal;
@@ -41,13 +39,11 @@ public:
             for (size_t i = startIndex; i < limit; i += blockSize) {
                 memory.loadAVXRegister(source + i, simdData);
                 storeResultRegister(simdData, destination + i);
-                //refetch_Operations::prefetchCacheLines<T, 2>(data, L1CacheSize, 0.3, PrefetchToL1, memory.cacheLinesProcessed);
             }
-            for (size_t i = limit; i < endIndex; i++) {
+            for (size_t i = limit; i < endIndex; i++)
                 destination[i] = source[i];
-            }
         };
-        Thread_Operations::executeJob(copyThreadJob, size, cores, threadLimits, manager);
+        Thread_Operations::executeJob(copyThreadJob, cores, true, threadLimits, manager);
         
         delete[] threadLimits;
     }

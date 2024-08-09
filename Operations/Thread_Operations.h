@@ -28,11 +28,10 @@ public:
     static inline void executeJob(threadJob job, unsigned size, unsigned numCores, bool enableHyperThreading, CPU_Manager &manager) {
         cpu_set_t thisJobCoreSet;
         CPU_ZERO(&thisJobCoreSet);
-        auto cores = std::move(manager.getCores(numCores));
+        auto cores = std::move(manager.getCores(numCores, true));
         auto threadPool = std::list<Thread*>();
         for (auto & core : cores) {
-            core->setHyperThreading(enableHyperThreading);
-            core->addThreadsToPool(threadPool);
+            core->addThreadsToPool(threadPool, enableHyperThreading);
             core->setThreadAffinity(thisJobCoreSet);
         }
         unsigned threadBlockSize = (size + threadPool.size() - 1) / threadPool.size();
@@ -52,43 +51,24 @@ public:
     }
 
     template <typename threadJob>
-    static inline void executeJob(threadJob job, unsigned size, unsigned numCores, CPU_Manager &manager) {
-        auto slaveThreadPool = std::list<Thread*>();
-        auto stokerThreadPool = std::list<Thread*>();
-        auto cores = std::move(manager.getCores(numCores));
-        for (const auto &core : cores) {
-            core->setThreadAffinity();
-            core->addSlaveThreadsToPool(slaveThreadPool);
-            core->addStokerThreadsToPool(stokerThreadPool);
-        }
-        unsigned threadBlockSize = (size + slaveThreadPool.size() - 1) / slaveThreadPool.size();
-        unsigned startIndex, endIndex, iThread , cacheSize;
-        for (const auto &thread : slaveThreadPool) {
-            startIndex = iThread * threadBlockSize;
-            endIndex = std::min((iThread + 1) * threadBlockSize, size);
-            cacheSize = thread->getSharedCacheMemory()->getCacheLevel1Data()->getSize();
-            thread->executeJob(job, startIndex, endIndex, cacheSize);
-            iThread++;
-        }
-        for (const auto &thread : slaveThreadPool) {
-            thread->join();
-            thread->resetThreadAffinity();
-        }
-        manager.release(std::move(cores));
-    }
-
-    template <typename threadJob>
-    static inline void executeJob(threadJob job, unsigned size, unsigned numCores,
+    static inline void executeJob(threadJob job, unsigned numCores, bool enableHyperThreading,
                            std::pair<unsigned, unsigned>* threadRange, CPU_Manager &manager) {
 
         auto slaveThreadPool = std::list<Thread*>();
-        auto stokerThreadPool = std::list<Thread*>();
-        auto cores = manager.getCores(numCores);
-        for (const auto &core : cores) {
-            core->setHyperThreading(false);
-            core->addSlaveThreadsToPool(slaveThreadPool);
-            core->addStokerThreadsToPool(stokerThreadPool);
-            core->setThreadAffinity();
+        auto cores = manager.getCores(numCores, enableHyperThreading);
+        if (enableHyperThreading) {
+            for (auto &core: cores){
+                core->setThreadAffinity();
+                core->addThreadsToPool(slaveThreadPool, enableHyperThreading);
+            }
+        }
+        else{
+            cpu_set_t thisJobCoreSet;
+            CPU_ZERO(&thisJobCoreSet);
+            for (auto & core : cores) {
+                core->setThreadAffinity(thisJobCoreSet);
+                core->addThreadsToPool(slaveThreadPool, enableHyperThreading);
+            }
         }
         unsigned iThread = 0;
         for (const auto &thread : slaveThreadPool) {
@@ -100,20 +80,28 @@ public:
             thread->join();
             thread->resetThreadAffinity();
         }
-        manager.release(std::move(cores));
+        manager.release(cores);
     }
 
     template <typename T, typename threadJob>
-    static inline T executeJobWithReduction(threadJob job, unsigned size, unsigned numCores,
+    static inline T executeJobWithReduction(threadJob job, unsigned size, unsigned numCores, bool enableHyperThreading,
                                   std::pair<unsigned, unsigned>* threadRange, CPU_Manager &manager) {
 
         auto slaveThreadPool = std::list<Thread*>();
-        auto stokerThreadPool = std::list<Thread*>();
-        auto cores = manager.getCores(numCores);
-        for (const auto &core : cores) {
-            core->addSlaveThreadsToPool(slaveThreadPool);
-            core->addStokerThreadsToPool(stokerThreadPool);
-            core->setThreadAffinity();
+        auto cores = manager.getCores(numCores, enableHyperThreading);
+        if (enableHyperThreading) {
+            for (auto &core: cores){
+                core->setThreadAffinity();
+                core->addThreadsToPool(slaveThreadPool, enableHyperThreading);
+            }
+        }
+        else{
+            cpu_set_t thisJobCoreSet;
+            CPU_ZERO(&thisJobCoreSet);
+            for (auto & core : cores) {
+                core->setThreadAffinity(thisJobCoreSet);
+                core->addThreadsToPool(slaveThreadPool, enableHyperThreading);
+            }
         }
         int iThread = 0;
         auto reducedResult = std::vector<T>(numCores, 0);
@@ -131,6 +119,7 @@ public:
     }
     
 private:
+
 };
 
 
