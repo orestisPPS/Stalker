@@ -12,7 +12,7 @@ class SIMD_Operations {
     using avxT = typename AVX_MemoryTraits<T, unrollFactor>::AVXRegisterType;
 public:
 
-    constexpr inline static void copy(T *destination, T  *source, unsigned size, unsigned cores, CPU_Manager &manager, bool temporalStore = false) {
+    constexpr inline static void copy(T *destination, T  *source, unsigned size, CPU_Manager &manager, bool temporalStore = false) {
 
         auto simdMemory = AVX_MemoryTraits<T, unrollFactor>();
         auto blockSize = simdMemory.registerSize * unrollFactor;
@@ -29,18 +29,18 @@ public:
             for (size_t i = limit; i < endIndex; i++)
                 destination[i] = source[i];
         };
-        Thread_Operations::executeJob(copyThreadJob, size, blockSize, cores, true, manager);
+        Thread_Operations::executeJob(copyThreadJob, size, blockSize, manager);
 
     }
 
-    constexpr inline static void setValue(T *destination, T  value, unsigned size, unsigned cores, CPU_Manager &manager, bool temporalStore = false) {
+    constexpr inline static void setValue(T *destination, T  value, unsigned size, CPU_Manager &manager, bool temporalStore = false) {
         auto simdMemory = AVX_MemoryTraits<T, unrollFactor>();
         auto blockSize = simdMemory.registerSize * unrollFactor;
 
         auto setValueThreadJob = [&](unsigned startIndex, unsigned endIndex, unsigned L0CacheSize) {
             avxT simdData[unrollFactor];
             void (*storeResultRegister)(const avxT*, T*) = temporalStore ?
-                                                           simdMemory.temporalStore : simdMemory.nonTemporalStore;
+               simdMemory.temporalStore : simdMemory.nonTemporalStore;
             auto limit = endIndex - (endIndex % blockSize);
             for (size_t i = startIndex; i < limit; i += blockSize) {
                 simdMemory.setValue(simdData, value);
@@ -51,10 +51,10 @@ public:
             }
         };
 
-        Thread_Operations::executeJob(setValueThreadJob, size, blockSize, cores, true, manager);
+        Thread_Operations::executeJob(setValueThreadJob, size, blockSize, manager);
     }
 
-    constexpr inline static void scale(T *data, T  scale, unsigned size, unsigned cores, CPU_Manager &manager, bool temporalStore = false) {
+    constexpr inline static void scale(T *data, T  scale, unsigned size, CPU_Manager &manager, bool temporalStore = false) {
         auto simdMemory = AVX_MemoryTraits<T, unrollFactor>();
         auto simdMath = SIMD_MathTraits<T, unrollFactor>();
         auto blockSize = simdMemory.registerSize * unrollFactor;
@@ -75,10 +75,10 @@ public:
                 data[i] *= scale;
             }
         };
-        Thread_Operations::executeJob(scaleThreadJob, size, blockSize, cores, true, manager);
+        Thread_Operations::executeJob(scaleThreadJob, size, blockSize, manager);
     }
 
-    constexpr inline static bool areEqual(const T *a, const T *b, unsigned size, unsigned cores, CPU_Manager &manager){
+    constexpr inline static bool areEqual(const T *a, const T *b, unsigned size, CPU_Manager &manager){
         auto simdMemory = AVX_MemoryTraits<T, unrollFactor>();
         auto blockSize = simdMemory.registerSize * unrollFactor;
 
@@ -101,11 +101,11 @@ public:
                 }
             }
         };
-        Thread_Operations::executeJob(areEqualThreadJob, size, blockSize, cores, true, manager);
+        Thread_Operations::executeJob(areEqualThreadJob, size, blockSize, manager);
         return result;
     }
 
-    constexpr inline static void add(T *data1, T  *data2, T *result, T scale1, T scale2, unsigned size, unsigned cores, CPU_Manager &manager, bool temporalStore = false) {
+    constexpr inline static void add(T *data1, T  *data2, T *result, T scale1, T scale2, unsigned size, CPU_Manager &manager, bool temporalStore = false) {
 
         auto simdMemory = AVX_MemoryTraits<T, unrollFactor>();
         auto simdMath = SIMD_MathTraits<T, unrollFactor>();
@@ -130,10 +130,10 @@ public:
                 result[i] = data1[i] * scale1 + data2[i] * scale2;
             }
         };
-        Thread_Operations::executeJob(addJob, size, blockSize, cores, true, manager);
+        Thread_Operations::executeJob(addJob, size, blockSize, manager);
     }
 
-    constexpr inline static void subtract(T *data1, T  *data2, T *result, T scale1, T scale2, unsigned size, unsigned cores, CPU_Manager &manager, bool temporalStore = false) {
+    constexpr inline static void subtract(T *data1, T  *data2, T *result, T scale1, T scale2, unsigned size, CPU_Manager &manager, bool temporalStore = false) {
 
         auto simdMemory = AVX_MemoryTraits<T, unrollFactor>();
         auto simdMath = SIMD_MathTraits<T, unrollFactor>();
@@ -158,10 +158,10 @@ public:
                 result[i] = data1[i] * scale1 - data2[i] * scale2;
             }
         };
-        Thread_Operations::executeJob(addJob, size, blockSize, cores, true, manager);
+        Thread_Operations::executeJob(addJob, size, blockSize, manager);
     }
 
-    constexpr inline static void multiply(T *data1, T  *data2, T *result, T scale1, T scale2, unsigned size, unsigned cores, CPU_Manager &manager, bool temporalStore = false) {
+    constexpr inline static void multiply(T *data1, T  *data2, T *result, T scale1, T scale2, unsigned size, CPU_Manager &manager, bool temporalStore = false) {
         auto simdMemory = AVX_MemoryTraits<T, unrollFactor>();
         auto simdMath = SIMD_MathTraits<T, unrollFactor>();
         auto blockSize = simdMemory.registerSize * unrollFactor;
@@ -185,46 +185,45 @@ public:
                 result[i] = data1[i] * scale1 * data2[i] * scale2;
             }
         };
-        Thread_Operations::executeJob(addJob, size, blockSize, cores, true, manager);
+        Thread_Operations::executeJob(addJob, size, blockSize, manager);
     }
 
-    constexpr inline static T sum(T *data1, unsigned size, unsigned cores, CPU_Manager &manager, bool temporalStore = false) {
+    constexpr inline static T sum(T *data1, unsigned size, CPU_Manager &manager) {
         auto simdMemory = AVX_MemoryTraits<T, unrollFactor>();
         auto simdMath = SIMD_MathTraits<T, unrollFactor>();
         auto blockSize = simdMemory.registerSize * unrollFactor;
 
-        auto sumJob = [&](unsigned startIndex, unsigned endIndex, T &result, unsigned L0CacheSize) {
+        auto sumJob = [&](unsigned startIndex, unsigned endIndex, T *result, unsigned L0CacheSize) {
             avxT simdData1[unrollFactor];
-            void (*storeResultRegister)(const avxT*, T*) = temporalStore ? simdMemory.temporalStore : simdMemory.nonTemporalStore;
             auto limit = endIndex - (endIndex % blockSize);
             for (size_t i = startIndex; i < limit; i += blockSize) {
                 simdMemory.loadRegister(data1 + i, simdData1);
-                simdMath.sum(simdData1, &result);
+                simdMath.sum(simdData1, result);
             }
             for (size_t i = limit; i < endIndex; i++)
-                result += data1[i];
+                *result += data1[i];
         };
-        auto result = Thread_Operations::executeJobWithReduction<T>(sumJob, size, blockSize, cores, true, manager);
+        auto result = Thread_Operations::executeJobWithReduction<T>(sumJob, size, blockSize, manager);
         return result;
     }
 
-    constexpr inline static T dotProduct(T *data1, T *data2, unsigned size, unsigned cores, CPU_Manager &manager, bool temporalStore = false) {
+    constexpr inline static T dotProduct(T *data1, T *data2, unsigned size, CPU_Manager &manager) {
         auto simdMemory = AVX_MemoryTraits<T, unrollFactor>();
         auto simdMath = SIMD_MathTraits<T, unrollFactor>();
         auto blockSize = simdMemory.registerSize * unrollFactor;
 
-        auto dotProductJob = [&](unsigned startIndex, unsigned endIndex, T &result, unsigned L0CacheSize) {
+        auto dotProductJob = [&](unsigned startIndex, unsigned endIndex, T *result, unsigned L0CacheSize) {
             avxT simdData1[unrollFactor];
             avxT simdData2[unrollFactor];
             auto limit = endIndex - (endIndex % blockSize);
             for (size_t i = startIndex; i < limit; i += blockSize) {
                 simdMemory.loadRegister(data1 + i, simdData1);
-                simdMath.dotProduct(simdData1, simdData1, &result);
+                simdMath.dotProduct(simdData1, simdData1, result);
             }
             for (size_t i = limit; i < endIndex; i++)
-                result += *(data1 + i) * *(data2 + i);
+                *result += *(data1 + i) * *(data2 + i);
         };
-        auto result = Thread_Operations::executeJobWithReduction<T>(dotProductJob, size, blockSize, cores, true, manager);
+        auto result = Thread_Operations::executeJobWithReduction<T>(dotProductJob, size, blockSize, manager);
         return result;
     }
 

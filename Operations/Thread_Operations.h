@@ -15,12 +15,13 @@ class Thread_Operations {
 public:
 
     template <typename threadJob>
-    static inline void executeJob(threadJob job, unsigned size, unsigned blockSize, unsigned numCores, bool enableHyperThreading, CPU_Manager &manager) {
-        auto cores = manager.getCores(numCores, enableHyperThreading);
-        auto threadPool = _initializeThreadPool(cores, enableHyperThreading);
+    static inline void executeJob(threadJob job, unsigned size, unsigned blockSize, CPU_Manager &manager) {
+        auto cores = manager.getCores();
+        auto threadPool = _initializeThreadPool(cores, manager.isHyperthreadingEnabled());
         auto threadLimits = _getThreadsRange(size, threadPool.size(), blockSize);
         unsigned iThread = 0;
         for (const auto &thread : threadPool) {
+            //std::cout<<thread->getId()<<" start: " << threadLimits[iThread].first << " end: " << threadLimits[iThread].second << std::endl; 
             thread->executeJob(job, threadLimits[iThread].first, threadLimits[iThread].second ,
                                thread->getSharedCacheMemory()->getCacheLevel1Data()->getSize());
             iThread++;
@@ -34,12 +35,12 @@ public:
     }
 
     template <typename T, typename threadJob>
-    static inline T executeJobWithReduction(threadJob job, unsigned size, unsigned blockSize, unsigned numCores, bool enableHyperThreading, CPU_Manager &manager) {
-        auto cores = manager.getCores(numCores, enableHyperThreading);
-        auto threadPool = _initializeThreadPool(cores, enableHyperThreading);
+    static inline T executeJobWithReduction(threadJob job, unsigned size, unsigned blockSize, CPU_Manager &manager) {
+        auto cores = manager.getCores();
+        auto threadPool = _initializeThreadPool(cores, manager.isHyperthreadingEnabled());
         auto threadLimits = _getThreadsRange(size, threadPool.size(), blockSize);
         unsigned iThread = 0;
-        auto reducedResult = std::vector<T>(numCores, 0);
+        auto reducedResult = std::vector<T>(threadPool.size(), 0);
         for (const auto &thread : threadPool){
             thread->executeJobWithReduction<threadJob, T>(job, threadLimits[iThread].first, threadLimits[iThread].second, &reducedResult[iThread], 
                                                            thread->getSharedCacheMemory()->getCacheLevel1Data()->getSize());

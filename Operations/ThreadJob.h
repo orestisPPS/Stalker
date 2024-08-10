@@ -33,7 +33,7 @@ static void* jobWrapper(void* args) {
 template<typename threadJob, typename T>
 static void* reducedJobWrapper(void* args) {
     auto jobArgs = static_cast<ReducedJobArgs<threadJob, T>*>(args);
-    jobArgs->job(jobArgs->startIndex, jobArgs->endIndex, *jobArgs->result, jobArgs->L0CacheSize);
+    jobArgs->job(jobArgs->startIndex, jobArgs->endIndex, jobArgs->result, jobArgs->L0CacheSize);
     delete jobArgs;  // Clean up dynamically allocated memory
     return nullptr;
 }

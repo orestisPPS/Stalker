@@ -17,6 +17,8 @@ namespace STLKR_Tests {
         explicit StalkerVector_ValidityTests() : STLKR_TestBase("Stalker Performance Vector Test") {}
 
         void runTest() override {
+            _manager.setAvailableCores(4);
+            _manager.enableHyperthreading(true);
             //_runGeneralVectorCases();
             _runSIMDVectorCases();
             //_manager.printInConsole();
@@ -239,7 +241,7 @@ namespace STLKR_Tests {
 
 
         void _runSIMDVectorCases(){
-            size_t size = 666;
+            size_t size = 666666;
 
             //AVX register size
             
@@ -277,50 +279,50 @@ namespace STLKR_Tests {
             printTestCaseResult(_testAdd<float>(size), "add (float)");
             printTestCaseResult(_testAdd<double>(size), "add (double)");
             printTestCaseResult(_testAdd<int>(size), "add (int)");
-            printTestCaseResult(_testAdd<short>(30000), "add (short)");
+            printTestCaseResult(_testAdd<short>(size), "add (short)");
             printTestCaseResult(_testAdd<unsigned>(size), "add (unsigned)");
             
             //subtract
             printTestCaseResult(_testSubtract<float>(size), "subtract (float)");
             printTestCaseResult(_testSubtract<double>(size), "subtract (double)");
             printTestCaseResult(_testSubtract<int>(size), "subtract (int)");
-            printTestCaseResult(_testSubtract<short>(30000), "subtract (short)");
+            printTestCaseResult(_testSubtract<short>(size), "subtract (short)");
             printTestCaseResult(_testSubtract<unsigned>(size), "subtract (unsigned)");
 
             //multiply
             printTestCaseResult(_testMultiply<float>(size), "multiply (float)");
             printTestCaseResult(_testMultiply<double>(size), "multiply (double)");
             printTestCaseResult(_testMultiply<int>(size), "multiply (int)");
-            printTestCaseResult(_testMultiply<short>(30000), "multiply (short)");
+            printTestCaseResult(_testMultiply<short>(size), "multiply (short)");
             printTestCaseResult(_testMultiply<unsigned>(size), "multiply (unsigned)");
 
             //scale
             printTestCaseResult(_scaleMultiply<float>(size), "scale (float)");
             printTestCaseResult(_scaleMultiply<double>(size), "scale (double)");
             printTestCaseResult(_scaleMultiply<int>(size), "scale (int)");
-            printTestCaseResult(_scaleMultiply<short>(30000), "scale (short)");
+            printTestCaseResult(_scaleMultiply<short>(size), "scale (short)");
             printTestCaseResult(_scaleMultiply<unsigned>(size), "scale (unsigned)");
             
             //sum of elements
             printTestCaseResult(_testSumOfElements<float>(size), "Sum of elements (float)");
             printTestCaseResult(_testSumOfElements<double>(size), "Sum of elements (double)");
             printTestCaseResult(_testSumOfElements<int>(size), "Sum of elements (int)");
-            printTestCaseResult(_testSumOfElements<short>(30000), "Sum of elements (short)");
+            printTestCaseResult(_testSumOfElements<short>(size), "Sum of elements (short)");
             printTestCaseResult(_testSumOfElements<unsigned>(size), "Sum of elements (unsigned)");
             
             //dot product
-            printTestCaseResult(_testDotProduct<float>(333), "Dot product (float)");
-            printTestCaseResult(_testDotProduct<double>(333), "Dot product (double)");
-            printTestCaseResult(_testDotProduct<int>(66666666), "Dot product (int)");
-            printTestCaseResult(_testDotProduct<short>(66), "Dot product (short)");
-            printTestCaseResult(_testDotProduct<unsigned>(66666666), "Dot product (unsigned)");
+            printTestCaseResult(_testDotProduct<float>(size), "Dot product (float)");
+            printTestCaseResult(_testDotProduct<double>(size), "Dot product (double)");
+            printTestCaseResult(_testDotProduct<int>(size), "Dot product (int)");
+            printTestCaseResult(_testDotProduct<short>(size), "Dot product (short)");
+            printTestCaseResult(_testDotProduct<unsigned>(size), "Dot product (unsigned)");
 
             //magnitude
-            printTestCaseResult(_testMagnitude<float>(333), "Magnitude (float)");
-            printTestCaseResult(_testMagnitude<double>(333), "Magnitude (double)");
-            printTestCaseResult(_testMagnitude<int>(66666666), "Magnitude (int)");
-            printTestCaseResult(_testMagnitude<short>(66), "Magnitude (short)");
-            printTestCaseResult(_testMagnitude<unsigned>(66666666), "Magnitude (unsigned)");
+            printTestCaseResult(_testMagnitude<float>(size), "Magnitude (float)");
+            printTestCaseResult(_testMagnitude<double>(size), "Magnitude (double)");
+            printTestCaseResult(_testMagnitude<int>(size), "Magnitude (int)");
+            printTestCaseResult(_testMagnitude<short>(size), "Magnitude (short)");
+            printTestCaseResult(_testMagnitude<unsigned>(size), "Magnitude (unsigned)");
             
         }
 
@@ -476,8 +478,8 @@ namespace STLKR_Tests {
             StalkerVector<T, unrollFactor> vec(size, 0, _manager);
             T sum = 0;
             for (unsigned i = 0; i < vec.size(); ++i) {
-                vec[i] = i;
-                sum += i;
+                vec[i] = 1;
+                sum ++;
             }
             return vec.sum() == sum;
         }
@@ -488,9 +490,9 @@ namespace STLKR_Tests {
             StalkerVector<T, unrollFactor> vec2(size, 0, _manager);
             T dotProduct = 0;
             for (unsigned i = 0; i < vec1.size(); ++i) {
-                vec1[i] = i;
-                vec2[i] = i;
-                dotProduct += i * i;
+                vec1[i] = 1;
+                vec2[i] = 1;
+                dotProduct += vec1[i] * vec2[i];
             }
             auto result = vec1.dotProduct(vec2);
             if (result != dotProduct) {
@@ -504,10 +506,10 @@ namespace STLKR_Tests {
             StalkerVector<T, unrollFactor> vec(size, 0, _manager);
             T sum = 0;
             for (unsigned i = 0; i < vec.size(); ++i) {
-                vec[i] = i;
-                sum += i * i;
+                vec[i] = 1;
+                sum ++;
             }
-            return vec.magnitude() == std::sqrt(sum);
+            return vec.magnitude() == std::sqrt(static_cast<double>(sum));
         }
 
     };

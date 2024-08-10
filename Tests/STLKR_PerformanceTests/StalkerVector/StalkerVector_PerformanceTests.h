@@ -36,26 +36,22 @@ namespace STLKR_Tests{
                 source[i] = static_cast<T>(i);
             }
             StalkerVector<T, unrollFactor> v1(size, _manager);
-            source.setAvailableCores(1);
-            v1.setAvailableCores(1);
+            _manager.setAvailableCores(1);
             logs.startSingleObservationTimer("SIMD_cores1", STLKR_TimeUnit::microseconds);
             v1.copy(source);
             logs.stopSingleObservationTimer("SIMD_cores1", STLKR_TimeUnit::microseconds);
 
             StalkerVector<T, unrollFactor> v2(size, _manager);
-            source.setAvailableCores(2);
-            v2.setAvailableCores(2);
+            _manager.setAvailableCores(2);
             logs.startSingleObservationTimer("SIMD_cores2", STLKR_TimeUnit::microseconds);
             v2.copy(source);
             logs.stopSingleObservationTimer("SIMD_cores2", STLKR_TimeUnit::microseconds);
 
             StalkerVector<T, unrollFactor> v3(size, _manager);
-            source.setAvailableCores(4);
-            v3.setAvailableCores(4);
+            _manager.setAvailableCores(4);
             logs.startSingleObservationTimer("SIMD_cores4", STLKR_TimeUnit::microseconds);
             v3.copy(source);
             logs.stopSingleObservationTimer("SIMD_cores4", STLKR_TimeUnit::microseconds);
-
             T* data1 = new T[size];
             T* data2 = new T[size];
             for (size_t i = 0; i < size; i++) {
@@ -66,7 +62,7 @@ namespace STLKR_Tests{
             logs.stopSingleObservationTimer("memcpy_noSIMD", STLKR_TimeUnit::seconds);
             delete[] data1;
             delete[] data2;
-            
+
             T* data3 = new T[size];
             T* data4 = new T[size];
             logs.startSingleObservationTimer("loopCopy_noSIMD", STLKR_TimeUnit::microseconds);

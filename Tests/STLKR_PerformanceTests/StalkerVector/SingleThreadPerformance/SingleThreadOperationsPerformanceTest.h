@@ -61,8 +61,7 @@ namespace STLKR_Tests{
                 source[i] = static_cast<T>(i);
             }
             StalkerVector<T, _unrollFactor> v1(size, _manager);
-            source.setAvailableCores(1);
-            v1.setAvailableCores(1);
+            _manager.setAvailableCores(1);
             auto unroll = std::to_string(_unrollFactor);
             auto typeString = getTypeString<T>();
             logs.startSingleObservationTimer(typeString + "_SIMD_unroll_" + unroll , STLKR_TimeUnit::microseconds);
@@ -137,8 +136,7 @@ namespace STLKR_Tests{
                 source[i] = static_cast<T>(i);
             }
             StalkerVector<T, _unrollFactor> v1(size, _manager);
-            source.setAvailableCores(1);
-            v1.setAvailableCores(1);
+            _manager.setAvailableCores(1);
             auto unroll = std::to_string(_unrollFactor);
             auto typeString = getTypeString<T>();
             logs.startSingleObservationTimer(typeString + "_SIMD_unroll_" + unroll , STLKR_TimeUnit::microseconds);
@@ -204,13 +202,12 @@ namespace STLKR_Tests{
             for (size_t i = 0; i < size; i++) {
                 v1[i] = static_cast<T>(i);
             }
-            v1.setAvailableCores(1);
+            _manager.setAvailableCores(1);
             auto typeString = getTypeString<T>();
             string unroll = std::to_string(_unrollFactor);
             logs.startSingleObservationTimer(typeString + "_SIMD_unroll_" + unroll , STLKR_TimeUnit::microseconds);
             auto sum = v1.sum();
-            logs.stopSingleObservationTimer(typeString + "_SIMD_unroll_" + unroll ,
-                                            STLKR_TimeUnit::microseconds);
+            logs.stopSingleObservationTimer(typeString + "_SIMD_unroll_" + unroll , STLKR_TimeUnit::microseconds);
         }
 
         template<typename T>

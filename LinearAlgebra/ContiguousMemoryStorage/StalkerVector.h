@@ -162,46 +162,41 @@ public:
     [[nodiscard]] inline unsigned alignment() const{
         return _alignment;
     }
-    
-    void setAvailableCores(unsigned numCores) {
-        _numCores = numCores;
-    }
 
     void copy(const StalkerVector& other) {
-        SIMD_Operations<T, unrollFactor>::copy(_data, other._data, _size, _numCores, _manager, true);
+        SIMD_Operations<T, unrollFactor>::copy(_data, other._data, _size, _manager, true);
     }
-
-
+    
     void fill(T value) {
-        SIMD_Operations<T, unrollFactor>::setValue(_data, value, _size, _numCores, _manager, true);
+        SIMD_Operations<T, unrollFactor>::setValue(_data, value, _size, _manager, true);
     }
     
     void scale(T value) {
-        SIMD_Operations<T, unrollFactor>::scale(_data, value, _size, _numCores, _manager, true);
+        SIMD_Operations<T, unrollFactor>::scale(_data, value, _size, _manager, true);
     }
     
     bool areEqual(const StalkerVector& other) {
-        return SIMD_Operations<T, unrollFactor>::areEqual(_data, other._data, _size, _numCores, _manager);
+        return SIMD_Operations<T, unrollFactor>::areEqual(_data, other._data, _size, _manager);
     }
     
     void add(const StalkerVector& other, StalkerVector& result, T scale1, T scale2) {
-        SIMD_Operations<T, unrollFactor>::add(_data, other._data, result._data, scale1, scale2, _size, _numCores, _manager, true);
+        SIMD_Operations<T, unrollFactor>::add(_data, other._data, result._data, scale1, scale2, _size, _manager, true);
     }
     
     void subtract(const StalkerVector& other, StalkerVector& result, T scale1, T scale2) {
-        SIMD_Operations<T, unrollFactor>::subtract(_data, other._data, result._data, scale1, scale2, _size, _numCores, _manager, true);
+        SIMD_Operations<T, unrollFactor>::subtract(_data, other._data, result._data, scale1, scale2, _size, _manager, true);
     }
     
     void multiply(const StalkerVector& other, StalkerVector& result, T scale1, T scale2) {
-        SIMD_Operations<T, unrollFactor>::multiply(_data, other._data, result._data, scale1, scale2, _size, _numCores, _manager, true);
+        SIMD_Operations<T, unrollFactor>::multiply(_data, other._data, result._data, scale1, scale2, _size, _manager, true);
     }
     
     T sum () {
-        return SIMD_Operations<T, unrollFactor>::sum(_data, _size, _numCores, _manager);
+        return SIMD_Operations<T, unrollFactor>::sum(_data, _size, _manager);
     }
     
     T dotProduct(const StalkerVector& other) {
-        return SIMD_Operations<T, unrollFactor>::dotProduct(_data, other._data, _size, _numCores, _manager);
+        return SIMD_Operations<T, unrollFactor>::dotProduct(_data, other._data, _size, _manager);
     }
     
     double magnitude() {
@@ -274,7 +269,7 @@ public:
     
 //    template<unsigned powerValue>
 //    void raisePower(){
-//        AVX_Operations<T, unrollFactor>::power<powerValue>(_data, _size, _numCores, _manager);
+//        AVX_Operations<T, unrollFactor>::power<powerValue>(_data, _size, _manager);
 //    }
 
 private:
@@ -284,7 +279,6 @@ private:
     unsigned _alignment;
     AVX_MemoryTraits<T, unrollFactor> _avxMemoryTraits;
     CPU_Manager &_manager;
-    unsigned _numCores = 2;
 
     T* _allocate() {
         void* allocatedData = _mm_malloc(_size * sizeof(T), _alignment);
