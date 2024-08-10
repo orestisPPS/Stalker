@@ -9,7 +9,6 @@ add_executable(stalker main.cpp
         Tests/NumericalVectorTest.h
         LinearAlgebra/ContiguousMemoryStorage/Norms.cpp
         LinearAlgebra/ContiguousMemoryStorage/Norms.h
-        Operations/SIMD_Operations.h
         Tests/TestBase.h
         Utility/Timer.cpp
         Utility/Timer.h
@@ -41,4 +40,5 @@ add_executable(stalker main.cpp
         Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_PerformanceTests.h
         Tests/STLKR_PerformanceTests/StalkerVector/SingleThreadPerformance/SingleThreadOperationsPerformanceTest.h
         Operations/Prefetch_Operations.h
+        Operations/AVX_Operations.h
 )

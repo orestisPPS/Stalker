@@ -11,8 +11,6 @@
 #include "ContiguousMemoryIterator.h"
 #include "../../Operations/SIMD_MathTraits.h"
 
-
-
 template <typename T, unsigned unrollFactor>
 class StalkerVector {
     
