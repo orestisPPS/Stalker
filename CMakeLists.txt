@@ -40,5 +40,5 @@ add_executable(stalker main.cpp
         Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_PerformanceTests.h
         Tests/STLKR_PerformanceTests/StalkerVector/SingleThreadPerformance/SingleThreadOperationsPerformanceTest.h
         Operations/Prefetch_Operations.h
-        Operations/AVX_Operations.h
+        Operations/SIMD_Operations.h
 )

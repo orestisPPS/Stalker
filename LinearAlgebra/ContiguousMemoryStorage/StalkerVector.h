@@ -7,7 +7,7 @@
 
 #include <cstring>
 #include <valarray>
-#include "../../Operations/AVX_Operations.h"
+#include "../../Operations/SIMD_Operations.h"
 #include "ContiguousMemoryIterator.h"
 #include "../../Operations/SIMD_MathTraits.h"
 
@@ -168,40 +168,40 @@ public:
     }
 
     void copy(const StalkerVector& other) {
-        AVX_Operations<T, unrollFactor>::copy(_data, other._data, _size, _numCores, _manager, true);
+        SIMD_Operations<T, unrollFactor>::copy(_data, other._data, _size, _numCores, _manager, true);
     }
 
 
     void fill(T value) {
-        AVX_Operations<T, unrollFactor>::setValue(_data, value, _size, _numCores, _manager, true);
+        SIMD_Operations<T, unrollFactor>::setValue(_data, value, _size, _numCores, _manager, true);
     }
     
     void scale(T value) {
-        AVX_Operations<T, unrollFactor>::scale(_data, value, _size, _numCores, _manager, true);
+        SIMD_Operations<T, unrollFactor>::scale(_data, value, _size, _numCores, _manager, true);
     }
     
     bool areEqual(const StalkerVector& other) {
-        return AVX_Operations<T, unrollFactor>::areEqual(_data, other._data, _size, _numCores, _manager);
+        return SIMD_Operations<T, unrollFactor>::areEqual(_data, other._data, _size, _numCores, _manager);
     }
     
     void add(const StalkerVector& other, StalkerVector& result, T scale1, T scale2) {
-        AVX_Operations<T, unrollFactor>::add(_data, other._data, result._data, scale1, scale2, _size, _numCores, _manager, true);
+        SIMD_Operations<T, unrollFactor>::add(_data, other._data, result._data, scale1, scale2, _size, _numCores, _manager, true);
     }
     
     void subtract(const StalkerVector& other, StalkerVector& result, T scale1, T scale2) {
-        AVX_Operations<T, unrollFactor>::subtract(_data, other._data, result._data, scale1, scale2, _size, _numCores, _manager, true);
+        SIMD_Operations<T, unrollFactor>::subtract(_data, other._data, result._data, scale1, scale2, _size, _numCores, _manager, true);
     }
     
     void multiply(const StalkerVector& other, StalkerVector& result, T scale1, T scale2) {
-        AVX_Operations<T, unrollFactor>::multiply(_data, other._data, result._data, scale1, scale2, _size, _numCores, _manager, true);
+        SIMD_Operations<T, unrollFactor>::multiply(_data, other._data, result._data, scale1, scale2, _size, _numCores, _manager, true);
     }
     
     T sum () {
-        return AVX_Operations<T, unrollFactor>::sum(_data, _size, _numCores, _manager);
+        return SIMD_Operations<T, unrollFactor>::sum(_data, _size, _numCores, _manager);
     }
     
     T dotProduct(const StalkerVector& other) {
-        return AVX_Operations<T, unrollFactor>::dotProduct(_data, other._data, _size, _numCores, _manager);
+        return SIMD_Operations<T, unrollFactor>::dotProduct(_data, other._data, _size, _numCores, _manager);
     }
     
     double magnitude() {

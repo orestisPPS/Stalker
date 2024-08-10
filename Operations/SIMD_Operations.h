@@ -8,7 +8,7 @@
 #include "Thread_Operations.h"
 
 template <typename T, unsigned unrollFactor>
-class AVX_Operations {
+class SIMD_Operations {
     using avxT = typename AVX_MemoryTraits<T, unrollFactor>::AVXRegisterType;
 public:
 
