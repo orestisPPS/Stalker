@@ -7,53 +7,17 @@
 
 #include <cstring>
 #include <valarray>
-#include "../../Operations/AVX_MemoryManagement.h"
-#include "../../Operations/AVX_Operations.h"
+#include "../../Operations/SIMD_Operations.h"
 #include "ContiguousMemoryIterator.h"
-#include "../../Operations/AVX_MathTraits.h"
+#include "../../Operations/SIMD_MathTraits.h"
 
 
-enum UnrollFactor {
-    UNROLL_1,
-    UNROLL_2,
-    UNROLL_4,
-    UNROLL_8,
-    UNROLL_16,
-    UNROLL_32,
-    UNROLL_64,
-};
-
-static constexpr unsigned int getUnrollFactor(UnrollFactor unrollFactor) {
-    switch (unrollFactor) {
-        case UNROLL_1:
-            return 1;
-        case UNROLL_2:
-            return 2;
-        case UNROLL_4:
-            return 4;
-        case UNROLL_8:
-            return 8;
-        case UNROLL_16:
-            return 16;
-        case UNROLL_32:
-            return 32;
-        case UNROLL_64:
-            return 64;
-        default:
-            return 1;
-    }
-}
-
-struct VectorThreadingConfig{
-    unsigned numCores = 2;
-    bool enableHyperThreading = false;
-    WorkDistributionPolicy workDistributionPolicy;
-};
 
 template <typename T, unsigned unrollFactor>
 class StalkerVector {
     
-    static_assert( AVX_MemoryManagement::checkInputType<T>(), "Invalid data type. Supported types are float, double, int, short, and unsigned.");
+    static_assert(std::is_same<T, float>::value || std::is_same<T, double>::value || std::is_same<T, int>::value ||
+                  std::is_same<T, short>::value || std::is_same<T, unsigned>::value);
     
 public:
 
@@ -62,7 +26,7 @@ public:
         _size = size;
         _alignment = 64;
         _sizeInCacheLines = (size * sizeof(T) + 63) / 64;
-        _data = AVX_MemoryManagement::allocate<T>(size, _alignment);
+       _data = _allocate();
         std::fill(_data, _data + size, 0);
     }
 
@@ -71,7 +35,7 @@ public:
         _size = size;
         _alignment = 64;
         _sizeInCacheLines = (size * sizeof(T) + 63) / 64;
-        _data = AVX_MemoryManagement::allocate<T>(size, _alignment);
+       _data = _allocate();
         std::fill(_data, _data + size, value);
     }
     
@@ -80,19 +44,16 @@ public:
         _size = size;
         _alignment = 64;
         _sizeInCacheLines = (size * sizeof(T) + 63) / 64; // Adding 63 ensures any remainder gets an extra cache line_sizeInAVXRegisters = (size + _avxRegisterSize - 1) / _avxRegisterSize; // Adding register size - 1 ensures any remainder gets an extra register
-        _data = AVX_MemoryManagement::allocate<T>(size, _alignment);
+       _data = _allocate();
         std::memcpy(_data, data, size * sizeof(T));
     }
 
 
     // Copy constructor
-    StalkerVector(const StalkerVector& other)
-        : _size(other._size),
-          _alignment(other._alignment),
-          _sizeInCacheLines(other._sizeInCacheLines),
-          _avxMemoryTraits(other._avxMemoryTraits),
-          _manager(other._manager){
-        _data = AVX_MemoryManagement::allocate<T>(_size, _alignment);
+    StalkerVector(const StalkerVector& other) : _size(other._size), _alignment(other._alignment),
+                                                _sizeInCacheLines(other._sizeInCacheLines), _avxMemoryTraits(other._avxMemoryTraits),
+                                                _manager(other._manager){
+        _data = _allocate();
         std::memcpy(_data, other._data, _size * sizeof(T));
     }
 
@@ -100,7 +61,7 @@ public:
     StalkerVector& operator=(const StalkerVector& other) {
         if (this != &other) {
             if (_size != other._size) {
-                T* newData = AVX_MemoryManagement::allocate<T>(other._size, other._alignment);
+                T* newData = _allocate();
                 std::memcpy(newData, other._data, other._size * sizeof(T));
                 std::free(_data);
                 _data = newData;
@@ -197,7 +158,7 @@ public:
 
     
     [[nodiscard]] inline unsigned getAVXRegisterSize() const{
-        return _avxMemoryTraits.AVXRegisterSize;
+        return _avxMemoryTraits.registerSize;
     }
     
     [[nodiscard]] inline unsigned alignment() const{
@@ -209,40 +170,40 @@ public:
     }
 
     void copy(const StalkerVector& other) {
-        AVX_Operations<T, unrollFactor>::copy(_data, other._data, _size, _numCores, _manager, true);
+        SIMD_Operations<T, unrollFactor>::copy(_data, other._data, _size, _numCores, _manager, true);
     }
 
 
     void fill(T value) {
-        AVX_Operations<T, unrollFactor>::setValue(_data, value, _size, _numCores, _manager, true);
+        SIMD_Operations<T, unrollFactor>::setValue(_data, value, _size, _numCores, _manager, true);
     }
     
     void scale(T value) {
-        AVX_Operations<T, unrollFactor>::scale(_data, value, _size, _numCores, _manager, true);
+        SIMD_Operations<T, unrollFactor>::scale(_data, value, _size, _numCores, _manager, true);
     }
     
     bool areEqual(const StalkerVector& other) {
-        return AVX_Operations<T, unrollFactor>::areEqual(_data, other._data, _size, _numCores, _manager);
+        return SIMD_Operations<T, unrollFactor>::areEqual(_data, other._data, _size, _numCores, _manager);
     }
     
     void add(const StalkerVector& other, StalkerVector& result, T scale1, T scale2) {
-        AVX_Operations<T, unrollFactor>::add(_data, other._data, result._data, scale1, scale2, _size, _numCores, _manager, true);
+        SIMD_Operations<T, unrollFactor>::add(_data, other._data, result._data, scale1, scale2, _size, _numCores, _manager, true);
     }
     
     void subtract(const StalkerVector& other, StalkerVector& result, T scale1, T scale2) {
-        AVX_Operations<T, unrollFactor>::subtract(_data, other._data, result._data, scale1, scale2, _size, _numCores, _manager, true);
+        SIMD_Operations<T, unrollFactor>::subtract(_data, other._data, result._data, scale1, scale2, _size, _numCores, _manager, true);
     }
     
     void multiply(const StalkerVector& other, StalkerVector& result, T scale1, T scale2) {
-        AVX_Operations<T, unrollFactor>::multiply(_data, other._data, result._data, scale1, scale2, _size, _numCores, _manager, true);
+        SIMD_Operations<T, unrollFactor>::multiply(_data, other._data, result._data, scale1, scale2, _size, _numCores, _manager, true);
     }
     
     T sum () {
-        return AVX_Operations<T, unrollFactor>::sum(_data, _size, _numCores, _manager);
+        return SIMD_Operations<T, unrollFactor>::sum(_data, _size, _numCores, _manager);
     }
     
     T dotProduct(const StalkerVector& other) {
-        return AVX_Operations<T, unrollFactor>::dotProduct(_data, other._data, _size, _numCores, _manager);
+        return SIMD_Operations<T, unrollFactor>::dotProduct(_data, other._data, _size, _numCores, _manager);
     }
     
     double magnitude() {
@@ -326,7 +287,22 @@ private:
     AVX_MemoryTraits<T, unrollFactor> _avxMemoryTraits;
     CPU_Manager &_manager;
     unsigned _numCores = 2;
+
+    T* _allocate() {
+        void* allocatedData = _mm_malloc(_size * sizeof(T), _alignment);
+        if (allocatedData == nullptr) {
+            throw std::runtime_error("Memory allocation failed.");
+        }
+        if (reinterpret_cast<std::uintptr_t>(allocatedData) % _alignment != 0) {
+            throw std::runtime_error("Memory allocation did not meet alignment requirements.");
+        }
+        return static_cast<T*>(allocatedData);
+    }
+
 };
+
+
+
 
 
 

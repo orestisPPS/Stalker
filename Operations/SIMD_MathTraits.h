@@ -2,22 +2,22 @@
 // Created by hal9000 on 7/9/24.
 //
 
-#ifndef STALKER_AVX_MATHTRAITS_H
-#define STALKER_AVX_MATHTRAITS_H
+#ifndef STALKER_SIMD_MATHTRAITS_H
+#define STALKER_SIMD_MATHTRAITS_H
 #include "AVX_MemoryTraits.h"
 #include <immintrin.h>
 #include <algorithm>
 #include <numeric>
 
 template<typename T, unsigned int unrollFactor>
-struct AVX_MathTraits;
+struct SIMD_MathTraits;
 
 // Float Specialization
 template<unsigned int unrollFactor>
-struct AVX_MathTraits<float, unrollFactor> {
+struct SIMD_MathTraits<float, unrollFactor> {
     using AVXRegisterType = __m256;
     using DataType = float;
-    static constexpr unsigned AVXRegisterSize = FLOAT_AVX_REGISTER_SIZE;
+    static constexpr unsigned registerSize = FLOAT_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(float);
 
     static constexpr inline void add(const AVXRegisterType* a, const AVXRegisterType* b, AVXRegisterType* result, AVXRegisterType* scale1, AVXRegisterType* scale2) {
@@ -115,10 +115,10 @@ private:
 
 // Double Specialization
 template<unsigned int unrollFactor>
-struct AVX_MathTraits<double, unrollFactor> {
+struct SIMD_MathTraits<double, unrollFactor> {
     using AVXRegisterType = __m256d;
     using DataType = double;
-    static constexpr unsigned AVXRegisterSize = DOUBLE_AVX_REGISTER_SIZE;
+    static constexpr unsigned registerSize = DOUBLE_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(double);
 
     static constexpr inline void add(const AVXRegisterType* a, const AVXRegisterType* b, AVXRegisterType* result, AVXRegisterType* scale1, AVXRegisterType* scale2) {
@@ -214,10 +214,10 @@ private:
 
 // Int Specialization
 template<unsigned int unrollFactor>
-struct AVX_MathTraits<int, unrollFactor> {
+struct SIMD_MathTraits<int, unrollFactor> {
     using AVXRegisterType = __m256i;
     using DataType = int;
-    static constexpr unsigned AVXRegisterSize = INT_AVX_REGISTER_SIZE;
+    static constexpr unsigned registerSize = INT_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(int);
 
     static constexpr inline void add(const AVXRegisterType* a, const AVXRegisterType* b, AVXRegisterType* result, AVXRegisterType* scale1, AVXRegisterType* scale2) {
@@ -316,10 +316,10 @@ private:
 
 // Unsigned Specialization
 template<unsigned int unrollFactor>
-struct AVX_MathTraits<unsigned, unrollFactor> {
+struct SIMD_MathTraits<unsigned, unrollFactor> {
     using AVXRegisterType = __m256i;
     using DataType = unsigned;
-    static constexpr unsigned AVXRegisterSize = UNSIGNED_AVX_REGISTER_SIZE;
+    static constexpr unsigned registerSize = UNSIGNED_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(unsigned);
 
     static constexpr inline void add(const AVXRegisterType* a, const AVXRegisterType* b, AVXRegisterType* result, AVXRegisterType* scale1, AVXRegisterType* scale2) {
@@ -418,10 +418,10 @@ private:
 
 // Short Specialization
 template<unsigned int unrollFactor>
-struct AVX_MathTraits<short, unrollFactor> {
+struct SIMD_MathTraits<short, unrollFactor> {
     using AVXRegisterType = __m256i;
     using DataType = short;
-    static constexpr unsigned AVXRegisterSize = SHORT_AVX_REGISTER_SIZE;
+    static constexpr unsigned registerSize = SHORT_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(short);
 
     static constexpr inline void add(const AVXRegisterType* a, const AVXRegisterType* b, AVXRegisterType* result, AVXRegisterType* scale1, AVXRegisterType* scale2) {
@@ -521,4 +521,4 @@ private:
     }
 
 };
-#endif //STALKER_AVX_MATHTRAITS_H
+#endif //STALKER_SIMD_MATHTRAITS_H

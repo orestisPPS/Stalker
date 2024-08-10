@@ -24,6 +24,27 @@ public:
     unsigned getId() const;
     void joinThreads() const;
     void printCPUSet(bool printBitSet) const;
+
+    template <typename threadJob>
+    void distributeJobToThreads(threadJob job, unsigned startIndex, unsigned endIndex, bool hyperThreadingEnabled) {
+        unsigned totalRange = endIndex - startIndex;
+        unsigned threadBlockSize = totalRange / _threads.size();
+        auto availableThreads = _isHyperThreaded ? _threads : std::vector<Thread*>{_threads[0]};
+
+        for (int i = 0; i < availableThreads.size(); ++i) {
+            unsigned threadStartIndex = startIndex + i * threadBlockSize;
+            unsigned threadEndIndex = (i == availableThreads.size() - 1) ? endIndex : threadStartIndex + threadBlockSize;
+
+            //std::cout << "Thread: " << _threads[i]->getId() << " Start: " << threadStartIndex << " End: " << threadEndIndex << std::endl;
+            availableThreads[i]->executeJob(job, threadStartIndex, threadEndIndex, _thisCoreSet);
+        }
+        for (const auto &thread : availableThreads)
+            thread->join();
+    }
+
+
+
+    
 private:
     unsigned _id;
     std::vector<Thread*> _threads;

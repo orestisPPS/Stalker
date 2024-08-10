@@ -13,6 +13,37 @@
 
 #include <immintrin.h>
 
+enum UnrollFactor {
+    UNROLL_1,
+    UNROLL_2,
+    UNROLL_4,
+    UNROLL_8,
+    UNROLL_16,
+    UNROLL_32,
+    UNROLL_64,
+};
+
+static constexpr unsigned int getUnrollFactor(UnrollFactor unrollFactor) {
+    switch (unrollFactor) {
+        case UNROLL_1:
+            return 1;
+        case UNROLL_2:
+            return 2;
+        case UNROLL_4:
+            return 4;
+        case UNROLL_8:
+            return 8;
+        case UNROLL_16:
+            return 16;
+        case UNROLL_32:
+            return 32;
+        case UNROLL_64:
+            return 64;
+        default:
+            return 1;
+    }
+}
+
 template<typename T, unsigned int unrollFactor>
 struct AVX_MemoryTraits;
 
@@ -21,20 +52,20 @@ template<unsigned int unrollFactor>
 struct AVX_MemoryTraits<float, unrollFactor> {
     using AVXRegisterType = __m256;
     using DataType = float;
-    static constexpr unsigned AVXRegisterSize = FLOAT_AVX_REGISTER_SIZE;
+    static constexpr unsigned registerSize = FLOAT_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(float);
     static constexpr unsigned UnrollFactor = unrollFactor;
-    static constexpr unsigned cacheLinesProcessed = (unrollFactor * AVXRegisterSize) / elementsPerCacheLine;
+    static constexpr unsigned cacheLinesProcessed = (unrollFactor * registerSize) / elementsPerCacheLine;
     
-    static constexpr inline void loadAVXRegister(const DataType* source, AVXRegisterType* destination) {
+    static constexpr inline void loadRegister(const DataType* source, AVXRegisterType* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterTemporal(const AVXRegisterType* source, DataType* destination) {
+    static constexpr inline void temporalStore(const AVXRegisterType* source, DataType* destination) {
         _storeAVXRegisterTemporal<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterNonTemporal(const AVXRegisterType* source, DataType* destination) {
+    static constexpr inline void nonTemporalStore(const AVXRegisterType* source, DataType* destination) {
         _storeAVXRegisterNonTemporal<UnrollFactor>(source, destination);
     }
 
@@ -113,20 +144,20 @@ template<unsigned int unrollFactor>
 struct AVX_MemoryTraits<double, unrollFactor> {
     using AVXRegisterType = __m256d;
     using DataType = double;
-    static constexpr unsigned AVXRegisterSize = DOUBLE_AVX_REGISTER_SIZE;
+    static constexpr unsigned registerSize = DOUBLE_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(double);
     static constexpr unsigned UnrollFactor = unrollFactor;
-    static constexpr unsigned cacheLinesProcessed = (unrollFactor * AVXRegisterSize) / elementsPerCacheLine;
+    static constexpr unsigned cacheLinesProcessed = (unrollFactor * registerSize) / elementsPerCacheLine;
 
-    static constexpr inline void loadAVXRegister(const DataType* source, AVXRegisterType* destination) {
+    static constexpr inline void loadRegister(const DataType* source, AVXRegisterType* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterTemporal(const AVXRegisterType* source, DataType* destination) {
+    static constexpr inline void temporalStore(const AVXRegisterType* source, DataType* destination) {
         _storeAVXRegisterTemporal<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterNonTemporal(const AVXRegisterType* source, DataType* destination) {
+    static constexpr inline void nonTemporalStore(const AVXRegisterType* source, DataType* destination) {
         _storeAVXRegisterNonTemporal<UnrollFactor>(source, destination);
     }
 
@@ -201,20 +232,20 @@ template<unsigned int unrollFactor>
 struct AVX_MemoryTraits<int, unrollFactor> {
     using AVXRegisterType = __m256i;
     using DataType = int;
-    static constexpr unsigned AVXRegisterSize = INT_AVX_REGISTER_SIZE;
+    static constexpr unsigned registerSize = INT_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(int);
     static constexpr unsigned UnrollFactor = unrollFactor;
-    static constexpr unsigned cacheLinesProcessed = (unrollFactor * AVXRegisterSize) / elementsPerCacheLine;
+    static constexpr unsigned cacheLinesProcessed = (unrollFactor * registerSize) / elementsPerCacheLine;
     
-    static constexpr inline void loadAVXRegister(const DataType* source, AVXRegisterType* destination) {
+    static constexpr inline void loadRegister(const DataType* source, AVXRegisterType* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterTemporal(const AVXRegisterType* source, DataType* destination) {
+    static constexpr inline void temporalStore(const AVXRegisterType* source, DataType* destination) {
         _storeAVXRegisterTemporal<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterNonTemporal(const AVXRegisterType* source, DataType* destination) {
+    static constexpr inline void nonTemporalStore(const AVXRegisterType* source, DataType* destination) {
         _storeAVXRegisterNonTemporal<UnrollFactor>(source, destination);
     }
 
@@ -287,20 +318,20 @@ template<unsigned int unrollFactor>
 struct AVX_MemoryTraits<short, unrollFactor> {
     using AVXRegisterType = __m256i;
     using DataType = short;
-    static constexpr unsigned AVXRegisterSize = SHORT_AVX_REGISTER_SIZE;
+    static constexpr unsigned registerSize = SHORT_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(short);
     static constexpr unsigned UnrollFactor = unrollFactor;
-    static constexpr unsigned cacheLinesProcessed = (unrollFactor * AVXRegisterSize) / elementsPerCacheLine;
+    static constexpr unsigned cacheLinesProcessed = (unrollFactor * registerSize) / elementsPerCacheLine;
 
-    static constexpr inline void loadAVXRegister(const DataType* source, AVXRegisterType* destination) {
+    static constexpr inline void loadRegister(const DataType* source, AVXRegisterType* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterTemporal(const AVXRegisterType* source, DataType* destination) {
+    static constexpr inline void temporalStore(const AVXRegisterType* source, DataType* destination) {
         _storeAVXRegisterTemporal<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterNonTemporal(const AVXRegisterType* source, DataType* destination) {
+    static constexpr inline void nonTemporalStore(const AVXRegisterType* source, DataType* destination) {
         _storeAVXRegisterNonTemporal<UnrollFactor>(source, destination);
     }
 
@@ -373,20 +404,20 @@ template<unsigned int unrollFactor>
 struct AVX_MemoryTraits<unsigned, unrollFactor> {
     using AVXRegisterType = __m256i;
     using DataType = unsigned;
-    static constexpr unsigned AVXRegisterSize = UNSIGNED_AVX_REGISTER_SIZE;
+    static constexpr unsigned registerSize = UNSIGNED_AVX_REGISTER_SIZE;
     static constexpr unsigned elementsPerCacheLine = 64 / sizeof(unsigned);
     static constexpr unsigned UnrollFactor = unrollFactor;
-    static constexpr unsigned cacheLinesProcessed = (unrollFactor * AVXRegisterSize) / elementsPerCacheLine;
+    static constexpr unsigned cacheLinesProcessed = (unrollFactor * registerSize) / elementsPerCacheLine;
 
-    static constexpr inline void loadAVXRegister(const DataType* source, AVXRegisterType* destination) {
+    static constexpr inline void loadRegister(const DataType* source, AVXRegisterType* destination) {
         _loadAVXRegister<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterTemporal(const AVXRegisterType* source, DataType* destination) {
+    static constexpr inline void temporalStore(const AVXRegisterType* source, DataType* destination) {
         _storeAVXRegisterTemporal<UnrollFactor>(source, destination);
     }
 
-    static constexpr inline void storeAVXRegisterNonTemporal(const AVXRegisterType* source, DataType* destination) {
+    static constexpr inline void nonTemporalStore(const AVXRegisterType* source, DataType* destination) {
         _storeAVXRegisterNonTemporal<UnrollFactor>(source, destination);
     }
 

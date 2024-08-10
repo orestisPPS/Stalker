@@ -9,7 +9,7 @@
 #include <string>
 #include <iostream>
 #include <limits.h>
-#include "../Operations/CPU_Manager.h"
+#include "../MachineTopology/CPU_Manager.h"
 
 
 namespace STLKR_Tests {

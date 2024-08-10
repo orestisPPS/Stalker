@@ -72,9 +72,16 @@ void CPU_Manager::release(const std::vector<Core*>& cores) {
     }
 }
 
-
 void CPU_Manager::printInConsole() {
     _cpu->print_processor_specs();
+}
+
+void CPU_Manager::enableHyperthreading(bool isEnabled) {
+    _hyperthreadingEnabled = isEnabled;
+}
+
+bool CPU_Manager::hyperThreadingEnabled() const {
+    return _hyperthreadingEnabled;
 }
 
         

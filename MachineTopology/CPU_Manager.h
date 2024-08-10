@@ -4,7 +4,7 @@
 
 #ifndef STALKER_CPU_MANAGER_H
 #define STALKER_CPU_MANAGER_H
-#include "../MachineTopology/CPUTopologyLinux.h"
+#include "CPUTopologyLinux.h"
 #include <unordered_map>
 #include <mutex>
 
@@ -15,6 +15,8 @@ public:
     ~CPU_Manager();
     std::vector<Core *> getCores(unsigned numCores, bool areHyperThreads);
     void release(const std::vector<Core*>& cores);
+    void enableHyperthreading(bool isEnabled);
+    bool hyperThreadingEnabled() const;
     void printInConsole();
     
     
@@ -26,6 +28,7 @@ private:
     std::unordered_map<Thread*, bool> _threadPool;
     std::vector<Core*> _cores;
     std::vector<Thread*> _threads;
+    bool _hyperthreadingEnabled;
     
 };
 
