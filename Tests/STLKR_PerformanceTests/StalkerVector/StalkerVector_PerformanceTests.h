@@ -6,6 +6,7 @@
 #define STALKER_STALKERVECTOR_PERFORMANCETESTS_H
 #include "../STLKR_PerformanceTestBase.h"
 #include "../../../LinearAlgebra/ContiguousMemoryStorage/StalkerVector.h"
+#include "../../../Utility/ConstexprConverter.h"
 
 namespace STLKR_Tests{
     
@@ -23,18 +24,20 @@ namespace STLKR_Tests{
             logs.addParameter("operation", "copy");
             logs.addParameter("unrollFactor", unrollFactor);
             logs.addParameter("prefetch", "disabled");
+            logs.addParameter("hyperthreading", "enabled");
             logs.addParameter("compiler flag", "-o0");
-            _runDeepCopyTest();
+            _runDeepCopyTest(2);
             logs.exportToCSV(_path, "StalkerVectorTest");
             logs.clearAllLogs();
         }
         
     private:
-        void _runDeepCopyTest(){
+        void _runDeepCopyTest(unsigned uf){
             StalkerVector<T, unrollFactor> source(size, _manager);
             for (size_t i = 0; i < size; i++) {
                 source[i] = static_cast<T>(i);
             }
+            _manager.enableHyperthreading(false);
             StalkerVector<T, unrollFactor> v1(size, _manager);
             _manager.setAvailableCores(1);
             logs.startSingleObservationTimer("SIMD_cores1", STLKR_TimeUnit::microseconds);

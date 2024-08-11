@@ -35,10 +35,12 @@ add_executable(stalker main.cpp
         LinearAlgebra/ContiguousMemoryStorage/StalkerVector.h
         Tests/StalkerVector_ValidityTests.h
         LinearAlgebra/ContiguousMemoryStorage/ContiguousMemoryIterator.h
-        Operations/AVX_MemoryTraits.h
-        Operations/SIMD_MathTraits.h
+        Operations/SingleInstructionMultipleData/AVX_MemoryTraits.h
+        Operations/SingleInstructionMultipleData/SIMD_MathTraits.h
         Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_PerformanceTests.h
         Tests/STLKR_PerformanceTests/StalkerVector/SingleThreadPerformance/SingleThreadOperationsPerformanceTest.h
-        Operations/Prefetch_Operations.h
-        Operations/SIMD_Operations.h
+        Operations/SingleInstructionMultipleData/Prefetch_Operations.h
+        Operations/SingleInstructionMultipleData/SIMD_Operations.h
+        Utility/ConstexprConverter.h
+        Operations/SingleInstructionMultipleData/SIMD_Traits.h
 )
