@@ -5,7 +5,7 @@
 #ifndef STALKER_SINGLETHREADOPERATIONSPERFORMANCETEST_H
 #define STALKER_SINGLETHREADOPERATIONSPERFORMANCETEST_H
 #include "../../STLKR_PerformanceTestBase.h"
-#include "../../../../LinearAlgebra/ContiguousMemoryStorage/StalkerVector.h"
+#include "../../../../StalkerVector/StalkerVector.h"
 
 namespace STLKR_Tests{
 

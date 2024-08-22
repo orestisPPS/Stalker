@@ -5,7 +5,7 @@
 #ifndef STALKER_STALKERVECTOR_PERFORMANCETESTS_H
 #define STALKER_STALKERVECTOR_PERFORMANCETESTS_H
 #include "../STLKR_PerformanceTestBase.h"
-#include "../../../LinearAlgebra/ContiguousMemoryStorage/StalkerVector.h"
+#include "../../../StalkerVector/StalkerVector.h"
 #include "../../../Utility/ConstexprConverter.h"
 
 namespace STLKR_Tests{
