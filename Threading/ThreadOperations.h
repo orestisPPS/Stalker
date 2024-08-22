@@ -7,7 +7,7 @@
 
 #include <list>
 #include <numeric>
-#include "ThreadJob.h"
+#include "../Threading/ThreadJob.h"
 #include "../MachineTopology/CPUTopologyLinux.h"
 #include "../MachineTopology/CPU_Manager.h"
 

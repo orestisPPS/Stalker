@@ -4,8 +4,8 @@
 
 #ifndef STALKER_SIMD_OPERATIONS_H
 #define STALKER_SIMD_OPERATIONS_H
-#include "SIMD_MathTraits.h"
-#include "../Thread_Operations.h"
+#include "MathTraits.h"
+#include "../../Operations/Thread_Operations.h"
 
 template <typename T, unsigned unrollFactor>
 class SIMD_Operations {

@@ -7,9 +7,8 @@
 
 #include <cstring>
 #include <valarray>
-#include "../../Operations/SingleInstructionMultipleData/SIMD_Operations.h"
-#include "ContiguousMemoryIterator.h"
-#include "../../Operations/SingleInstructionMultipleData/SIMD_MathTraits.h"
+#include "AVX2/Operations.h"
+#include "StalkerVector_Iterator.h"
 
 template <typename T, unsigned unrollFactor>
 class StalkerVector {

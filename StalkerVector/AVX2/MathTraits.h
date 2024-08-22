@@ -4,7 +4,7 @@
 
 #ifndef STALKER_SIMD_MATHTRAITS_H
 #define STALKER_SIMD_MATHTRAITS_H
-#include "AVX_MemoryTraits.h"
+#include "MemoryTraits.h"
 #include <immintrin.h>
 #include <algorithm>
 #include <numeric>
