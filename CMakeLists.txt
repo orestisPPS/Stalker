@@ -36,4 +36,5 @@ add_executable(stalker main.cpp
         StalkerVector/AVX2/MemoryTraits.h
         StalkerVector/AVX2/Prefetch.h
         StalkerVector/AVX2/Operations.h
+        Threading/CPUTopology/Cache.h
 )

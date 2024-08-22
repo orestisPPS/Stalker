@@ -5,7 +5,7 @@
 #ifndef STALKER_SIMD_OPERATIONS_H
 #define STALKER_SIMD_OPERATIONS_H
 #include "MathTraits.h"
-#include "../../Operations/Thread_Operations.h"
+#include "../../Threading/ThreadOperations.h"
 
 template <typename T, unsigned unrollFactor>
 class SIMD_Operations {
@@ -29,7 +29,7 @@ public:
             for (size_t i = limit; i < endIndex; i++)
                 destination[i] = source[i];
         };
-        Thread_Operations::executeJob(copyThreadJob, size, blockSize, manager);
+        ThreadOperations::executeJob(copyThreadJob, size, blockSize, manager);
 
     }
 
@@ -51,7 +51,7 @@ public:
             }
         };
 
-        Thread_Operations::executeJob(setValueThreadJob, size, blockSize, manager);
+        ThreadOperations::executeJob(setValueThreadJob, size, blockSize, manager);
     }
 
     constexpr inline static void scale(T *data, T  scale, unsigned size, CPU_Manager &manager, bool temporalStore = false) {
@@ -75,7 +75,7 @@ public:
                 data[i] *= scale;
             }
         };
-        Thread_Operations::executeJob(scaleThreadJob, size, blockSize, manager);
+        ThreadOperations::executeJob(scaleThreadJob, size, blockSize, manager);
     }
 
     constexpr inline static bool areEqual(const T *a, const T *b, unsigned size, CPU_Manager &manager){
@@ -101,7 +101,7 @@ public:
                 }
             }
         };
-        Thread_Operations::executeJob(areEqualThreadJob, size, blockSize, manager);
+        ThreadOperations::executeJob(areEqualThreadJob, size, blockSize, manager);
         return result;
     }
 
@@ -130,7 +130,7 @@ public:
                 result[i] = data1[i] * scale1 + data2[i] * scale2;
             }
         };
-        Thread_Operations::executeJob(addJob, size, blockSize, manager);
+        ThreadOperations::executeJob(addJob, size, blockSize, manager);
     }
 
     constexpr inline static void subtract(T *data1, T  *data2, T *result, T scale1, T scale2, unsigned size, CPU_Manager &manager, bool temporalStore = false) {
@@ -158,7 +158,7 @@ public:
                 result[i] = data1[i] * scale1 - data2[i] * scale2;
             }
         };
-        Thread_Operations::executeJob(addJob, size, blockSize, manager);
+        ThreadOperations::executeJob(addJob, size, blockSize, manager);
     }
 
     constexpr inline static void multiply(T *data1, T  *data2, T *result, T scale1, T scale2, unsigned size, CPU_Manager &manager, bool temporalStore = false) {
@@ -185,7 +185,7 @@ public:
                 result[i] = data1[i] * scale1 * data2[i] * scale2;
             }
         };
-        Thread_Operations::executeJob(addJob, size, blockSize, manager);
+        ThreadOperations::executeJob(addJob, size, blockSize, manager);
     }
 
     constexpr inline static T sum(T *data1, unsigned size, CPU_Manager &manager) {
@@ -203,7 +203,7 @@ public:
             for (size_t i = limit; i < endIndex; i++)
                 *result += data1[i];
         };
-        auto result = Thread_Operations::executeJobWithReduction<T>(sumJob, size, blockSize, manager);
+        auto result = ThreadOperations::executeJobWithReduction<T>(sumJob, size, blockSize, manager);
         return result;
     }
 
@@ -223,7 +223,7 @@ public:
             for (size_t i = limit; i < endIndex; i++)
                 *result += *(data1 + i) * *(data2 + i);
         };
-        auto result = Thread_Operations::executeJobWithReduction<T>(dotProductJob, size, blockSize, manager);
+        auto result = ThreadOperations::executeJobWithReduction<T>(dotProductJob, size, blockSize, manager);
         return result;
     }
 

@@ -8,10 +8,11 @@
 #include <list>
 #include <numeric>
 #include "../Threading/ThreadJob.h"
-#include "../MachineTopology/CPUTopologyLinux.h"
-#include "../MachineTopology/CPU_Manager.h"
+#include "CPUTopology/CPU_Manager.h"
 
-class Thread_Operations {
+
+
+class ThreadOperations {
 public:
 
     template <typename threadJob>

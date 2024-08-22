@@ -5,9 +5,9 @@
 #ifndef STALKER_THREAD_H
 #define STALKER_THREAD_H
 
-#include "SharedCache.h"
+#include "Cache.h"
+#include "../ThreadJob.h"
 #include <pthread.h>
-#include "../Operations/ThreadJob.h"
 
 
 class Thread{

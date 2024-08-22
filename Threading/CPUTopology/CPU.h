@@ -19,16 +19,16 @@
 #include <mutex>
 #include <algorithm>
 #include "Core.h"
-#include "CacheLevel.h"
+#include "Cache.h"
 
-class CPUTopologyLinux {
+class CPU {
 
 public:
-    explicit CPUTopologyLinux(std::string cpuPath = "/sys/devices/system/cpu/") :_cpuPath("/sys/devices/system/cpu/") {
+    explicit CPU(std::string cpuPath = "/sys/devices/system/cpu/") :_cpuPath("/sys/devices/system/cpu/") {
         _readMachineTopology();
     }
     
-    ~CPUTopologyLinux() {
+    ~CPU() {
         for (auto core : _physicalCores) {
             delete core;
         }

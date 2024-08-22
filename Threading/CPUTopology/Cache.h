@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <vector>
+#include <unordered_map>
 
 enum CacheLevelType {
     L1_Data = 0,
@@ -31,6 +32,26 @@ private:
     CacheLevelType _level;
     unsigned _size;
     std::vector<unsigned> _threads;
+};
+
+
+class SharedCache {
+public:
+    SharedCache(CacheLevel *l1Data, CacheLevel *l1Instructions, CacheLevel *l2, CacheLevel *l3) {
+        _cacheLevels = { {L1_Data, l1Data}, {L1_Instructions, l1Instructions}, {L2, l2}, {L3, l3} };
+    }
+
+    ~SharedCache() = default;
+
+    inline const CacheLevel* getCacheLevel(CacheLevelType level) const {
+        auto it = _cacheLevels.find(level);
+        if (it != _cacheLevels.end()) {
+            return it->second;
+        }
+        return nullptr;
+    }
+private:
+    std::unordered_map<CacheLevelType, CacheLevel*> _cacheLevels;
 };
 
 

@@ -4,7 +4,7 @@
 
 #ifndef STALKER_CPU_MANAGER_H
 #define STALKER_CPU_MANAGER_H
-#include "CPUTopologyLinux.h"
+#include "CPU.h"
 #include <unordered_map>
 #include <mutex>
 
@@ -12,13 +12,13 @@ class CPU_Manager {
 public:
     CPU_Manager() {
         _hyperthreadingEnabled = false;
-        _cpu = new CPUTopologyLinux();
+        _cpu = new CPU();
         _populate();
         setAvailableCores(1);
     }
     explicit CPU_Manager(unsigned availableCores, bool enableHyperthreading = false) {
         _hyperthreadingEnabled = enableHyperthreading;
-        _cpu = new CPUTopologyLinux();
+        _cpu = new CPU();
         _populate();
         setAvailableCores(availableCores);
     }
@@ -76,7 +76,7 @@ public:
 private:
     bool _hyperthreadingEnabled;
     unsigned _availableCores;
-    CPUTopologyLinux *_cpu;
+    CPU *_cpu;
     std::unordered_map<Core*, bool> _corePool;
     std::unordered_map<Core*, bool> _hyperThreadCorePool;
     std::unordered_map<Core*, bool> _ecoCorePool;
