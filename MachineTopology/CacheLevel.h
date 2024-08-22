@@ -9,27 +9,28 @@
 #include <vector>
 
 enum CacheLevelType {
-    DATA,
-    INSTRUCTIONS,
-    UNIFIED
+    L1_Data = 0,
+    L1_Instructions = 1,
+    L2 = 2,
+    L3 = 3,
+    LNone = -1
 };
 
 class CacheLevel {
 public:
-    CacheLevel(unsigned level, unsigned size , const std::vector<unsigned> &threads, CacheLevelType type);
+    CacheLevel(CacheLevelType level, unsigned size , const std::vector<unsigned> &threads) :
+    _level(level), _size(size), _threads(threads) {}
     CacheLevel() = default;
     ~CacheLevel() = default;
     
-    unsigned getLevel() const;
-    unsigned getSize() const;
-    constexpr unsigned getSizeInCacheLines() const;
-    const std::vector<unsigned> &getThreads() const;
-    const CacheLevelType getType() const;
+    [[nodiscard]] inline unsigned getLevel() const { return _level; }
+    [[nodiscard]] inline unsigned getSize() const { return _size; }
+    [[nodiscard]] inline constexpr unsigned getSizeInCacheLines() const { return (_size + 63) / 64; }
+    [[nodiscard]] inline const std::vector<unsigned> &getThreads() const{ return _threads; }
 private:
-    unsigned _level;
+    CacheLevelType _level;
     unsigned _size;
     std::vector<unsigned> _threads;
-    CacheLevelType _type;
 };
 
 

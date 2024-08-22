@@ -23,7 +23,7 @@ public:
         for (const auto &thread : threadPool) {
             //std::cout<<thread->getId()<<" start: " << threadLimits[iThread].first << " end: " << threadLimits[iThread].second << std::endl; 
             thread->executeJob(job, threadLimits[iThread].first, threadLimits[iThread].second ,
-                               thread->getSharedCacheMemory()->getCacheLevel1Data()->getSize());
+                               thread->getSharedCacheMemory()->getCacheLevel(L1_Data)->getSize());
             iThread++;
         }
         for (const auto &thread : threadPool) {
@@ -43,7 +43,7 @@ public:
         auto reducedResult = std::vector<T>(threadPool.size(), 0);
         for (const auto &thread : threadPool){
             thread->executeJobWithReduction<threadJob, T>(job, threadLimits[iThread].first, threadLimits[iThread].second, &reducedResult[iThread], 
-                                                           thread->getSharedCacheMemory()->getCacheLevel1Data()->getSize());
+                                                           thread->getSharedCacheMemory()->getCacheLevel(L1_Data)->getSize());
             iThread++;
         }
         for (const auto &thread : threadPool) {

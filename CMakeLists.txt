@@ -18,19 +18,13 @@ add_executable(stalker main.cpp
         Tests/STLKR_TestBase.cpp
         Tests/STLKR_TestBase.h
         Tests/STLKR_PerformanceTests/STLKR_PerformanceTestBase.cpp
-        MachineTopology/CPUTopologyLinux.cpp
         MachineTopology/CPUTopologyLinux.h
-        MachineTopology/Core.cpp
         MachineTopology/Core.h
-        MachineTopology/CacheLevel.cpp
         MachineTopology/CacheLevel.h
-        MachineTopology/Thread.cpp
         MachineTopology/Thread.h
-        MachineTopology/SharedCache.cpp
         MachineTopology/SharedCache.h
         Operations/Thread_Operations.h
         Operations/ThreadJob.h
-        MachineTopology/CPU_Manager.cpp
         MachineTopology/CPU_Manager.h
         LinearAlgebra/ContiguousMemoryStorage/StalkerVector.h
         Tests/StalkerVector_ValidityTests.h

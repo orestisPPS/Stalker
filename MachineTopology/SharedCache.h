@@ -6,21 +6,25 @@
 #define STALKER_SHAREDCACHE_H
 #include "CacheLevel.h"
 #include <stdexcept>
+#include <unordered_map>
 
 class SharedCache {
 public:
-    SharedCache(CacheLevel *cacheLeve1Data, CacheLevel *cacheLevel1Instructions, CacheLevel *cacheLevel2, CacheLevel *cacheLevel3);
+    SharedCache(CacheLevel *l1Data, CacheLevel *l1Instructions, CacheLevel *l2, CacheLevel *l3) {
+        _cacheLevels = { {L1_Data, l1Data}, {L1_Instructions, l1Instructions}, {L2, l2}, {L3, l3} };
+    }
+    
     ~SharedCache() = default;
-    const CacheLevel *getCacheLevel1Data() const;
-    const CacheLevel *getCacheLevel1Instructions() const;
-    const CacheLevel *getCacheLevel2() const;
-    const CacheLevel *getCacheLevel3() const;
-    const CacheLevel *getCacheLevel(unsigned level) const;
+
+    inline const CacheLevel* getCacheLevel(CacheLevelType level) const {
+        auto it = _cacheLevels.find(level);
+        if (it != _cacheLevels.end()) {
+            return it->second;
+        }
+        return nullptr;
+    }
 private:
-    CacheLevel *_cacheLevel1_Data;
-    CacheLevel *_cacheLevel1_Instructions;
-    CacheLevel *_cacheLevel2;
-    CacheLevel *_cacheLevel3;
+    std::unordered_map<CacheLevelType, CacheLevel*> _cacheLevels;
 };
 
 

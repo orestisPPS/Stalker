@@ -13,20 +13,43 @@
 class Thread{
 public:
     Thread() = default;
-    Thread(unsigned id, unsigned parentId, unsigned clockMin, unsigned clockMax, SharedCache *sharedCacheMemory);
+    Thread(unsigned id, unsigned parentId, unsigned clockMin, unsigned clockMax, SharedCache *sharedCacheMemory) :
+        _id(id), _parentId(parentId), _clockMin(clockMin), _clockMax(clockMax),
+        _sharedCacheMemory(sharedCacheMemory), _pThread(0), _pThreadAttribute({}) { }
 
 
     ~Thread() = default;
-    unsigned getId() const;
-    unsigned getParentId() const;
-    unsigned getClockMin() const;
-    unsigned getClockMax() const;
-    bool isRunning() const;
-    const SharedCache *getSharedCacheMemory();
-    void setThreadAffinity(const cpu_set_t &coreSet);
-    void resetThreadAffinity();
-    cpu_set_t & getCoreSet();
-    void join() const;
+    
+    [[nodiscard]] inline unsigned getId() const { return _id; }
+    
+    [[nodiscard]] inline unsigned getParentId() const{ return _parentId; }
+    
+    [[nodiscard]] inline unsigned getClockMin() const { return _clockMin; }
+    
+    [[nodiscard]] inline unsigned getClockMax() const { return _clockMax; }
+    
+    const SharedCache *getSharedCacheMemory() { return _sharedCacheMemory; }
+    
+    void setThreadAffinity(const cpu_set_t &coreSet) {
+        _coreSet = coreSet;
+        pthread_attr_init(&_pThreadAttribute);
+        CPU_SET(_id, &_coreSet);
+        int result = pthread_attr_setaffinity_np(&_pThreadAttribute, sizeof(cpu_set_t), &_coreSet);
+        if (result != 0) std::cerr << "Error setting affinity for thread " << _id << std::endl;
+    }
+    
+    void resetThreadAffinity(){
+        CPU_ZERO(&_coreSet);
+        int result = pthread_attr_setaffinity_np(&_pThreadAttribute, sizeof(cpu_set_t), &_coreSet);
+        if (result != 0) std::cerr << "Error resetting affinity for thread " << _id << std::endl;
+        pthread_attr_destroy(&_pThreadAttribute);
+    }
+    
+    cpu_set_t & getCoreSet() {return _coreSet; }
+    
+    void join() const {
+        pthread_join(_pThread, nullptr);
+    }
 
     template<typename threadJob>
     void executeJob(threadJob job, unsigned startIndex, unsigned endIndex, unsigned L0CacheSize = 0) {
@@ -47,7 +70,6 @@ private:
     unsigned _parentId;
     unsigned _clockMin;
     unsigned _clockMax;
-    bool _isRunning;
     SharedCache *_sharedCacheMemory;
     pthread_t _pThread;
     pthread_attr_t _pThreadAttribute;
