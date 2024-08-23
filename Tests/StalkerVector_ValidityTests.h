@@ -384,9 +384,9 @@ namespace STLKR_Tests {
             }
 
             if (std::is_same<T, float>::value || std::is_same<T, double>::value){
-                vec1.add(vec2, result, 0.5, 1.5);
+                vec1.add(vec2, result, 0.5, -1.5);
                 for (unsigned i = 0; i < vec1.size(); ++i)
-                    if (result[i] != 2) return false;
+                    if (result[i] != -1) return false;
                 
             }
             if (std::is_same<T, int>::value || std::is_same<T, short>::value || std::is_same<T, unsigned>::value){

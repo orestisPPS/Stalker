@@ -276,7 +276,7 @@ private:
     unsigned _size;
     unsigned _sizeInCacheLines;
     unsigned _alignment;
-    AVX_MemoryTraits<T, unrollFactor> _avxMemoryTraits;
+    MemoryTraits<T, unrollFactor> _avxMemoryTraits;
     CPU_Manager &_manager;
 
     T* _allocate() {

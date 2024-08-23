@@ -5,7 +5,7 @@
 #ifndef STALKER_PREFETCH_OPERATIONS_H
 #define STALKER_PREFETCH_OPERATIONS_H
 #include <mmintrin.h>
-#include "AVX_MemoryTraits.h"
+#include "MemoryTraits.h"
 
 enum PrefetchConfig {
     PrefetchToL1, // Corresponds to _MM_HINT_T0: Prefetch to L1 cache (and all levels below it)
