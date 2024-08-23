@@ -23,7 +23,7 @@ namespace STLKR_Tests{
             logs.addParameter("operation", "copy");
             logs.addParameter("unrollFactor", unrollFactor);
             logs.addParameter("prefetch", "disabled");
-            logs.addParameter("hyperthreading", "enabled");
+            logs.addParameter("hyperthreading", "disabled");
             logs.addParameter("compiler flag", "-o0");
             _runDeepCopyTest(2);
             logs.exportToCSV(_path, "StalkerVectorTest");

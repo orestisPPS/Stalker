@@ -10,11 +10,11 @@
 #include <numeric>
 
 template<typename T, unsigned int unrollFactor>
-struct SIMD_MathTraits;
+struct MathTraits;
 
 // Float Specialization
 template<unsigned int unrollFactor>
-struct SIMD_MathTraits<float, unrollFactor> {
+struct MathTraits<float, unrollFactor> {
     using AVXRegisterType = __m256;
     using DataType = float;
     static constexpr unsigned registerSize = FLOAT_AVX_REGISTER_SIZE;
@@ -115,7 +115,7 @@ private:
 
 // Double Specialization
 template<unsigned int unrollFactor>
-struct SIMD_MathTraits<double, unrollFactor> {
+struct MathTraits<double, unrollFactor> {
     using AVXRegisterType = __m256d;
     using DataType = double;
     static constexpr unsigned registerSize = DOUBLE_AVX_REGISTER_SIZE;
@@ -214,7 +214,7 @@ private:
 
 // Int Specialization
 template<unsigned int unrollFactor>
-struct SIMD_MathTraits<int, unrollFactor> {
+struct MathTraits<int, unrollFactor> {
     using AVXRegisterType = __m256i;
     using DataType = int;
     static constexpr unsigned registerSize = INT_AVX_REGISTER_SIZE;
@@ -316,7 +316,7 @@ private:
 
 // Unsigned Specialization
 template<unsigned int unrollFactor>
-struct SIMD_MathTraits<unsigned, unrollFactor> {
+struct MathTraits<unsigned, unrollFactor> {
     using AVXRegisterType = __m256i;
     using DataType = unsigned;
     static constexpr unsigned registerSize = UNSIGNED_AVX_REGISTER_SIZE;
@@ -418,7 +418,7 @@ private:
 
 // Short Specialization
 template<unsigned int unrollFactor>
-struct SIMD_MathTraits<short, unrollFactor> {
+struct MathTraits<short, unrollFactor> {
     using AVXRegisterType = __m256i;
     using DataType = short;
     static constexpr unsigned registerSize = SHORT_AVX_REGISTER_SIZE;
