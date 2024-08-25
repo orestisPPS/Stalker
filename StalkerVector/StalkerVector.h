@@ -162,51 +162,51 @@ public:
         return _alignment;
     }
 
-    void copy(const StalkerVector& other) {
-        SIMD_Operations<T, unrollFactor>::copy(_data, other._data, _size, _manager, true);
+    inline void copy(const StalkerVector& other) {
+        SIMD_Operations<T, unrollFactor>::copy(_data, other._data, _size, _manager);
     }
-    
-    void fill(T value) {
-        SIMD_Operations<T, unrollFactor>::setValue(_data, value, _size, _manager, true);
+
+    inline void fill(T value) {
+        SIMD_Operations<T, unrollFactor>::setValue(_data, value, _size, _manager);
     }
-    
-    void scale(T value) {
-        SIMD_Operations<T, unrollFactor>::scale(_data, value, _size, _manager, true);
+
+    inline void scale(T value) {
+        SIMD_Operations<T, unrollFactor>::scale(_data, value, _size, _manager);
     }
-    
-    bool areEqual(const StalkerVector& other) {
+
+    inline bool areEqual(const StalkerVector& other) {
         return SIMD_Operations<T, unrollFactor>::areEqual(_data, other._data, _size, _manager);
     }
-    
-    void add(const StalkerVector& other, StalkerVector& result, T scale1, T scale2) {
-        SIMD_Operations<T, unrollFactor>::add(_data, other._data, result._data, scale1, scale2, _size, _manager, true);
+
+    inline void add(const StalkerVector& other, StalkerVector& result, T scale1, T scale2) {
+        SIMD_Operations<T, unrollFactor>::add(_data, other._data, result._data, scale1, scale2, _size, _manager);
     }
-    
-    void subtract(const StalkerVector& other, StalkerVector& result, T scale1, T scale2) {
-        SIMD_Operations<T, unrollFactor>::subtract(_data, other._data, result._data, scale1, scale2, _size, _manager, true);
+
+    inline void subtract(const StalkerVector& other, StalkerVector& result, T scale1, T scale2) {
+        SIMD_Operations<T, unrollFactor>::subtract(_data, other._data, result._data, scale1, scale2, _size, _manager);
     }
-    
-    void multiply(const StalkerVector& other, StalkerVector& result, T scale1, T scale2) {
-        SIMD_Operations<T, unrollFactor>::multiply(_data, other._data, result._data, scale1, scale2, _size, _manager, true);
+
+    inline void multiply(const StalkerVector& other, StalkerVector& result, T scale1, T scale2) {
+        SIMD_Operations<T, unrollFactor>::multiply(_data, other._data, result._data, scale1, scale2, _size, _manager);
     }
-    
-    T sum () {
+
+    inline T sum () {
         return SIMD_Operations<T, unrollFactor>::sum(_data, _size, _manager);
     }
-    
-    T dotProduct(const StalkerVector& other) {
+
+    inline T dotProduct(const StalkerVector& other) {
         return SIMD_Operations<T, unrollFactor>::dotProduct(_data, other._data, _size, _manager);
     }
-    
-    double magnitude() {
+
+    inline double magnitude() {
         if constexpr (std::is_same<T, int>::value || std::is_same<T, short>::value ||
                       std::is_same<T, unsigned>::value || std::is_same<T, float>::value)
             return sqrt(static_cast<double>(dotProduct(*this)));
         else if constexpr (std::is_same<T, double>::value)
             return sqrt(dotProduct(*this));
     }
-    
-    double average() {
+
+    inline double average() {
         return static_cast<double>(sum()) / _size;
     }
     
@@ -264,13 +264,6 @@ public:
 
         file.close();
     }
-            
-    
-//    template<unsigned powerValue>
-//    void raisePower(){
-//        AVX_Operations<T, unrollFactor>::power<powerValue>(_data, _size, _manager);
-//    }
-
 private:
     T* _data;
     unsigned _size;
@@ -281,12 +274,10 @@ private:
 
     T* _allocate() {
         void* allocatedData = _mm_malloc(_size * sizeof(T), _alignment);
-        if (allocatedData == nullptr) {
+        if (allocatedData == nullptr)
             throw std::runtime_error("Memory allocation failed.");
-        }
-        if (reinterpret_cast<std::uintptr_t>(allocatedData) % _alignment != 0) {
+        if (reinterpret_cast<std::uintptr_t>(allocatedData) % _alignment != 0)
             throw std::runtime_error("Memory allocation did not meet alignment requirements.");
-        }
         return static_cast<T*>(allocatedData);
     }
 

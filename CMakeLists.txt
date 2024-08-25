@@ -56,7 +56,6 @@ target_include_directories(stalker_core INTERFACE
 )
 # Define the stalker_tests library
 add_library(stalker_tests STATIC
-        Tests/NumericalVectorTest.h
         Tests/TestBase.h
         Tests/STLKR_PerformanceTests/STLKR_PerformanceTestBase.h
         Tests/STLKR_TestBase.cpp
@@ -65,13 +64,15 @@ add_library(stalker_tests STATIC
         Tests/StalkerVector_ValidityTests.h
         Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_PerformanceTests.h
         Tests/STLKR_PerformanceTests/StalkerVector/SingleThreadPerformance/SingleThreadOperationsPerformanceTest.h
+        Tests/CPUTopologyTest.h
 )
 
 # Link the stalker_tests library with stalker_core
 target_link_libraries(stalker_tests PRIVATE stalker_core)
 
 # Add the main executable
-add_executable(stalker main.cpp)
+add_executable(stalker main.cpp
+        Utility/Readers.h)
 
 # Link the executable with stalker_core and stalker_tests
 target_link_libraries(stalker stalker_core stalker_tests)

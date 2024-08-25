@@ -13,37 +13,6 @@
 
 #include <immintrin.h>
 
-enum UnrollFactor {
-    UNROLL_1,
-    UNROLL_2,
-    UNROLL_4,
-    UNROLL_8,
-    UNROLL_16,
-    UNROLL_32,
-    UNROLL_64,
-};
-
-static constexpr unsigned int getUnrollFactor(UnrollFactor unrollFactor) {
-    switch (unrollFactor) {
-        case UNROLL_1:
-            return 1;
-        case UNROLL_2:
-            return 2;
-        case UNROLL_4:
-            return 4;
-        case UNROLL_8:
-            return 8;
-        case UNROLL_16:
-            return 16;
-        case UNROLL_32:
-            return 32;
-        case UNROLL_64:
-            return 64;
-        default:
-            return 1;
-    }
-}
-
 template<typename T, unsigned int unrollFactor>
 struct MemoryTraits;
 

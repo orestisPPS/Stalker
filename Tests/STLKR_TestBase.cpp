@@ -25,12 +25,28 @@ namespace STLKR_Tests {
     }
 
     void STLKR_TestBase::printTestCaseResult(bool success, const std::string& name) {
+        std::cout << "Test " << _caseCounter++ << ": ";
         if (success)
             printSuccess();
         else
             printFailure();
 
         std::cout << " " << name << std::endl;
+    }
+
+    void STLKR_TestBase::printTestCaseResult(bool success, const std::string& testNumber, const std::string& testName) {
+        std::cout << testNumber << " ";
+        if (success)
+            printSuccess();
+        else
+            printFailure();
+
+        std::cout << " " << testName << std::endl;
+    }
+    
+
+    void STLKR_TestBase::resetCaseCounting() {
+        _caseCounter = 0;
     }
 
 //    void STLKR_TestBase::_welcomeMessage() {

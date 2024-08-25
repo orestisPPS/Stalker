@@ -20,6 +20,7 @@
 #include <algorithm>
 #include "Core.h"
 #include "Cache.h"
+#include "Readers.h"
 
 class CPU {
 
@@ -116,13 +117,13 @@ private:
     //------------------------------------------------------------------
     //Reader functions
     //------------------------------------------------------------------
-    void _readMachineTopology() {
+    inline void _readMachineTopology() {
         auto start = std::chrono::high_resolution_clock::now();
         unsigned int size_kb = 0, coreTopologyId = 0;
         std::string type, shared_cpus_str;
 
         // Find the online Threads
-        auto onlineThreads = _parseCPUList(_readStringFromFile("/sys/devices/system/cpu/online"));
+        auto onlineThreads = Readers::parseCPUList(Readers::readStringFromFile("/sys/devices/system/cpu/online"));
 
         _threads = std::vector<Thread*>(onlineThreads.size());
         _cacheLevels = std::vector<CacheLevel*>();
@@ -135,17 +136,17 @@ private:
         auto threadToCacheLevels = std::unordered_map<unsigned, CacheLevel*[4]>();
         for (unsigned iThread : onlineThreads) {
             //Read the core id of the thread
-            coreTopologyId = _readIntegerFromFile(
+            coreTopologyId = Readers::readIntegerFromFile(
                     _getThreadPath(iThread) + "/topology/core_id");
-            auto threadSiblings = _parseCPUList(_readStringFromFile(_getThreadPath(iThread) + "/topology/thread_siblings_list"));
+            auto threadSiblings = Readers::parseCPUList(Readers::readStringFromFile(_getThreadPath(iThread) + "/topology/thread_siblings_list"));
             if (physicalCoreToThreads.find(coreTopologyId) == physicalCoreToThreads.end())
                 physicalCoreToThreads[coreTopologyId] = std::move(threadSiblings);
 
             //Read the cache levels of the thread
             for (unsigned cache_index = 0; cache_index <= 3; ++cache_index) { // Iterate over 1, 2, and 3
-                size_kb = _readIntegerFromFile(_getCacheLevelPath(iThread, cache_index) + "/size");
-                shared_cpus_str = _readStringFromFile(_getCacheLevelPath(iThread, cache_index) + "/shared_cpu_list");
-                auto sharedCPUs = _parseCPUList(shared_cpus_str);
+                size_kb = Readers::readIntegerFromFile(_getCacheLevelPath(iThread, cache_index) + "/size");
+                shared_cpus_str = Readers::readStringFromFile(_getCacheLevelPath(iThread, cache_index) + "/shared_cpu_list");
+                auto sharedCPUs = Readers::parseCPUList(shared_cpus_str);
                 if (cacheMap.find(cache_index) == cacheMap.end())
                     cacheMap[cache_index] = std::map<std::vector<unsigned>, CacheLevel*>();
                 if (cacheMap[cache_index].find(sharedCPUs) == cacheMap[cache_index].end()){
@@ -157,8 +158,8 @@ private:
             _sharedCaches.push_back(new SharedCache(threadToCacheLevels[iThread][0], threadToCacheLevels[iThread][1],
                                                     threadToCacheLevels[iThread][2], threadToCacheLevels[iThread][3]));
             _threads[iThread] = new Thread(iThread, coreTopologyId,
-                                           _readIntegerFromFile(_getThreadPath(iThread) + "/cpufreq/cpuinfo_min_freq"),
-                                           _readIntegerFromFile(_getThreadPath(iThread) + "/cpufreq/cpuinfo_max_freq"),
+                                           Readers::readIntegerFromFile(_getThreadPath(iThread) + "/cpufreq/cpuinfo_min_freq"),
+                                           Readers::readIntegerFromFile(_getThreadPath(iThread) + "/cpufreq/cpuinfo_max_freq"),
                                            _sharedCaches.back());
         }
         _physicalCores = std::vector<Core*>();
@@ -183,56 +184,17 @@ private:
         std::cout << "Cache info read successfully!" << std::endl;
     }
     
-    static unsigned _readIntegerFromFile(const std::string& path) {
-        std::ifstream file(path);
-        if (!file.is_open()) {
-            throw std::runtime_error("Failed to open file: " + path);
-        }
-        unsigned value;
-        file >> value;
-        return value;
-    }
-    
-    static std::string _readStringFromFile(const std::string& path) {
-        std::ifstream file(path);
-        if (!file.is_open()) {
-            throw std::runtime_error("Failed to open file: " + path);
-        }
-        std::string value;
-        std::getline(file, value);
-        return value;
-    }
-    
-    static std::vector<unsigned> _parseCPUList(const std::string& cpu_list) {
-        std::vector<unsigned> cpus;
-        std::stringstream ss(cpu_list);
-        std::string range;
-        size_t start, end, dash;
 
-        while (std::getline(ss, range, ',')) {
-            dash = range.find('-');
-            if (dash != std::string::npos) {
-                start = std::stoi(range.substr(0, dash));
-                end = std::stoi(range.substr(dash + 1));
-                for (unsigned i = start; i <= end; ++i) {
-                    cpus.push_back(i);
-                }
-            } else {
-                cpus.push_back(std::stoi(range));
-            }
-        }
-        return cpus;
-    }
     
-    std::string _getThreadPath(unsigned &threadId) const {
+    inline std::string _getThreadPath(unsigned &threadId) const {
         return _cpuPath + "cpu" + std::to_string(threadId);
     }
-    
-    std::string _getCacheLevelPath(unsigned threadId, unsigned cacheIndex) const {
+
+    inline std::string _getCacheLevelPath(unsigned threadId, unsigned cacheIndex) const {
         return _cpuPath + "cpu" + std::to_string(threadId) + "/cache/index" + std::to_string(cacheIndex);
     }
 
-    static CacheLevelType _getCacheLevelType(unsigned level) {
+    inline static constexpr CacheLevelType _getCacheLevelType(unsigned level) {
         switch (level) {
             case 0: return L1_Data;
             case 1: return L1_Instructions;

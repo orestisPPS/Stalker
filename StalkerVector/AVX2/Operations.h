@@ -13,11 +13,11 @@ class SIMD_Operations {
     using T_simd = typename MemoryTraits<T, unrollFactor>::T_simd;
 public:
 
-    constexpr inline static void copy(T_data *destination, const T_data  *source, unsigned size, CPU_Manager &manager, bool temporalStore = false) {
+    constexpr inline static void copy(T_data *destination, const T_data  *source, unsigned size, CPU_Manager &manager) {
         auto memory = MemoryTraits<T_data, unrollFactor>();
         auto copyThreadJob = [&](unsigned startIndex, unsigned endIndex, unsigned L1CacheSize) {
             T_simd simdData[unrollFactor];
-            void (*storeResultRegister)(const T_simd*, T_data*) = temporalStore ? memory.temporalStore : memory.nonTemporalStore;
+            void (*storeResultRegister)(const T_simd*, T_data*) = manager.getTemporalCacheStore() ? memory.temporalStore : memory.nonTemporalStore;
             auto limit = endIndex - (endIndex % memory.blockSize);
             for (size_t i = startIndex; i < limit; i += memory.blockSize) {
                 memory.loadRegister(source + i, simdData);
@@ -29,11 +29,11 @@ public:
         ThreadOperations::executeJob(copyThreadJob, size, memory.blockSize, manager);
     }
 
-    constexpr inline static void setValue(T_data *destination, T_data  value, unsigned size, CPU_Manager &manager, bool temporalStore = false) {
+    constexpr inline static void setValue(T_data *destination, T_data  value, unsigned size, CPU_Manager &manager) {
         auto memory = MemoryTraits<T_data, unrollFactor>();
         auto setValueThreadJob = [&](unsigned startIndex, unsigned endIndex, unsigned L0CacheSize) {
             T_simd simdData[unrollFactor];
-            void (*storeResultRegister)(const T_simd*, T_data*) = temporalStore ? memory.temporalStore : memory.nonTemporalStore;
+            void (*storeResultRegister)(const T_simd*, T_data*) = manager.getTemporalCacheStore() ? memory.temporalStore : memory.nonTemporalStore;
             auto limit = endIndex - (endIndex % memory.blockSize);
             for (size_t i = startIndex; i < limit; i += memory.blockSize) {
                 memory.setValue(simdData, value);
@@ -46,15 +46,14 @@ public:
         ThreadOperations::executeJob(setValueThreadJob, size, memory.blockSize, manager);
     }
 
-    constexpr inline static void scale(T_data *data, T_data  scale, unsigned size, CPU_Manager &manager, bool temporalStore = false) {
+    constexpr inline static void scale(T_data *data, T_data  scale, unsigned size, CPU_Manager &manager) {
         auto memory = MemoryTraits<T_data, unrollFactor>();
         auto math = MathTraits<T_data, unrollFactor>();
-
+        void (*storeResultRegister)(const T_simd*, T_data*) = manager.getTemporalCacheStore() ? memory.temporalStore : memory.nonTemporalStore;
         auto scaleThreadJob = [&](unsigned startIndex, unsigned endIndex, unsigned L0CacheSize) {
             T_simd simdScale;
             memory.setValue(&simdScale, scale);
             T_simd simdData[unrollFactor];
-            void (*storeResultRegister)(const T_simd*, T_data*) = temporalStore ? memory.temporalStore : memory.nonTemporalStore;
             auto limit = endIndex - (endIndex % memory.blockSize);
             for (size_t i = startIndex; i < limit; i += memory.blockSize) {
                 memory.loadRegister(data + i, simdData);
@@ -91,17 +90,17 @@ public:
         return result;
     }
 
-    constexpr inline static void add(T_data *data1, T_data  *data2, T_data *result, T_data scale1, T_data scale2, unsigned size, CPU_Manager &manager, bool temporalStore = false) {
+    constexpr inline static void add(T_data *data1, T_data  *data2, T_data *result, T_data scale1, T_data scale2, unsigned size, CPU_Manager &manager) {
 
         auto memory = MemoryTraits<T_data, unrollFactor>();
         auto math = MathTraits<T_data, unrollFactor>();
+        void (*storeResultRegister)(const T_simd*, T_data*) = manager.getTemporalCacheStore() ? memory.temporalStore : memory.nonTemporalStore;
         
         auto addJob = [&](unsigned startIndex, unsigned endIndex, unsigned L0CacheSize) {
             T_simd simdScale1, simdScale2;
             memory.setValue(&simdScale1, scale1);
             memory.setValue(&simdScale2, scale2);
             T_simd simdData1[unrollFactor], simdData2[unrollFactor], simdResult[unrollFactor];
-            void (*storeResultRegister)(const T_simd*, T_data*) = temporalStore ? memory.temporalStore : memory.nonTemporalStore;
             auto limit = endIndex - (endIndex % memory.blockSize);
             for (size_t i = startIndex; i < limit; i += memory.blockSize) {
                 memory.loadRegister(data1 + i, simdData1);
@@ -116,15 +115,15 @@ public:
         ThreadOperations::executeJob(addJob, size, memory.blockSize, manager);
     }
 
-    constexpr inline static void subtract(T_data *data1, T_data  *data2, T_data *result, T_data scale1, T_data scale2, unsigned size, CPU_Manager &manager, bool temporalStore = false) {
+    constexpr inline static void subtract(T_data *data1, T_data  *data2, T_data *result, T_data scale1, T_data scale2, unsigned size, CPU_Manager &manager) {
         auto memory = MemoryTraits<T_data, unrollFactor>();
         auto math = MathTraits<T_data, unrollFactor>();
+        void (*storeResultRegister)(const T_simd*, T_data*) = manager.getTemporalCacheStore() ? memory.temporalStore : memory.nonTemporalStore;
         auto subtractJob = [&](unsigned startIndex, unsigned endIndex, unsigned L0CacheSize) {
             T_simd simdScale1, simdScale2;
             memory.setValue(&simdScale1, scale1);
             memory.setValue(&simdScale2, scale2);
             T_simd simdData1[unrollFactor], simdData2[unrollFactor], simdResult[unrollFactor];
-            void (*storeResultRegister)(const T_simd*, T_data*) = temporalStore ? memory.temporalStore : memory.nonTemporalStore;
             auto limit = endIndex - (endIndex % memory.blockSize);
             for (size_t i = startIndex; i < limit; i += memory.blockSize) {
                 memory.loadRegister(data1 + i, simdData1);
@@ -139,16 +138,15 @@ public:
         ThreadOperations::executeJob(subtractJob, size, memory.blockSize, manager);
     }
 
-    constexpr inline static void multiply(T_data *data1, T_data  *data2, T_data *result, T scale1, T_data scale2, unsigned size, CPU_Manager &manager, bool temporalStore = false) {
+    constexpr inline static void multiply(T_data *data1, T_data  *data2, T_data *result, T scale1, T_data scale2, unsigned size, CPU_Manager &manager) {
         auto memory = MemoryTraits<T_data, unrollFactor>();
         auto math = MathTraits<T_data, unrollFactor>();
+        void (*storeResultRegister)(const T_simd*, T_data*) = manager.getTemporalCacheStore() ? memory.temporalStore : memory.nonTemporalStore;
         auto multiplyJob = [&](unsigned startIndex, unsigned endIndex, unsigned L0CacheSize) {
             T_simd simdScale1, simdScale2;
             memory.setValue(&simdScale1, scale1);
             memory.setValue(&simdScale2, scale2);
             T_simd simdData1[unrollFactor], simdData2[unrollFactor], simdResult[unrollFactor];
-            void (*storeResultRegister)(const T_simd*, T_data*) = temporalStore ?
-                                                           memory.temporalStore : memory.nonTemporalStore;
             auto limit = endIndex - (endIndex % memory.blockSize);
             for (size_t i = startIndex; i < limit; i += memory.blockSize) {
                 memory.loadRegister(data1 + i, simdData1);

@@ -7,6 +7,7 @@
 #include "CPU.h"
 #include <unordered_map>
 #include <mutex>
+#include "../StalkerVector/AVX2/MemoryTraits.h"
 
 class CPU_Manager {
 public:
@@ -60,8 +61,24 @@ public:
             }
         }
     }
+    
     void enableHyperthreading(bool isEnabled) { _hyperthreadingEnabled = isEnabled; }
+    
     bool isHyperthreadingEnabled() const { return _hyperthreadingEnabled; }
+    
+    unsigned getTotalCores() { return _cores.size(); }
+    
+    unsigned getTotalThreads() { return _threads.size(); }
+    
+    const std::vector<SharedCache*> & getSharedCaches() { return _cpu->getSharedCaches(); }
+
+    const std::vector<CacheLevel*> & getCacheLevels(){ return _cpu->getCacheLevels(); }
+    
+    void setTemporalCacheStore(bool isTemporal) { _temporalStore = isTemporal; }
+    
+    bool getTemporalCacheStore() const { return _temporalStore; }
+    
+    
     void setAvailableCores(unsigned availableCores) {
         if (availableCores > _cores.size()){
             std::cout<<"WARNING: Available Cores requested surpass the maximum number of hyperthreaded cores."
@@ -83,6 +100,7 @@ private:
     std::unordered_map<Thread*, bool> _threadPool;
     std::vector<Core*> _cores;
     std::vector<Thread*> _threads;
+    bool _temporalStore = false;
     
     void _populate()  {
         _corePool = std::unordered_map<Core*, bool>();

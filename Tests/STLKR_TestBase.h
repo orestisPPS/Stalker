@@ -22,18 +22,21 @@ namespace STLKR_Tests {
         protected:
 
             CPU_Manager _manager;
+            
+            unsigned _caseCounter = 0;
 
             explicit STLKR_TestBase(std::string testName);
             
             std::string _testName;
             
             //void _welcomeMessage();
-            
-            static void printTestCaseResult(bool success, const std::string& name);
-            
-            static void printSuccess();
+
+        static void printSuccess();
 
             static void printFailure();
+            
+            void resetCaseCounting();
+            
             
             template<typename T>
             static std::string getTypeString(){
@@ -51,6 +54,10 @@ namespace STLKR_Tests {
                     return "unknown";
                 }
             }
+
+        static void printTestCaseResult(bool success, const std::string &testNumber, const std::string &testName);
+
+        void printTestCaseResult(bool success, const std::string& name);
     };
 
 } // STLKR_Tests

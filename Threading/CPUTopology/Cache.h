@@ -21,7 +21,7 @@ class CacheLevel {
 public:
     CacheLevel(CacheLevelType level, unsigned size , const std::vector<unsigned> &threads) :
     _level(level), _size(size), _threads(threads) {}
-    CacheLevel() = default;
+    CacheLevel() : _level(LNone), _size(0), _threads(std::vector<unsigned>()) {}
     ~CacheLevel() = default;
     
     [[nodiscard]] inline unsigned getLevel() const { return _level; }
