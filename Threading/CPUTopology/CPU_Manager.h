@@ -9,16 +9,25 @@
 #include <mutex>
 #include "../StalkerVector/AVX2/MemoryTraits.h"
 
+enum CoreAffinityConfig{
+    HyperThreadsEnabled,   // Hyperthreading is enabled and all core threads are bound to a single cpu_set_t.
+    ThreadPoolSet,         // Threads are bound to a pool of CPU cores in a single cpu_set_t.
+    SingleThreadSet        // A single thread of each core is bound to it's own cpu_set_t.
+};
+
+
 class CPU_Manager {
 public:
     CPU_Manager() {
-        _hyperthreadingEnabled = false;
+        _affinityConfig = SingleThreadSet;
+        _activeSets = std::list<cpu_set_t *>();
         _cpu = new CPU();
         _populate();
         setAvailableCores(1);
     }
     explicit CPU_Manager(unsigned availableCores, bool enableHyperthreading = false) {
-        _hyperthreadingEnabled = enableHyperthreading;
+        _affinityConfig = SingleThreadSet;
+        _activeSets = std::list<cpu_set_t *>();
         _cpu = new CPU();
         _populate();
         setAvailableCores(availableCores);
@@ -27,6 +36,44 @@ public:
     ~CPU_Manager() {
         delete _cpu;
     }
+
+    std::list<Thread *> getThreadPool()  {
+        _activeSets.clear();
+        auto threadPool = std::list<Thread*>();
+        bool hyperThreadingEnabled = false;
+        _affinityConfig == HyperThreadsEnabled ? hyperThreadingEnabled = true : hyperThreadingEnabled = false;
+        auto iCore = -1;
+        for (const auto &core : _hyperThreadCorePool) {
+            if (++iCore < _availableCores && core.second) {
+                core.first->addThreadsToPool(threadPool, hyperThreadingEnabled);
+                if (_affinityConfig == HyperThreadsEnabled){
+                    core.first->setThreadAffinity();
+                    _activeSets.push_back(core.first->getCpuSet());
+                }
+                _hyperThreadCorePool[core.first] = false;
+                _corePool[core.first] = false;
+                for (const auto &thread : core.first->getThreads())
+                    _threadPool[thread] = false;
+            }
+        }
+        if (_affinityConfig == SingleThreadSet){
+            for (const auto &thread : threadPool){
+                cpu_set_t set;
+                CPU_ZERO(&set);
+                thread->setThreadAffinity(set);
+                _activeSets.push_back(&set);
+            }
+        }
+        else if (_affinityConfig == ThreadPoolSet){
+            cpu_set_t set;
+            CPU_ZERO(&set);
+            _activeSets.push_back(&set);
+            for (const auto &thread : threadPool)
+                thread->setThreadAffinity(set);
+        }
+        return threadPool;
+    }
+
     std::vector<Core *> getCores()  {
         auto getCoresLambda = [&](std::unordered_map<Core*, bool> &pool){
             auto numCores = _availableCores;
@@ -47,24 +94,36 @@ public:
         };
         return getCoresLambda(_hyperThreadCorePool);
     }
-    void release(const std::vector<Core*>& cores)  {
+
+    inline void releaseResources(std::list<Thread*>& threads)  {
         auto mutex = std::mutex();
         std::lock_guard<std::mutex> lock(mutex); // Lock the mutex
-        for (const auto &core : cores) {
+        Core* parent;
+        for (const auto &thread : threads){
+            parent = _threadToCoreMap[thread];
+            thread->join();
+            thread->resetThreadAffinity();
+            _threadPool[thread] = true;
+            parent = _threadToCoreMap[thread];
+            _corePool[parent] = true;
+            parent->getThreads().size() > 1 ? _hyperThreadCorePool[parent] = true : _ecoCorePool[parent] = true;
+        }
+    }
+
+    inline void releaseResources(std::vector<Core*>& cores)  {
+        auto mutex = std::mutex();
+        std::lock_guard<std::mutex> lock(mutex); // Lock the mutex
+        for (const auto &core : cores){
             _corePool[core] = true;
-            for (const auto &thread : core->getThreads()) {
+            core->getThreads().size() > 1 ? _hyperThreadCorePool[core] = true : _ecoCorePool[core] = true;
+            for (auto &thread : core->getThreads())
                 _threadPool[thread] = true;
-                if (core->getThreads().size() > 1)
-                    _hyperThreadCorePool[core] = true;
-                else
-                    _ecoCorePool[core] = true;
-            }
         }
     }
     
-    void enableHyperthreading(bool isEnabled) { _hyperthreadingEnabled = isEnabled; }
+    void setCoreAffinityConfig(CoreAffinityConfig config) { _affinityConfig = config; }
     
-    bool isHyperthreadingEnabled() const { return _hyperthreadingEnabled; }
+    bool getCoreAffinityConfig() const { return _affinityConfig; }
     
     unsigned getTotalCores() { return _cores.size(); }
     
@@ -78,7 +137,6 @@ public:
     
     bool getTemporalCacheStore() const { return _temporalStore; }
     
-    
     void setAvailableCores(unsigned availableCores) {
         if (availableCores > _cores.size()){
             std::cout<<"WARNING: Available Cores requested surpass the maximum number of hyperthreaded cores."
@@ -86,21 +144,24 @@ public:
         }
         _availableCores = availableCores;
     }
+    
     unsigned getAvailableCores() const { return _availableCores; }
     
     void printInConsole() {  _cpu->print(); }
     
 private:
-    bool _hyperthreadingEnabled;
     unsigned _availableCores;
     CPU *_cpu;
     std::unordered_map<Core*, bool> _corePool;
     std::unordered_map<Core*, bool> _hyperThreadCorePool;
     std::unordered_map<Core*, bool> _ecoCorePool;
     std::unordered_map<Thread*, bool> _threadPool;
+    std::unordered_map<Thread*, Core*> _threadToCoreMap;
     std::vector<Core*> _cores;
     std::vector<Thread*> _threads;
     bool _temporalStore = false;
+    CoreAffinityConfig _affinityConfig;
+    std::list<cpu_set_t*> _activeSets;
     
     void _populate()  {
         _corePool = std::unordered_map<Core*, bool>();
@@ -119,6 +180,8 @@ private:
             else
                 _ecoCorePool.insert({core, true});
             _corePool.insert({core, true});
+            for (auto& thread : core->getThreads())
+                _threadToCoreMap.insert(std::make_pair(thread, core));
         }
     }
 };

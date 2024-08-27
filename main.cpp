@@ -4,7 +4,7 @@
 #include "Tests/STLKR_PerformanceTests/StalkerVector/SingleThreadPerformance/SingleThreadOperationsPerformanceTest.h"
 #include "Tests/CPUTopologyTest.h"
 #include <chrono>
-
+using namespace STLKR_Tests;
 int main() {
     std::cout << "SLET" << std::endl;
     
@@ -20,7 +20,20 @@ auto exportPath = "/home/hal9000/code/stalker/Tests/STLKR_PerformanceTests/Stalk
 //    if (i % 2 == 0) cout << "Iteration: " << i << endl;
 //    singleThreadUnrollFactorTest.runTest();
 //}
-auto vectorPerformanceTest = STLKR_Tests::StalkerVector_PerformanceTests<float, 400000000, 16>(exportPath);
+    std::list<TestConfig_TemplateTypes> typeList {Double, Int};
+    std::list<TestConfig_OperationTypes> operationsList{SIMD_Copy, SIMD_Add};
+    std::list<unsigned> availableCoresList{1, 2, 4, 8};
+    auto vectorPerformanceTest = STLKR_Tests::StalkerVector_PerformanceTests<float, 16>(
+            exportPath,
+            400000000,
+            typeList,
+            operationsList,
+            availableCoresList,
+            EnabledDisabled,
+            false,
+            Random,
+            O3
+    );
 for (size_t i = 0; i < 1; i++){
     if (i % 1 == 0) cout << "Iteration: " << i << endl;
     vectorPerformanceTest.runTest();

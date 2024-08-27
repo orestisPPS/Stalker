@@ -25,7 +25,7 @@ public:
     ~CacheLevel() = default;
     
     [[nodiscard]] inline unsigned getLevel() const { return _level; }
-    [[nodiscard]] inline unsigned getSize() const { return _size; }
+    [[nodiscard]] inline unsigned size() const { return _size; }
     [[nodiscard]] inline constexpr unsigned getSizeInCacheLines() const { return (_size + 63) / 64; }
     [[nodiscard]] inline const std::vector<unsigned> &getThreads() const{ return _threads; }
 private:
@@ -43,7 +43,7 @@ public:
 
     ~SharedCache() = default;
 
-    inline const CacheLevel* getCacheLevel(CacheLevelType level) const {
+    inline const CacheLevel* getLevel(CacheLevelType level) const {
         auto it = _cacheLevels.find(level);
         if (it != _cacheLevels.end()) {
             return it->second;

@@ -137,6 +137,11 @@ class Logs {
 
 
     void exportToCSV(const string &filePath, const string &fileName) {
+        if (!std::filesystem::exists(filePath)) {
+            if (!std::filesystem::create_directories(filePath)) {
+                throw std::runtime_error("Unable to create directory: " + filePath);
+            }
+        }
         // Get current time
         auto now = std::chrono::system_clock::now();
         auto now_as_time_t = std::chrono::system_clock::to_time_t(now);

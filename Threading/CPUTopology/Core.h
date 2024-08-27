@@ -38,21 +38,13 @@ public:
 
     inline void setThreadAffinity() {
         CPU_ZERO(&_thisCoreSet);
-        for (auto & _thread : _threads) {
+        for (auto & _thread : _threads)
+            _thread->addToCoreSet(_thisCoreSet);
+        for (auto & _thread : _threads)
             _thread->setThreadAffinity(_thisCoreSet);
-        }
     }
-    inline void setThreadAffinity(cpu_set_t &coreSet) {
-        for (auto & _thread : _threads) {
-            _thread->setThreadAffinity(coreSet);
-        }
-    }
-    inline void resetThreadAffinity() {
-        auto availableThreads = _isHyperThreaded ? _threads.size() : 1;
-        for (int i = 0; i < availableThreads; ++i) {
-            _threads[i]->resetThreadAffinity();
-        }
-    }
+    
+    inline cpu_set_t * getCpuSet(){ return &_thisCoreSet; }
     
     [[nodiscard]] inline unsigned getId() const { return _id; }
 

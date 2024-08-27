@@ -70,7 +70,7 @@ public:
         for (const auto& cacheLevel : _cacheLevels) {
             if (cacheLevel != nullptr) {
                 std::cout << "L" << cacheLevel->getLevel() << " Cache: Size = "
-                          << cacheLevel->getSize() << " KB, Shared with CPUs = ";
+                          << cacheLevel->size() << " KB, Shared with CPUs = ";
                 const auto& sharedCPUs = cacheLevel->getThreads();
                 for (auto cpu : sharedCPUs) {
                     std::cout << cpu << " ";
@@ -83,10 +83,10 @@ public:
         std::cout << "\nShared Cache Information:\n";
         for (const auto& sharedCache : _sharedCaches) {
             if (sharedCache != nullptr) {
-                std::cout << "Shared Cache: L1_Data Size = " << sharedCache->getCacheLevel(L1_Data)->getSize() << " KB, "
-                          << "L1_Instruction Size = " << sharedCache->getCacheLevel(L1_Instructions)->getSize() << " KB, "
-                          << "L2 Size = " << sharedCache->getCacheLevel(L2)->getSize() << " KB, "
-                          << "L3 Size = " << sharedCache->getCacheLevel(L3)->getSize() << " KB\n";
+                std::cout << "Shared Cache: L1_Data Size = " << sharedCache->getLevel(L1_Data)->size() << " KB, "
+                          << "L1_Instruction Size = " << sharedCache->getLevel(L1_Instructions)->size() << " KB, "
+                          << "L2 Size = " << sharedCache->getLevel(L2)->size() << " KB, "
+                          << "L3 Size = " << sharedCache->getLevel(L3)->size() << " KB\n";
             }
         }
 

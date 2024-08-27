@@ -28,24 +28,21 @@ public:
     
     [[nodiscard]] inline unsigned getClockMax() const { return _clockMax; }
     
-    const SharedCache *getSharedCacheMemory() { return _sharedCacheMemory; }
+    const SharedCache *getSharedCache() { return _sharedCacheMemory; }
     
     void setThreadAffinity(const cpu_set_t &coreSet) {
-        _coreSet = coreSet;
         pthread_attr_init(&_pThreadAttribute);
-        CPU_SET(_id, &_coreSet);
-        int result = pthread_attr_setaffinity_np(&_pThreadAttribute, sizeof(cpu_set_t), &_coreSet);
+        int result = pthread_attr_setaffinity_np(&_pThreadAttribute, sizeof(cpu_set_t), &coreSet);
         if (result != 0) std::cerr << "Error setting affinity for thread " << _id << std::endl;
     }
     
     void resetThreadAffinity(){
-        CPU_ZERO(&_coreSet);
-        int result = pthread_attr_setaffinity_np(&_pThreadAttribute, sizeof(cpu_set_t), &_coreSet);
-        if (result != 0) std::cerr << "Error resetting affinity for thread " << _id << std::endl;
         pthread_attr_destroy(&_pThreadAttribute);
     }
     
-    cpu_set_t & getCoreSet() {return _coreSet; }
+    inline void addToCoreSet(cpu_set_t &coreSet) const {
+        CPU_SET(_id, &coreSet);
+    }
     
     void join() const {
         pthread_join(_pThread, nullptr);
@@ -73,7 +70,6 @@ private:
     SharedCache *_sharedCacheMemory;
     pthread_t _pThread;
     pthread_attr_t _pThreadAttribute;
-    cpu_set_t _coreSet{};
 
     static inline void _initializeAttribute(pthread_attr_t& attribute);
     static inline void _destroyAttribute(pthread_attr_t& attribute);

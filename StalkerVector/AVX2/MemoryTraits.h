@@ -38,6 +38,10 @@ struct MemoryTraits<float, unrollFactor> {
     static constexpr inline void nonTemporalStore(const T_simd* source, T_data* destination) {
         _storeAVXRegisterNonTemporal<UnrollFactor>(source, destination);
     }
+    
+    static constexpr inline void prefetchL1(const T_data* data) {
+        _prefetchL1<4>(data);
+    }
 
     static constexpr inline void setZeroAVXRegister(T_simd* destination) {
         _setZeroAVXRegister<UnrollFactor>(destination);
@@ -77,6 +81,15 @@ private:
             _storeAVXRegisterNonTemporal<iUnroll - 1>(source, destination);
         }
         else return;
+    }
+
+    template <unsigned iPrefetch>
+    static constexpr inline void _prefetchL1(const T_data* data) {
+//        if constexpr (iPrefetch > 0) {
+//            _mm_prefetch(reinterpret_cast<const char*>(&data[iPrefetch + prefetch_distance]), _MM_HINT_T0);
+//            _prefetchL1<iPrefetch - 1>(data);
+//        }
+//        else return;
     }
 
     template <unsigned iUnroll>

@@ -18,7 +18,7 @@ namespace STLKR_Tests {
 
         void runTest() override {
             _manager.setAvailableCores(4);
-            _manager.enableHyperthreading(true);
+            _manager.setCoreAffinityConfig(HyperThreadsEnabled);
             //_runGeneralVectorCases();
             _runSIMDVectorCases();
             //_manager.printInConsole();

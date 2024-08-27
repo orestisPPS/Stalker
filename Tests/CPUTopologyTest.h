@@ -112,7 +112,7 @@ namespace STLKR_Tests {
         void testCacheLevels(const std::vector<CacheLevel*>& cacheLevels) {
             for (const auto& cacheLevel : cacheLevels) {
                 unsigned cacheLevelType = cacheLevel->getLevel();
-                unsigned cacheSize = cacheLevel->getSize();
+                unsigned cacheSize = cacheLevel->size();
                 const auto& sharedCPUs = cacheLevel->getThreads();
 
                 bool found = false;
@@ -140,7 +140,7 @@ namespace STLKR_Tests {
             testCoreIds(cores);
             testThreadIds(cores);
             testThreadClockFrequencies(cores);
-            _manager.release(cores);
+            _manager.releaseResources(cores);
             testCacheLevels(_manager.getCacheLevels());
         }
     };
