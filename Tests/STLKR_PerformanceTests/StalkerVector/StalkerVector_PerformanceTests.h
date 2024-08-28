@@ -5,6 +5,7 @@
 #ifndef STALKER_STALKERVECTOR_PERFORMANCETESTS_H
 #define STALKER_STALKERVECTOR_PERFORMANCETESTS_H
 #include "../STLKR_PerformanceTestBase.h"
+#include "StalkerVector_OperationsTests.h"
 #include "../../../StalkerVector/StalkerVector.h"
 
 namespace STLKR_Tests{
@@ -53,204 +54,106 @@ namespace STLKR_Tests{
     template<typename T, unsigned unrollFactor>
     class StalkerVector_PerformanceTests : public STLKR_PerformanceTestBase {
         using vector = StalkerVector<T, unrollFactor>;
+        using OperationsTests = StalkerVector_OperationsTests<T, unrollFactor>;
     public:
         StalkerVector_PerformanceTests(const std::string &path,
-                                                unsigned _size,
-                                                list<TestConfig_TemplateTypes>& types, 
+                                                unsigned size,
                                                 list<TestConfig_OperationTypes> &operations,
                                                 list<unsigned> &availableCores,
-                                                TestConfig_Hyperthreading hyperthreading,
+                                                list<CoreAffinityConfig> &threadAffinities,
                                                 bool prefetching,
                                                 TestConfig_FillType fillType,
                                                 TestConfig_CompilerFlag flag) :
                                                 STLKR_PerformanceTestBase("StalkerVector", path){
-            _size = _size;
-            _types = &types;
+            _size = size;
             _operations = &operations;
             _availableCores = &availableCores;
             _fillType = fillType;
             _prefetching = prefetching;
-            _hyperthreading = hyperthreading;
+            _affinities = &threadAffinities;
             _flag = flag;
         }
         
         
         void runTest() override {
-//            for (auto & operation : *_operations){
-//                logs.addParameter("operation ", _operationsToString(operation));
-//                logs.addParameter("_size", std::to_string(_size));
-//                logs.addParameter("unrollFactor", unrollFactor);
-//                logs.addParameter("alignment", 64);
-//                logs.addParameter("prefetch", _boolToOnOff(_prefetching));
-//                logs.addParameter("hyperThreading", _boolToOnOff(_hyperthreading != Disabled));
-//                logs.addParameter("compiler flag", _compilerFlagToString());
-//                auto iType = 0;
-//                for (auto & type : *_types) {
-//                    logs.addParameter("type" + std::to_string(++iType), _templateTypesToString(type));
-//                    for (auto & core : *_availableCores) {
-//                        _manager.setAvailableCores(core);
-//                        switch (_hyperthreading) {
-//                            case Enabled:
-//                                _manager.enableHyperthreading(true);
-//                                //do stuff
-//                                break;
-//                            case Disabled:
-//                                _manager.enableHyperthreading(false);
-//                                //do stuff
-//                                break;
-//                            case EnabledDisabled:
-//                                _manager.enableHyperthreading(true);
-//                                //do stuff
-//                                _manager.enableHyperthreading(false);
-//                                //do stuff
-//                                break;
-//                        }
-//                    }
-//                }
-//                
-//                iType = 0;
-//                logs.exportToCSV(_path + "/" + _operationsToString(operation), "StalkerVectorTest");
-//                
-//            }
-            _runOperationTest();
-            logs.clearAllLogs();
+            for (auto & operation : *_operations){
+                _addLogParameters(operation);
+                vector source(_size, _manager);
+                for (auto i = 0; i < _size; i++) {
+                    source[i] = static_cast<T>(i);
+                }
+                void (OperationsTests::*simdFunction)(vector& source, const std::string &name, Logs& logs, CPU_Manager &manager) = nullptr;
+                void (OperationsTests::*stdFunction)(unsigned size, Logs &logs) = nullptr;
+                for (auto &coreNum : *_availableCores) {
+                    _manager.setAvailableCores(coreNum);
+                    for (auto &affinity: *_affinities) {
+                        _manager.setCoreAffinityConfig(affinity);
+                        std::string name = "simd_cores" + std::to_string(coreNum) + "_" + _threadAffinityConfigToString(affinity);
+                        cout<<name<<endl;
+                        switch (operation) {
+                            case SIMD_Copy:
+                                simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::copySimd;
+                                stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::copySTD;
+                                break;
+                            case SIMD_Fill:
+                                simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::fillSimd;
+                                stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::fillSTD;
+                                break;
+                            case SIMD_Scale:
+                                simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::scaleSimd;
+                                stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::scaleSTD;
+                                break;
+                            case SIMD_AreEqual:
+                                simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::areEqualSimd;
+                                stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::areEqualSTD;
+                                break;
+                            case SIMD_Sum:
+                                simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::sumSimd;
+                                stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::sumSTD;
+                                break;
+                            case SIMD_Add:
+                                simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::addSimd;
+                                stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::addSTD;
+                                break;
+                            case SIMD_Subtract:
+                                simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::subtractSimd;
+                                stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::subtractSTD;
+                                break;
+                            case SIMD_Multiply:
+                                simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::multiplySimd;
+                                stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::multiplySTD;
+                                break;
+                            case SIMD_DotProduct:
+                                simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::dotSimd;
+                                stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::dotSTD;
+                                break;
+                            default:
+                                throw std::runtime_error("Unknown operation type");
+                        }
+                        if (simdFunction)
+                            (OperationsTests().*simdFunction)(source, name, logs, _manager);
+                    }
+                }
+                if (stdFunction)
+                    (OperationsTests().*stdFunction)(_size, logs);
+                
+                logs.exportToCSV(_path + "/" + _operationsToString(operation), "StalkerVectorTest");
+                logs.clearAllLogs();
+            }
         }
         
     private:
         unsigned _size;
-        list<TestConfig_TemplateTypes>* _types;
         list<TestConfig_OperationTypes>* _operations;
         TestConfig_FillType _fillType;
         list<unsigned> *_availableCores;
-        TestConfig_Hyperthreading _hyperthreading;
+        list<CoreAffinityConfig> *_affinities;
         bool _prefetching;
         TestConfig_CompilerFlag _flag;
-
-        std::string _operationsToString(TestConfig_OperationTypes operation){
-            switch (operation) {
-                case SIMD_Copy:
-                    return "Copy";
-                case SIMD_Fill:
-                    return "Fill";
-                case SIMD_Scale:
-                    return "Scale";
-                case SIMD_AreEqual:
-                    return "AreEqual";
-                case SIMD_Sum:
-                    return "Sum";
-                case SIMD_Add:
-                    return "Add";
-                case SIMD_Subtract:
-                    return "Subtract";
-                case SIMD_Multiply:
-                    return "Multiply";
-                case SIMD_DotProduct:
-                    return "DotProduct";
-            }
-        }
-
-        std::string _boolToOnOff(bool on){
-            return on ? "on" : "off";
-        }
         
-        std::string _compilerFlagToString() {
-            switch (_flag) {
-                case O0:
-                    return "-O0";
-                case 01:
-                    return "-O1";
-                case 02:
-                    return "-O2";
-                case 03:
-                    return "-O3";
-            }
-        }
 
-        std::string _templateTypesToString(TestConfig_TemplateTypes t){
-            switch (t) {
-                case Float:
-                    return "float";
-                case Double:
-                    return "double";
-                case Int:
-                    return "int";
-                case Unsigned:
-                    return "unsigned";
-                case Short:
-                    return "short";
-            }
-        }
         
-        void _runOperationTest(){
-            StalkerVector<T, unrollFactor> source(_size, _manager);
-            for (auto i = 0; i < _size; i++) {
-                source[i] = static_cast<T>(i);
-            }
-            _manager.setCoreAffinityConfig(SingleThreadSet);
-            vector v1(_size, _manager);
-            _manager.setAvailableCores(1);
-            logs.startSingleObservationTimer("SIMD_cores1", STLKR_TimeUnit::microseconds);
-            v1.copy(source);
-            logs.stopSingleObservationTimer("SIMD_cores1", STLKR_TimeUnit::microseconds);
-
-            vector v2(_size, _manager);
-            _manager.setAvailableCores(2);
-            logs.startSingleObservationTimer("SIMD_cores2", STLKR_TimeUnit::microseconds);
-            v2.copy(source);
-            logs.stopSingleObservationTimer("SIMD_cores2", STLKR_TimeUnit::microseconds);
-
-            vector v3(_size, _manager);
-            _manager.setAvailableCores(4);
-            logs.startSingleObservationTimer("SIMD_cores4", STLKR_TimeUnit::microseconds);
-            v3.copy(source);
-            logs.stopSingleObservationTimer("SIMD_cores4", STLKR_TimeUnit::microseconds);
-            T* data1 = new T[_size];
-            T* data2 = new T[_size];
-            for (auto i = 0; i < _size; i++) {
-                data1[i] = static_cast<T>(i);
-            }
-            logs.startSingleObservationTimer("memcpy_noSIMD", STLKR_TimeUnit::microseconds);
-            std::memcpy(data1, data2, _size * sizeof(T));
-            logs.stopSingleObservationTimer("memcpy_noSIMD", STLKR_TimeUnit::microseconds);
-            delete[] data1;
-            delete[] data2;
-
-            T* data3 = new T[_size];
-            T* data4 = new T[_size];
-            logs.startSingleObservationTimer("loopCopy_noSIMD", STLKR_TimeUnit::microseconds);
-            for (auto i = 0; i < _size; i++) {
-                data3[i] = data4[i];
-            }
-            logs.stopSingleObservationTimer("loopCopy_noSIMD", STLKR_TimeUnit::microseconds);
-
-            delete[] data3;
-            delete[] data4;
-        }
         
-        void performSimdOperation(TestConfig_OperationTypes operation, vector* v1, vector* v2, vector* v3 ){
-            switch (operation) {
-                case SIMD_Copy:
-                    v1->copy(*v2);
-                    break;
-                case SIMD_Fill:
-                    v1->fill(0);
-                case SIMD_Scale:
-                    v1->scale(2);
-                case SIMD_AreEqual:
-                    v1->areEqual(*v2);
-                case SIMD_Sum:
-                    v1->sum();
-                case SIMD_Add:
-                    v1->add(*v2, *v3, 1, 1);
-                case SIMD_Subtract:
-                    v1->subtract(*v2, *v3, 1, 1);
-                case SIMD_Multiply:
-                    v1->multiply(*v2, *v3, 1, 1);
-                case SIMD_DotProduct:
-                    v1->SIMD_DotProduct(*v2);
-            }
-        }
-
         vector** _createVectors(unsigned numVectors){
             auto vectorOfVectors = new vector*[numVectors];
             for (int i = 0; i < numVectors; ++i) {
@@ -292,8 +195,102 @@ namespace STLKR_Tests{
                 
             }
         }
+
+        void _addLogParameters(TestConfig_OperationTypes operation){
+            logs.addParameter("operation ", _operationsToString(operation));
+            logs.addParameter("_size", std::to_string(_size));
+            logs.addParameter("unrollFactor", unrollFactor);
+            logs.addParameter("alignment", 64);
+            auto i = 0;
+            for (auto & affinity : *_affinities){
+                logs.addParameter("affinityConfig_" + std::to_string(++i), _threadAffinityConfigToString(affinity));
+            }
+            logs.addParameter("vector fill", _boolToOnOff(_prefetching));_vectorFillToString();
+            logs.addParameter("prefetch", _boolToOnOff(_prefetching));
+            logs.addParameter("compiler flag", _compilerFlagToString());
+        }
+
+        std::string _operationsToString(TestConfig_OperationTypes operation){
+            switch (operation) {
+                case SIMD_Copy:
+                    return "Copy";
+                case SIMD_Fill:
+                    return "Fill";
+                case SIMD_Scale:
+                    return "Scale";
+                case SIMD_AreEqual:
+                    return "AreEqual";
+                case SIMD_Sum:
+                    return "Sum";
+                case SIMD_Add:
+                    return "Add";
+                case SIMD_Subtract:
+                    return "Subtract";
+                case SIMD_Multiply:
+                    return "Multiply";
+                case SIMD_DotProduct:
+                    return "DotProduct";
+            }
+        }
+
+        std::string _boolToOnOff(bool on){
+            return on ? "on" : "off";
+        }
+
+        std::string _compilerFlagToString() {
+            switch (_flag) {
+                case O0:
+                    return "-O0";
+                case 01:
+                    return "-O1";
+                case 02:
+                    return "-O2";
+                case 03:
+                    return "-O3";
+            }
+        }
+
+        std::string _threadAffinityConfigToString(CoreAffinityConfig config) {
+            switch (config) {
+                case HyperThreadsEnabled:
+                    return "hyperThreadSet";
+                case ThreadPoolSet:
+                    return "threadPoolSet";
+                case SingleThreadSet:
+                    return "singleThreadSet";
+            }
+        }
+
+        std::string _vectorFillToString() {
+            switch (_fillType) {
+                case Zero:
+                    return "Zero";
+                case One:
+                    return "1";
+                case Index:
+                    return "++index";
+                case Random:
+                    return "random";
+                case None:
+                    return "empty";
+            }
+        }
+
+        std::string _templateTypesToString(TestConfig_TemplateTypes t){
+            switch (t) {
+                case Float:
+                    return "float";
+                case Double:
+                    return "double";
+                case Int:
+                    return "int";
+                case Unsigned:
+                    return "unsigned";
+                case Short:
+                    return "short";
+            }
+        }
     };
-    
 
 }
 #endif //STALKER_STALKERVECTOR_PERFORMANCETESTS_H

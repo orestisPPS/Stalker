@@ -14,7 +14,9 @@
 namespace STLKR_Tests {
     class STLKR_PerformanceTestBase : public STLKR_TestBase {
         public:
-            explicit STLKR_PerformanceTestBase(const string& testName, const string& path);
+            explicit STLKR_PerformanceTestBase(const string& testName, const string& path) : STLKR_TestBase(testName),
+                                                                                             logs(Logs(testName)),
+                                                                                             _path(path){}
 
             Logs logs;
             

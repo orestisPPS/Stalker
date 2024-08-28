@@ -60,7 +60,6 @@ add_library(stalker_tests STATIC
         Tests/STLKR_PerformanceTests/STLKR_PerformanceTestBase.h
         Tests/STLKR_TestBase.cpp
         Tests/STLKR_TestBase.h
-        Tests/STLKR_PerformanceTests/STLKR_PerformanceTestBase.cpp
         Tests/StalkerVector_ValidityTests.h
         Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_PerformanceTests.h
         Tests/STLKR_PerformanceTests/StalkerVector/SingleThreadPerformance/SingleThreadOperationsPerformanceTest.h
@@ -72,7 +71,8 @@ target_link_libraries(stalker_tests PRIVATE stalker_core)
 
 # Add the main executable
 add_executable(stalker main.cpp
-        Utility/Readers.h)
+        Utility/Readers.h
+        Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_OperationsTests.h)
 
 # Link the executable with stalker_core and stalker_tests
 target_link_libraries(stalker stalker_core stalker_tests)

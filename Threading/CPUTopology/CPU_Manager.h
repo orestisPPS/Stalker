@@ -38,7 +38,6 @@ public:
     }
 
     std::list<Thread *> getThreadPool()  {
-        _activeSets.clear();
         auto threadPool = std::list<Thread*>();
         bool hyperThreadingEnabled = false;
         _affinityConfig == HyperThreadsEnabled ? hyperThreadingEnabled = true : hyperThreadingEnabled = false;
@@ -60,6 +59,7 @@ public:
             for (const auto &thread : threadPool){
                 cpu_set_t set;
                 CPU_ZERO(&set);
+                thread->addToCoreSet(set);
                 thread->setThreadAffinity(set);
                 _activeSets.push_back(&set);
             }
@@ -67,9 +67,11 @@ public:
         else if (_affinityConfig == ThreadPoolSet){
             cpu_set_t set;
             CPU_ZERO(&set);
-            _activeSets.push_back(&set);
+            for (const auto &thread : threadPool)
+                thread->addToCoreSet(set);
             for (const auto &thread : threadPool)
                 thread->setThreadAffinity(set);
+            _activeSets.push_back(&set);
         }
         return threadPool;
     }
@@ -96,18 +98,22 @@ public:
     }
 
     inline void releaseResources(std::list<Thread*>& threads)  {
-        auto mutex = std::mutex();
-        std::lock_guard<std::mutex> lock(mutex); // Lock the mutex
+//        auto mutex = std::mutex();
+//        std::lock_guard<std::mutex> lock(mutex); // Lock the mutex
         Core* parent;
         for (const auto &thread : threads){
-            parent = _threadToCoreMap[thread];
-            thread->join();
             thread->resetThreadAffinity();
+            thread->join();
             _threadPool[thread] = true;
             parent = _threadToCoreMap[thread];
             _corePool[parent] = true;
-            parent->getThreads().size() > 1 ? _hyperThreadCorePool[parent] = true : _ecoCorePool[parent] = true;
+            if (parent->getAvailableThreadsCount() > 1)
+                _hyperThreadCorePool[parent] = true;
+            else
+                _ecoCorePool[parent] = true;
+            //parent->getAvailableThreadsCount() > 1 ? _hyperThreadCorePool[parent] = true : _ecoCorePool[parent] = true;
         }
+        _activeSets.clear();
     }
 
     inline void releaseResources(std::vector<Core*>& cores)  {
@@ -115,7 +121,7 @@ public:
         std::lock_guard<std::mutex> lock(mutex); // Lock the mutex
         for (const auto &core : cores){
             _corePool[core] = true;
-            core->getThreads().size() > 1 ? _hyperThreadCorePool[core] = true : _ecoCorePool[core] = true;
+            core->getAvailableThreadsCount() > 1 ? _hyperThreadCorePool[core] = true : _ecoCorePool[core] = true;
             for (auto &thread : core->getThreads())
                 _threadPool[thread] = true;
         }

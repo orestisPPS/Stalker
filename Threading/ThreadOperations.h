@@ -17,7 +17,7 @@ public:
 
     template <typename threadJob>
     static inline void executeJob(threadJob job, unsigned size, unsigned blockSize, CPU_Manager &manager) {
-        auto threadPool = std::move(manager.getThreadPool());
+        auto threadPool = manager.getThreadPool();
         auto threadLimits = _getThreadsRange(size, threadPool.size(), blockSize);
         unsigned iThread = 0;
         for (const auto &thread : threadPool) {
@@ -31,7 +31,7 @@ public:
 
     template <typename T, typename threadJob>
     static inline T executeJobWithReduction(threadJob job, unsigned size, unsigned blockSize, CPU_Manager &manager) {
-        auto threadPool = std::move(manager.getThreadPool());
+        auto threadPool = manager.getThreadPool();
         auto threadLimits = _getThreadsRange(size, threadPool.size(), blockSize);
         unsigned iThread = 0;
         auto reducedResult = std::vector<T>(threadPool.size(), 0);
