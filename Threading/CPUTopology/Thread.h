@@ -8,6 +8,7 @@
 #include "Cache.h"
 #include "../ThreadJob.h"
 #include <pthread.h>
+#include <cassert>
 
 
 class Thread{
@@ -15,7 +16,7 @@ public:
     Thread() = default;
     Thread(unsigned id, unsigned parentId, unsigned clockMin, unsigned clockMax, SharedCache *sharedCacheMemory) :
         _id(id), _parentId(parentId), _clockMin(clockMin), _clockMax(clockMax),
-        _sharedCacheMemory(sharedCacheMemory), _pThread(0), _pThreadAttribute({}) { }
+        _sharedCacheMemory(sharedCacheMemory), _pThread(0), _pThreadAttribute({}), _cpuSet(nullptr) { }
 
 
     ~Thread() = default;
@@ -30,18 +31,9 @@ public:
     
     const SharedCache *getSharedCache() { return _sharedCacheMemory; }
     
-    void setThreadAffinity(const cpu_set_t &coreSet) {
-        pthread_attr_init(&_pThreadAttribute);
-        int result = pthread_attr_setaffinity_np(&_pThreadAttribute, sizeof(cpu_set_t), &coreSet);
-        if (result != 0) std::cerr << "Error setting affinity for thread " << _id << std::endl;
-    }
-    
-    void resetThreadAffinity(){
-        pthread_attr_destroy(&_pThreadAttribute);
-    }
-    
-    inline void addToCoreSet(cpu_set_t &coreSet) const {
-        CPU_SET(_id, &coreSet);
+    inline void addToCoreSet(cpu_set_t *coreSet){
+        _cpuSet = coreSet;
+        CPU_SET(_id, _cpuSet);
     }
     
     void join() const {
@@ -51,13 +43,15 @@ public:
     template<typename threadJob>
     void executeJob(threadJob job, unsigned startIndex, unsigned endIndex, unsigned L0CacheSize = 0) {
         auto jobArgs = new JobArgs<threadJob>{job, startIndex, endIndex, L0CacheSize};
-        pthread_create(&_pThread, &_pThreadAttribute, jobWrapper<threadJob>, jobArgs);
+        pthread_create(&_pThread, nullptr, jobWrapper<threadJob>, jobArgs);
+        assert(pthread_setaffinity_np(_pThread, sizeof(cpu_set_t), _cpuSet) == 0);
     }
 
     template<typename threadJob, typename T>
     void executeJobWithReduction(threadJob job, unsigned startIndex, unsigned endIndex, T *result, unsigned L0CacheSize = 0) {
         auto jobArgs = new ReducedJobArgs<threadJob, T>{job, startIndex, endIndex, result, L0CacheSize};
-        pthread_create(&_pThread, &_pThreadAttribute, reducedJobWrapper<threadJob, T>, jobArgs);
+        pthread_create(&_pThread, nullptr, reducedJobWrapper<threadJob, T>, jobArgs);
+        assert(pthread_setaffinity_np(_pThread, sizeof(cpu_set_t), _cpuSet) == 0);
     }
 
 
@@ -70,9 +64,7 @@ private:
     SharedCache *_sharedCacheMemory;
     pthread_t _pThread;
     pthread_attr_t _pThreadAttribute;
-
-    static inline void _initializeAttribute(pthread_attr_t& attribute);
-    static inline void _destroyAttribute(pthread_attr_t& attribute);
+    cpu_set_t *_cpuSet;
 };
 
 

@@ -14,15 +14,14 @@
 namespace STLKR_Tests {
     class STLKR_PerformanceTestBase : public STLKR_TestBase {
         public:
-            explicit STLKR_PerformanceTestBase(const string& testName, const string& path) : STLKR_TestBase(testName),
-                                                                                             logs(Logs(testName)),
-                                                                                             _path(path){}
+            explicit STLKR_PerformanceTestBase(const string& testName, const string& path, unsigned testRunCount = 1) :
+                    STLKR_TestBase(testName), logs(Logs(testName)), _path(path), _testRunCount(testRunCount) {}
 
             Logs logs;
             
         protected:
             std::string _path;
-            
+            unsigned _testRunCount;
     };
 }
 

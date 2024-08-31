@@ -9,13 +9,7 @@
 #include "../../../StalkerVector/StalkerVector.h"
 
 namespace STLKR_Tests{
-    
-    enum TestConfig_Hyperthreading{
-        Enabled,
-        Disabled,
-        EnabledDisabled
-    };
-    
+
     enum TestConfig_TemplateTypes{
         Float,
         Double,
@@ -57,6 +51,7 @@ namespace STLKR_Tests{
         using OperationsTests = StalkerVector_OperationsTests<T, unrollFactor>;
     public:
         StalkerVector_PerformanceTests(const std::string &path,
+                                                unsigned testRunCount,
                                                 unsigned size,
                                                 list<TestConfig_OperationTypes> &operations,
                                                 list<unsigned> &availableCores,
@@ -64,7 +59,7 @@ namespace STLKR_Tests{
                                                 bool prefetching,
                                                 TestConfig_FillType fillType,
                                                 TestConfig_CompilerFlag flag) :
-                                                STLKR_PerformanceTestBase("StalkerVector", path){
+                                                STLKR_PerformanceTestBase("StalkerVector", path, testRunCount){
             _size = size;
             _operations = &operations;
             _availableCores = &availableCores;
@@ -76,69 +71,83 @@ namespace STLKR_Tests{
         
         
         void runTest() override {
-            for (auto & operation : *_operations){
-                _addLogParameters(operation);
-                vector source(_size, _manager);
-                for (auto i = 0; i < _size; i++) {
-                    source[i] = static_cast<T>(i);
-                }
-                void (OperationsTests::*simdFunction)(vector& source, const std::string &name, Logs& logs, CPU_Manager &manager) = nullptr;
-                void (OperationsTests::*stdFunction)(unsigned size, Logs &logs) = nullptr;
-                for (auto &coreNum : *_availableCores) {
-                    _manager.setAvailableCores(coreNum);
-                    for (auto &affinity: *_affinities) {
-                        _manager.setCoreAffinityConfig(affinity);
-                        std::string name = "simd_cores" + std::to_string(coreNum) + "_" + _threadAffinityConfigToString(affinity);
-                        cout<<name<<endl;
-                        switch (operation) {
-                            case SIMD_Copy:
-                                simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::copySimd;
-                                stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::copySTD;
-                                break;
-                            case SIMD_Fill:
-                                simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::fillSimd;
-                                stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::fillSTD;
-                                break;
-                            case SIMD_Scale:
-                                simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::scaleSimd;
-                                stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::scaleSTD;
-                                break;
-                            case SIMD_AreEqual:
-                                simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::areEqualSimd;
-                                stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::areEqualSTD;
-                                break;
-                            case SIMD_Sum:
-                                simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::sumSimd;
-                                stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::sumSTD;
-                                break;
-                            case SIMD_Add:
-                                simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::addSimd;
-                                stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::addSTD;
-                                break;
-                            case SIMD_Subtract:
-                                simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::subtractSimd;
-                                stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::subtractSTD;
-                                break;
-                            case SIMD_Multiply:
-                                simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::multiplySimd;
-                                stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::multiplySTD;
-                                break;
-                            case SIMD_DotProduct:
-                                simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::dotSimd;
-                                stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::dotSTD;
-                                break;
-                            default:
-                                throw std::runtime_error("Unknown operation type");
-                        }
-                        if (simdFunction)
-                            (OperationsTests().*simdFunction)(source, name, logs, _manager);
+            for (int testCount = 0; testCount < _testRunCount; ++testCount) {
+                std::cout<<"========= Iteration " << testCount << "=========" << std::endl;
+                for (auto & operation : *_operations){
+                    logs.addParameter("operation ", _operationsToString(operation));
+                    logs.addParameter("_size", std::to_string(_size));
+                    logs.addParameter("unrollFactor", unrollFactor);
+                    logs.addParameter("alignment", 64);
+                    auto i = 0;
+                    for (auto & affinity : *_affinities){
+                        logs.addParameter("affinityConfig_" + std::to_string(++i), _threadAffinityConfigToString(affinity));
                     }
+                    logs.addParameter("vector fill", _boolToOnOff(_prefetching));_vectorFillToString();
+                    logs.addParameter("prefetch", _boolToOnOff(_prefetching));
+                    logs.addParameter("compiler flag", _compilerFlagToString());
+
+                    vector source(_size, _manager);
+                    for (auto i = 0; i < _size; i++) {
+                        source[i] = static_cast<T>(i);
+                    }
+                    void (OperationsTests::*simdFunction)(vector& source, const std::string &name, Logs& logs, CPU_Manager &manager) = nullptr;
+                    void (OperationsTests::*stdFunction)(unsigned size, Logs &logs) = nullptr;
+                    for (auto &coreNum : *_availableCores) {
+                        _manager.setAvailableCores(coreNum);
+                        for (auto &affinity: *_affinities) {
+                            _manager.setCoreAffinityConfig(affinity);
+                            std::string name = "simd_cores" + std::to_string(coreNum) + "_" + _threadAffinityConfigToString(affinity);
+                            cout<<name<<endl;
+                            switch (operation) {
+                                case SIMD_Copy:
+                                    simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::copySimd;
+                                    stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::copySTD;
+                                    break;
+                                case SIMD_Fill:
+                                    simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::fillSimd;
+                                    stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::fillSTD;
+                                    break;
+                                case SIMD_Scale:
+                                    simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::scaleSimd;
+                                    stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::scaleSTD;
+                                    break;
+                                case SIMD_AreEqual:
+                                    simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::areEqualSimd;
+                                    stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::areEqualSTD;
+                                    break;
+                                case SIMD_Sum:
+                                    simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::sumSimd;
+                                    stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::sumSTD;
+                                    break;
+                                case SIMD_Add:
+                                    simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::addSimd;
+                                    stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::addSTD;
+                                    break;
+                                case SIMD_Subtract:
+                                    simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::subtractSimd;
+                                    stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::subtractSTD;
+                                    break;
+                                case SIMD_Multiply:
+                                    simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::multiplySimd;
+                                    stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::multiplySTD;
+                                    break;
+                                case SIMD_DotProduct:
+                                    simdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::dotSimd;
+                                    stdFunction = &StalkerVector_OperationsTests<T, unrollFactor>::dotSTD;
+                                    break;
+                                default:
+                                    throw std::runtime_error("Unknown operation type");
+                            }
+                            if (simdFunction)
+                                (OperationsTests().*simdFunction)(source, name, logs, _manager);
+                        }
+                    }
+                    if (stdFunction)
+                        (OperationsTests().*stdFunction)(_size, logs);
+
+                    logs.exportToCSV(_path + "/" + _operationsToString(operation), "StalkerVectorTest");
+                    logs.clearAllLogs();
                 }
-                if (stdFunction)
-                    (OperationsTests().*stdFunction)(_size, logs);
-                
-                logs.exportToCSV(_path + "/" + _operationsToString(operation), "StalkerVectorTest");
-                logs.clearAllLogs();
             }
         }
         
@@ -150,9 +159,6 @@ namespace STLKR_Tests{
         list<CoreAffinityConfig> *_affinities;
         bool _prefetching;
         TestConfig_CompilerFlag _flag;
-        
-
-        
         
         vector** _createVectors(unsigned numVectors){
             auto vectorOfVectors = new vector*[numVectors];
@@ -194,20 +200,6 @@ namespace STLKR_Tests{
                 }
                 
             }
-        }
-
-        void _addLogParameters(TestConfig_OperationTypes operation){
-            logs.addParameter("operation ", _operationsToString(operation));
-            logs.addParameter("_size", std::to_string(_size));
-            logs.addParameter("unrollFactor", unrollFactor);
-            logs.addParameter("alignment", 64);
-            auto i = 0;
-            for (auto & affinity : *_affinities){
-                logs.addParameter("affinityConfig_" + std::to_string(++i), _threadAffinityConfigToString(affinity));
-            }
-            logs.addParameter("vector fill", _boolToOnOff(_prefetching));_vectorFillToString();
-            logs.addParameter("prefetch", _boolToOnOff(_prefetching));
-            logs.addParameter("compiler flag", _compilerFlagToString());
         }
 
         std::string _operationsToString(TestConfig_OperationTypes operation){
@@ -252,12 +244,14 @@ namespace STLKR_Tests{
 
         std::string _threadAffinityConfigToString(CoreAffinityConfig config) {
             switch (config) {
-                case HyperThreadsEnabled:
-                    return "hyperThreadSet";
-                case ThreadPoolSet:
-                    return "threadPoolSet";
-                case SingleThreadSet:
-                    return "singleThreadSet";
+                case HT_CoreSet:
+                    return "HT_CoreSet";
+                case HT_PoolSet:
+                    return "HT_PoolSet";
+                case SingleThread_CoreSet:
+                    return "SingleThread_CoreSet";
+                case SingleThread_PoolSet:
+                    return "SingleThread_PoolSet";
             }
         }
 

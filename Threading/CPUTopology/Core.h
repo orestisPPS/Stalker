@@ -22,7 +22,7 @@ public:
     
     inline void getThreads(std::vector<Thread*> &threads) const { threads = _threads;}
 
-    inline void addThreadsToPool(std::list<Thread*> &threadPool, bool hyperThreaded) const {
+    inline void addThreadsToPool(std::vector<Thread*> &threadPool, bool hyperThreaded) const {
         if (hyperThreaded)
             threadPool.insert(threadPool.end(), _threads.begin(), _threads.end());
         else
@@ -39,9 +39,7 @@ public:
     inline void setThreadAffinity() {
         CPU_ZERO(&_thisCoreSet);
         for (auto & _thread : _threads)
-            _thread->addToCoreSet(_thisCoreSet);
-        for (auto & _thread : _threads)
-            _thread->setThreadAffinity(_thisCoreSet);
+            _thread->addToCoreSet(&_thisCoreSet);
     }
     
     inline cpu_set_t * getCpuSet(){ return &_thisCoreSet; }

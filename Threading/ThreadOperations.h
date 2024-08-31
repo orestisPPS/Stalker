@@ -21,7 +21,6 @@ public:
         auto threadLimits = _getThreadsRange(size, threadPool.size(), blockSize);
         unsigned iThread = 0;
         for (const auto &thread : threadPool) {
-            //std::cout<<thread->getId()<<" start: " << threadLimits[iThread].first << " end: " << threadLimits[iThread].second << std::endl; 
             thread->executeJob(job, threadLimits[iThread].first, threadLimits[iThread].second ,
                                thread->getSharedCache()->getLevel(L1_Data)->size());
             iThread++;
