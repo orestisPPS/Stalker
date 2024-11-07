@@ -3,8 +3,7 @@ enum MatrixStorageType {
     COO,
     CSR,
     CSC,
-    Diagonal,
-    None
+    Diagonal
 };
 
 enum MatrixFormType {
@@ -12,11 +11,9 @@ enum MatrixFormType {
     NonSymmetric,
     UpperTriangular,
     LowerTriangular,
-    None
 };
 
 enum MatrixElementsOrder {
     RowMajor,
-    ColumnMajor,
-    None
+    ColumnMajor
 };
