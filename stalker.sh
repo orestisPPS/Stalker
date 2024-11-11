@@ -35,6 +35,14 @@ RunStalker () {
   "$STALKER_BIN_PATH"/${BIN_NAME}
   echo "Finished!"
 }
+CleanStalker () {
+    SetEnvironment
+    echo "Cleaning stalker build..."
+    cd "$STALKER_ROOT"
+    rm -rf build
+    echo "Finished cleaning!"
+    echo ""
+}
 AnalyzeLogs () {
   python3 "$PYTHON_LOG_ANALYZER" "$LOGS_PATH"
 }
@@ -91,6 +99,8 @@ alias helgrindstlkr=HelgrindStalker
 alias buildstlkr=BuildStalker
 
 alias runstlkr=RunStalker
+
+alias cleanstlkr=CleanStalker
 
 alias analyzestlkr=AnalyzeLogs
 

@@ -14,11 +14,20 @@
             StalkerMatrix(unsigned rows, unsigned columns, MatrixStorageType storageType = Full, MatrixFormType formType = NonSymmetric, MatrixElementsOrder orderType = RowMajor) :
                           _rows(rows), _columns(columns), _order(order), _storageType(storageType), _formType(formType), _order(orderType) {}
 
+            T& operator()(unsigned row, unsigned col) {
+
+            }
+
+            const T& operator()(unsigned row, unsigned col) const {
+
+            }
+            
             unsigned getNumRows() const { return _rows; }
             unsigned getNumColumns() const { return _columns; }
             MatrixElementsOrder getElementsOrder() const { return _order; }
             MatrixStorageType getStorageType() const { return _storageType; }
             MatrixFormType getFormType() const { return _formType; }
+
 
         protected:
             unsigned _rows;

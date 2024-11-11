@@ -1,19 +1,26 @@
-enum MatrixStorageType {
+#ifndef MATRIX_TYPES_H
+#define MATRIX_TYPES_H
+
+enum class MatrixStorageType {
     Full,
     COO,
-    CSR,
-    CSC,
-    Diagonal
+    CompressedSparse,
+    Diagonal,
+    None
 };
 
-enum MatrixFormType {
+enum class MatrixFormType {
     Symmetric,
     NonSymmetric,
     UpperTriangular,
     LowerTriangular,
+    None
 };
 
-enum MatrixElementsOrder {
+enum class MatrixElementsOrder {
     RowMajor,
-    ColumnMajor
+    ColumnMajor,
+    None
 };
+
+#endif // MATRIX_TYPES_H
