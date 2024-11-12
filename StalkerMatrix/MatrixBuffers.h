@@ -6,7 +6,46 @@
 #include "MatrixTypes.h"    
 #include "MatrixIterators.h"
 
-template <typename T, MatrixElementsOrder orderType>
+enum class MatrixBufferType {
+    Row,
+    Column,
+    Diagonal,
+    Block
+};
+
+template <typename T, OrderType OrderT, MatrixBufferType bufferType>
+class MatrixPtrBuffer {
+public:
+    T* data_start;  ///< Pointer to the start of the buffer.
+    std::size_t size;  ///< Number of elements in the buffer.
+
+    MatrixPtrBuffer(T* data_start, std::size_t size) : data_start(data_start), size(size) {}
+
+    inline T& operator[](std::size_t i) {
+        if (i >= size) {
+            throw std::out_of_range("MatrixPtrBuffer index out of range");
+        }
+        return *(data_start + i);
+    }
+
+    inline const T& operator[](std::size_t i) const {
+        if (i >= size) {
+            throw std::out_of_range("MatrixPtrBuffer index out of range");
+        }
+        return *(data_start + i);
+    }
+
+    inline std::size_t getSize() const { return size; }
+
+    inline T* data() { return data_start; }
+    inline const T* data() const { return data_start; }
+
+    inline MatrixStrideIterator<T> begin() { return MatrixStrideIterator<T>(data_start, 1); }
+    inline MatrixStrideIterator<const T> cbegin() const { return MatrixStrideIterator<const T>(data_start, 1); }
+    inline MatrixStrideIterator<T> end() { return MatrixStrideIterator<T>(data_start + size, 1); }
+    inline MatrixStrideIterator<const T> cend() const { return MatrixStrideIterator<const T>(data_start + size, 1); }
+};
+template <typename T, OrderType OrderT>
 class MatrixRowBuffer {
 private:
     T* _data_start;       ///< Pointer to the start of the matrix data.
@@ -22,9 +61,9 @@ public:
         if (i >= _size) {
             throw std::out_of_range("MatrixRowBuffer index out of range");
         }
-        if constexpr (orderType == MatrixElementsOrder::RowMajor) {
+        if constexpr (OrderT == OrderType::RowMajor) {
             return *(_data_start + i);
-        } else if constexpr (orderType == MatrixElementsOrder::ColumnMajor) {
+        } else if constexpr (OrderT == OrderType::ColumnMajor) {
             return *(_data_start + i * _numRows);
         }
     }
@@ -33,9 +72,9 @@ public:
         if (i >= _size) {
             throw std::out_of_range("MatrixRowBuffer index out of range");
         }
-        if constexpr (orderType == MatrixElementsOrder::RowMajor) {
+        if constexpr (OrderT == OrderType::RowMajor) {
             return *(_data_start + i);
-        } else if constexpr (orderType == MatrixElementsOrder::ColumnMajor) {
+        } else if constexpr (OrderT == OrderType::ColumnMajor) {
             return *(_data_start + i * _numRows);
         }
     }
@@ -53,22 +92,22 @@ public:
 private:
     template <typename S>
     inline MatrixStrideIterator<S> _beginIterator() const {
-        if constexpr (orderType == MatrixElementsOrder::RowMajor)
+        if constexpr (OrderT == OrderType::RowMajor)
             return MatrixStrideIterator<S>(_data_start, 1);
-        else if constexpr (orderType == MatrixElementsOrder::ColumnMajor)
+        else if constexpr (OrderT == OrderType::ColumnMajor)
             return MatrixStrideIterator<S>(_data_start, _numRows);
     }
 
     template <typename S>
     inline MatrixStrideIterator<S> _endIterator() const {
-        if constexpr (orderType == MatrixElementsOrder::RowMajor)
+        if constexpr (OrderT == OrderType::RowMajor)
             return MatrixStrideIterator<S>(_data_start + _size, 1);
-        else if constexpr (orderType == MatrixElementsOrder::ColumnMajor)
+        else if constexpr (OrderT == OrderType::ColumnMajor)
             return MatrixStrideIterator<S>(_data_start + _size * _numRows, _numRows);
     }
 };
 
-template <typename T, MatrixElementsOrder orderType>
+template <typename T, OrderType OrderT>
 class MatrixColumnBuffer {
 private:
     T* _data_start;        ///< Pointer to the start of the matrix data.
@@ -84,18 +123,18 @@ public:
 
     inline T& operator[](std::size_t i) {
         if (i >= _size) { throw std::out_of_range("MatrixColumnBuffer index out of range"); }
-        if constexpr (orderType == MatrixElementsOrder::RowMajor) {
+        if constexpr (OrderT == OrderType::RowMajor) {
             return *(_data_start + i * _numCols);
-        } else if constexpr (orderType == MatrixElementsOrder::ColumnMajor) {
+        } else if constexpr (OrderT == OrderType::ColumnMajor) {
             return *(_data_start + i);
         }
     }
 
     inline const T& operator[](std::size_t i) const {
         if (i >= _size) { throw std::out_of_range("MatrixColumnBuffer index out of range"); }
-        if constexpr (orderType == MatrixElementsOrder::RowMajor) {
+        if constexpr (OrderT == OrderType::RowMajor) {
             return *(_data_start + i * _numCols);
-        } else if constexpr (orderType == MatrixElementsOrder::ColumnMajor) {
+        } else if constexpr (OrderT == OrderType::ColumnMajor) {
             return *(_data_start + i);
         }
     }
@@ -113,17 +152,17 @@ public:
 private:
     template <typename S>
     inline MatrixStrideIterator<S> _beginIterator() const {
-        if constexpr (orderType == MatrixElementsOrder::RowMajor)
+        if constexpr (OrderT == OrderType::RowMajor)
             return MatrixStrideIterator<S>(_data_start, _numCols);
-        else if constexpr (orderType == MatrixElementsOrder::ColumnMajor)
+        else if constexpr (OrderT == OrderType::ColumnMajor)
             return MatrixStrideIterator<S>(_data_start, 1);
     }
 
     template <typename S>
     inline MatrixStrideIterator<S> _endIterator() const {
-        if constexpr (orderType == MatrixElementsOrder::RowMajor)
+        if constexpr (OrderT == OrderType::RowMajor)
             return MatrixStrideIterator<S>(_data_start + _size * _numCols, _numCols);
-        else if constexpr (orderType == MatrixElementsOrder::ColumnMajor)
+        else if constexpr (OrderT == OrderType::ColumnMajor)
             return MatrixStrideIterator<S>(_data_start + _size, 1);
     }
 };

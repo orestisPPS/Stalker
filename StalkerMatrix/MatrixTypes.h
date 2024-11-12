@@ -2,14 +2,14 @@
 #define MATRIX_TYPES_H
 
 enum class MatrixStorageType {
-    Full,
+    Dense,
     COO,
     CompressedSparse,
     Diagonal,
     None
 };
 
-enum class MatrixFormType {
+enum class FormType {
     Symmetric,
     NonSymmetric,
     UpperTriangular,
@@ -17,7 +17,7 @@ enum class MatrixFormType {
     None
 };
 
-enum class MatrixElementsOrder {
+enum class OrderType {
     RowMajor,
     ColumnMajor,
     None
