@@ -1,10 +1,10 @@
-#ifndef MATRIXBUFFERS_H
-#define MATRIXBUFFERS_H
+#ifndef MATRIX_PTRBUFFER_H
+#define MATRIX_PTRBUFFER_H
 
 #include <cstddef>
 #include <stdexcept>
 #include "MatrixTypes.h"    
-#include "MatrixIterators.h"
+#include "StrideIterator.h"
 
 enum class MatrixBufferType {
     Row,
@@ -12,160 +12,114 @@ enum class MatrixBufferType {
     Diagonal,
     Block
 };
-
-template <typename T, OrderType OrderT, MatrixBufferType bufferType>
+// =============================
+// Base CRTP Class for Buffers
+// =============================
+template <typename Derived, typename T>
 class MatrixPtrBuffer {
 public:
-    T* data_start;  ///< Pointer to the start of the buffer.
-    std::size_t size;  ///< Number of elements in the buffer.
+    MatrixPtrBuffer(T* data_start, std::size_t size)
+        : _data_start(data_start), _size(size) {}
 
-    MatrixPtrBuffer(T* data_start, std::size_t size) : data_start(data_start), size(size) {}
-
+    // Public element access with bounds checking
     inline T& operator[](std::size_t i) {
-        if (i >= size) {
+        if (i >= _size)
             throw std::out_of_range("MatrixPtrBuffer index out of range");
-        }
-        return *(data_start + i);
+        return derived()._access(i); // Delegate to derived
     }
 
     inline const T& operator[](std::size_t i) const {
-        if (i >= size) {
+        if (i >= _size)
             throw std::out_of_range("MatrixPtrBuffer index out of range");
-        }
-        return *(data_start + i);
+        return derived()._access(i); // Delegate to derived
     }
 
-    inline std::size_t getSize() const { return size; }
+    // Iterators
+    inline MatrixStrideIterator<T> begin() { return MatrixStrideIterator<T>(_data_start, derived().stride()); }
+    inline MatrixStrideIterator<const T> cbegin() const { return MatrixStrideIterator<const T>(_data_start, derived().stride()); }
+    inline MatrixStrideIterator<T> end() { return MatrixStrideIterator<T>(_data_start + _size * derived().stride(), derived().stride()); }
+    inline MatrixStrideIterator<const T> cend() const { return MatrixStrideIterator<const T>(_data_start + _size * derived().stride(), derived().stride()); }
 
-    inline T* data() { return data_start; }
-    inline const T* data() const { return data_start; }
+protected:
+    T* _data_start;       ///< Pointer to the start of the buffer
+    std::size_t _size;    ///< Number of elements in the buffer
 
-    inline MatrixStrideIterator<T> begin() { return MatrixStrideIterator<T>(data_start, 1); }
-    inline MatrixStrideIterator<const T> cbegin() const { return MatrixStrideIterator<const T>(data_start, 1); }
-    inline MatrixStrideIterator<T> end() { return MatrixStrideIterator<T>(data_start + size, 1); }
-    inline MatrixStrideIterator<const T> cend() const { return MatrixStrideIterator<const T>(data_start + size, 1); }
-};
-template <typename T, OrderType OrderT>
-class MatrixRowBuffer {
 private:
-    T* _data_start;       ///< Pointer to the start of the matrix data.
-    std::size_t _size;    ///< Number of elements in the row.
-    std::size_t _numRows; ///< Total number of rows in the matrix.
+    Derived& derived() { return static_cast<Derived&>(*this); }
+    const Derived& derived() const { return static_cast<const Derived&>(*this); }
+};
 
+// =============================
+// Row-Major Row Buffer
+// =============================
+template <typename T>
+class RowBufferRowMajor : public MatrixPtrBuffer<RowBufferRowMajor<T>, T> {
 public:
-    MatrixRowBuffer(T* data_start, std::size_t size, std::size_t numRows)
-        : _data_start(data_start), _size(size), _numRows(numRows) {}
+    RowBufferRowMajor(T* data_start, std::size_t size)
+        : MatrixPtrBuffer<RowBufferRowMajor, T>(data_start, size) {}
 
-    // Access element with bounds checking
-    inline T& operator[](std::size_t i) {
-        if (i >= _size) {
-            throw std::out_of_range("MatrixRowBuffer index out of range");
-        }
-        if constexpr (OrderT == OrderType::RowMajor) {
-            return *(_data_start + i);
-        } else if constexpr (OrderT == OrderType::ColumnMajor) {
-            return *(_data_start + i * _numRows);
-        }
-    }
+    // Element access
+    inline T& _access(std::size_t i) { return *(this->_data_start + i); }
+    inline const T& _access(std::size_t i) const { return *(this->_data_start + i); }
 
-    inline const T& operator[](std::size_t i) const {
-        if (i >= _size) {
-            throw std::out_of_range("MatrixRowBuffer index out of range");
-        }
-        if constexpr (OrderT == OrderType::RowMajor) {
-            return *(_data_start + i);
-        } else if constexpr (OrderT == OrderType::ColumnMajor) {
-            return *(_data_start + i * _numRows);
-        }
-    }
-
-    inline std::size_t size() const { return _size; }
-
-    inline T* data() { return _data_start; }
-    inline const T* data() const { return _data_start; }
-
-    inline MatrixStrideIterator<T> begin() { return _beginIterator<T>(); }
-    inline MatrixStrideIterator<const T> cbegin() const { return _beginIterator<const T>(); }
-    inline MatrixStrideIterator<T> end() { return _endIterator<T>(); }
-    inline MatrixStrideIterator<const T> cend() const { return _endIterator<const T>(); }
-
-private:
-    template <typename S>
-    inline MatrixStrideIterator<S> _beginIterator() const {
-        if constexpr (OrderT == OrderType::RowMajor)
-            return MatrixStrideIterator<S>(_data_start, 1);
-        else if constexpr (OrderT == OrderType::ColumnMajor)
-            return MatrixStrideIterator<S>(_data_start, _numRows);
-    }
-
-    template <typename S>
-    inline MatrixStrideIterator<S> _endIterator() const {
-        if constexpr (OrderT == OrderType::RowMajor)
-            return MatrixStrideIterator<S>(_data_start + _size, 1);
-        else if constexpr (OrderT == OrderType::ColumnMajor)
-            return MatrixStrideIterator<S>(_data_start + _size * _numRows, _numRows);
-    }
+    // Stride is always 1 for row-major row buffer
+    inline std::ptrdiff_t stride() const { return 1; }
 };
 
-template <typename T, OrderType OrderT>
-class MatrixColumnBuffer {
-private:
-    T* _data_start;        ///< Pointer to the start of the matrix data.
-    std::size_t _size;     ///< Number of elements in the column.
-    std::size_t _numCols;  ///< Total number of columns in the matrix.
-
+// =============================
+// Column-Major Row Buffer
+// =============================
+template <typename T>
+class RowBufferColumnMajor : public MatrixPtrBuffer<RowBufferColumnMajor<T>, T> {
 public:
-    MatrixColumnBuffer(T* data_start, std::size_t size, std::size_t numCols)
-        : _data_start(data_start), _size(size), _numCols(numCols) {
-            if (!data_start)
-                throw std::invalid_argument("Buffer initiated with null pointer");
-    }
+    RowBufferColumnMajor(T* data_start, std::size_t size, std::size_t numRows)
+        : MatrixPtrBuffer<RowBufferColumnMajor, T>(data_start, size), _numRows(numRows) {}
 
-    inline T& operator[](std::size_t i) {
-        if (i >= _size) { throw std::out_of_range("MatrixColumnBuffer index out of range"); }
-        if constexpr (OrderT == OrderType::RowMajor) {
-            return *(_data_start + i * _numCols);
-        } else if constexpr (OrderT == OrderType::ColumnMajor) {
-            return *(_data_start + i);
-        }
-    }
+    // Element access
+    inline T& _access(std::size_t i) { return *(this->_data_start + i * _numRows); }
+    inline const T& _access(std::size_t i) const { return *(this->_data_start + i * _numRows); }
 
-    inline const T& operator[](std::size_t i) const {
-        if (i >= _size) { throw std::out_of_range("MatrixColumnBuffer index out of range"); }
-        if constexpr (OrderT == OrderType::RowMajor) {
-            return *(_data_start + i * _numCols);
-        } else if constexpr (OrderT == OrderType::ColumnMajor) {
-            return *(_data_start + i);
-        }
-    }
-
-    inline std::size_t size() const { return _size; }
-
-    inline T* data() { return _data_start; }
-    inline const T* data() const { return _data_start; }
-
-    inline MatrixStrideIterator<T> begin() { return _beginIterator<T>(); }
-    inline MatrixStrideIterator<const T> cbegin() const { return _beginIterator<const T>(); }
-    inline MatrixStrideIterator<T> end() { return _endIterator<T>(); }
-    inline MatrixStrideIterator<const T> cend() const { return _endIterator<const T>(); }
+    // Stride is determined by the number of rows
+    inline std::ptrdiff_t stride() const { return _numRows; }
 
 private:
-    template <typename S>
-    inline MatrixStrideIterator<S> _beginIterator() const {
-        if constexpr (OrderT == OrderType::RowMajor)
-            return MatrixStrideIterator<S>(_data_start, _numCols);
-        else if constexpr (OrderT == OrderType::ColumnMajor)
-            return MatrixStrideIterator<S>(_data_start, 1);
-    }
-
-    template <typename S>
-    inline MatrixStrideIterator<S> _endIterator() const {
-        if constexpr (OrderT == OrderType::RowMajor)
-            return MatrixStrideIterator<S>(_data_start + _size * _numCols, _numCols);
-        else if constexpr (OrderT == OrderType::ColumnMajor)
-            return MatrixStrideIterator<S>(_data_start + _size, 1);
-    }
+    std::size_t _numRows; // Stride
 };
 
+// =============================
+// Row-Major Column Buffer
+// =============================
+template <typename T>
+class ColumnBufferRowMajor : public MatrixPtrBuffer<ColumnBufferRowMajor<T>, T> {
+public:
+    ColumnBufferRowMajor(T* data_start, std::size_t size, std::size_t numCols)
+        : MatrixPtrBuffer<ColumnBufferRowMajor, T>(data_start, size), _numCols(numCols) {}
 
-#endif // MATRIXBUFFERS_H
+    // Element access
+    inline T& _access(std::size_t i) { return *(this->_data_start + i * _numCols); }
+    inline const T& _access(std::size_t i) const { return *(this->_data_start + i * _numCols); }
+
+    // Stride is determined by the number of columns
+    inline std::ptrdiff_t stride() const { return _numCols; }
+
+private:
+    std::size_t _numCols; // Stride
+};
+
+// =============================
+// Column-Major Column Buffer
+// =============================
+template <typename T>
+class ColumnBufferColumnMajor : public MatrixPtrBuffer<ColumnBufferColumnMajor<T>, T> {
+public:
+    ColumnBufferColumnMajor(T* data_start, std::size_t size)
+        : MatrixPtrBuffer<ColumnBufferColumnMajor, T>(data_start, size) {}
+
+    // Element access
+    inline T& _access(std::size_t i) { return *(this->_data_start + i); }
+    inline const T& _access(std::size_t i) const { return *(this->_data_start + i); }
+
+    // Stride is always 1 for column-major column buffer
+    inline std::ptrdiff_t stride() const { return 1; }
+};
+#endif // MATRIX_PTRBUFFER_H

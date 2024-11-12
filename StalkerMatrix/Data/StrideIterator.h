@@ -1,5 +1,5 @@
-#ifndef MATRIX_ITERATORS_H
-#define MATRIX_ITERATORS_H
+#ifndef MATRIX_STRIDE_ITERATOR_H
+#define MATRIX_STRIDE_ITERATOR_H
 
 #include <iterator>
 #include <stdexcept>
@@ -171,4 +171,4 @@ public:
     inline bool operator>=(const MatrixStrideIterator& other) const { return !(*this < other); }
 };
 
-#endif // MATRIX_ITERATORS_H
+#endif // MATRIX_STRIDE_ITERATOR_H
