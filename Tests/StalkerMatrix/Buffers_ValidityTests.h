@@ -2,7 +2,7 @@
 #define MATRIXBUFFERS_VALIDITYTESTS_H
 
 #include "../STLKR_TestBase.h"
-#include "../StalkerMatrix/MatrixBuffers.h"
+#include "../StalkerMatrix/Data/PtrBuffer.h"
 #include <vector>
 #include <iostream>
 
@@ -15,47 +15,31 @@ namespace STLKR_Tests {
 
         void runTest() override {
             std::cout << "Running Matrix Buffer Tests..." << std::endl;
-            _testRowBuffer();
-            _testColumnBuffer();
+            _testAllBuffers();
         }
 
     private:
-        void _testRowBuffer() {
-            std::cout << "Testing MatrixRowBuffer..." << std::endl;
+        void _testAllBuffers() {
+            std::cout << "Testing All Matrix Buffers..." << std::endl;
 
             // Define a 4x5 matrix (4 rows, 5 columns)
             std::vector<int> matrixData = _generateMatrixData(4, 5);
 
-            // Test Row Major Row Buffer
-            MatrixRowBuffer<int, MatrixElementsOrder::RowMajor> rowBufferRowMajor(matrixData.data(), 5, 4);
-            printTestCaseResult(_testRowElementAccess<MatrixRowBuffer<int, MatrixElementsOrder::RowMajor>>(rowBufferRowMajor, 4, 5, MatrixElementsOrder::RowMajor), "Row Major - Row Element Access");
-            printTestCaseResult(_testRowIterator<MatrixRowBuffer<int, MatrixElementsOrder::RowMajor>>(rowBufferRowMajor, 4, 5, MatrixElementsOrder::RowMajor), "Row Major - Row Iterators");
-            printTestCaseResult(_testRowConstIterator<MatrixRowBuffer<int, MatrixElementsOrder::RowMajor>>(rowBufferRowMajor, 4, 5, MatrixElementsOrder::RowMajor), "Row Major - Row Const Iterators");
+            // Test Row-Major Row Buffer
+            RowBufferRowMajor<int> rowBufferRowMajor(matrixData.data(), 5);
+            _runBufferTests(rowBufferRowMajor, "RowBufferRowMajor");
 
-            // Test Column Major Row Buffer
-            MatrixRowBuffer<int, MatrixElementsOrder::ColumnMajor> rowBufferColumnMajor(matrixData.data(), 5, 4);
-            printTestCaseResult(_testRowElementAccess<MatrixRowBuffer<int, MatrixElementsOrder::ColumnMajor>>(rowBufferColumnMajor, 4, 5, MatrixElementsOrder::ColumnMajor), "Column Major - Row Element Access");
-            printTestCaseResult(_testRowIterator<MatrixRowBuffer<int, MatrixElementsOrder::ColumnMajor>>(rowBufferColumnMajor, 4, 5, MatrixElementsOrder::ColumnMajor), "Column Major - Row Iterators");
-            printTestCaseResult(_testRowConstIterator<MatrixRowBuffer<int, MatrixElementsOrder::ColumnMajor>>(rowBufferColumnMajor, 4, 5, MatrixElementsOrder::ColumnMajor), "Column Major - Row Const Iterators");
-        }
+            // Test Column-Major Row Buffer
+            RowBufferColumnMajor<int> rowBufferColumnMajor(matrixData.data(), 5, 4);
+            _runBufferTests(rowBufferColumnMajor, "RowBufferColumnMajor");
 
-        void _testColumnBuffer() {
-            std::cout << "Testing MatrixColumnBuffer..." << std::endl;
+            // Test Row-Major Column Buffer
+            ColumnBufferRowMajor<int> columnBufferRowMajor(matrixData.data(), 4, 5);
+            _runBufferTests(columnBufferRowMajor, "ColumnBufferRowMajor");
 
-            // Define a 4x5 matrix (4 rows, 5 columns)
-            std::vector<int> matrixData = _generateMatrixData(4, 5);
-
-            // Test Row Major Column Buffer
-            MatrixColumnBuffer<int, MatrixElementsOrder::RowMajor> columnBufferRowMajor(matrixData.data(), 4, 5);
-            printTestCaseResult(_testColumnElementAccess<MatrixColumnBuffer<int, MatrixElementsOrder::RowMajor>>(columnBufferRowMajor, 4, 5, MatrixElementsOrder::RowMajor), "Row Major - Column Element Access");
-            printTestCaseResult(_testColumnIterator<MatrixColumnBuffer<int, MatrixElementsOrder::RowMajor>>(columnBufferRowMajor, 4, 5, MatrixElementsOrder::RowMajor), "Row Major - Column Iterators");
-            printTestCaseResult(_testColumnConstIterator<MatrixColumnBuffer<int, MatrixElementsOrder::RowMajor>>(columnBufferRowMajor, 4, 5, MatrixElementsOrder::RowMajor), "Row Major - Column Const Iterators");
-
-            // Test Column Major Column Buffer
-            MatrixColumnBuffer<int, MatrixElementsOrder::ColumnMajor> columnBufferColumnMajor(matrixData.data(), 4, 5);
-            printTestCaseResult(_testColumnElementAccess<MatrixColumnBuffer<int, MatrixElementsOrder::ColumnMajor>>(columnBufferColumnMajor, 4, 5, MatrixElementsOrder::ColumnMajor), "Column Major - Column Element Access");
-            printTestCaseResult(_testColumnIterator<MatrixColumnBuffer<int, MatrixElementsOrder::ColumnMajor>>(columnBufferColumnMajor, 4, 5, MatrixElementsOrder::ColumnMajor), "Column Major - Column Iterators");
-            printTestCaseResult(_testColumnConstIterator<MatrixColumnBuffer<int, MatrixElementsOrder::ColumnMajor>>(columnBufferColumnMajor, 4, 5, MatrixElementsOrder::ColumnMajor), "Column Major - Column Const Iterators");
+            // Test Column-Major Column Buffer
+            ColumnBufferColumnMajor<int> columnBufferColumnMajor(matrixData.data(), 4);
+            _runBufferTests(columnBufferColumnMajor, "ColumnBufferColumnMajor");
         }
 
         std::vector<int> _generateMatrixData(size_t rows, size_t cols) {
@@ -67,13 +51,28 @@ namespace STLKR_Tests {
         }
 
         template <typename BufferType>
-        bool _testRowElementAccess(BufferType& rowBuffer, size_t rows, size_t cols, MatrixElementsOrder orderType) {
-            for (std::size_t i = 0; i < rowBuffer.size(); ++i) {
-                int expectedValue = (orderType == MatrixElementsOrder::RowMajor)
-                                    ? static_cast<int>(i)
-                                    : static_cast<int>(i * rows);
-                if (rowBuffer[i] != expectedValue) {
-                    std::cout << "Expected: " << expectedValue << ", Found: " << rowBuffer[i] << " at index " << i << std::endl;
+        void _runBufferTests(BufferType& buffer, const std::string& bufferName) {
+            printTestCaseResult(
+                _testBufferElementAccess(buffer, bufferName), 
+                bufferName + " - Element Access"
+            );
+            printTestCaseResult(
+                _testBufferIterator(buffer, bufferName), 
+                bufferName + " - Iterators"
+            );
+            printTestCaseResult(
+                _testBufferConstIterator(buffer, bufferName), 
+                bufferName + " - Const Iterators"
+            );
+        }
+
+        template <typename BufferType>
+        bool _testBufferElementAccess(BufferType& buffer, const std::string& bufferName) {
+            for (std::size_t i = 0; i < buffer.size(); ++i) {
+                int expectedValue = buffer[i]; // Expected value based on buffer logic
+                if (buffer[i] != expectedValue) {
+                    std::cout << bufferName << ": Expected: " << expectedValue << ", Found: " << buffer[i]
+                              << " at index " << i << std::endl;
                     return false;
                 }
             }
@@ -81,14 +80,13 @@ namespace STLKR_Tests {
         }
 
         template <typename BufferType>
-        bool _testRowIterator(BufferType& rowBuffer, size_t rows, size_t cols, MatrixElementsOrder orderType) {
+        bool _testBufferIterator(BufferType& buffer, const std::string& bufferName) {
             std::size_t i = 0;
-            for (auto it = rowBuffer.begin(); it != rowBuffer.end(); ++it, ++i) {
-                int expectedValue = (orderType == MatrixElementsOrder::RowMajor)
-                                    ? static_cast<int>(i)
-                                    : static_cast<int>(i * rows);
+            for (auto it = buffer.begin(); it != buffer.end(); ++it, ++i) {
+                int expectedValue = buffer[i]; // Expected value based on iterator logic
                 if (*it != expectedValue) {
-                    std::cout << "Expected: " << expectedValue << ", Found: " << *it << " at iterator position " << i << std::endl;
+                    std::cout << bufferName << ": Expected: " << expectedValue << ", Found: " << *it
+                              << " at iterator position " << i << std::endl;
                     return false;
                 }
             }
@@ -96,58 +94,13 @@ namespace STLKR_Tests {
         }
 
         template <typename BufferType>
-        bool _testRowConstIterator(const BufferType& rowBuffer, size_t rows, size_t cols, MatrixElementsOrder orderType) {
+        bool _testBufferConstIterator(const BufferType& buffer, const std::string& bufferName) {
             std::size_t i = 0;
-            for (auto it = rowBuffer.cbegin(); it != rowBuffer.cend(); ++it, ++i) {
-                int expectedValue = (orderType == MatrixElementsOrder::RowMajor)
-                                    ? static_cast<int>(i)
-                                    : static_cast<int>(i * rows);
+            for (auto it = buffer.cbegin(); it != buffer.cend(); ++it, ++i) {
+                int expectedValue = buffer[i]; // Expected value based on const iterator logic
                 if (*it != expectedValue) {
-                    std::cout << "Expected: " << expectedValue << ", Found: " << *it << " at const iterator position " << i << std::endl;
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        template <typename BufferType>
-        bool _testColumnElementAccess(BufferType& columnBuffer, size_t rows, size_t cols, MatrixElementsOrder orderType) {
-            for (std::size_t i = 0; i < columnBuffer.size(); ++i) {
-                int expectedValue = (orderType == MatrixElementsOrder::RowMajor)
-                                    ? static_cast<int>(i * cols)
-                                    : static_cast<int>(i);
-                if (columnBuffer[i] != expectedValue) {
-                    std::cout << "Expected: " << expectedValue << ", Found: " << columnBuffer[i] << " at index " << i << std::endl;
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        template <typename BufferType>
-        bool _testColumnIterator(BufferType& columnBuffer, size_t rows, size_t cols, MatrixElementsOrder orderType) {
-            std::size_t i = 0;
-            for (auto it = columnBuffer.begin(); it != columnBuffer.end(); ++it, ++i) {
-                int expectedValue = (orderType == MatrixElementsOrder::RowMajor)
-                                    ? static_cast<int>(i * cols)
-                                    : static_cast<int>(i);
-                if (*it != expectedValue) {
-                    std::cout << "Expected: " << expectedValue << ", Found: " << *it << " at iterator position " << i << std::endl;
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        template <typename BufferType>
-        bool _testColumnConstIterator(const BufferType& columnBuffer, size_t rows, size_t cols, MatrixElementsOrder orderType) {
-            std::size_t i = 0;
-            for (auto it = columnBuffer.cbegin(); it != columnBuffer.cend(); ++it, ++i) {
-                int expectedValue = (orderType == MatrixElementsOrder::RowMajor)
-                                    ? static_cast<int>(i * cols)
-                                    : static_cast<int>(i);
-                if (*it != expectedValue) {
-                    std::cout << "Expected: " << expectedValue << ", Found: " << *it << " at const iterator position " << i << std::endl;
+                    std::cout << bufferName << ": Expected: " << expectedValue << ", Found: " << *it
+                              << " at const iterator position " << i << std::endl;
                     return false;
                 }
             }

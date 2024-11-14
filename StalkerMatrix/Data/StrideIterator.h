@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <iterator>
 #include <cstddef> // For std::ptrdiff_t
-#include "MatrixTypes.h"
+#include "../MatrixTypes.h"
 
 /**
  * @brief A random-access iterator for traversing matrix elements with a fixed stride.

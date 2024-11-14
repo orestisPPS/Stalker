@@ -3,7 +3,6 @@
 
 #include <cstddef>
 #include <stdexcept>
-#include "MatrixTypes.h"    
 #include "StrideIterator.h"
 
 enum class MatrixBufferType {
@@ -12,14 +11,20 @@ enum class MatrixBufferType {
     Diagonal,
     Block
 };
+
 // =============================
 // Base CRTP Class for Buffers
 // =============================
 template <typename Derived, typename T>
 class MatrixPtrBuffer {
 public:
+    // Constructor for non-const data
     MatrixPtrBuffer(T* data_start, std::size_t size)
         : _data_start(data_start), _size(size) {}
+
+    // Constructor for const data
+    MatrixPtrBuffer(const T* data_start, std::size_t size)
+        : _data_start(const_cast<T*>(data_start)), _size(size) {}
 
     // Public element access with bounds checking
     inline T& operator[](std::size_t i) {
@@ -34,11 +39,23 @@ public:
         return derived()._access(i); // Delegate to derived
     }
 
-    // Iterators
-    inline MatrixStrideIterator<T> begin() { return MatrixStrideIterator<T>(_data_start, derived().stride()); }
-    inline MatrixStrideIterator<const T> cbegin() const { return MatrixStrideIterator<const T>(_data_start, derived().stride()); }
-    inline MatrixStrideIterator<T> end() { return MatrixStrideIterator<T>(_data_start + _size * derived().stride(), derived().stride()); }
-    inline MatrixStrideIterator<const T> cend() const { return MatrixStrideIterator<const T>(_data_start + _size * derived().stride(), derived().stride()); }
+    size_t size() const { return _size; }
+
+    // Iterators for mutable access
+    inline MatrixStrideIterator<T> begin() {
+        return MatrixStrideIterator<T>(_data_start, derived().stride());
+    }
+    inline MatrixStrideIterator<T> end() {
+        return MatrixStrideIterator<T>(_data_start + _size * derived().stride(), derived().stride());
+    }
+
+    // Iterators for const access
+    inline MatrixStrideIterator<const T> cbegin() const {
+        return MatrixStrideIterator<const T>(_data_start, derived().stride());
+    }
+    inline MatrixStrideIterator<const T> cend() const {
+        return MatrixStrideIterator<const T>(_data_start + _size * derived().stride(), derived().stride());
+    }
 
 protected:
     T* _data_start;       ///< Pointer to the start of the buffer
@@ -55,7 +72,12 @@ private:
 template <typename T>
 class RowBufferRowMajor : public MatrixPtrBuffer<RowBufferRowMajor<T>, T> {
 public:
+    // Constructor for non-const data
     RowBufferRowMajor(T* data_start, std::size_t size)
+        : MatrixPtrBuffer<RowBufferRowMajor, T>(data_start, size) {}
+
+    // Constructor for const data
+    RowBufferRowMajor(const T* data_start, std::size_t size)
         : MatrixPtrBuffer<RowBufferRowMajor, T>(data_start, size) {}
 
     // Element access
@@ -72,7 +94,12 @@ public:
 template <typename T>
 class RowBufferColumnMajor : public MatrixPtrBuffer<RowBufferColumnMajor<T>, T> {
 public:
+    // Constructor for non-const data
     RowBufferColumnMajor(T* data_start, std::size_t size, std::size_t numRows)
+        : MatrixPtrBuffer<RowBufferColumnMajor, T>(data_start, size), _numRows(numRows) {}
+
+    // Constructor for const data
+    RowBufferColumnMajor(const T* data_start, std::size_t size, std::size_t numRows)
         : MatrixPtrBuffer<RowBufferColumnMajor, T>(data_start, size), _numRows(numRows) {}
 
     // Element access
@@ -92,7 +119,12 @@ private:
 template <typename T>
 class ColumnBufferRowMajor : public MatrixPtrBuffer<ColumnBufferRowMajor<T>, T> {
 public:
+    // Constructor for non-const data
     ColumnBufferRowMajor(T* data_start, std::size_t size, std::size_t numCols)
+        : MatrixPtrBuffer<ColumnBufferRowMajor, T>(data_start, size), _numCols(numCols) {}
+
+    // Constructor for const data
+    ColumnBufferRowMajor(const T* data_start, std::size_t size, std::size_t numCols)
         : MatrixPtrBuffer<ColumnBufferRowMajor, T>(data_start, size), _numCols(numCols) {}
 
     // Element access
@@ -112,7 +144,12 @@ private:
 template <typename T>
 class ColumnBufferColumnMajor : public MatrixPtrBuffer<ColumnBufferColumnMajor<T>, T> {
 public:
+    // Constructor for non-const data
     ColumnBufferColumnMajor(T* data_start, std::size_t size)
+        : MatrixPtrBuffer<ColumnBufferColumnMajor, T>(data_start, size) {}
+
+    // Constructor for const data
+    ColumnBufferColumnMajor(const T* data_start, std::size_t size)
         : MatrixPtrBuffer<ColumnBufferColumnMajor, T>(data_start, size) {}
 
     // Element access
@@ -122,4 +159,5 @@ public:
     // Stride is always 1 for column-major column buffer
     inline std::ptrdiff_t stride() const { return 1; }
 };
+
 #endif // MATRIX_PTRBUFFER_H

@@ -4,8 +4,9 @@
 #include <vector>
 #include <stdexcept>
 #include <unordered_map>
-#include "MatrixTypes.h"
-#include "PtrBuffer.h"// =============================
+#include "PtrBuffer.h"
+
+// =============================
 // Base MatrixDataBase Class
 // =============================
 template <typename Derived, typename T, FormType FormT, OrderType OrderT>
@@ -13,6 +14,8 @@ class MatrixDataBase {
 public:
     MatrixDataBase(size_t rows, size_t cols) : _rows(rows), _cols(cols) {}
 
+    static constexpr FormType FormTypeValue = FormT;   
+    static constexpr OrderType OrderTypeValue = OrderT; // Expose OrderType
     inline size_t getNumRows() const { return _rows; }
     inline size_t getNumCols() const { return _cols; }
 
@@ -66,39 +69,36 @@ public:
 
     std::vector<T> values; ///< Flat array to store matrix elements
 
-private:
+protected:
+    friend class MatrixDataBase<DenseMatrixData<T, FormT, OrderT>, T, FormT, OrderT>;
     // Element access implementation
     inline T& _element(size_t i, size_t j) {
-        if constexpr (OrderT == OrderType::RowMajor) {
+        if constexpr (OrderT == OrderType::RowMajor)
             return values[i * this->_cols + j];
-        } else { // ColumnMajor
+        else if constexpr (OrderT == OrderType::ColumnMajor)
             return values[j * this->_rows + i];
-        }
     }
 
     inline const T& _element(size_t i, size_t j) const {
-        if constexpr (OrderT == OrderType::RowMajor) {
+        if constexpr (OrderT == OrderType::RowMajor)
             return values[i * this->_cols + j];
-        } else { // ColumnMajor
+        else if constexpr (OrderT == OrderType::ColumnMajor)
             return values[j * this->_rows + i];
-        }
     }
 
     // Row and column buffer creation
     inline auto _row(size_t row) const {
-        if constexpr (OrderT == OrderType::RowMajor) {
+        if constexpr (OrderT == OrderType::RowMajor)
             return RowBufferRowMajor<T>(values.data() + row * this->_cols, this->_cols);
-        } else { // ColumnMajor
+        else if constexpr (OrderT == OrderType::ColumnMajor)
             return RowBufferColumnMajor<T>(values.data() + row, this->_cols, this->_rows);
-        }
     }
 
     inline auto _column(size_t col) const {
-        if constexpr (OrderT == OrderType::RowMajor) {
+        if constexpr (OrderT == OrderType::RowMajor)
             return ColumnBufferRowMajor<T>(values.data() + col, this->_rows, this->_cols);
-        } else { // ColumnMajor
+        else if constexpr (OrderT == OrderType::ColumnMajor)
             return ColumnBufferColumnMajor<T>(values.data() + col * this->_rows, this->_rows);
-        }
     }
 };
 
@@ -119,33 +119,24 @@ public:
 
     std::vector<T> values; ///< Flat array for symmetric matrix data
 
-private:
-    // Element access implementation for symmetric matrices
+protected:
+    friend class MatrixDataBase<DenseMatrixData<T, FormType::Symmetric, OrderT>, T, FormType::Symmetric, OrderT>;
     inline T& _element(size_t i, size_t j) {
         if (i > j) std::swap(i, j);
-        return values[i * (2 * this->_rows - i + 1) / 2 + j - i];
+        return values[(i * (2 * this->_rows - i + 1)) / 2 + (j - i)];
     }
 
     inline const T& _element(size_t i, size_t j) const {
         if (i > j) std::swap(i, j);
-        return values[i * (2 * this->_rows - i + 1) / 2 + j - i];
+        return values[(i * (2 * this->_rows - i + 1)) / 2 + (j - i)];
     }
 
-    // Row and column buffer creation for symmetric matrices
     inline auto _row(size_t row) const {
-        if constexpr (OrderT == OrderType::RowMajor) {
-            return RowBufferRowMajor<T>(values.data() + row * (row + 1) / 2, this->_cols);
-        } else {
-            return RowBufferColumnMajor<T>(values.data(), row + 1, this->_rows);
-        }
+        return RowBufferRowMajor<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row);
     }
 
     inline auto _column(size_t col) const {
-        if constexpr (OrderT == OrderType::RowMajor) {
-            return ColumnBufferRowMajor<T>(values.data() + col * this->_rows, this->_rows, this->_cols);
-        } else {
-            return ColumnBufferColumnMajor<T>(values.data() + col * (col + 1) / 2, col + 1);
-        }
+        return ColumnBufferColumnMajor<T>(values.data() + (col * (2 * this->_rows - col + 1)) / 2, this->_rows - col);
     }
 };
 
@@ -166,39 +157,24 @@ public:
 
     std::vector<T> values; ///< Flat array for upper triangular matrix data
 
-private:
-    // Element access implementation for upper triangular matrices
+protected:
+    friend class MatrixDataBase<DenseMatrixData<T, FormType::UpperTriangular, OrderT>, T, FormType::UpperTriangular, OrderT>;
     inline T& _element(size_t i, size_t j) {
-        if constexpr (OrderT == OrderType::RowMajor) {
-            return (i <= j) ? values[i * this->_cols + j] : values[j * this->_cols + i];
-        } else { // ColumnMajor
-            return (i <= j) ? values[j * this->_rows + i] : values[i * this->_rows + j];
-        }
+        if (i > j) throw std::out_of_range("Accessing non-stored element in upper triangular matrix.");
+        return values[(i * (2 * this->_rows - i + 1)) / 2 + (j - i)];
     }
 
     inline const T& _element(size_t i, size_t j) const {
-        if constexpr (OrderT == OrderType::RowMajor) {
-            return (i <= j) ? values[i * this->_cols + j] : values[j * this->_cols + i];
-        } else { // ColumnMajor
-            return (i <= j) ? values[j * this->_rows + i] : values[i * this->_rows + j];
-        }
+        if (i > j) throw std::out_of_range("Accessing non-stored element in upper triangular matrix.");
+        return values[(i * (2 * this->_rows - i + 1)) / 2 + (j - i)];
     }
 
-    // Row and column buffer creation for upper triangular matrices
     inline auto _row(size_t row) const {
-        if constexpr (OrderT == OrderType::RowMajor) {
-            return RowBufferRowMajor<T>(values.data() + row * (row + 1) / 2, this->_cols);
-        } else {
-            return RowBufferColumnMajor<T>(values.data(), row + 1, this->_rows);
-        }
+        return RowBufferRowMajor<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row);
     }
 
     inline auto _column(size_t col) const {
-        if constexpr (OrderT == OrderType::RowMajor) {
-            return ColumnBufferRowMajor<T>(values.data(), col + 1, this->_cols);
-        } else {
-            return ColumnBufferColumnMajor<T>(values.data() + col * (col + 1) / 2, col + 1);
-        }
+        return ColumnBufferColumnMajor<T>(values.data() + col, col + 1);
     }
 };
 
@@ -218,40 +194,25 @@ public:
           values(rows * (rows + 1) / 2, value) {}
 
     std::vector<T> values; ///< Flat array for lower triangular matrix data
-    
-private:
-    // Element access implementation for lower triangular matrices
+
+protected:
+    friend class MatrixDataBase<DenseMatrixData<T, FormType::LowerTriangular, OrderT>, T, FormType::LowerTriangular, OrderT>;
     inline T& _element(size_t i, size_t j) {
-        if constexpr (OrderT == OrderType::RowMajor) {
-            return (i >= j) ? values[i * this->_cols + j] : values[j * this->_cols + i];
-        } else { // ColumnMajor
-            return (i >= j) ? values[j * this->_rows + i] : values[i * this->_rows + j];
-        }
+        if (i < j) throw std::out_of_range("Accessing non-stored element in lower triangular matrix.");
+        return values[(j * (2 * this->_rows - j + 1)) / 2 + (i - j)];
     }
 
     inline const T& _element(size_t i, size_t j) const {
-        if constexpr (OrderT == OrderType::RowMajor) {
-            return (i >= j) ? values[i * this->_cols + j] : values[j * this->_cols + i];
-        } else { // ColumnMajor
-            return (i >= j) ? values[j * this->_rows + i] : values[i * this->_rows + j];
-        }
+        if (i < j) throw std::out_of_range("Accessing non-stored element in lower triangular matrix.");
+        return values[(j * (2 * this->_rows - j + 1)) / 2 + (i - j)];
     }
 
-    // Row and column buffer creation for lower triangular matrices
     inline auto _row(size_t row) const {
-        if constexpr (OrderT == OrderType::RowMajor) {
-            return RowBufferRowMajor<T>(values.data(), row + 1);
-        } else {
-            return RowBufferColumnMajor<T>(values.data() + row * (row + 1) / 2, this->_cols, this->_rows);
-        }
+        return RowBufferRowMajor<T>(values.data() + (row * (row + 1)) / 2, row + 1);
     }
 
     inline auto _column(size_t col) const {
-        if constexpr (OrderT == OrderType::RowMajor) {
-            return ColumnBufferRowMajor<T>(values.data() + col * this->_rows, this->_rows);
-        } else {
-            return ColumnBufferColumnMajor<T>(values.data() + col * (col + 1) / 2, col + 1);
-        }
+        return ColumnBufferColumnMajor<T>(values.data() + (col * (col + 1)) / 2, this->_rows - col);
     }
 };
 
