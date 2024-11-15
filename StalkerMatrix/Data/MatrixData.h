@@ -132,11 +132,17 @@ protected:
     }
 
     inline auto _row(size_t row) const {
-        return RowBufferRowMajor<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row);
+        if constexpr (OrderT == OrderType::RowMajor)
+            return RowBufferRowMajor<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row);
+        else if constexpr (OrderT == OrderType::ColumnMajor)
+            return RowBufferColumnMajor<T>(values.data() + (row * (row + 1)) / 2, row + 1, this->_rows);
     }
 
     inline auto _column(size_t col) const {
-        return ColumnBufferColumnMajor<T>(values.data() + (col * (2 * this->_rows - col + 1)) / 2, this->_rows - col);
+        if constexpr (OrderT == OrderType::RowMajor)
+            return ColumnBufferRowMajor<T>(values.data() + (col * (2 * this->_rows - col + 1)) / 2, this->_rows - col, this->_cols);
+        else if constexpr (OrderT == OrderType::ColumnMajor)
+            return ColumnBufferColumnMajor<T>(values.data() + (col * (col + 1)) / 2, col + 1);
     }
 };
 
@@ -170,11 +176,17 @@ protected:
     }
 
     inline auto _row(size_t row) const {
-        return RowBufferRowMajor<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row);
+        if constexpr (OrderT == OrderType::RowMajor)
+            return RowBufferRowMajor<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row);
+        else if constexpr (OrderT == OrderType::ColumnMajor)
+            return RowBufferColumnMajor<T>(values.data() + (row * (row + 1)) / 2, row + 1);
     }
 
     inline auto _column(size_t col) const {
-        return ColumnBufferColumnMajor<T>(values.data() + col, col + 1);
+        if constexpr (OrderT == OrderType::RowMajor)
+            return ColumnBufferRowMajor<T>(values.data() + (col * (2 * this->_rows - col + 1)) / 2, this->_rows - col, this->_cols);
+        else if constexpr (OrderT == OrderType::ColumnMajor)
+            return ColumnBufferColumnMajor<T>(values.data() + (col * (col + 1)) / 2, col + 1);
     }
 };
 
@@ -208,11 +220,17 @@ protected:
     }
 
     inline auto _row(size_t row) const {
-        return RowBufferRowMajor<T>(values.data() + (row * (row + 1)) / 2, row + 1);
+        if constexpr (OrderT == OrderType::RowMajor)
+            return RowBufferRowMajor<T>(values.data() + (row * (row + 1)) / 2, row + 1);
+        else if constexpr (OrderT == OrderType::ColumnMajor)
+            return RowBufferColumnMajor<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row, this->_rows);
     }
 
     inline auto _column(size_t col) const {
-        return ColumnBufferColumnMajor<T>(values.data() + (col * (col + 1)) / 2, this->_rows - col);
+        if constexpr (OrderT == OrderType::RowMajor)
+            return ColumnBufferRowMajor<T>(values.data() + (col * (2 * this->_rows - col + 1)) / 2, this->_rows - col, this->_cols);
+        else if constexpr (OrderT == OrderType::ColumnMajor)
+            return ColumnBufferColumnMajor<T>(values.data() + (col * (col + 1)) / 2, col + 1);
     }
 };
 
