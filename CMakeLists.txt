@@ -51,6 +51,7 @@ add_library(stalker_core INTERFACE)
 # Add include directories to the stalker_core library
 target_include_directories(stalker_core INTERFACE
         ${PROJECT_SOURCE_DIR}/StalkerVector
+        ${PROJECT_SOURCE_DIR}/StalkerMatrix
         ${PROJECT_SOURCE_DIR}/Threading
         ${PROJECT_SOURCE_DIR}/Utility
 )
@@ -64,6 +65,9 @@ add_library(stalker_tests STATIC
         Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_PerformanceTests.h
         Tests/STLKR_PerformanceTests/StalkerVector/SingleThreadPerformance/SingleThreadOperationsPerformanceTest.h
         Tests/CPUTopologyTest.h
+        Tests/StalkerMatrix/DataAccess_ValidityTests.h
+        Tests/StalkerMatrix/Iterator_ValidityTests.h
+        Tests/StalkerMatrix/Buffers_ValidityTests.h
 )
 
 # Link the stalker_tests library with stalker_core

@@ -67,6 +67,13 @@ public:
     DenseMatrixData(size_t rows, size_t cols, const T& value)
         : MatrixDataBase<DenseMatrixData, T, FormT, OrderT>(rows, cols), values(rows * cols, value) {}
 
+    DenseMatrixData(size_t rows, size_t cols, const T* values, size_t numValues) 
+        : MatrixDataBase<DenseMatrixData, T, FormT, OrderT>(rows, cols) {
+            if (numValues != rows * cols)
+                throw std::invalid_argument("Invalid number of values for dense matrix.");
+            this->values = std::vector<T>(values, values + numValues);
+        }
+
     std::vector<T> values; ///< Flat array to store matrix elements
 
 protected:
@@ -117,32 +124,46 @@ public:
         : MatrixDataBase<DenseMatrixData, T, FormType::Symmetric, OrderT>(rows, cols),
           values(rows * (rows + 1) / 2, value) {}
 
+    DenseMatrixData(size_t rows, size_t cols, const T* values, size_t numValues)
+        : MatrixDataBase<DenseMatrixData, T, FormType::Symmetric, OrderT>(rows, cols) {
+            if (numValues != rows * (rows + 1) / 2)
+                throw std::invalid_argument("Invalid number of values for symmetric matrix.");
+            this->values = std::vector<T>(values, values + numValues);
+        }
+
     std::vector<T> values; ///< Flat array for symmetric matrix data
 
 protected:
     friend class MatrixDataBase<DenseMatrixData<T, FormType::Symmetric, OrderT>, T, FormType::Symmetric, OrderT>;
     inline T& _element(size_t i, size_t j) {
         if (i > j) std::swap(i, j);
-        return values[(i * (2 * this->_rows - i + 1)) / 2 + (j - i)];
+        if constexpr (OrderT == OrderType::RowMajor)
+            return values[(i * (2 * this->_rows - i + 1)) / 2];
+        else if constexpr (OrderT == OrderType::ColumnMajor)
+            return values[(j * (2 * this->_rows - j + 1)) / 2 + (i - j)];
     }
 
     inline const T& _element(size_t i, size_t j) const {
         if (i > j) std::swap(i, j);
-        return values[(i * (2 * this->_rows - i + 1)) / 2 + (j - i)];
+        if constexpr (OrderT == OrderType::RowMajor)
+            return values[(i * (2 * this->_rows - i + 1)) / 2];
+        else if constexpr (OrderT == OrderType::ColumnMajor)
+            return values[(j * (2 * this->_rows - j + 1)) / 2 + (i - j)];
     }
 
     inline auto _row(size_t row) const {
         if constexpr (OrderT == OrderType::RowMajor)
             return RowBufferRowMajor<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row);
         else if constexpr (OrderT == OrderType::ColumnMajor)
-            return RowBufferColumnMajor<T>(values.data() + (row * (row + 1)) / 2, row + 1, this->_rows);
+            return RowBufferColumnMajor<T>(values.data() + (row * (row + 1)) / 2, this->_cols - row, this->_rows);
     }
 
     inline auto _column(size_t col) const {
-        if constexpr (OrderT == OrderType::RowMajor)
-            return ColumnBufferRowMajor<T>(values.data() + (col * (2 * this->_rows - col + 1)) / 2, this->_rows - col, this->_cols);
-        else if constexpr (OrderT == OrderType::ColumnMajor)
+        if constexpr (OrderT == OrderType::RowMajor) {
+            return ColumnBufferRowMajor<T>(values.data() + col, col + 1, this->_cols);
+        } else if constexpr (OrderT == OrderType::ColumnMajor) {
             return ColumnBufferColumnMajor<T>(values.data() + (col * (col + 1)) / 2, col + 1);
+        }
     }
 };
 
@@ -161,30 +182,37 @@ public:
         : MatrixDataBase<DenseMatrixData, T, FormType::UpperTriangular, OrderT>(rows, cols),
           values(rows * (rows + 1) / 2, value) {}
 
+    DenseMatrixData(size_t rows, size_t cols, const T* values, size_t numValues)
+        : MatrixDataBase<DenseMatrixData, T, FormType::UpperTriangular, OrderT>(rows, cols) {
+            if (numValues != rows * (rows + 1) / 2)
+                throw std::invalid_argument("Invalid number of values for upper triangular matrix.");
+            this->values = std::vector<T>(values, values + numValues);
+        }
+
     std::vector<T> values; ///< Flat array for upper triangular matrix data
 
 protected:
     friend class MatrixDataBase<DenseMatrixData<T, FormType::UpperTriangular, OrderT>, T, FormType::UpperTriangular, OrderT>;
     inline T& _element(size_t i, size_t j) {
         if (i > j) throw std::out_of_range("Accessing non-stored element in upper triangular matrix.");
-        return values[(i * (2 * this->_rows - i + 1)) / 2 + (j - i)];
+        return values[(i * (2 * this->_rows - i + 1)) / 2];
     }
 
     inline const T& _element(size_t i, size_t j) const {
         if (i > j) throw std::out_of_range("Accessing non-stored element in upper triangular matrix.");
-        return values[(i * (2 * this->_rows - i + 1)) / 2 + (j - i)];
+        return values[(i * (2 * this->_rows - i + 1)) / 2];
     }
 
     inline auto _row(size_t row) const {
         if constexpr (OrderT == OrderType::RowMajor)
             return RowBufferRowMajor<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row);
         else if constexpr (OrderT == OrderType::ColumnMajor)
-            return RowBufferColumnMajor<T>(values.data() + (row * (row + 1)) / 2, row + 1);
+            return RowBufferColumnMajor<T>(values.data() + (row * (row + 1)) / 2, this->_cols - row, this->_rows);
     }
 
     inline auto _column(size_t col) const {
         if constexpr (OrderT == OrderType::RowMajor)
-            return ColumnBufferRowMajor<T>(values.data() + (col * (2 * this->_rows - col + 1)) / 2, this->_rows - col, this->_cols);
+            return ColumnBufferRowMajor<T>(values.data() + (col * (2 * this->_rows - col + 1)) / 2, col + 1, this->_cols);
         else if constexpr (OrderT == OrderType::ColumnMajor)
             return ColumnBufferColumnMajor<T>(values.data() + (col * (col + 1)) / 2, col + 1);
     }
@@ -204,6 +232,14 @@ public:
     DenseMatrixData(size_t rows, size_t cols, const T& value)
         : MatrixDataBase<DenseMatrixData, T, FormType::LowerTriangular, OrderT>(rows, cols),
           values(rows * (rows + 1) / 2, value) {}
+
+    DenseMatrixData(size_t rows, size_t cols, const T* values, size_t numValues)
+        : MatrixDataBase<DenseMatrixData, T, FormType::LowerTriangular, OrderT>(rows, cols){
+            if (numValues != rows * (rows + 1) / 2)
+                throw std::invalid_argument("Invalid number of values for lower triangular matrix.");
+                this->values = std::vector<T>(values, values + numValues);
+        }
+
 
     std::vector<T> values; ///< Flat array for lower triangular matrix data
 
