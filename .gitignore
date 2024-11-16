@@ -2,9 +2,13 @@
 .idea/
 *.iml
 
+#vscode
+.vscode/
+
 # Build output
 cmake-build-debug/
 cmake-build-release/
+build/
 *.o
 *.a
 *.so
@@ -42,6 +46,11 @@ temp/
 *.pdf
 *.txt
 *.pptx
-
-
-Testing/
+*.csv
+*.xlsx
+*.xls
+*.doc
+*.ppt
+*.jpg
+*.jpeg
+*.png

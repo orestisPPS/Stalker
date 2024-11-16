@@ -5,7 +5,7 @@ SetEnvironment () {
   echo "=================STALKER ENVIRONMENT VARIABLES===================="
   echo "=================================================================="
   export STALKER_ROOTDIR=${CODE}/stalker
-  export STALKER_BIN_PATH=${STALKER_ROOTDIR}/cmake-build-debug
+  export STALKER_BIN_PATH=${STALKER_ROOTDIR}/build
   export BIN_NAME="stalker"
   export CMAKE_PATH=/usr/bin/cmake
   export TESTS_PATH=${STALKER_ROOTDIR}/Tests

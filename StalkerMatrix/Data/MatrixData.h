@@ -96,16 +96,16 @@ protected:
     // Row and column buffer creation
     inline auto _row(size_t row) const {
         if constexpr (OrderT == OrderType::RowMajor)
-            return RowBufferRowMajor<T>(values.data() + row * this->_cols, this->_cols);
+            return ContiguousBlockPtrBuffer<T>(values.data() + row * this->_cols, this->_cols);
         else if constexpr (OrderT == OrderType::ColumnMajor)
-            return RowBufferColumnMajor<T>(values.data() + row, this->_cols, this->_rows);
+            return StridePtrBuffer<T>(values.data() + row, this->_cols, this->_rows);
     }
 
     inline auto _column(size_t col) const {
         if constexpr (OrderT == OrderType::RowMajor)
-            return ColumnBufferRowMajor<T>(values.data() + col, this->_rows, this->_cols);
+            return StridePtrBuffer<T>(values.data() + col, this->_rows, this->_cols);
         else if constexpr (OrderT == OrderType::ColumnMajor)
-            return ColumnBufferColumnMajor<T>(values.data() + col * this->_rows, this->_rows);
+            return ContiguousBlockPtrBuffer<T>(values.data() + col * this->_rows, this->_rows);
     }
 };
 
@@ -153,16 +153,16 @@ protected:
 
     inline auto _row(size_t row) const {
         if constexpr (OrderT == OrderType::RowMajor)
-            return RowBufferRowMajor<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row);
+            return ContiguousBlockPtrBuffer<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row);
         else if constexpr (OrderT == OrderType::ColumnMajor)
-            return RowBufferColumnMajor<T>(values.data() + (row * (row + 1)) / 2, this->_cols - row, this->_rows);
+            return StridePtrBuffer<T>(values.data() + (row * (row + 1)) / 2, this->_cols - row, this->_rows);
     }
 
     inline auto _column(size_t col) const {
         if constexpr (OrderT == OrderType::RowMajor) {
-            return ColumnBufferRowMajor<T>(values.data() + col, col + 1, this->_cols);
+            return StridePtrBuffer<T>(values.data() + col, col + 1, this->_cols);
         } else if constexpr (OrderT == OrderType::ColumnMajor) {
-            return ColumnBufferColumnMajor<T>(values.data() + (col * (col + 1)) / 2, col + 1);
+            return ContiguousBlockPtrBuffer<T>(values.data() + (col * (col + 1)) / 2, col + 1);
         }
     }
 };
@@ -205,16 +205,16 @@ protected:
 
     inline auto _row(size_t row) const {
         if constexpr (OrderT == OrderType::RowMajor)
-            return RowBufferRowMajor<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row);
+            return ContiguousBlockPtrBuffer<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row);
         else if constexpr (OrderT == OrderType::ColumnMajor)
-            return RowBufferColumnMajor<T>(values.data() + (row * (row + 1)) / 2, this->_cols - row, this->_rows);
+            return StridePtrBuffer<T>(values.data() + (row * (row + 1)) / 2, this->_cols - row, this->_rows);
     }
 
     inline auto _column(size_t col) const {
         if constexpr (OrderT == OrderType::RowMajor)
-            return ColumnBufferRowMajor<T>(values.data() + (col * (2 * this->_rows - col + 1)) / 2, col + 1, this->_cols);
+            return StridePtrBuffer<T>(values.data() + (col * (2 * this->_rows - col + 1)) / 2, col + 1, this->_cols);
         else if constexpr (OrderT == OrderType::ColumnMajor)
-            return ColumnBufferColumnMajor<T>(values.data() + (col * (col + 1)) / 2, col + 1);
+            return ContiguousBlockPtrBuffer<T>(values.data() + (col * (col + 1)) / 2, col + 1);
     }
 };
 
@@ -257,16 +257,16 @@ protected:
 
     inline auto _row(size_t row) const {
         if constexpr (OrderT == OrderType::RowMajor)
-            return RowBufferRowMajor<T>(values.data() + (row * (row + 1)) / 2, row + 1);
+            return ContiguousBlockPtrBuffer<T>(values.data() + (row * (row + 1)) / 2, row + 1);
         else if constexpr (OrderT == OrderType::ColumnMajor)
-            return RowBufferColumnMajor<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row, this->_rows);
+            return StridePtrBuffer<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row, this->_rows);
     }
 
     inline auto _column(size_t col) const {
         if constexpr (OrderT == OrderType::RowMajor)
-            return ColumnBufferRowMajor<T>(values.data() + (col * (2 * this->_rows - col + 1)) / 2, this->_rows - col, this->_cols);
+            return StridePtrBuffer<T>(values.data() + (col * (2 * this->_rows - col + 1)) / 2, this->_rows - col, this->_cols);
         else if constexpr (OrderT == OrderType::ColumnMajor)
-            return ColumnBufferColumnMajor<T>(values.data() + (col * (col + 1)) / 2, col + 1);
+            return ContiguousBlockPtrBuffer<T>(values.data() + (col * (col + 1)) / 2, col + 1);
     }
 };
 

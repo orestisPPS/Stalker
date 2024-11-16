@@ -25,21 +25,17 @@ namespace STLKR_Tests {
             // Define a 4x5 matrix (4 rows, 5 columns)
             std::vector<int> matrixData = _generateMatrixData(4, 5);
 
-            // Test Row-Major Row Buffer
-            RowBufferRowMajor<int> rowBufferRowMajor(matrixData.data(), 5);
-            _runBufferTests(rowBufferRowMajor, "RowBufferRowMajor");
+            // Test Column-Major Column Buffer
+            ContiguousBlockPtrBuffer<int> contiguousBlockPtrBuffer(matrixData.data(), 4);
+            _runBufferTests(contiguousBlockPtrBuffer, "ContiguousBlockPtrBuffer");
 
             // Test Column-Major Row Buffer
-            RowBufferColumnMajor<int> rowBufferColumnMajor(matrixData.data(), 5, 4);
-            _runBufferTests(rowBufferColumnMajor, "RowBufferColumnMajor");
+            StridePtrBuffer<int> rowBufferColumnMajor(matrixData.data(), 5, 4);
+            _runBufferTests(rowBufferColumnMajor, "StridePtrBuffer");
 
             // Test Row-Major Column Buffer
-            ColumnBufferRowMajor<int> columnBufferRowMajor(matrixData.data(), 4, 5);
-            _runBufferTests(columnBufferRowMajor, "ColumnBufferRowMajor");
-
-            // Test Column-Major Column Buffer
-            ColumnBufferColumnMajor<int> columnBufferColumnMajor(matrixData.data(), 4);
-            _runBufferTests(columnBufferColumnMajor, "ColumnBufferColumnMajor");
+            StridePtrBuffer<int> columnBufferRowMajor(matrixData.data(), 4, 5);
+            _runBufferTests(columnBufferRowMajor, "StridePtrBuffer");
         }
 
         std::vector<int> _generateMatrixData(size_t rows, size_t cols) {
