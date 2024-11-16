@@ -26,7 +26,7 @@ namespace STLKR_Tests {
             std::vector<int> matrixData = _generateMatrixData(4, 5);
 
             // Test Column-Major Column Buffer
-            ContiguousBlockPtrBuffer<int> contiguousBlockPtrBuffer(matrixData.data(), 4);
+            StridePtrBuffer<int> contiguousBlockPtrBuffer(matrixData.data(), 4);
             _runBufferTests(contiguousBlockPtrBuffer, "ContiguousBlockPtrBuffer");
 
             // Test Column-Major Row Buffer

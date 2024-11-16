@@ -24,7 +24,7 @@ namespace STLKR_Tests {
 
         void _testStrideIteratorBasic() {
             int data[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-            MatrixStrideIterator<int> it(data, 2); // Stride of 2
+            StrideIterator<int> it(data, 2); // Stride of 2
 
             printTestCaseResult(*it == 1, "Dereference operator (basic)");
             ++it;
@@ -39,14 +39,14 @@ namespace STLKR_Tests {
 
         void _testStrideIteratorArithmetic() {
             int data[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-            MatrixStrideIterator<int> it(data, 2); // Stride of 2
+            StrideIterator<int> it(data, 2); // Stride of 2
 
-            MatrixStrideIterator<int> it2 = it + 3;
+            StrideIterator<int> it2 = it + 3;
             printTestCaseResult(*it2 == 7, "Addition operator");
             it += 2;
             printTestCaseResult(*it == 5, "Compound addition operator");
 
-            MatrixStrideIterator<int> it3 = it - 2;
+            StrideIterator<int> it3 = it - 2;
             printTestCaseResult(*it3 == 1, "Subtraction operator");
             it -= 1;
             printTestCaseResult(*it == 3, "Compound subtraction operator");
@@ -56,8 +56,8 @@ namespace STLKR_Tests {
 
         void _testStrideIteratorComparison() {
             int data[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-            MatrixStrideIterator<int> it1(data, 2);
-            MatrixStrideIterator<int> it2 = it1 + 2;
+            StrideIterator<int> it1(data, 2);
+            StrideIterator<int> it2 = it1 + 2;
 
             printTestCaseResult(it1 != it2, "Inequality operator");
             printTestCaseResult(it1 < it2, "Less-than operator");
@@ -68,7 +68,7 @@ namespace STLKR_Tests {
 
         void _testStrideIteratorRandomAccess() {
             int data[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-            MatrixStrideIterator<int> it(data, 2);
+            StrideIterator<int> it(data, 2);
 
             printTestCaseResult(it[3] == 7, "Random access operator");
             printTestCaseResult(!(it[-1] == -1), "Negative offset access");
@@ -76,7 +76,7 @@ namespace STLKR_Tests {
 
         void _testStrideConstIterator() {
             const int data[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-            MatrixStrideIterator<const int> constIt(data, 2);
+            StrideIterator<const int> constIt(data, 2);
 
             printTestCaseResult(*constIt == 1, "Const dereference operator");
             ++constIt;
