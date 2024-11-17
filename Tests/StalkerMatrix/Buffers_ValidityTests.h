@@ -5,6 +5,7 @@
 #include "../StalkerMatrix/Data/PtrBuffer.h"
 #include <vector>
 #include <iostream>
+#include <cassert>
 
 namespace STLKR_Tests {
 
@@ -25,23 +26,27 @@ namespace STLKR_Tests {
             // Define a 4x5 matrix (4 rows, 5 columns)
             std::vector<int> matrixData = _generateMatrixData(4, 5);
 
-            // Test Column-Major Column Buffer
-            StridePtrBuffer<int> contiguousBlockPtrBuffer(matrixData.data(), 4);
-            _runBufferTests(contiguousBlockPtrBuffer, "ContiguousBlockPtrBuffer");
+            // Test ContiguousBlockPtrBuffer (Row in Row-Major)
+            ContiguousBlockPtrBuffer<int> contiguousRowBuffer(matrixData.data(), 5, 1); // Row-major row buffer
+            _runBufferTests(contiguousRowBuffer, "ContiguousBlockPtrBuffer (Row in Row-Major)");
 
-            // Test Column-Major Row Buffer
-            StridePtrBuffer<int> rowBufferColumnMajor(matrixData.data(), 5, 4);
-            _runBufferTests(rowBufferColumnMajor, "StridePtrBuffer");
+            // Test NonContiguousBlockPtrBuffer (Column in Row-Major)
+            NonContiguousBlockPtrBuffer<int> nonContiguousColumnBuffer(matrixData.data(), 4, 5, 5); // Row-major column buffer
+            _runBufferTests(nonContiguousColumnBuffer, "NonContiguousBlockPtrBuffer (Column in Row-Major)");
 
-            // Test Row-Major Column Buffer
-            StridePtrBuffer<int> columnBufferRowMajor(matrixData.data(), 4, 5);
-            _runBufferTests(columnBufferRowMajor, "StridePtrBuffer");
+            // Test ContiguousBlockPtrBuffer (Column in Column-Major)
+            ContiguousBlockPtrBuffer<int> contiguousColumnBuffer(matrixData.data(), 4, 5); // Column-major column buffer
+            _runBufferTests(contiguousColumnBuffer, "ContiguousBlockPtrBuffer (Column in Column-Major)");
+
+            // Test NonContiguousBlockPtrBuffer (Row in Column-Major)
+            NonContiguousBlockPtrBuffer<int> nonContiguousRowBuffer(matrixData.data(), 5, 4, 1); // Column-major row buffer
+            _runBufferTests(nonContiguousRowBuffer, "NonContiguousBlockPtrBuffer (Row in Column-Major)");
         }
 
         std::vector<int> _generateMatrixData(size_t rows, size_t cols) {
             std::vector<int> data(rows * cols);
             for (size_t i = 0; i < rows * cols; ++i) {
-                data[i] = static_cast<int>(i);
+                data[i] = static_cast<int>(i + 1); // Fill with 1-based indexing
             }
             return data;
         }
@@ -60,47 +65,81 @@ namespace STLKR_Tests {
                 _testBufferConstIterator(buffer, bufferName), 
                 bufferName + " - Const Iterators"
             );
+            printTestCaseResult(
+                _testBufferBounds(buffer, bufferName),
+                bufferName + " - Bounds Check"
+            );
         }
 
         template <typename BufferType>
         bool _testBufferElementAccess(BufferType& buffer, const std::string& bufferName) {
-            for (std::size_t i = 0; i < buffer.size(); ++i) {
-                int expectedValue = buffer[i]; // Expected value based on buffer logic
-                if (buffer[i] != expectedValue) {
-                    std::cout << bufferName << ": Expected: " << expectedValue << ", Found: " << buffer[i]
-                              << " at index " << i << std::endl;
-                    return false;
+            try {
+                for (std::size_t i = 0; i < buffer.size(); ++i) {
+                    int expectedValue = buffer.at(i); // Expected value
+                    if (buffer.at(i) != expectedValue) {
+                        std::cout << bufferName << ": Expected: " << expectedValue << ", Found: " << buffer.at(i)
+                                  << " at index " << i << std::endl;
+                        return false;
+                    }
                 }
+            } catch (const std::exception& ex) {
+                std::cout << bufferName << ": Exception during element access: " << ex.what() << std::endl;
+                return false;
             }
             return true;
         }
 
         template <typename BufferType>
         bool _testBufferIterator(BufferType& buffer, const std::string& bufferName) {
-            std::size_t i = 0;
-            for (auto it = buffer.begin(); it != buffer.end(); ++it, ++i) {
-                int expectedValue = buffer[i]; // Expected value based on iterator logic
-                if (*it != expectedValue) {
-                    std::cout << bufferName << ": Expected: " << expectedValue << ", Found: " << *it
-                              << " at iterator position " << i << std::endl;
-                    return false;
+            try {
+                std::size_t i = 0;
+                for (auto it = buffer.begin(); it != buffer.end(); ++it, ++i) {
+                    int expectedValue = buffer.at(i); // Expected value based on iterator logic
+                    if (*it != expectedValue) {
+                        std::cout << bufferName << ": Expected: " << expectedValue << ", Found: " << *it
+                                  << " at iterator position " << i << std::endl;
+                        return false;
+                    }
                 }
+            } catch (const std::exception& ex) {
+                std::cout << bufferName << ": Exception during iterator access: " << ex.what() << std::endl;
+                return false;
             }
             return true;
         }
 
         template <typename BufferType>
         bool _testBufferConstIterator(const BufferType& buffer, const std::string& bufferName) {
-            std::size_t i = 0;
-            for (auto it = buffer.cbegin(); it != buffer.cend(); ++it, ++i) {
-                int expectedValue = buffer[i]; // Expected value based on const iterator logic
-                if (*it != expectedValue) {
-                    std::cout << bufferName << ": Expected: " << expectedValue << ", Found: " << *it
-                              << " at const iterator position " << i << std::endl;
-                    return false;
+            try {
+                std::size_t i = 0;
+                for (auto it = buffer.cbegin(); it != buffer.cend(); ++it, ++i) {
+                    int expectedValue = buffer.at(i); // Expected value based on const iterator logic
+                    if (*it != expectedValue) {
+                        std::cout << bufferName << ": Expected: " << expectedValue << ", Found: " << *it
+                                  << " at const iterator position " << i << std::endl;
+                        return false;
+                    }
                 }
+            } catch (const std::exception& ex) {
+                std::cout << bufferName << ": Exception during const iterator access: " << ex.what() << std::endl;
+                return false;
             }
             return true;
+        }
+
+        template <typename BufferType>
+        bool _testBufferBounds(BufferType& buffer, const std::string& bufferName) {
+            try {
+                // Access beyond buffer size should throw
+                buffer.at(buffer.size());
+                std::cout << bufferName << ": Expected out_of_range exception, but none was thrown." << std::endl;
+                return false;
+            } catch (const std::out_of_range&) {
+                return true; // Exception correctly thrown
+            } catch (const std::exception& ex) {
+                std::cout << bufferName << ": Unexpected exception during bounds check: " << ex.what() << std::endl;
+                return false;
+            }
         }
     };
 

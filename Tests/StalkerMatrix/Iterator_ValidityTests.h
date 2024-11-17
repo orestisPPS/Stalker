@@ -2,93 +2,118 @@
 #define STALKERMATRIX_ITERATOR_VALIDITYTESTS_H
 
 #include "../STLKR_TestBase.h"
-#include "../StalkerMatrix/Data/StrideIterator.h" // Path to your iterator implementation
+#include "../StalkerMatrix/Data/StrideIterator.h"  // Path to ContiguousBlockIterator
 #include <cmath>  // For std::abs in floating-point comparisons
 
 namespace STLKR_Tests {
 
-    class MatrixStrideIteratorTest : public STLKR_TestBase {
+    class MatrixBlockIteratorTest : public STLKR_TestBase {
     public:
-        explicit MatrixStrideIteratorTest() 
-            : STLKR_TestBase("Matrix Stride Iterator Test") {}
+        explicit MatrixBlockIteratorTest() 
+            : STLKR_TestBase("Matrix Block Iterator Test") {}
 
         void runTest() override {
-            _testStrideIteratorBasic();
-            _testStrideIteratorArithmetic();
-            _testStrideIteratorComparison();
-            _testStrideIteratorRandomAccess();
-            _testStrideConstIterator();
+            _testContiguousIteratorBasic();
+            _testContiguousIteratorArithmetic();
+            _testContiguousIteratorComparison();
+            _testContiguousIteratorRandomAccess();
+            _testNonContiguousIterator();
         }
 
     private:
 
-        void _testStrideIteratorBasic() {
+        void _testContiguousIteratorBasic() {
             int data[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-            StrideIterator<int> it(data, 2); // Stride of 2
+            ContiguousBlockIterator<int> it(data, 2); // Stride of 2
 
-            printTestCaseResult(*it == 1, "Dereference operator (basic)");
+            printTestCaseResult(*it == 1, "Contiguous iterator dereference operator (basic)");
             ++it;
-            printTestCaseResult(*it == 3, "Pre-increment operator");
+            printTestCaseResult(*it == 3, "Contiguous iterator pre-increment operator");
             it++;
-            printTestCaseResult(*it == 5, "Post-increment operator");
+            printTestCaseResult(*it == 5, "Contiguous iterator post-increment operator");
             --it;
-            printTestCaseResult(*it == 3, "Pre-decrement operator");
+            printTestCaseResult(*it == 3, "Contiguous iterator pre-decrement operator");
             it--;
-            printTestCaseResult(*it == 1, "Post-decrement operator");
+            printTestCaseResult(*it == 1, "Contiguous iterator post-decrement operator");
         }
 
-        void _testStrideIteratorArithmetic() {
+        void _testContiguousIteratorArithmetic() {
             int data[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-            StrideIterator<int> it(data, 2); // Stride of 2
+            ContiguousBlockIterator<int> it(data, 2); // Stride of 2
 
-            StrideIterator<int> it2 = it + 3;
-            printTestCaseResult(*it2 == 7, "Addition operator");
+            ContiguousBlockIterator<int> it2 = it + 3;
+            printTestCaseResult(*it2 == 7, "Contiguous iterator addition operator");
             it += 2;
-            printTestCaseResult(*it == 5, "Compound addition operator");
+            printTestCaseResult(*it == 5, "Contiguous iterator compound addition operator");
 
-            StrideIterator<int> it3 = it - 2;
-            printTestCaseResult(*it3 == 1, "Subtraction operator");
+            ContiguousBlockIterator<int> it3 = it - 2;
+            printTestCaseResult(*it3 == 1, "Contiguous iterator subtraction operator");
             it -= 1;
-            printTestCaseResult(*it == 3, "Compound subtraction operator");
+            printTestCaseResult(*it == 3, "Contiguous iterator compound subtraction operator");
 
-            printTestCaseResult(it3 - it == -1, "Distance between iterators");
+            printTestCaseResult(it3 - it == -1, "Contiguous iterator distance between iterators");
         }
 
-        void _testStrideIteratorComparison() {
+        void _testContiguousIteratorComparison() {
             int data[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-            StrideIterator<int> it1(data, 2);
-            StrideIterator<int> it2 = it1 + 2;
+            ContiguousBlockIterator<int> it1(data, 2);
+            ContiguousBlockIterator<int> it2 = it1 + 2;
 
-            printTestCaseResult(it1 != it2, "Inequality operator");
-            printTestCaseResult(it1 < it2, "Less-than operator");
-            printTestCaseResult(it2 > it1, "Greater-than operator");
-            printTestCaseResult(it1 <= it2, "Less-than-or-equal operator");
-            printTestCaseResult(it2 >= it1, "Greater-than-or-equal operator");
+            printTestCaseResult(it1 != it2, "Contiguous iterator inequality operator");
+            printTestCaseResult(it1 < it2, "Contiguous iterator less-than operator");
+            printTestCaseResult(it2 > it1, "Contiguous iterator greater-than operator");
+            printTestCaseResult(it1 <= it2, "Contiguous iterator less-than-or-equal operator");
+            printTestCaseResult(it2 >= it1, "Contiguous iterator greater-than-or-equal operator");
         }
 
-        void _testStrideIteratorRandomAccess() {
+        void _testContiguousIteratorRandomAccess() {
             int data[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-            StrideIterator<int> it(data, 2);
+            ContiguousBlockIterator<int> it(data, 2);
 
-            printTestCaseResult(it[3] == 7, "Random access operator");
-            printTestCaseResult(!(it[-1] == -1), "Negative offset access");
+            printTestCaseResult(it[3] == 7, "Contiguous iterator random access operator");
         }
 
-        void _testStrideConstIterator() {
-            const int data[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-            StrideIterator<const int> constIt(data, 2);
+        void _testNonContiguousIterator() {
+            int data[12] = {1, 2, 3, 4,
+                            5, 6, 7, 8,
+                            9, 10, 11, 12}; // Simulate 3x4 row-major
+            std::size_t totalRows = 3;
 
-            printTestCaseResult(*constIt == 1, "Const dereference operator");
-            ++constIt;
-            printTestCaseResult(*constIt == 3, "Const pre-increment operator");
+            NonContiguousBlockIterator<int> it(data, 4, totalRows, 0, 0); // Column in row-major
+            // Basic dereference
+            printTestCaseResult(*it == 1, "Non-contiguous iterator dereference operator (basic)");
 
-            auto constIt2 = constIt + 3;
-            printTestCaseResult(*constIt2 == 9, "Const addition operator");
-        }
+            //column 0 traversal
+            ++it; // Move to next row
+            printTestCaseResult(*it == 5, "Non-contiguous iterator pre-increment operator");
+            it++; // Move to next row
+            printTestCaseResult(*it == 9, "Non-contiguous iterator post-increment operator");
+
+            --it; // Move to previous row
+            printTestCaseResult(*it == 5, "Non-contiguous iterator pre-decrement operator");
+
+            it--; // Move to previous row
+            printTestCaseResult(*it == 1, "Non-contiguous iterator post-decrement operator");
+
+            // Advance
+            it.advance(4); // Skip a full column
+            printTestCaseResult(*it == 6, "Non-contiguous iterator advance operator");
+
+            // Distance
+            NonContiguousBlockIterator<int> it2(data, 4, totalRows, 1, 1); // 2nd row of 2nd column
+            printTestCaseResult(*it2 == 6, "Non-contiguous iterator dereference operator (Non - zero start)");
+            printTestCaseResult(it == it2, "Non-contiguous iterator equality");
+            printTestCaseResult(it <= it2, "Non-contiguous iterator less-than-or-equal");
+            // printTestCaseResult(it.distance(it2) == 1, "Non-contiguous iterator distance");
+            ++it; // Move to the first row of the next column
+            // Relational operators
+            printTestCaseResult(it != it2, "Non-contiguous iterator inequality");
+            printTestCaseResult(it2 < it, "Non-contiguous iterator less-than");
+            printTestCaseResult(it > it2, "Non-contiguous iterator greater-than");
+}
+
     };
 
 } // namespace STLKR_Tests
-
-
 
 #endif // STALKERMATRIX_ITERATOR_VALIDITYTESTS_H
