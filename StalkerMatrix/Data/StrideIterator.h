@@ -43,11 +43,11 @@ public:
 
     /**
      * @brief Constructor to initialize the base iterator.
-     * @param current Pointer to the initial element.
+     * @param startPtr Pointer to the initial element.
      * @param stride Stride (step size) between consecutive elements.
      */
-    BlockIteratorBase(T* current, std::ptrdiff_t stride)
-        : _current(current), _stride(stride) {}
+    BlockIteratorBase(T* startPtr, std::ptrdiff_t stride)
+        : _current(startPtr), _stride(stride) {}
 
     /**
      * @brief Dereference operator.
@@ -180,139 +180,81 @@ public:
  * (stride) between consecutive elements.
  */
 template <typename T>
-class ContiguousBlockIterator : public BlockIteratorBase<ContiguousBlockIterator<T>, T> {
-    using Base = BlockIteratorBase<ContiguousBlockIterator<T>, T>;
+class FixedStrideIterator : public BlockIteratorBase<FixedStrideIterator<T>, T> {
+    using Base = BlockIteratorBase<FixedStrideIterator<T>, T>;
 
 public:
     /**
      * @brief Constructor to initialize the contiguous iterator.
-     * @param current Pointer to the initial element.
+     * @param startPtr Pointer to the initial element.
      * @param stride Stride between consecutive elements.
      */
-    ContiguousBlockIterator(T* current, std::ptrdiff_t stride)
-        : Base(current, stride) {}
+    FixedStrideIterator(T* startPtr, std::ptrdiff_t stride)
+        : Base(startPtr, stride) {}
 
     // CRTP-required operations
     inline void increment() { this->_current += this->_stride; }
     inline void decrement() { this->_current -= this->_stride; }
     inline void advance(typename Base::difference_type n) { this->_current += n * this->_stride; }
-    inline typename Base::difference_type distance(const ContiguousBlockIterator& other) const {
+    inline typename Base::difference_type distance(const FixedStrideIterator& other) const {
         return (this->_current - other._current) / this->_stride;
     }
-    inline bool equals(const ContiguousBlockIterator& other) const { return this->_current == other._current; }
-    inline bool less_than(const ContiguousBlockIterator& other) const { return this->_current < other._current; }
+    inline bool equals(const FixedStrideIterator& other) const { return this->_current == other._current; }
+    inline bool less_than(const FixedStrideIterator& other) const { return this->_current < other._current; }
 };
 
-/**
- * @class NonContiguousBlockIterator
- * @brief An iterator for traversing non-contiguous blocks of data (e.g., columns in row-major order or rows in column-major order).
- * 
- * @tparam T The type of elements in the matrix.
- * 
- * This iterator facilitates traversal over non-contiguous blocks of memory, such as:
- * - Columns in a row-major ordered matrix.
- * - Rows in a column-major ordered matrix.
- * It maintains internal tracking of the current position in both primary and secondary dimensions.
- */
-template <typename T>
-class NonContiguousBlockIterator : public BlockIteratorBase<NonContiguousBlockIterator<T>, T> {
-    using Base = BlockIteratorBase<NonContiguousBlockIterator<T>, T>;
 
-private:
-    T* _base;                ///< Pointer to the start of the data block.
-    std::size_t _primaryDim; ///< Number of elements in the primary dimension.
-    std::size_t _primaryIdx; ///< Current index in the primary dimension.
-    std::size_t _secondaryIdx; ///< Current index in the secondary dimension.
+/**
+ * @brief Iterator for traversing blocks with dynamic stride.
+ *
+ * @tparam Derived The derived iterator class.
+ * @tparam T The type of elements being iterated over.
+ *
+ * This pure virtual iterator is the template for dynamic stride iterators, allowing variable steps between elements.
+ * The stride is determined by the derived class, which can implement custom stride logic.
+ * It is useful for non-linear traversal patterns in data structures like triangular matrices.
+ */
+template <typename Derived, typename T>
+class DynamicStrideIterator : public BlockIteratorBase<Derived, T> {
+    using Base = BlockIteratorBase<Derived, T>;
 
 public:
-    /**
-     * @brief Constructs a non-contiguous iterator for traversing a specific block of data.
-     * 
-     * @param base Pointer to the start of the memory block (typically the start of the matrix).
-     * @param stride Stride between elements in the primary dimension.
-     * @param primaryDim Total number of elements in the primary dimension.
-     * @param primaryIdx Initial index in the primary dimension (e.g., starting row for a column).
-     * @param secondaryIdx Initial index in the secondary dimension (e.g., column index for a column in row-major order).
-     * 
-     * ### Example:
-     * #### Traversing a column in a row-major 4x3 matrix:
-     * ```
-     * Matrix:
-     * 1  2  3
-     * 4  5  6
-     * 7  8  9
-     * 10 11 12
-     * 
-     * NonContiguousBlockIterator<int> columnIter(&matrix[0], 3, 4, 0, 1);
-     * ```
-     * Here:
-     * - `base` = Pointer to the first element of the matrix (`&matrix[0]`).
-     * - `stride` = 3 (number of elements in a row).
-     * - `primaryDim` = 4 (number of rows).
-     * - `primaryIdx` = 0 (start at the first row).
-     * - `secondaryIdx` = 1 (iterate over the second column).
-     * 
-     * #### Traversing a row in a column-major 3x4 matrix:
-     * ```
-     * Matrix:
-     * 1  4  7  10
-     * 2  5  8  11
-     * 3  6  9  12
-     * 
-     * NonContiguousBlockIterator<int> rowIter(&matrix[0], 4, 3, 0, 1);
-     * ```
-     * Here:
-     * - `base` = Pointer to the first element of the matrix (`&matrix[0]`).
-     * - `stride` = 4 (number of rows).
-     * - `primaryDim` = 3 (number of columns).
-     * - `primaryIdx` = 0 (start at the first column).
-     * - `secondaryIdx` = 1 (iterate over the second row).
-     */
-    NonContiguousBlockIterator(T* base, std::ptrdiff_t stride, std::size_t primaryDim, 
-                               std::size_t primaryIdx, std::size_t secondaryIdx)
-        : Base(base + primaryIdx * stride + secondaryIdx, stride),
-          _base(base), _primaryDim(primaryDim), _primaryIdx(primaryIdx), _secondaryIdx(secondaryIdx) {}
-
 
     // CRTP-required operations
     inline void increment() {
-        ++_primaryIdx;
-        if (_primaryIdx >= _primaryDim) {
-            _primaryIdx = 0;
-            ++_secondaryIdx;
-        }
-        this->_current = _base + _primaryIdx * this->_stride + _secondaryIdx;
+        this->_current += child()._stride(_index);
+        ++_index;
     }
+
     inline void decrement() {
-        if (_primaryIdx == 0) {
-            _primaryIdx = _primaryDim - 1;
-            --_secondaryIdx;
-        } else {
-            --_primaryIdx;
-        }
-        this->_current = _base + _primaryIdx * this->_stride + _secondaryIdx;
+        --_index;
+        this->_current -= child()._stride(_index);
     }
+
     inline void advance(typename Base::difference_type n) {
-        typename Base::difference_type total = _primaryIdx + n;
-        if (total >= 0) {
-            _secondaryIdx += total / _primaryDim;
-            _primaryIdx = total % _primaryDim;
-        } else {
-            _secondaryIdx += (total / _primaryDim) - 1;
-            _primaryIdx = (total % _primaryDim + _primaryDim) % _primaryDim;
+        for (typename Base::difference_type i = 0; i < n; ++i) {
+            this->_current += child()._stride();
+            ++_index;
         }
-        this->_current = _base + _primaryIdx * this->_stride + _secondaryIdx;
     }
-    inline typename Base::difference_type distance(const NonContiguousBlockIterator& other) const {
-        return (_secondaryIdx - other._secondaryIdx) * _primaryDim + (_primaryIdx - other._primaryIdx);
+
+    inline typename Base::difference_type distance(const DynamicStrideIterator& other) const {
+        return static_cast<typename Base::difference_type>(_index - other._index);
     }
-    inline bool equals(const NonContiguousBlockIterator& other) const {
-        return _primaryIdx == other._primaryIdx && _secondaryIdx == other._secondaryIdx;
-    }
-    inline bool less_than(const NonContiguousBlockIterator& other) const {
-        return (_secondaryIdx < other._secondaryIdx) || 
-               (_secondaryIdx == other._secondaryIdx && _primaryIdx < other._primaryIdx);
-    }
+
+    inline bool equals(const DynamicStrideIterator& other) const { return this->_current == other._current; }
+    inline bool less_than(const DynamicStrideIterator& other) const { return this->_current < other._current; }
+
+    size_t index() const { return _index; }
+
+protected:
+    DynamicStrideIterator(T* startPtr) : Base(startPtr), _index(0) {}
+
+private:
+    std::size_t _index; ///< Current logical index.
+    inline Derived& child() { return *static_cast<Derived*>(this); }
+    inline const Derived& child() const { return *static_cast<const Derived*>(this); }
 };
+
 
 #endif // MATRIX_BLOCK_ITERATOR_BASE_H

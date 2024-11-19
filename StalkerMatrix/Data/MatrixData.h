@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <unordered_map>
 #include "PtrBuffer.h"
+#include "../MatrixTypes.h"
 
 // =============================
 // Base MatrixDataBase Class
@@ -33,13 +34,25 @@ public:
     }
 
     // Public row and column access
-    inline auto row(size_t row) const {
+    inline auto row(size_t row) {
         if (row >= _rows)
             throw std::out_of_range("Row index out of bounds in Matrix Data.");
         return derived()._row(row);
     }
 
-    inline auto column(size_t col) const {
+    inline const auto row(size_t row) const {
+        if (row >= _rows)
+            throw std::out_of_range("Row index out of bounds in Matrix Data.");
+        return derived()._row(row);
+    }
+
+    inline const auto column(size_t col) {
+        if (col >= _cols)
+            throw std::out_of_range("Column index out of bounds in Matrix Data.");
+        return derived()._column(col);
+    }
+
+    inline const auto column(size_t col) const {
         if (col >= _cols)
             throw std::out_of_range("Column index out of bounds in Matrix Data.");
         return derived()._column(col);
@@ -94,18 +107,32 @@ protected:
     }
 
     // Row and column buffer creation
+    inline auto _row(size_t row) {
+        if constexpr (OrderT == OrderType::RowMajor)
+            return FixedStridePtrBuffer<T>(values.data() + row * this->_cols, this->_cols);
+        else if constexpr (OrderT == OrderType::ColumnMajor)
+            return FixedStridePtrBuffer<T>(values.data() + row, this->_cols, this->_rows);
+    }
+
     inline auto _row(size_t row) const {
         if constexpr (OrderT == OrderType::RowMajor)
-            return ContiguousBlockPtrBuffer<T>(values.data() + row * this->_cols, this->_cols);
+            return FixedStridePtrBuffer<T>(values.data() + row * this->_cols, this->_cols);
         else if constexpr (OrderT == OrderType::ColumnMajor)
-            return StridePtrBuffer<T>(values.data() + row, this->_cols, this->_rows);
+            return FixedStridePtrBuffer<T>(values.data() + row, this->_cols, this->_rows);
+    }
+
+    inline auto _column(size_t col) {
+        if constexpr (OrderT == OrderType::RowMajor)
+            return FixedStridePtrBuffer<T>(values.data() + col, this->_rows, this->_cols);
+        else if constexpr (OrderT == OrderType::ColumnMajor)
+            return FixedStridePtrBuffer<T>(values.data() + col * this->_rows, this->_rows);
     }
 
     inline auto _column(size_t col) const {
         if constexpr (OrderT == OrderType::RowMajor)
-            return StridePtrBuffer<T>(values.data() + col, this->_rows, this->_cols);
+            return FixedStridePtrBuffer<T>(values.data() + col, this->_rows, this->_cols);
         else if constexpr (OrderT == OrderType::ColumnMajor)
-            return ContiguousBlockPtrBuffer<T>(values.data() + col * this->_rows, this->_rows);
+            return FixedStridePtrBuffer<T>(values.data() + col * this->_rows, this->_rows);
     }
 };
 
@@ -138,136 +165,186 @@ protected:
     inline T& _element(size_t i, size_t j) {
         if (i > j) std::swap(i, j);
         if constexpr (OrderT == OrderType::RowMajor)
-            return values[(i * (2 * this->_rows - i + 1)) / 2];
+            return values[(i * (2 * this->_rows - i + 1)) / 2 + (j - i)];
         else if constexpr (OrderT == OrderType::ColumnMajor)
-            return values[(j * (2 * this->_rows - j + 1)) / 2 + (i - j)];
+            return values[(j * (2 * this->_rows - j + 1)) / 2 + (i - j)]; 
     }
 
     inline const T& _element(size_t i, size_t j) const {
         if (i > j) std::swap(i, j);
         if constexpr (OrderT == OrderType::RowMajor)
-            return values[(i * (2 * this->_rows - i + 1)) / 2];
+            return values[(i * (2 * this->_rows - i + 1)) / 2 + (j - i)];
         else if constexpr (OrderT == OrderType::ColumnMajor)
             return values[(j * (2 * this->_rows - j + 1)) / 2 + (i - j)];
     }
 
-    inline auto _row(size_t row) const {
-        if constexpr (OrderT == OrderType::RowMajor)
-            return ContiguousBlockPtrBuffer<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row);
-        else if constexpr (OrderT == OrderType::ColumnMajor)
-            return StridePtrBuffer<T>(values.data() + (row * (row + 1)) / 2, this->_cols - row, this->_rows);
+inline auto _row(size_t row) {
+    if constexpr (OrderT == OrderType::RowMajor)
+        return FixedStridePtrBuffer<T>(
+            values.data() + (row * (2 * this->_rows - row + 1)) / 2, // Offset
+            this->_cols - row); // Length of the row
+    else if constexpr (OrderT == OrderType::ColumnMajor)
+        return UpperTriangularMatrixIterator<T>(values.data() + (row * (row + 1)) / 2, this->cols-row); // Offset
     }
 
-    inline auto _column(size_t col) const {
-        if constexpr (OrderT == OrderType::RowMajor) {
-            return StridePtrBuffer<T>(values.data() + col, col + 1, this->_cols);
-        } else if constexpr (OrderT == OrderType::ColumnMajor) {
-            return ContiguousBlockPtrBuffer<T>(values.data() + (col * (col + 1)) / 2, col + 1);
-        }
+inline auto _row(size_t row) const {
+    if constexpr (OrderT == OrderType::RowMajor)
+        return FixedStridePtrBuffer<const T>(
+            values.data() + (row * (2 * this->_rows - row + 1)) / 2, // Offset
+            this->_cols - row); // Length of the row
+    else if constexpr (OrderT == OrderType::ColumnMajor)
+        return UpperTriangularMatrixIterator<const T>(values.data() + (row * (row + 1)) / 2, this->cols-row); // Offset
+}
+
+inline auto _column(size_t col) {
+    if constexpr (OrderT == OrderType::RowMajor) {
+        return UpperTriangularMatrixIterator<T>(values.data() + (col * (col + 1)) / 2, col + 1); // Offset
+    } else if constexpr (OrderT == OrderType::ColumnMajor) {
+        return FixedStridePtrBuffer<T>(values.data() + (col * (col + 1)) / 2, col + 1);
     }
+}
+
+inline auto _column(size_t col) const {
+    if constexpr (OrderT == OrderType::RowMajor) {
+        return UpperTriangularMatrixIterator<const T>(values.data() + (col * (col + 1)) / 2, col + 1);                                // Secondary index
+    } else if constexpr (OrderT == OrderType::ColumnMajor) {
+        return FixedStridePtrBuffer<const T>(
+            values.data() + (col * (col + 1)) / 2, // Offset
+            col + 1);                             // Length of the column
+    }
+}
+
 };
 
-// ==============================
-// Dense Matrix: Upper Triangular
-// ==============================
-template <typename T, OrderType OrderT>
-class DenseMatrixData<T, FormType::UpperTriangular, OrderT>
-    : public MatrixDataBase<DenseMatrixData<T, FormType::UpperTriangular, OrderT>, T, FormType::UpperTriangular, OrderT> {
-public:
-    DenseMatrixData(size_t rows, size_t cols)
-        : MatrixDataBase<DenseMatrixData, T, FormType::UpperTriangular, OrderT>(rows, cols),
-          values(rows * (rows + 1) / 2) {}
+// // ==============================
+// // Dense Matrix: Upper Triangular
+// // ==============================
+// template <typename T, OrderType OrderT>
+// class DenseMatrixData<T, FormType::UpperTriangular, OrderT>
+//     : public MatrixDataBase<DenseMatrixData<T, FormType::UpperTriangular, OrderT>, T, FormType::UpperTriangular, OrderT> {
+// public:
+//     DenseMatrixData(size_t rows, size_t cols)
+//         : MatrixDataBase<DenseMatrixData, T, FormType::UpperTriangular, OrderT>(rows, cols),
+//           values(rows * (rows + 1) / 2) {}
 
-    DenseMatrixData(size_t rows, size_t cols, const T& value)
-        : MatrixDataBase<DenseMatrixData, T, FormType::UpperTriangular, OrderT>(rows, cols),
-          values(rows * (rows + 1) / 2, value) {}
+//     DenseMatrixData(size_t rows, size_t cols, const T& value)
+//         : MatrixDataBase<DenseMatrixData, T, FormType::UpperTriangular, OrderT>(rows, cols),
+//           values(rows * (rows + 1) / 2, value) {}
 
-    DenseMatrixData(size_t rows, size_t cols, const T* values, size_t numValues)
-        : MatrixDataBase<DenseMatrixData, T, FormType::UpperTriangular, OrderT>(rows, cols) {
-            if (numValues != rows * (rows + 1) / 2)
-                throw std::invalid_argument("Invalid number of values for upper triangular matrix.");
-            this->values = std::vector<T>(values, values + numValues);
-        }
+//     DenseMatrixData(size_t rows, size_t cols, const T* values, size_t numValues)
+//         : MatrixDataBase<DenseMatrixData, T, FormType::UpperTriangular, OrderT>(rows, cols) {
+//             if (numValues != rows * (rows + 1) / 2)
+//                 throw std::invalid_argument("Invalid number of values for upper triangular matrix.");
+//             this->values = std::vector<T>(values, values + numValues);
+//         }
 
-    std::vector<T> values; ///< Flat array for upper triangular matrix data
+//     std::vector<T> values; ///< Flat array for upper triangular matrix data
 
-protected:
-    friend class MatrixDataBase<DenseMatrixData<T, FormType::UpperTriangular, OrderT>, T, FormType::UpperTriangular, OrderT>;
-    inline T& _element(size_t i, size_t j) {
-        if (i > j) throw std::out_of_range("Accessing non-stored element in upper triangular matrix.");
-        return values[(i * (2 * this->_rows - i + 1)) / 2];
-    }
+// protected:
+//     friend class MatrixDataBase<DenseMatrixData<T, FormType::UpperTriangular, OrderT>, T, FormType::UpperTriangular, OrderT>;
+//     inline T& _element(size_t i, size_t j) {
+//         if (i > j) throw std::out_of_range("Accessing non-stored element in upper triangular matrix.");
+//         return values[(i * (2 * this->_rows - i + 1)) / 2];
+//     }
 
-    inline const T& _element(size_t i, size_t j) const {
-        if (i > j) throw std::out_of_range("Accessing non-stored element in upper triangular matrix.");
-        return values[(i * (2 * this->_rows - i + 1)) / 2];
-    }
+//     inline const T& _element(size_t i, size_t j) const {
+//         if (i > j) throw std::out_of_range("Accessing non-stored element in upper triangular matrix.");
+//         return values[(i * (2 * this->_rows - i + 1)) / 2];
+//     }
 
-    inline auto _row(size_t row) const {
-        if constexpr (OrderT == OrderType::RowMajor)
-            return ContiguousBlockPtrBuffer<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row);
-        else if constexpr (OrderT == OrderType::ColumnMajor)
-            return StridePtrBuffer<T>(values.data() + (row * (row + 1)) / 2, this->_cols - row, this->_rows);
-    }
+//     inline auto _row(size_t row) {
+//         if constexpr (OrderT == OrderType::RowMajor)
+//             return FixedStridePtrBuffer<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row);
+//         else if constexpr (OrderT == OrderType::ColumnMajor)
+//             return NonContiguousBlockPtrBuffer<T>(values.data() + (row * (row + 1)) / 2, this->_cols - row, this->_rows);
+//     }
+    
+//     inline auto _row(size_t row) const {
+//         if constexpr (OrderT == OrderType::RowMajor)
+//             return FixedStridePtrBuffer<const T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row);
+//         else if constexpr (OrderT == OrderType::ColumnMajor)
+//             return NonContiguousBlockPtrBuffer<const T>(values.data() + (row * (row + 1)) / 2, this->_cols - row, this->_rows);
+//     }
 
-    inline auto _column(size_t col) const {
-        if constexpr (OrderT == OrderType::RowMajor)
-            return StridePtrBuffer<T>(values.data() + (col * (2 * this->_rows - col + 1)) / 2, col + 1, this->_cols);
-        else if constexpr (OrderT == OrderType::ColumnMajor)
-            return ContiguousBlockPtrBuffer<T>(values.data() + (col * (col + 1)) / 2, col + 1);
-    }
-};
+//     inline auto _column(size_t col) {
+//         if constexpr (OrderT == OrderType::RowMajor)
+//             return NonContiguousBlockPtrBuffer<T>(values.data() + (col * (2 * this->_rows - col + 1)) / 2, col + 1, this->_cols);
+//         else if constexpr (OrderT == OrderType::ColumnMajor)
+//             return FixedStridePtrBuffer<T>(values.data() + (col * (col + 1)) / 2, col + 1);
+//     }
 
-// ==============================
-// Dense Matrix: Lower Triangular
-// ==============================
-template <typename T, OrderType OrderT>
-class DenseMatrixData<T, FormType::LowerTriangular, OrderT>
-    : public MatrixDataBase<DenseMatrixData<T, FormType::LowerTriangular, OrderT>, T, FormType::LowerTriangular, OrderT> {
-public:
-    DenseMatrixData(size_t rows, size_t cols)
-        : MatrixDataBase<DenseMatrixData, T, FormType::LowerTriangular, OrderT>(rows, cols),
-          values(rows * (rows + 1) / 2) {}
+//     inline auto _column(size_t col) const {
+//         if constexpr (OrderT == OrderType::RowMajor)
+//             return NonContiguousBlockPtrBuffer<const T>(values.data() + (col * (2 * this->_rows - col + 1)) / 2, col + 1, this->_cols);
+//         else if constexpr (OrderT == OrderType::ColumnMajor)
+//             return FixedStridePtrBuffer<const T>(values.data() + (col * (col + 1)) / 2, col + 1);
+//     }
+// };
 
-    DenseMatrixData(size_t rows, size_t cols, const T& value)
-        : MatrixDataBase<DenseMatrixData, T, FormType::LowerTriangular, OrderT>(rows, cols),
-          values(rows * (rows + 1) / 2, value) {}
+// // ==============================
+// // Dense Matrix: Lower Triangular
+// // ==============================
+// template <typename T, OrderType OrderT>
+// class DenseMatrixData<T, FormType::LowerTriangular, OrderT>
+//     : public MatrixDataBase<DenseMatrixData<T, FormType::LowerTriangular, OrderT>, T, FormType::LowerTriangular, OrderT> {
+// public:
+//     DenseMatrixData(size_t rows, size_t cols)
+//         : MatrixDataBase<DenseMatrixData, T, FormType::LowerTriangular, OrderT>(rows, cols),
+//           values(rows * (rows + 1) / 2) {}
 
-    DenseMatrixData(size_t rows, size_t cols, const T* values, size_t numValues)
-        : MatrixDataBase<DenseMatrixData, T, FormType::LowerTriangular, OrderT>(rows, cols){
-            if (numValues != rows * (rows + 1) / 2)
-                throw std::invalid_argument("Invalid number of values for lower triangular matrix.");
-                this->values = std::vector<T>(values, values + numValues);
-        }
+//     DenseMatrixData(size_t rows, size_t cols, const T& value)
+//         : MatrixDataBase<DenseMatrixData, T, FormType::LowerTriangular, OrderT>(rows, cols),
+//           values(rows * (rows + 1) / 2, value) {}
+
+//     DenseMatrixData(size_t rows, size_t cols, const T* values, size_t numValues)
+//         : MatrixDataBase<DenseMatrixData, T, FormType::LowerTriangular, OrderT>(rows, cols){
+//             if (numValues != rows * (rows + 1) / 2)
+//                 throw std::invalid_argument("Invalid number of values for lower triangular matrix.");
+//                 this->values = std::vector<T>(values, values + numValues);
+//         }
 
 
-    std::vector<T> values; ///< Flat array for lower triangular matrix data
+//     std::vector<T> values; ///< Flat array for lower triangular matrix data
 
-protected:
-    friend class MatrixDataBase<DenseMatrixData<T, FormType::LowerTriangular, OrderT>, T, FormType::LowerTriangular, OrderT>;
-    inline T& _element(size_t i, size_t j) {
-        if (i < j) throw std::out_of_range("Accessing non-stored element in lower triangular matrix.");
-        return values[(j * (2 * this->_rows - j + 1)) / 2 + (i - j)];
-    }
+// protected:
+//     friend class MatrixDataBase<DenseMatrixData<T, FormType::LowerTriangular, OrderT>, T, FormType::LowerTriangular, OrderT>;
+//     inline T& _element(size_t i, size_t j) {
+//         if (i < j) throw std::out_of_range("Accessing non-stored element in lower triangular matrix.");
+//         return values[(j * (2 * this->_rows - j + 1)) / 2 + (i - j)];
+//     }
 
-    inline const T& _element(size_t i, size_t j) const {
-        if (i < j) throw std::out_of_range("Accessing non-stored element in lower triangular matrix.");
-        return values[(j * (2 * this->_rows - j + 1)) / 2 + (i - j)];
-    }
+//     inline const T& _element(size_t i, size_t j) const {
+//         if (i < j) throw std::out_of_range("Accessing non-stored element in lower triangular matrix.");
+//         return values[(j * (2 * this->_rows - j + 1)) / 2 + (i - j)];
+//     }
 
-    inline auto _row(size_t row) const {
-        if constexpr (OrderT == OrderType::RowMajor)
-            return ContiguousBlockPtrBuffer<T>(values.data() + (row * (row + 1)) / 2, row + 1);
-        else if constexpr (OrderT == OrderType::ColumnMajor)
-            return StridePtrBuffer<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row, this->_rows);
-    }
+//     inline auto _row(size_t row) {
+//         if constexpr (OrderT == OrderType::RowMajor)
+//             return FixedStridePtrBuffer<T>(values.data() + (row * (row + 1)) / 2, row + 1);
+//         else if constexpr (OrderT == OrderType::ColumnMajor)
+//             return NonContiguousBlockPtrBuffer<T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row, this->_rows);
+//     }
 
-    inline auto _column(size_t col) const {
-        if constexpr (OrderT == OrderType::RowMajor)
-            return StridePtrBuffer<T>(values.data() + (col * (2 * this->_rows - col + 1)) / 2, this->_rows - col, this->_cols);
-        else if constexpr (OrderT == OrderType::ColumnMajor)
-            return ContiguousBlockPtrBuffer<T>(values.data() + (col * (col + 1)) / 2, col + 1);
-    }
-};
+//     inline auto _row(size_t row) const {
+//         if constexpr (OrderT == OrderType::RowMajor)
+//             return FixedStridePtrBuffer<const T>(values.data() + (row * (row + 1)) / 2, row + 1);
+//         else if constexpr (OrderT == OrderType::ColumnMajor)
+//             return NonContiguousBlockPtrBuffer<const T>(values.data() + (row * (2 * this->_rows - row + 1)) / 2, this->_cols - row, this->_rows);
+//     }
+
+//     inline auto _column(size_t col) {
+//         if constexpr (OrderT == OrderType::RowMajor)
+//             return NonContiguousBlockPtrBuffer<T>(values.data() + (col * (2 * this->_rows - col + 1)) / 2, this->_rows - col, this->_cols);
+//         else if constexpr (OrderT == OrderType::ColumnMajor)
+//             return FixedStridePtrBuffer<T>(values.data() + (col * (col + 1)) / 2, col + 1);
+//     }
+
+//     inline auto _column(size_t col) const {
+//         if constexpr (OrderT == OrderType::RowMajor)
+//             return NonContiguousBlockPtrBuffer<const T>(values.data() + (col * (2 * this->_rows - col + 1)) / 2, this->_rows - col, this->_cols);
+//         else if constexpr (OrderT == OrderType::ColumnMajor)
+//             return FixedStridePtrBuffer<const T>(values.data() + (col * (col + 1)) / 2, col + 1);
+//     }
+// };
 
 #endif // MATRIX_DATA_H
