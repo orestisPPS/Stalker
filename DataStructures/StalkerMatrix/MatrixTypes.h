@@ -11,7 +11,7 @@ enum class MatrixStorageType {
 
 enum class FormType {
     Symmetric,
-    NonSymmetric,
+    Full,
     UpperTriangular,
     LowerTriangular,
     None
@@ -21,6 +21,13 @@ enum class OrderType {
     RowMajor,
     ColumnMajor,
     None
+};
+
+enum class SubstructureType {
+    Row,
+    Column,
+    Diagonal,
+    Block
 };
 
 #endif // MATRIX_TYPES_H

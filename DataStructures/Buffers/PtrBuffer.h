@@ -3,14 +3,9 @@
 
 #include <cstddef>
 #include <stdexcept>
-#include "StrideIterator.h"
-
-enum class MatrixBufferType {
-    Row,
-    Column,
-    Diagonal,
-    Block
-};
+#include <vector>
+#include <cstring>
+#include "../Iterators/StrideIterator.h"
 
 /**
  * @class PtrBufferBase
@@ -79,7 +74,7 @@ public:
      * @brief Returns the number of elements in the buffer.
      * @return Size of the buffer.
      */
-    size_t size() const { return _size; }
+    inline size_t size() const { return _size; }
 
     /**
      * @brief Returns an iterator to the beginning of the buffer.
@@ -104,6 +99,12 @@ public:
      * @return Const iterator pointing past the last element.
      */
     inline auto cend() const { return child().cend(); }
+
+    inline std::vector<T> toVector() const {
+        std::vector<T> vector(this->_size);
+        std::memcpy(vector.data(), this->_data_start, this->_size * sizeof(T));
+        return vector;
+    }
 
 protected:
     T* _data_start;        ///< Pointer to the start of the buffer.
@@ -209,115 +210,6 @@ public:
 
     inline FixedStrideIterator<const T> cend() const {
         return FixedStrideIterator<const T>(this->_data_start + this->_size * this->_stride, this->_stride);
-    }
-};
-
-
-/**
- * @class NonContiguousBlockPtrBuffer
- * @brief Represents a non-contiguous block of matrix data.
- * 
- * This buffer is used to access non-contiguous blocks such as columns in row-major matrices
- * or rows in column-major matrices. It provides efficient access and iteration over these blocks
- * by internally managing strides and dimensions.
- * 
- * @tparam T Type of the elements in the buffer.
- */
-template <typename T>
-class NonContiguousBlockPtrBuffer : public PtrBufferBase<T, NonContiguousBlockPtrBuffer<T>> {
-private:
-    std::size_t _primaryDim; ///< Number of elements in the primary dimension. Primary dimension is the number of rows for column major order and vice versa.
-    std::size_t _secondaryIdx; ///< Index in the secondary dimension. Secondary dimension is the column index for column major order and vice versa.
-public:
-
-    /**
-     * @brief Constructs a buffer for a non-contiguous block.
-     * 
-     * Use this constructor when the block is not stored contiguously in memory (e.g., columns in a row-major matrix).
-     * 
-     * @param data_start Pointer to the first element of the block.
-     * @param size Number of elements in the block.
-     * @param primaryDim The number of rows (or columns) in the primary dimension of the matrix.
-     *                   For example, for a column in a row-major matrix, this is the number of rows.
-     * @param stride The distance (in memory) between elements in the block. For example:
-     *   - For columns in a row-major matrix, the stride is the number of columns.
-     *   - For rows in a column-major matrix, the stride is the number of rows.
-     * @param secondaryIdx The index in the secondary dimension. For example:
-     *   - For columns in a row-major matrix, this is the column index.
-     *   - For rows in a column-major matrix, this is the row index.
-     * 
-     * @example Accessing a read-only column:
-     * ```cpp
-     * double matrix[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-     * NonContiguousBlockPtrBuffer<const double> colBuffer(matrix + 1, 3, 3, 3);
-     * // Buffer contains: 2, 5, 8
-     * ```
-     */
-    NonContiguousBlockPtrBuffer(T* data_start, std::size_t size, std::size_t primaryDim, std::ptrdiff_t stride, std::size_t secondaryIdx = 0)
-        : PtrBufferBase<T, NonContiguousBlockPtrBuffer<T>>(data_start, size, stride),
-          _primaryDim(primaryDim), _secondaryIdx(secondaryIdx) {}
-
-    /**
-     * @brief Constructs a const buffer for a non-contiguous block.
-     * 
-     * This overload is used for blocks that should remain immutable (e.g., read-only columns).
-     * 
-     * @param data_start Pointer to the first element of the block.
-     * @param size Number of elements in the block.
-     * @param primaryDim The number of rows (or columns) in the primary dimension of the matrix.
-     *                   For example, for a column in a row-major matrix, this is the number of rows.
-     * @param stride The distance (in memory) between elements in the block. For example:
-     *   - For columns in a row-major matrix, the stride is the number of columns.
-     *   - For rows in a column-major matrix, the stride is the number of rows.
-     * @param secondaryIdx The index in the secondary dimension. For example:
-     *   - For columns in a row-major matrix, this is the column index.
-     *   - For rows in a column-major matrix, this is the row index.
-     * 
-     * @example Accessing a read-only column:
-     * ```cpp
-     * double matrix[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-     * NonContiguousBlockPtrBuffer<const double> colBuffer(matrix + 1, 3, 3, 3);
-     * // Buffer contains: 2, 5, 8
-     * ```
-     */
-    NonContiguousBlockPtrBuffer(const T* data_start, std::size_t size, std::size_t primaryDim, std::ptrdiff_t stride, std::size_t secondaryIdx = 0)
-        : PtrBufferBase<T, NonContiguousBlockPtrBuffer<T>>(const_cast<T*>(data_start), size, stride),
-          _primaryDim(primaryDim), _secondaryIdx(secondaryIdx) {}
-
-    inline T& operator[](std::size_t i) {
-        return *(this->_data_start + i * this->_stride); 
-    }
-
-    inline const T& operator[](std::size_t i) const {
-        return *(UpperTriangularMatrixIterator<T>(this->_data_start, this->_stride, _primaryDim, 0, _secondaryIdx) + i); 
-    }
-
-    inline T& at(std::size_t i) {
-        if (i >= this->_size)
-        throw std::out_of_range("MatrixPtrBuffer index out of range");
-        return *(this->_data_start + i * this->_stride); 
-    }
-
-    inline const T& at(std::size_t i) const {
-        if (i >= this->_size)
-        throw std::out_of_range("MatrixPtrBuffer index out of range");
-        return *(UpperTriangularMatrixIterator<T>(this->_data_start, this->_stride, _primaryDim, 0, _secondaryIdx) + i); 
-    }
-
-    inline UpperTriangularMatrixIterator<T> begin() {
-        return UpperTriangularMatrixIterator<T>(this->_data_start, this->_stride, _primaryDim, 0, _secondaryIdx);
-    }
-
-    inline UpperTriangularMatrixIterator<T> end() {
-        return UpperTriangularMatrixIterator<T>(this->_data_start, this->_stride, _primaryDim, this->_size, _secondaryIdx);
-    }
-
-    inline UpperTriangularMatrixIterator<const T> cbegin() const {
-        return UpperTriangularMatrixIterator<const T>(this->_data_start, this->_stride, _primaryDim, 0, _secondaryIdx);
-    }
-
-    inline UpperTriangularMatrixIterator<const T> cend() const {
-        return UpperTriangularMatrixIterator<const T>(this->_data_start, this->_stride, _primaryDim, this->_size, _secondaryIdx);
     }
 };
 

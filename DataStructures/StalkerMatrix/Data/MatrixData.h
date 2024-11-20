@@ -4,7 +4,7 @@
 #include <vector>
 #include <stdexcept>
 #include <unordered_map>
-#include "PtrBuffer.h"
+#include "../../Buffers/PtrBuffer.h"
 #include "../MatrixTypes.h"
 
 // =============================
