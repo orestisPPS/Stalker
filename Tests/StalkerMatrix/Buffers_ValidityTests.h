@@ -2,8 +2,8 @@
 #define MATRIXBUFFERS_VALIDITYTESTS_H
 
 #include "../STLKR_TestBase.h"
-#include "../StalkerMatrix/Data/PtrBuffer.h"
-#include <vector>
+#include "../../DataStructures/Buffers/PtrBuffer.h"
+#include "../../DataStructures/StalkerMatrix/Buffers/GeneralMatrixPtrBuffers.h"
 #include <iostream>
 #include <cassert>
 
@@ -26,20 +26,20 @@ namespace STLKR_Tests {
             // Define a 4x5 matrix (4 rows, 5 columns)
             std::vector<int> matrixData = _generateMatrixData(4, 5);
 
-            // Test ContiguousBlockPtrBuffer (Row in Row-Major)
-            ContiguousBlockPtrBuffer<int> contiguousRowBuffer(matrixData.data(), 5, 1); // Row-major row buffer
-            _runBufferTests(contiguousRowBuffer, "ContiguousBlockPtrBuffer (Row in Row-Major)");
+            // Test FixedStridePtrBuffer (Row in Row-Major)
+            GeneralMatrixPtrBuffer<int> contiguousRowBuffer(matrixData.data(), 5); // Row-major row buffer
+            _runBufferTests(contiguousRowBuffer, "FixedStridePtrBuffer (Row in Row-Major)");
 
-            // Test NonContiguousBlockPtrBuffer (Column in Row-Major)
-            NonContiguousBlockPtrBuffer<int> nonContiguousColumnBuffer(matrixData.data(), 4, 5, 5); // Row-major column buffer
+            // // Test NonContiguousBlockPtrBuffer (Column in Row-Major)
+            GeneralMatrixPtrBuffer<int> nonContiguousColumnBuffer(matrixData.data(), 4, 4, 1); // Row-major column buffer
             _runBufferTests(nonContiguousColumnBuffer, "NonContiguousBlockPtrBuffer (Column in Row-Major)");
 
-            // Test ContiguousBlockPtrBuffer (Column in Column-Major)
-            ContiguousBlockPtrBuffer<int> contiguousColumnBuffer(matrixData.data(), 4, 5); // Column-major column buffer
-            _runBufferTests(contiguousColumnBuffer, "ContiguousBlockPtrBuffer (Column in Column-Major)");
+            // Test FixedStridePtrBuffer (Column in Column-Major)
+            GeneralMatrixPtrBuffer<int> contiguousColumnBuffer(matrixData.data(), 4); // Column-major column buffer
+            _runBufferTests(contiguousColumnBuffer, "FixedStridePtrBuffer (Column in Column-Major)");
 
-            // Test NonContiguousBlockPtrBuffer (Row in Column-Major)
-            NonContiguousBlockPtrBuffer<int> nonContiguousRowBuffer(matrixData.data(), 5, 4, 1); // Column-major row buffer
+            // // Test NonContiguousBlockPtrBuffer (Row in Column-Major)
+            GeneralMatrixPtrBuffer<int> nonContiguousRowBuffer(matrixData.data(), 5, 4, 1); // Column-major row buffer
             _runBufferTests(nonContiguousRowBuffer, "NonContiguousBlockPtrBuffer (Row in Column-Major)");
         }
 
@@ -75,9 +75,9 @@ namespace STLKR_Tests {
         bool _testBufferElementAccess(BufferType& buffer, const std::string& bufferName) {
             try {
                 for (std::size_t i = 0; i < buffer.size(); ++i) {
-                    int expectedValue = buffer.at(i); // Expected value
-                    if (buffer.at(i) != expectedValue) {
-                        std::cout << bufferName << ": Expected: " << expectedValue << ", Found: " << buffer.at(i)
+                    int expectedValue = buffer[i]; // Expected value
+                    if (buffer[i] != expectedValue) {
+                        std::cout << bufferName << ": Expected: " << expectedValue << ", Found: " << buffer[i]
                                   << " at index " << i << std::endl;
                         return false;
                     }
@@ -94,7 +94,7 @@ namespace STLKR_Tests {
             try {
                 std::size_t i = 0;
                 for (auto it = buffer.begin(); it != buffer.end(); ++it, ++i) {
-                    int expectedValue = buffer.at(i); // Expected value based on iterator logic
+                    int expectedValue = buffer[i]; // Expected value based on iterator logic
                     if (*it != expectedValue) {
                         std::cout << bufferName << ": Expected: " << expectedValue << ", Found: " << *it
                                   << " at iterator position " << i << std::endl;
@@ -113,7 +113,7 @@ namespace STLKR_Tests {
             try {
                 std::size_t i = 0;
                 for (auto it = buffer.cbegin(); it != buffer.cend(); ++it, ++i) {
-                    int expectedValue = buffer.at(i); // Expected value based on const iterator logic
+                    int expectedValue = buffer[i]; // Expected value based on const iterator logic
                     if (*it != expectedValue) {
                         std::cout << bufferName << ": Expected: " << expectedValue << ", Found: " << *it
                                   << " at const iterator position " << i << std::endl;
@@ -131,7 +131,7 @@ namespace STLKR_Tests {
         bool _testBufferBounds(BufferType& buffer, const std::string& bufferName) {
             try {
                 // Access beyond buffer size should throw
-                buffer.at(buffer.size());
+                buffer[buffer.size()] = 0;
                 std::cout << bufferName << ": Expected out_of_range exception, but none was thrown." << std::endl;
                 return false;
             } catch (const std::out_of_range&) {

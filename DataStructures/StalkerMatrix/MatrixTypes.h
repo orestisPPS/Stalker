@@ -2,7 +2,7 @@
 #define MATRIX_TYPES_H
 
 enum class MatrixStorageType {
-    Dense,
+    General,
     COO,
     CompressedSparse,
     Diagonal,
@@ -10,8 +10,9 @@ enum class MatrixStorageType {
 };
 
 enum class FormType {
-    Symmetric,
     Full,
+    Symmetric,
+    NonSymmetric,
     UpperTriangular,
     LowerTriangular,
     None
@@ -23,7 +24,7 @@ enum class OrderType {
     None
 };
 
-enum class SubstructureType {
+enum class MatrixSubstructureType {
     Row,
     Column,
     Diagonal,

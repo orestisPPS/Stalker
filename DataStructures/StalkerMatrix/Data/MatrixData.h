@@ -69,7 +69,7 @@ private:
 };
 
 // ==============================
-// Dense Matrix: Non-Symmetric
+// General Matrix: Non-Symmetric
 // ==============================
 template <typename T, FormType FormT, OrderType OrderT>
 class DenseMatrixData : public MatrixDataBase<DenseMatrixData<T, FormT, OrderT>, T, FormT, OrderT> {
@@ -137,7 +137,7 @@ protected:
 };
 
 // ==============================
-// Dense Matrix: Symmetric
+// General Matrix: Symmetric
 // ==============================
 template <typename T, OrderType OrderT>
 class DenseMatrixData<T, FormType::Symmetric, OrderT>
@@ -217,7 +217,7 @@ inline auto _column(size_t col) const {
 };
 
 // // ==============================
-// // Dense Matrix: Upper Triangular
+// // General Matrix: Upper Triangular
 // // ==============================
 // template <typename T, OrderType OrderT>
 // class DenseMatrixData<T, FormType::UpperTriangular, OrderT>
@@ -282,7 +282,7 @@ inline auto _column(size_t col) const {
 // };
 
 // // ==============================
-// // Dense Matrix: Lower Triangular
+// // General Matrix: Lower Triangular
 // // ==============================
 // template <typename T, OrderType OrderT>
 // class DenseMatrixData<T, FormType::LowerTriangular, OrderT>
