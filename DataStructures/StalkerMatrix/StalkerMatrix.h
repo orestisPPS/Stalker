@@ -11,7 +11,7 @@
                       std::is_same<T, float>::value, "StalkerMatrix only supports double, int, unsigned, short, and float types.");
 
                       
-            StalkerMatrix(unsigned rows, unsigned columns, MatrixStorageType storageType = General, FormType FormT = NonSymmetric, OrderType OrderT = RowMajor) :
+            StalkerMatrix(unsigned rows, unsigned columns, MatrixStorageLayout storageType = General, FormType FormT = NonSymmetric, OrderType OrderT = RowMajor) :
                           _rows(rows), _columns(columns), _order(order), _storageType(storageType), _FormT(FormT), _order(OrderT) {}
 
             T& operator()(unsigned row, unsigned col) {
@@ -25,14 +25,14 @@
             unsigned getNumRows() const { return _rows; }
             unsigned getNumColumns() const { return _columns; }
             OrderType getElementsOrderType() const { return _order; }
-            MatrixStorageType getStorageType() const { return _storageType; }
+            MatrixStorageLayout getStorageType() const { return _storageType; }
             FormType getFormType() const { return _FormT; }
 
 
         protected:
             unsigned _rows;
             unsigned _columns;
-            MatrixStorageType _storageType;
+            MatrixStorageLayout _storageType;
             FormType _FormT;
             OrderType _order;
 

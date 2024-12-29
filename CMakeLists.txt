@@ -42,7 +42,8 @@
 cmake_minimum_required(VERSION 3.27)
 project(stalker)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2 -mfma -O0")
 
 # Define the stalker_core header-only library
@@ -50,8 +51,10 @@ add_library(stalker_core INTERFACE)
 
 # Add include directories to the stalker_core library
 target_include_directories(stalker_core INTERFACE
-        ${PROJECT_SOURCE_DIR}/StalkerVector
-        ${PROJECT_SOURCE_DIR}/StalkerMatrix
+        ${PROJECT_SOURCE_DIR}/DataStructures/StalkerVector
+        ${PROJECT_SOURCE_DIR}/DataStructures/StalkerMatrix
+        ${PROJECT_SOURCE_DIR}/DataStructures/Iterators
+        ${PROJECT_SOURCE_DIR}/DataStructures/Buffers
         ${PROJECT_SOURCE_DIR}/Threading
         ${PROJECT_SOURCE_DIR}/Utility
 )

@@ -26,6 +26,14 @@
 template <typename T, typename ChildPtrBuffer>
 class PtrBufferBase {
 public:
+    // STL-compliant container traits
+    using value_type = T;
+    using pointer = T*;
+    using const_pointer = const T*;
+    using reference = T&;
+    using const_reference = const T&;
+    using size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
 
     /**
      * @brief Accesses the element at the specified index.
@@ -38,7 +46,6 @@ public:
         if constexpr (RawDoggySize)
             checkIndex(i, _size, "PtrBufferBase::operator[]");
         return child()._at(i);
-        // return child()[i];
     }
 
     /**
@@ -51,7 +58,6 @@ public:
     inline const T& operator[](std::size_t i) const {
         if constexpr (RawDoggyIndex)
             checkIndex(i, _size, "PtrBufferBase::operator[]");
-        // return child()[i];
         return child()._at(i);
     }
 
@@ -92,7 +98,6 @@ public:
     }
 
 protected:
-
     /**
      * @brief Constructs a buffer with the given parameters.
      *
@@ -112,7 +117,6 @@ protected:
      */
     PtrBufferBase(const T* data_start, std::size_t size, std::ptrdiff_t stride)
         : _data_start(const_cast<T*>(data_start)), _size(size), _stride(stride) {}
-
 
     T* _data_start;        ///< Pointer to the start of the buffer.
     std::size_t _size;     ///< Number of elements in the buffer.
@@ -143,12 +147,26 @@ public:
         : PtrBufferBase<T, FixedStridePtrBuffer<T>>(const_cast<T*>(data_start), size, stride) {}
 
 
-    inline T& _at(std::size_t i) { return *(this->_data_start + i * this->_stride); }
-    inline const T& _at(std::size_t i) const { return *(this->_data_start + i * this->_stride); }
-    inline FixedStrideIterator<T> _begin() { return FixedStrideIterator<T>(this->_data_start, this->_stride); }
-    inline FixedStrideIterator<T> _end() { return FixedStrideIterator<T>(this->_data_start + this->_size * this->_stride, this->_stride); }
-    inline FixedStrideIterator<const T> _cbegin() const { return FixedStrideIterator<const T>(this->_data_start, this->_stride); }
-    inline FixedStrideIterator<const T> _cend() const { return FixedStrideIterator<const T>(this->_data_start + this->_size * this->_stride, this->_stride); }
+    inline T& _at(std::size_t i) {
+        return *(this->_data_start + i * this->_stride);
+    }
+    inline const T& _at(std::size_t i) const {
+        return *(this->_data_start + i * this->_stride);
+    }
+    inline FixedStrideIterator<T> _begin() {
+        return FixedStrideIterator<T>(this->_data_start, this->_stride);
+    }
+    inline FixedStrideIterator<T> _end() {
+        return FixedStrideIterator<T>(this->_data_start + this->_size * this->_stride, this->_stride);
+    }
+    inline FixedStrideIterator<const T> _cbegin() const {
+        return FixedStrideIterator<const T>(this->_data_start, this->_stride);
+    }
+    inline FixedStrideIterator<const T> _cend() const {
+        return FixedStrideIterator<const T>(this->_data_start + this->_size * this->_stride, this->_stride);
+    }
 };
+
+
 
 #endif // PTRBUFFER_H

@@ -2,12 +2,12 @@
 #define CHECKERS_H
 
 #include <type_traits>
+#include <stdexcept>
 #include <iostream>
 #include <string>
 #include <stdexcept>
 #include <unordered_map>
 #include "Printers.h"
-
 
 static inline void checkSize(const std::size_t size, const std::size_t expectedSize, const std::string& message = "") {
     if (size != expectedSize)
@@ -41,13 +41,16 @@ static inline void checkIndex(const std::size_t index, const std::size_t size, c
                         : throw std::out_of_range(Printers::errorMessage(message + ": Index (" + std::to_string(index) + ") is out of bounds. The size is " + std::to_string(size) + "."));
 }
 
+static inline void checkMatrixIndeces(const std::size_t row, const std::size_t col, const std::size_t rows, const std::size_t cols, const std::string& message = "") {
+    if (row >= rows || col >= cols)
+        message.empty() ? throw std::out_of_range(Printers::errorMessage("Matrix index (" + std::to_string(row) + ", " + std::to_string(col) + ") is out of bounds. The matrix is " + std::to_string(rows) + "x" + std::to_string(cols) + "."))
+                        : throw std::out_of_range(Printers::errorMessage(message + ": Matrix index (" + std::to_string(row) + ", " + std::to_string(col) + ") is out of bounds. The matrix is " + std::to_string(rows) + "x" + std::to_string(cols) + "."));
+}
+
 static inline void checkSquareMatrix(const std::size_t rows, const std::size_t cols, const std::string& message = "") {
     if (rows != cols)
         message.empty() ? throw std::invalid_argument(Printers::errorMessage("Matrix not square. It has " + std::to_string(rows) + " rows and " + std::to_string(cols) + " columns."))
                         : throw std::invalid_argument(Printers::errorMessage(message + ": Matrix not square. It has " + std::to_string(rows) + " rows and " + std::to_string(cols) + " columns."));
 }
-
-
-
 
 #endif // CHECKERS_H

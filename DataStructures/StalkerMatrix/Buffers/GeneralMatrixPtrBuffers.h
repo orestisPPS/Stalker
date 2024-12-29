@@ -4,56 +4,25 @@
 #include "../Buffers/PtrBuffer.h"
 #include "MatrixTypes.h"
 
-template <typename T, typename Derived>
-class GeneralMatrixPtrBufferBase : public PtrBufferBase<T, Derived> {
-public:
-    inline T& _at(std::size_t i) { return *(this->_data_start + i * this->_stride); }
-    inline const T& _at(std::size_t i) const { return *(this->_data_start + i * this->_stride); }
-    inline FixedStrideIterator<T> _begin() { return FixedStrideIterator<T>(this->_data_start, this->_stride); }
-    inline FixedStrideIterator<T> _end() { return FixedStrideIterator<T>(this->_data_start + this->_size * this->_stride, this->_stride); }
-    inline FixedStrideIterator<const T> _cbegin() const { return FixedStrideIterator<const T>(this->_data_start, this->_stride); }
-    inline FixedStrideIterator<const T> _cend() const { return FixedStrideIterator<const T>(this->_data_start + this->_size * this->_stride, this->_stride); }
-
-protected:
-    GeneralMatrixPtrBufferBase(T* data_start, std::size_t size, std::ptrdiff_t _stride) : PtrBufferBase<T, Derived>(data_start, size, _stride) {}
-    GeneralMatrixPtrBufferBase(const T* data_start, std::size_t size, std::ptrdiff_t _stride) : PtrBufferBase<T, Derived>(const_cast<T*>(data_start), size, _stride) {}
-
-private:
-    inline Derived& child() { return static_cast<Derived&>(*this); }
-    inline const Derived& child() const { return static_cast<const Derived&>(*this); }
-};
-
-
-
-
-/**
- * @brief A buffer class for full dense matrix pointers.
- * 
- * This class provides a buffer for full dense matrix pointers, inheriting from GeneralMatrixPtrBufferBase.
- * It allows for the creation of buffers for rows or columns from both row-major and column-major full matrices.
- * 
- * The class supports the following constructors:
- * - Constructors  that initializes the buffer with a given data start pointer / constant pointer, size, and stride.
- * - Constructors that initializes the buffer with a given data start pointer / constant pointer, size, primary dimension size, and stride.
- * 
- * @tparam T The type of the elements in the matrix.
- */
 template <typename T>
-class GeneralMatrixPtrBuffer : public GeneralMatrixPtrBufferBase<T, GeneralMatrixPtrBuffer<T>> {
+class GeneralMatrixPtrBuffer : public PtrBufferBase<T, GeneralMatrixPtrBuffer<T>> {
 public:
-    /**
-     * @brief Constructs a GeneralMatrixPtrBuffer with a given data start pointer, size, and stride.
-     *
-     * This constructor initializes a GeneralMatrixPtrBuffer to buffer a row from a row-major full matrix 
-     * or a column from a column-major full matrix.
-     *
-     * @param data_start Pointer to the start of the data.
-     * @param size The size of the matrix.
-     * @param stride The stride between elements (default is 1).
-     */
-    GeneralMatrixPtrBuffer(T* data_start, std::size_t size, std::ptrdiff_t stride = 1) :
-        GeneralMatrixPtrBufferBase<T, GeneralMatrixPtrBuffer<T>>(data_start, size, stride) {}
 
+    /**
+     * @brief A buffer class for full dense matrix pointers.
+     * 
+     * This class provides a buffer for full dense matrix pointers, inheriting from GeneralMatrixPtrBufferBase.
+     * It allows for the creation of buffers for rows or columns from both row-major and column-major full matrices.
+     * 
+     * The class supports the following constructors:
+     * - Constructors  that initializes the buffer with a given data start pointer / constant pointer, size, and stride.
+     * - Constructors that initializes the buffer with a given data start pointer / constant pointer, size, primary dimension size, and stride.
+     * 
+     * @tparam T The type of the elements in the matrix.
+     */
+    GeneralMatrixPtrBuffer(T* data_start, std::size_t size, std::ptrdiff_t _stride = 1) :
+        PtrBufferBase<T, GeneralMatrixPtrBuffer<T>>(data_start, size, _stride = 1) {}
+        
     /**
      * @brief Constructs a GeneralMatrixPtrBuffer with a given constant data start pointer, size, and stride.
      *
@@ -64,8 +33,8 @@ public:
      * @param size The size of the matrix.
      * @param stride The stride between elements (default is 1).
      */
-    GeneralMatrixPtrBuffer(const T* data_start, std::size_t size, std::ptrdiff_t stride = 1) :
-        GeneralMatrixPtrBufferBase<T, GeneralMatrixPtrBuffer<T>>(data_start, size, stride) {}
+    GeneralMatrixPtrBuffer(const T* data_start, std::size_t size, std::ptrdiff_t _stride) :
+        PtrBufferBase<T, GeneralMatrixPtrBuffer<T>>(const_cast<T*>(data_start), size, _stride) {}
 
     /**
      * @brief Constructs a GeneralMatrixPtrBuffer with a given constant data start pointer, size, primary dimension size, and stride.
@@ -79,7 +48,7 @@ public:
      * @param stride The stride between elements (default is 1).
      */
     GeneralMatrixPtrBuffer(const T* data_start, std::size_t size, std::size_t primaryDimSize, std::ptrdiff_t stride = 1) :
-        GeneralMatrixPtrBufferBase<T, GeneralMatrixPtrBuffer<T>>(data_start, size, primaryDimSize + stride) {}
+        PtrBufferBase<T, GeneralMatrixPtrBuffer<T>>(const_cast<T*>(data_start), size, primaryDimSize + stride) {}
 
     /**
      * @brief Constructs a GeneralMatrixPtrBuffer with a given data start pointer, size, primary dimension size, and stride.
@@ -93,10 +62,15 @@ public:
      * @param stride The stride between elements (default is 1).
      */
     GeneralMatrixPtrBuffer(T* data_start, std::size_t size, std::size_t primaryDimSize, std::ptrdiff_t stride = 1) :
-        GeneralMatrixPtrBufferBase<T, GeneralMatrixPtrBuffer<T>>(data_start, size, primaryDimSize + stride) {}   
+        PtrBufferBase<T, GeneralMatrixPtrBuffer<T>>(data_start, size, primaryDimSize + stride) {}
+
+    inline T& _at(std::size_t i) { return *(this->_data_start + i * this->_stride); }
+    inline const T& _at(std::size_t i) const { return *(this->_data_start + i * this->_stride); }
+    inline FixedStrideIterator<T> _begin() { return FixedStrideIterator<T>(this->_data_start, this->_stride); }
+    inline FixedStrideIterator<T> _end() { return FixedStrideIterator<T>(this->_data_start + this->_size * this->_stride, this->_stride); }
+    inline FixedStrideIterator<const T> _cbegin() const { return FixedStrideIterator<const T>(this->_data_start, this->_stride); }
+    inline FixedStrideIterator<const T> _cend() const { return FixedStrideIterator<const T>(this->_data_start + this->_size * this->_stride, this->_stride); }
+
 };
-
-
-
 
 #endif // STALKER_MATRIX_BUFFERS_H

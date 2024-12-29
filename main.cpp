@@ -1,13 +1,17 @@
 #include <iostream>
-#include "Tests/StalkerVector_ValidityTests.h"
+// #include "Tests/StalkerVector_ValidityTests.h"
 #include "Tests/StalkerMatrix/Iterator_ValidityTests.h"
-#include "Tests/StalkerMatrix/MatrixBuffers_ValidityTests.h"
-#include "Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_PerformanceTests.h"
-#include "Tests/STLKR_PerformanceTests/StalkerVector/SingleThreadPerformance/SingleThreadOperationsPerformanceTest.h"
-#include "Tests/CPUTopologyTest.h"
+#include "Tests/StalkerMatrix/Buffers_ValidityTests.h"
+#include "DataStructures/Concepts/NumericTypeConstraints.h"
+// #include "Tests/StalkerMatrix/DataAccess_ValidityTests.h"
+// #include "Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_PerformanceTests.h"
+// #include "Tests/STLKR_PerformanceTests/StalkerVector/SingleThreadPerformance/SingleThreadOperationsPerformanceTest.h"
+// #include "Tests/CPUTopologyTest.h"
+#include "Utility/Checkers.h"
 // #include "StalkerMatrix/FullMatrixData.h"
 #include <chrono>
-using namespace STLKR_Tests;
+#include <ostream>
+// using namespace STLKR_Tests;
 int main() {
     std::cout << "SLET" << std::endl;
     
@@ -16,8 +20,10 @@ int main() {
 //    
     //STLKR_Tests::StalkerVector_ValidityTests<2>().runTest();
 
-    STLKR_Tests::MatrixStrideIteratorTest().runTest();
+    STLKR_Tests::MatrixBlockIteratorTest().runTest();
     STLKR_Tests::MatrixBuffers_ValidityTests().runTest();
+    // STLKR_Tests::DataAccess_ValidityTests<double>().runTest();
+
     
 auto exportPath = "/home/hal9000/code/stalker/Tests/STLKR_PerformanceTests/StalkerVector/logs";
 //auto singleThreadUnrollFactorTest = STLKR_Tests::SingleThreadOperationsPerformanceTest<40000000>(exportPath);
@@ -40,7 +46,6 @@ auto exportPath = "/home/hal9000/code/stalker/Tests/STLKR_PerformanceTests/Stalk
     //         Index,                    // TestConfig_FillType fillType
     //         O0                         // TestConfig_CompilerFlag flag
     // ).runTest();
-    
-    std::cout << "ΔΩΣΕ ΓΚΑΖΙ ΜΩΡΗ ΑΝΑΠΗΡΗ!!!!!!!!!" << std::endl;
+
     return 0;
 }
