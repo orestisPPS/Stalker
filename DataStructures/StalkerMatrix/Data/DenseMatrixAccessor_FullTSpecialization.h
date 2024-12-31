@@ -1,83 +1,93 @@
 #ifndef DENSEMATRIXDATAACCESSOR_TSPECIALIZATION_H
 #define DENSEMATRIXDATAACCESSOR_TSPECIALIZATION_H
-#include "MatrixData.h"
+#include "MatrixAccessorBase.h"
 
+//=================================================================================================
+// ======================== Fuil Dense Row Major Matrix Template Specialization ===================
+//=================================================================================================
 
 template <typename T, FormType FormT, OrderType OrderT>
-class DenseMatrixAccessor
-    : public MatrixAccessorBase<DenseMatrixAccessor<T, FormT, OrderT>, T, FormT, OrderT> {
+class DenseMatrixAccessor : public MatrixAccessorBase<DenseMatrixAccessor<T, FormT, OrderT>, T, FormT, OrderT> {
+
+using Base = MatrixAccessorBase<DenseMatrixAccessor<T, FormT, OrderT>, T, FormT, OrderT>;
+
 public:
-    DenseMatrixAccessor(size_t rows, size_t cols)
-        : MatrixAccessorBase<DenseMatrixAccessor, T, FormType::Symmetric, OrderT>(rows, cols),
-          values(rows * (rows + 1) / 2) {}
 
-    DenseMatrixAccessor(size_t rows, size_t cols, const T& value)
-        : MatrixAccessorBase<DenseMatrixAccessor, T, FormType::Symmetric, OrderT>(rows, cols),
-          values(rows * (rows + 1) / 2, value) {}
-
-    DenseMatrixAccessor(size_t rows, size_t cols, const T* values, size_t numValues)
-        : MatrixAccessorBase<DenseMatrixAccessor, T, FormType::Symmetric, OrderT>(rows, cols) {
-            if (numValues != rows * (rows + 1) / 2)
-                throw std::invalid_argument("Invalid number of values for symmetric matrix.");
-            this->values = std::vector<T>(values, values + numValues);
+    DenseMatrixAccessor(size_t rows, size_t cols) : Base(rows, cols), values(rows * (rows + 1) / 2) {}
+    DenseMatrixAccessor(size_t rows, size_t cols, const T& value) : Base(rows, cols), values(rows * (rows + 1) / 2, value) {}
+    DenseMatrixAccessor(size_t rows, size_t cols, const T* values, size_t numValues) : Base(rows, cols) {
+        if constexpr (RawDoggySize) {
+            checkSize(numValues, rows * cols, "DenseMatrixAccessor:: Constructor");  
         }
-
-    std::vector<T> values; ///< Flat array for symmetric matrix data
+        this->values = std::vector<T>(values, values + numValues);
+    }
 
 protected:
-    friend class MatrixAccessorBase<DenseMatrixAccessor<T, FormType::Symmetric, OrderT>, T, FormType::Symmetric, OrderT>;
+
+    friend class Base;
+    std::vector<T> values; ///< Flat array for symmetric matrix data
+
     inline T& _element(size_t i, size_t j) {
-        if (i > j) std::swap(i, j);
-        if constexpr (OrderT == OrderType::RowMajor)
-            return values[(i * (2 * this->_rows - i + 1)) / 2 + (j - i)];
-        else if constexpr (OrderT == OrderType::ColumnMajor)
-            return values[(j * (2 * this->_rows - j + 1)) / 2 + (i - j)]; 
+        return values[i * this->_cols + j];
     }
-
     inline const T& _element(size_t i, size_t j) const {
-        if (i > j) std::swap(i, j);
-        if constexpr (OrderT == OrderType::RowMajor)
-            return values[(i * (2 * this->_rows - i + 1)) / 2 + (j - i)];
-        else if constexpr (OrderT == OrderType::ColumnMajor)
-            return values[(j * (2 * this->_rows - j + 1)) / 2 + (i - j)];
+        return values[i * this->_cols + j];
+    }
+    inline auto _row(size_t row) {
+        return GeneralMatrixPtrBuffer<T>(values.data() + row * this->_cols, this->_cols);
+    }
+    inline auto _row(size_t row) const {
+        return GeneralMatrixPtrBuffer<const T>(values.data() + row * this->_cols, this->_cols);
+    }
+    inline auto _column(size_t col) {
+        return GeneralMatrixPtrBuffer<T>(values.data() + col, this->_rows, this->_rows);
+    }
+    inline auto _column(size_t col) const {
+        return GeneralMatrixPtrBuffer<const T>(values.data() + col, this->_rows, this->_cols);
+    }
+};
+
+//=================================================================================================
+// ======================== Fuil Dense Col Major Matrix Template Specialization ===================
+//=================================================================================================
+template <typename T, FormType FormT>
+class DenseMatrixAccessor : public MatrixAccessorBase<DenseMatrixAccessor<T, FormT, OrderType::ColumnMajor>, T, FormT, OrderType::ColumnMajor> {
+
+using Base = MatrixAccessorBase<DenseMatrixAccessor<T, FormT, OrderType::ColumnMajor>, T, FormT, OrderType::ColumnMajor>;
+
+public:
+
+    DenseMatrixAccessor(size_t rows, size_t cols) : Base(rows, cols), values(rows * (rows + 1) / 2) {}
+    DenseMatrixAccessor(size_t rows, size_t cols, const T& value) : Base(rows, cols), values(rows * (rows + 1) / 2, value) {}
+    DenseMatrixAccessor(size_t rows, size_t cols, const T* values, size_t numValues) : Base(rows, cols) {
+        if constexpr (RawDoggySize)
+            checkSize(numValues, rows * cols, "DenseMatrixAccessor:: Constructor");  
+        this->values = std::vector<T>(values, values + numValues);
     }
 
-inline auto _row(size_t row) {
-    if constexpr (OrderT == OrderType::RowMajor)
-        return FixedStridePtrBuffer<T>(
-            values.data() + (row * (2 * this->_rows - row + 1)) / 2, // Offset
-            this->_cols - row); // Length of the row
-    else if constexpr (OrderT == OrderType::ColumnMajor)
-        return UpperTriangularMatrixIterator<T>(values.data() + (row * (row + 1)) / 2, this->cols-row); // Offset
+protected:
+
+    friend class Base;
+    std::vector<T> values;
+
+    inline T& _element(size_t i, size_t j) {
+        return values[j * this->_rows + i];
     }
-
-inline auto _row(size_t row) const {
-    if constexpr (OrderT == OrderType::RowMajor)
-        return FixedStridePtrBuffer<const T>(
-            values.data() + (row * (2 * this->_rows - row + 1)) / 2, // Offset
-            this->_cols - row); // Length of the row
-    else if constexpr (OrderT == OrderType::ColumnMajor)
-        return UpperTriangularMatrixIterator<const T>(values.data() + (row * (row + 1)) / 2, this->cols-row); // Offset
-}
-
-inline auto _column(size_t col) {
-    if constexpr (OrderT == OrderType::RowMajor) {
-        return UpperTriangularMatrixIterator<T>(values.data() + (col * (col + 1)) / 2, col + 1); // Offset
-    } else if constexpr (OrderT == OrderType::ColumnMajor) {
-        return FixedStridePtrBuffer<T>(values.data() + (col * (col + 1)) / 2, col + 1);
+    inline const T& _element(size_t i, size_t j) const {
+        return values[j * this->_rows + i];
     }
-}
-
-inline auto _column(size_t col) const {
-    if constexpr (OrderT == OrderType::RowMajor) {
-        return UpperTriangularMatrixIterator<const T>(values.data() + (col * (col + 1)) / 2, col + 1);                                // Secondary index
-    } else if constexpr (OrderT == OrderType::ColumnMajor) {
-        return FixedStridePtrBuffer<const T>(
-            values.data() + (col * (col + 1)) / 2, // Offset
-            col + 1);                             // Length of the column
+    inline auto _row(size_t row) {
+        return GeneralMatrixPtrBuffer<T>(values.data() + row, this->_cols, this->_cols);
     }
-}
-
+    inline auto _row(size_t row) const {
+        return GeneralMatrixPtrBuffer<const T>(values.data() + row, this->_cols, this->_cols);
+    }
+    inline auto _column(size_t col) {
+        return GeneralMatrixPtrBuffer<T>(values.data() + col * this->_rows, this->_rows);
+    }
+    inline auto _column(size_t col) const {
+        return GeneralMatrixPtrBuffer<const T>(values.data() + col * this->_rows, this->_rows);
+    }
 };
 
 // // ==============================

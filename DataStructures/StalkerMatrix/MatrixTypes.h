@@ -45,7 +45,6 @@ enum class FormType {
     UpperTriangular,    ///< Upper triangular matrix.
     LowerTriangular,    ///< Lower triangular matrix.
     Diagonal,           ///< Diagonal matrix storage.
-
     None                ///< No specific form.
 };
 

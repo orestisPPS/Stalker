@@ -6,7 +6,6 @@
 #include <iostream>
 #include <string>
 #include <stdexcept>
-#include <unordered_map>
 #include "Printers.h"
 
 static inline void checkSize(const std::size_t size, const std::size_t expectedSize, const std::string& message = "") {

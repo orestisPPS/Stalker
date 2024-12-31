@@ -2,10 +2,8 @@
 #define MATRIX_DATA_H
 
 #include <vector>
-#include <stdexcept>
-#include <unordered_map>
-#include "../../Buffers/PtrBuffer.h"
 #include "../MatrixTypes.h"
+#include "../Buffers/GeneralMatrixPtrBuffers.h"
 
 // =============================
 // Base MatrixDataBase Class
@@ -16,7 +14,7 @@ public:
     MatrixAccessorBase(size_t rows, size_t cols) : _rows(rows), _cols(cols) {}
 
     static constexpr FormType FormT = FormT;   
-    static constexpr OrderType OrderT = OrderT; // Expose OrderType
+    static constexpr OrderType OrderT = OrderT;
     inline size_t getNumRows() const { return _rows; }
     inline size_t getNumCols() const { return _cols; }
 
