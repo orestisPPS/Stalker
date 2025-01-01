@@ -13,8 +13,8 @@ class MatrixAccessorBase {
 public:
     MatrixAccessorBase(size_t rows, size_t cols) : _rows(rows), _cols(cols) {}
 
-    static constexpr FormType FormT = FormT;   
-    static constexpr OrderType OrderT = OrderT;
+    static constexpr FormType FormT = Form;   
+    static constexpr OrderType OrderT = Order;
     inline size_t getNumRows() const { return _rows; }
     inline size_t getNumCols() const { return _cols; }
 
@@ -34,6 +34,7 @@ public:
     inline auto row(size_t row) {
         if constexpr (RawDoggyIndex)
             checkIndex(row, _rows, "MatrixAccessorBase::row");
+        return derived()._row(row);
     }
 
     inline const auto row(size_t row) const {

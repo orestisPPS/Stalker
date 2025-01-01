@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <vector>
+#include <cstring>
 #include "../Iterators/StrideIterator.h"
 #include "../../Utility/Checkers.h"
 #include "../../GlobalDefinitions.h"

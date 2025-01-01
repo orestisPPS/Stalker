@@ -6,9 +6,9 @@
 #include <concepts>
 
 template <typename T>
-concept SupportedNumericalType = std::same_as<T, int> || std::same_as<T, short> || 
-                    std::same_as<T, float> || std::same_as<T, double> || 
-                    std::same_as<T, unsigned>;
+concept SupportedNumericalType = std::same_as<T, int>   || std::same_as<T, short>  || 
+                                 std::same_as<T, float> || std::same_as<T, double> || 
+                                 std::same_as<T, unsigned>;
 
 template <typename T>
 concept SupportedNumericalOperations = SupportedNumericalType<T> && requires(T a, T b) {

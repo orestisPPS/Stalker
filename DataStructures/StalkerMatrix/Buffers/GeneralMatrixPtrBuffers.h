@@ -31,7 +31,7 @@ public:
      * or a column from a column-major full matrix.
      * 
      * @param data_start Constant pointer to the start of the data.
-     * @param size The size of the matrix.
+     * @param size The size of the buffer (row or col).
      * @param stride The stride between elements (default is 1).
      */
     GeneralMatrixPtrBuffer(const T* data_start, std::size_t size, std::ptrdiff_t _stride) : Base(const_cast<T*>(data_start), size, _stride) {}
@@ -43,11 +43,11 @@ public:
      * or a column from a row-major full matrix.
      * 
      * @param data_start Pointer to the start of the data.
-     * @param size The size of the matrix.
+     * @param size The size of the buffer (row or col).
      * @param primaryDimSize The size of the primary dimension. Number of rows for row-major matrices, number of columns for column-major matrices.
      * @param stride The stride between elements (default is 1).
      */
-    GeneralMatrixPtrBuffer(T* data_start, std::size_t size, std::size_t primaryDimSize, std::ptrdiff_t stride = 1) : Base(data_start, size, primaryDimSize + stride) {}
+    GeneralMatrixPtrBuffer(T* data_start, std::size_t size, std::size_t primaryDimSize, std::ptrdiff_t stride = 1) : Base(data_start, size, (primaryDimSize - 1) + stride) {}
 
     /**
      * @brief Constructs a GeneralMatrixPtrBuffer with a given constant data start pointer, size, primary dimension size, and stride.
@@ -56,11 +56,11 @@ public:
      * or a column from a row-major full matrix.
      * 
      * @param data_start Constant pointer to the start of the data.
-     * @param size The size of the matrix.
+     * @param size The size of the buffer (row or col).
      * @param primaryDimSize The size of the primary dimension. Number of rows for row-major matrices, number of columns for column-major matrices.
      * @param stride The stride between elements (default is 1).
      */
-    GeneralMatrixPtrBuffer(const T* data_start, std::size_t size, std::size_t primaryDimSize, std::ptrdiff_t stride = 1) : Base(const_cast<T*>(data_start), size, primaryDimSize + stride) {}
+    GeneralMatrixPtrBuffer(const T* data_start, std::size_t size, std::size_t primaryDimSize, std::ptrdiff_t stride = 1) : Base(const_cast<T*>(data_start), size, (primaryDimSize - 1) + stride) {}
 
     inline T& _at(std::size_t i) { return *(this->_data_start + i * this->_stride); }
     inline const T& _at(std::size_t i) const { return *(this->_data_start + i * this->_stride); }
