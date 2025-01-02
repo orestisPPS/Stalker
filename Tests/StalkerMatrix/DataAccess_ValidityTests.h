@@ -2,7 +2,9 @@
 #define MATRIXDATA_VALIDITYTESTS_H
 
 #include "../STLKR_TestBase.h"
-#include "../StalkerMatrix/Data/MatrixData.h"
+#include "../StalkerMatrix/Data/DenseMatrixAccessor_FullTSpecialization.h"
+#include "../StalkerMatrix/Data/DenseMatrixAccessor_SymmetricTSpecialization.h"
+// #include "../StalkerMatrix/Data/DenseMatrixAccessor_UpperTriangularTSpecialization.h"
 #include <iostream>
 #include <vector>
 #include <map>
@@ -34,10 +36,10 @@ namespace STLKR_Tests {
 
         void runTest() override {
             std::cout << "Running Matrix Data Tests..." << std::endl;
-            _testNonSymmetricColumnMajor();
-            _testNonSymmetricRowMajor();
-            // _testSymmetricRowMajor();
-            // _testSymmetricColumnMajor();
+            // _testNonSymmetricColumnMajor();
+            // _testNonSymmetricRowMajor();
+            _testSymmetricRowMajor();
+            _testSymmetricColumnMajor();
 
         }
 
@@ -56,14 +58,14 @@ namespace STLKR_Tests {
         std::vector<T> _lowerTriangularColumnMajorValues;
 
         // Matrix data
-        DenseMatrixData<T, FormType::NonSymmetric, OrderType::RowMajor> _nonSymmetricRowMajor;
-        DenseMatrixData<T, FormType::NonSymmetric, OrderType::ColumnMajor> _nonSymmetricColumnMajor;
-        DenseMatrixData<T, FormType::Symmetric, OrderType::RowMajor> _symmetricRowMajor;
-        DenseMatrixData<T, FormType::Symmetric, OrderType::ColumnMajor> _symmetricColumnMajor;
-        DenseMatrixData<T, FormType::UpperTriangular, OrderType::RowMajor> _upperTriangularRowMajor;
-        DenseMatrixData<T, FormType::UpperTriangular, OrderType::ColumnMajor> _upperTriangularColumnMajor;
-        DenseMatrixData<T, FormType::LowerTriangular, OrderType::RowMajor> _lowerTriangularRowMajor;
-        DenseMatrixData<T, FormType::LowerTriangular, OrderType::ColumnMajor> _lowerTriangularColumnMajor;
+        DenseMatrixAccessor<T, FormType::Full,            OrderType::RowMajor   > _nonSymmetricRowMajor;
+        DenseMatrixAccessor<T, FormType::Full,            OrderType::ColumnMajor> _nonSymmetricColumnMajor;
+        DenseMatrixAccessor<T, FormType::Symmetric,       OrderType::RowMajor   > _symmetricRowMajor;
+        DenseMatrixAccessor<T, FormType::Symmetric,       OrderType::ColumnMajor> _symmetricColumnMajor;
+        DenseMatrixAccessor<T, FormType::UpperTriangular, OrderType::RowMajor   > _upperTriangularRowMajor;
+        DenseMatrixAccessor<T, FormType::UpperTriangular, OrderType::ColumnMajor> _upperTriangularColumnMajor;
+        DenseMatrixAccessor<T, FormType::LowerTriangular, OrderType::RowMajor   > _lowerTriangularRowMajor;
+        DenseMatrixAccessor<T, FormType::LowerTriangular, OrderType::ColumnMajor> _lowerTriangularColumnMajor;
 
         std::vector<std::vector<T>> _nonSymmetricExpectedRows = {
             {0, 1, 2, 3},
@@ -108,7 +110,7 @@ namespace STLKR_Tests {
         void _testSymmetricRowMajor() {
             for (int i = 0; i < _numRows; ++i) {
                 auto row = _symmetricRowMajor.row(i);
-                printTestCaseResult(row.size() == _numCols - i, "Symmetric Row Major Row " + std::to_string(i) + " Buffer Size");
+                printTestCaseResult(row.size() == _symmetricExpectedRows[i].size(), "Symmetric Row Major Row " + std::to_string(i) + " Buffer Size");
                 printTestCaseResult(std::vector<T>(row.begin(), row.end()) == _symmetricExpectedRows[i], "Symmetric Row Major Row " + std::to_string(i) + " Buffer Values");
             }
             for (int i = 0; i < _numCols; ++i) {
@@ -123,12 +125,12 @@ namespace STLKR_Tests {
         void _testSymmetricColumnMajor() {
             for (int i = 0; i < _numRows; ++i) {
                 auto row = _symmetricColumnMajor.row(i);
-                printTestCaseResult(row.size() == _numCols - i, "Symmetric Column Major Row " + std::to_string(i) + " Buffer Size");
+                printTestCaseResult(row.size() == _symmetricExpectedRows[i].size(), "Symmetric Column Major Row " + std::to_string(i) + " Buffer Size");
                 printTestCaseResult(std::vector<T>(row.begin(), row.end()) == _symmetricExpectedRows[i], "Symmetric Column Major Row " + std::to_string(i) + " Buffer Values");
             }
             for (int i = 0; i < _numCols; ++i) {
                 auto column = _symmetricColumnMajor.column(i);
-                printTestCaseResult(column.size() == i + 1, "Symmetric Column Major Column " + std::to_string(i) + " Buffer Size");
+                printTestCaseResult(column.size() == _symmetricExpectedColumns[i].size(), "Symmetric Column Major Column " + std::to_string(i) + " Buffer Size");
                 printTestCaseResult(std::vector<T>(column.begin(), column.end()) == _symmetricExpectedColumns[i], "Symmetric Column Major Column " + std::to_string(i) + " Buffer Values");
                 auto v = std::vector<T>(column.begin(), column.end());
                 bool lol = false;
