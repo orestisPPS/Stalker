@@ -36,8 +36,8 @@ namespace STLKR_Tests {
 
         void runTest() override {
             std::cout << "Running Matrix Data Tests..." << std::endl;
-            // _testNonSymmetricColumnMajor();
-            // _testNonSymmetricRowMajor();
+            _testNonSymmetricColumnMajor();
+            _testNonSymmetricRowMajor();
             _testSymmetricRowMajor();
             _testSymmetricColumnMajor();
 

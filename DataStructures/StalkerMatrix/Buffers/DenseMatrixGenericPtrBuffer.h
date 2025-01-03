@@ -1,19 +1,19 @@
-#ifndef STALKER_MATRIX_BUFFERS_H
-#define STALKER_MATRIX_BUFFERS_H
+#ifndef DENSE_MATRIX_GENERIC_PTR_BUFFER_H
+#define DENSE_MATRIX_GENERIC_PTR_BUFFER_H
 
-#include "../../Buffers/PtrBuffer.h"
+#include "../../Buffers/FixedStridePtrBuffer.h"
 #include "../MatrixTypes.h"
 
 template <typename T>
-class GeneralMatrixPtrBuffer : public PtrBufferBase<T, GeneralMatrixPtrBuffer<T>> {
-    using Base = PtrBufferBase<T, GeneralMatrixPtrBuffer<T>>;
+class DenseMatrixGenericPtrBuffer : public PtrBufferBase<T, DenseMatrixGenericPtrBuffer<T>> {
+    using Base = PtrBufferBase<T, DenseMatrixGenericPtrBuffer<T>>;
 
 public:
 
     /**
      * @brief A buffer class for full dense matrix pointers.
      * 
-     * This class provides a buffer for full dense matrix pointers, inheriting from GeneralMatrixPtrBufferBase.
+     * This class provides a buffer for full dense matrix pointers, inheriting from DenseMatrixGenericPtrBufferBase.
      * It allows for the creation of buffers for rows or columns from both row-major and column-major full matrices.
      * 
      * The class supports the following constructors:
@@ -22,24 +22,24 @@ public:
      * 
      * @tparam T The type of the elements in the matrix.
      */
-    GeneralMatrixPtrBuffer(T* data_start, std::size_t size, std::ptrdiff_t _stride = 1) : Base(data_start, size, _stride) {}
+    DenseMatrixGenericPtrBuffer(T* data_start, std::size_t size, std::ptrdiff_t _stride = 1) : Base(data_start, size, _stride) {}
         
     /**
-     * @brief Constructs a GeneralMatrixPtrBuffer with a given constant data start pointer, size, and stride.
+     * @brief Constructs a DenseMatrixGenericPtrBuffer with a given constant data start pointer, size, and stride.
      *
-     * This constructor initializes a GeneralMatrixPtrBuffer to buffer a row from a row-major full matrix
+     * This constructor initializes a DenseMatrixGenericPtrBuffer to buffer a row from a row-major full matrix
      * or a column from a column-major full matrix.
      * 
      * @param data_start Constant pointer to the start of the data.
      * @param size The size of the buffer (row or col).
      * @param stride The stride between elements (default is 1).
      */
-    GeneralMatrixPtrBuffer(const T* data_start, std::size_t size, std::ptrdiff_t _stride) : Base(const_cast<T*>(data_start), size, _stride) {}
+    DenseMatrixGenericPtrBuffer(const T* data_start, std::size_t size, std::ptrdiff_t _stride) : Base(const_cast<T*>(data_start), size, _stride) {}
 
     /**
-     * @brief Constructs a GeneralMatrixPtrBuffer with a given data start pointer, size, primary dimension size, and stride.
+     * @brief Constructs a DenseMatrixGenericPtrBuffer with a given data start pointer, size, primary dimension size, and stride.
      *
-     * This constructor initializes a GeneralMatrixPtrBuffer to buffer a row from a column-major full matrix
+     * This constructor initializes a DenseMatrixGenericPtrBuffer to buffer a row from a column-major full matrix
      * or a column from a row-major full matrix.
      * 
      * @param data_start Pointer to the start of the data.
@@ -47,12 +47,12 @@ public:
      * @param primaryDimSize The size of the primary dimension. Number of rows for row-major matrices, number of columns for column-major matrices.
      * @param stride The stride between elements (default is 1).
      */
-    GeneralMatrixPtrBuffer(T* data_start, std::size_t size, std::size_t primaryDimSize, std::ptrdiff_t stride = 1) : Base(data_start, size, (primaryDimSize - 1) + stride) {}
+    DenseMatrixGenericPtrBuffer(T* data_start, std::size_t size, std::size_t primaryDimSize, std::ptrdiff_t stride = 1) : Base(data_start, size, (primaryDimSize - 1) + stride) {}
 
     /**
-     * @brief Constructs a GeneralMatrixPtrBuffer with a given constant data start pointer, size, primary dimension size, and stride.
+     * @brief Constructs a DenseMatrixGenericPtrBuffer with a given constant data start pointer, size, primary dimension size, and stride.
      *
-     * This constructor initializes a GeneralMatrixPtrBuffer to buffer a row from a column-major full matrix 
+     * This constructor initializes a DenseMatrixGenericPtrBuffer to buffer a row from a column-major full matrix 
      * or a column from a row-major full matrix.
      * 
      * @param data_start Constant pointer to the start of the data.
@@ -60,7 +60,7 @@ public:
      * @param primaryDimSize The size of the primary dimension. Number of rows for row-major matrices, number of columns for column-major matrices.
      * @param stride The stride between elements (default is 1).
      */
-    GeneralMatrixPtrBuffer(const T* data_start, std::size_t size, std::size_t primaryDimSize, std::ptrdiff_t stride = 1) : Base(const_cast<T*>(data_start), size, (primaryDimSize - 1) + stride) {}
+    DenseMatrixGenericPtrBuffer(const T* data_start, std::size_t size, std::size_t primaryDimSize, std::ptrdiff_t stride = 1) : Base(const_cast<T*>(data_start), size, (primaryDimSize - 1) + stride) {}
 
     inline T& _at(std::size_t i) { return *(this->_data_start + i * this->_stride); }
     inline const T& _at(std::size_t i) const { return *(this->_data_start + i * this->_stride); }
@@ -71,4 +71,4 @@ public:
 
 };
 
-#endif // STALKER_MATRIX_BUFFERS_H
+#endif // DENSE_MATRIX_GENERIC_PTR_BUFFER_H

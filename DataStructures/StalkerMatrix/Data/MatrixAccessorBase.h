@@ -3,7 +3,7 @@
 
 #include <vector>
 #include "../MatrixTypes.h"
-#include "../Buffers/GeneralMatrixPtrBuffers.h"
+#include "../Buffers/DenseMatrixGenericPtrBuffer.h"
 
 // =============================
 // Base MatrixDataBase Class

@@ -2,6 +2,7 @@
 #define MATRIXACCESSOR_SYMMETRICTSPECIALIZATION_H
 
 #include "DenseMatrixAccessor_FullTSpecialization.h"
+#include "../Buffers/DenseTriangularMatrixPtrBuffer.h"
 
 template <typename T>
 class DenseMatrixAccessor<T, FormType::Symmetric, OrderType::RowMajor>
@@ -35,17 +36,19 @@ protected:
             std::swap(i, j);
         return values[i * (2 * this->_rows - i + 1) / 2 + (j - i)];
     }
-    inline GeneralMatrixPtrBuffer<T> _row(size_t row) {
-        return GeneralMatrixPtrBuffer<T>(values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row);
+    inline DenseMatrixGenericPtrBuffer<T> _row(size_t row) {
+        return DenseMatrixGenericPtrBuffer<T>(values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row);
     }
-    inline GeneralMatrixPtrBuffer<const T> _row(size_t row) const {
-        return GeneralMatrixPtrBuffer<const T>(values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row);
+    inline DenseMatrixGenericPtrBuffer<const T> _row(size_t row) const {
+        return DenseMatrixGenericPtrBuffer<const T>(values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row);
     }
-    inline GeneralMatrixPtrBuffer<T> _column(size_t col) {
-        return GeneralMatrixPtrBuffer<T>(values.data() + col, col + 1);
+    inline DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::RowMajor> _column(size_t col) {
+        return DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::RowMajor>(
+            values.data() + col * (2 * this->_rows - col + 1) / 2, col + 1, this->_rows);
     }
-    inline GeneralMatrixPtrBuffer<const T> _column(size_t col) const {
-        return GeneralMatrixPtrBuffer<const T>(values.data() + col, col + 1);
+    inline DenseTriangularMatrixPtrBuffer<const T, FormType::UpperTriangular, OrderType::RowMajor> _column(size_t col) const {
+        return DenseTriangularMatrixPtrBuffer<const T, FormType::UpperTriangular, OrderType::RowMajor>(
+            values.data() + col * (2 * this->_rows - col + 1) / 2, col + 1, this->_rows);
     }
 };
 template <typename T>
@@ -78,17 +81,19 @@ protected:
             std::swap(i, j);
         return values[j * (2 * this->_rows - j + 1) / 2 + i - j];
     }
-    inline GeneralMatrixPtrBuffer<T> _row(size_t row) {
-        return GeneralMatrixPtrBuffer<T>(values.data() + (row * (row + 1)) / 2, this->_rows - row);
+    inline DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::ColumnMajor> _row(size_t row) {
+        return DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::ColumnMajor>(
+            values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row, this->_rows);
     }
-    inline GeneralMatrixPtrBuffer<const T> _row(size_t row) const {
-        return GeneralMatrixPtrBuffer<const T>(values.data() + (row * (row + 1)) / 2, this->_rows - row);
+    inline DenseTriangularMatrixPtrBuffer<const T, FormType::Symmetric, OrderType::ColumnMajor> _row(size_t row) const {
+        return DenseTriangularMatrixPtrBuffer<const T, FormType::Symmetric, OrderType::ColumnMajor>(
+            values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row, this->_rows);
     }
-    inline GeneralMatrixPtrBuffer<T> _column(size_t col) {
-        return GeneralMatrixPtrBuffer<T>(values.data() + (col * (col + 1)) / 2, col + 1);
+    inline DenseMatrixGenericPtrBuffer<T> _column(size_t col) {
+        return DenseMatrixGenericPtrBuffer<T>(values.data() + (col * (col + 1)) / 2, col + 1);
     }
-    inline GeneralMatrixPtrBuffer<const T> _column(size_t col) const {
-        return GeneralMatrixPtrBuffer<const T>(values.data() + (col * (col + 1)) / 2, col + 1);
+    inline DenseMatrixGenericPtrBuffer<const T> _column(size_t col) const {
+        return DenseMatrixGenericPtrBuffer<const T>(values.data() + (col * (col + 1)) / 2, col + 1);
     }
 };
 

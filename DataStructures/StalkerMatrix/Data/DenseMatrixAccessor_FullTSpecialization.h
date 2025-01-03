@@ -32,17 +32,17 @@ protected:
     inline const T& _element(size_t i, size_t j) const {
         return values[i * this->_cols + j];
     }
-    inline GeneralMatrixPtrBuffer<T> _row(size_t row) {
-        return GeneralMatrixPtrBuffer<T>(values.data() + row * this->_cols, this->_cols);
+    inline DenseMatrixGenericPtrBuffer<T> _row(size_t row) {
+        return DenseMatrixGenericPtrBuffer<T>(values.data() + row * this->_cols, this->_cols);
     }
-    inline GeneralMatrixPtrBuffer<const T> _row(size_t row) const {
-        return GeneralMatrixPtrBuffer<const T>(values.data() + row * this->_cols, this->_cols);
+    inline DenseMatrixGenericPtrBuffer<const T> _row(size_t row) const {
+        return DenseMatrixGenericPtrBuffer<const T>(values.data() + row * this->_cols, this->_cols);
     }
-    inline GeneralMatrixPtrBuffer<T> _column(size_t col) {
-        return GeneralMatrixPtrBuffer<T>(values.data() + col, this->_rows, this->_rows);
+    inline DenseMatrixGenericPtrBuffer<T> _column(size_t col) {
+        return DenseMatrixGenericPtrBuffer<T>(values.data() + col, this->_rows, this->_rows);
     }
-    inline GeneralMatrixPtrBuffer<const T> _column(size_t col) const {
-        return GeneralMatrixPtrBuffer<const T>(values.data() + col, this->_rows, this->_rows);
+    inline DenseMatrixGenericPtrBuffer<const T> _column(size_t col) const {
+        return DenseMatrixGenericPtrBuffer<const T>(values.data() + col, this->_rows, this->_rows);
     }
 };
 
@@ -76,17 +76,17 @@ protected:
     inline const T& _element(size_t i, size_t j) const {
         return values[j * this->_rows + i];
     }
-    inline GeneralMatrixPtrBuffer<T> _row(size_t row) {
-        return GeneralMatrixPtrBuffer<T>(values.data() + row, this->_cols, this->_cols);
+    inline DenseMatrixGenericPtrBuffer<T> _row(size_t row) {
+        return DenseMatrixGenericPtrBuffer<T>(values.data() + row, this->_cols, this->_cols);
     }
-    inline GeneralMatrixPtrBuffer<const T> _row(size_t row) const {
-        return GeneralMatrixPtrBuffer<const T>(values.data() + row, this->_cols, this->_cols);
+    inline DenseMatrixGenericPtrBuffer<const T> _row(size_t row) const {
+        return DenseMatrixGenericPtrBuffer<const T>(values.data() + row, this->_cols, this->_cols);
     }
-    inline GeneralMatrixPtrBuffer<T> _column(size_t col) {
-        return GeneralMatrixPtrBuffer<T>(values.data() + col * this->_rows, this->_rows);
+    inline DenseMatrixGenericPtrBuffer<T> _column(size_t col) {
+        return DenseMatrixGenericPtrBuffer<T>(values.data() + col * this->_rows, this->_rows);
     }
-    inline GeneralMatrixPtrBuffer<const T> _column(size_t col) const {
-        return GeneralMatrixPtrBuffer<const T>(values.data() + col * this->_rows, this->_rows);
+    inline DenseMatrixGenericPtrBuffer<const T> _column(size_t col) const {
+        return DenseMatrixGenericPtrBuffer<const T>(values.data() + col * this->_rows, this->_rows);
     }
 };
 

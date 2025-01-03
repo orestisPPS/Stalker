@@ -2,7 +2,7 @@
 #define STALKERMATRIX_ITERATOR_VALIDITYTESTS_H
 
 #include "../STLKR_TestBase.h"
-#include "../../DataStructures/Iterators/StrideIterator.h"  // Path to FixedStrideIterator
+#include "../../DataStructures/Iterators/FixedStrideIteratorBase.h"  // Path to FixedStrideIterator
 #include <cmath>  // For std::abs in floating-point comparisons
 
 namespace STLKR_Tests {

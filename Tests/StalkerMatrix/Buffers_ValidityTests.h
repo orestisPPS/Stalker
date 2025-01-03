@@ -2,8 +2,8 @@
 #define MATRIXBUFFERS_VALIDITYTESTS_H
 
 #include "../STLKR_TestBase.h"
-#include "../../DataStructures/Buffers/PtrBuffer.h"
-#include "../../DataStructures/StalkerMatrix/Buffers/GeneralMatrixPtrBuffers.h"
+#include "../../DataStructures/Buffers/FixedStridePtrBuffer.h"
+#include "../../DataStructures/StalkerMatrix/Buffers/DenseMatrixGenericPtrBuffer.h"
 #include <iostream>
 #include <cassert>
 
@@ -27,19 +27,19 @@ namespace STLKR_Tests {
             std::vector<int> matrixData = _generateMatrixData(4, 5);
 
             // Test FixedStridePtrBuffer (Row in Row-Major)
-            GeneralMatrixPtrBuffer<int> contiguousRowBuffer(matrixData.data(), 5); // Row-major row buffer
+            DenseMatrixGenericPtrBuffer<int> contiguousRowBuffer(matrixData.data(), 5); // Row-major row buffer
             _runBufferTests(contiguousRowBuffer, "FixedStridePtrBuffer (Row in Row-Major)");
 
             // // Test NonContiguousBlockPtrBuffer (Column in Row-Major)
-            GeneralMatrixPtrBuffer<int> nonContiguousColumnBuffer(matrixData.data(), 4, 4, 1); // Row-major column buffer
+            DenseMatrixGenericPtrBuffer<int> nonContiguousColumnBuffer(matrixData.data(), 4, 4, 1); // Row-major column buffer
             _runBufferTests(nonContiguousColumnBuffer, "NonContiguousBlockPtrBuffer (Column in Row-Major)");
 
             // Test FixedStridePtrBuffer (Column in Column-Major)
-            GeneralMatrixPtrBuffer<int> contiguousColumnBuffer(matrixData.data(), 4); // Column-major column buffer
+            DenseMatrixGenericPtrBuffer<int> contiguousColumnBuffer(matrixData.data(), 4); // Column-major column buffer
             _runBufferTests(contiguousColumnBuffer, "FixedStridePtrBuffer (Column in Column-Major)");
 
             // // Test NonContiguousBlockPtrBuffer (Row in Column-Major)
-            GeneralMatrixPtrBuffer<int> nonContiguousRowBuffer(matrixData.data(), 5, 4, 1); // Column-major row buffer
+            DenseMatrixGenericPtrBuffer<int> nonContiguousRowBuffer(matrixData.data(), 5, 4, 1); // Column-major row buffer
             _runBufferTests(nonContiguousRowBuffer, "NonContiguousBlockPtrBuffer (Row in Column-Major)");
         }
 

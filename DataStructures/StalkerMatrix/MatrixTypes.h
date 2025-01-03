@@ -64,7 +64,7 @@ enum class OrderType {
 };
 
 /**
- * @enum MatrixSubstructureType
+ * @enum MatrixRegionType
  * @brief Specifies the substructure type within a matrix.
  * 
  * This enumeration defines the types of substructures that can exist within a matrix.
@@ -73,7 +73,7 @@ enum class OrderType {
  * - Diagonal: Diagonal substructure.
  * - Block: Block substructure.
  */
-enum class MatrixSubstructureType {
+enum class RegionType {
     Row,                ///< Row substructure.
     Column,             ///< Column substructure.
     Diagonal,           ///< Diagonal substructure.

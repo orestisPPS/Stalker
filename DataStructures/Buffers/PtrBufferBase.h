@@ -1,10 +1,9 @@
-#ifndef PTRBUFFER_H
-#define PTRBUFFER_H
+#ifndef PTR_BUFFER_BASE_H
+#define PTR_BUFFER_BASE_H
 
 #include <cstddef>
 #include <vector>
 #include <cstring>
-#include "../Iterators/StrideIterator.h"
 #include "../../Utility/Checkers.h"
 #include "../../GlobalDefinitions.h"
 
@@ -134,38 +133,4 @@ protected:
     inline const ChildPtrBuffer& child() const { return static_cast<const ChildPtrBuffer&>(*this); }
 };
 
-
-template <typename T>
-class FixedStridePtrBuffer : public PtrBufferBase<T, FixedStridePtrBuffer<T>> {
-public:
-
-    FixedStridePtrBuffer(T* data_start, std::size_t size, std::ptrdiff_t stride = 1)
-        : PtrBufferBase<T, FixedStridePtrBuffer<T>>(data_start, size, stride) {}
-
-    FixedStridePtrBuffer(const T* data_start, std::size_t size, std::ptrdiff_t stride = 1)
-        : PtrBufferBase<T, FixedStridePtrBuffer<T>>(const_cast<T*>(data_start), size, stride) {}
-
-
-    inline T& _at(std::size_t i) {
-        return *(this->_data_start + i * this->_stride);
-    }
-    inline const T& _at(std::size_t i) const {
-        return *(this->_data_start + i * this->_stride);
-    }
-    inline FixedStrideIterator<T> _begin() {
-        return FixedStrideIterator<T>(this->_data_start, this->_stride);
-    }
-    inline FixedStrideIterator<T> _end() {
-        return FixedStrideIterator<T>(this->_data_start + this->_size * this->_stride, this->_stride);
-    }
-    inline FixedStrideIterator<const T> _cbegin() const {
-        return FixedStrideIterator<const T>(this->_data_start, this->_stride);
-    }
-    inline FixedStrideIterator<const T> _cend() const {
-        return FixedStrideIterator<const T>(this->_data_start + this->_size * this->_stride, this->_stride);
-    }
-};
-
-
-
-#endif // PTRBUFFER_H
+#endif // PTR_BUFFER_BASE_H
