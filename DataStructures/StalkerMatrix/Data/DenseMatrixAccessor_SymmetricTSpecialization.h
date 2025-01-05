@@ -9,6 +9,10 @@ class DenseMatrixAccessor<T, FormType::Symmetric, OrderType::RowMajor>
     : public MatrixAccessorBase<DenseMatrixAccessor<T, FormType::Symmetric, OrderType::RowMajor>, T, FormType::Symmetric, OrderType::RowMajor> {
 
     using Base = MatrixAccessorBase<DenseMatrixAccessor<T, FormType::Symmetric, OrderType::RowMajor>, T, FormType::Symmetric, OrderType::RowMajor>;
+    using RowBuffer = DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Row>;
+    using ConstRowBuffer = DenseTriangularMatrixPtrBuffer<const T, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Row>;
+    using ColumnBuffer = DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Column>;
+    using ConstColumnBuffer = DenseTriangularMatrixPtrBuffer<const T, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Column>;
 
 public:
 
@@ -36,26 +40,30 @@ protected:
             std::swap(i, j);
         return values[i * (2 * this->_rows - i + 1) / 2 + (j - i)];
     }
-    inline DenseMatrixGenericPtrBuffer<T> _row(size_t row) {
-        return DenseMatrixGenericPtrBuffer<T>(values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row);
+    inline RowBuffer _row(size_t row) {
+        return RowBuffer(values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row, 1); 
     }
-    inline DenseMatrixGenericPtrBuffer<const T> _row(size_t row) const {
-        return DenseMatrixGenericPtrBuffer<const T>(values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row);
+    inline ConstRowBuffer _row(size_t row) const {
+        return ConstRowBuffer(values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row, 1);
     }
-    inline DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::RowMajor> _column(size_t col) {
-        return DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::RowMajor>(
-            values.data() + col * (2 * this->_rows - col + 1) / 2, col + 1, this->_rows);
+    inline ColumnBuffer _column(size_t col) {
+        return ColumnBuffer(values.data(), col + 1, col, this->_rows, 1);
     }
-    inline DenseTriangularMatrixPtrBuffer<const T, FormType::UpperTriangular, OrderType::RowMajor> _column(size_t col) const {
-        return DenseTriangularMatrixPtrBuffer<const T, FormType::UpperTriangular, OrderType::RowMajor>(
-            values.data() + col * (2 * this->_rows - col + 1) / 2, col + 1, this->_rows);
+    inline ConstColumnBuffer _column(size_t col) const {
+        return ConstColumnBuffer(values.data(), col + 1, col, this->_rows, 1);
     }
 };
+
 template <typename T>
 class DenseMatrixAccessor<T, FormType::Symmetric, OrderType::ColumnMajor>
     : public MatrixAccessorBase<DenseMatrixAccessor<T, FormType::Symmetric, OrderType::ColumnMajor>, T, FormType::Symmetric, OrderType::ColumnMajor> {
 
     using Base = MatrixAccessorBase<DenseMatrixAccessor<T, FormType::Symmetric, OrderType::ColumnMajor>, T, FormType::Symmetric, OrderType::ColumnMajor>;
+    using RowBuffer = DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>;
+    using ConstRowBuffer = DenseTriangularMatrixPtrBuffer<const T, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>;
+    using ColumnBuffer = DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Column>;
+    using ConstColumnBuffer = DenseTriangularMatrixPtrBuffer<const T, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Column>;
+
 public:
 
     DenseMatrixAccessor(size_t rows, size_t cols) : Base(rows, cols), values(rows * (rows + 1) / 2) {}
@@ -81,19 +89,17 @@ protected:
             std::swap(i, j);
         return values[j * (2 * this->_rows - j + 1) / 2 + i - j];
     }
-    inline DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::ColumnMajor> _row(size_t row) {
-        return DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::ColumnMajor>(
-            values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row, this->_rows);
+    inline RowBuffer _row(size_t row) {
+        return RowBuffer(values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row, this->_rows);
     }
-    inline DenseTriangularMatrixPtrBuffer<const T, FormType::Symmetric, OrderType::ColumnMajor> _row(size_t row) const {
-        return DenseTriangularMatrixPtrBuffer<const T, FormType::Symmetric, OrderType::ColumnMajor>(
-            values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row, this->_rows);
+    inline ConstRowBuffer _row(size_t row) const {
+        return ConstRowBuffer(values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row, this->_rows);
     }
-    inline DenseMatrixGenericPtrBuffer<T> _column(size_t col) {
-        return DenseMatrixGenericPtrBuffer<T>(values.data() + (col * (col + 1)) / 2, col + 1);
+    inline ColumnBuffer _column(size_t col) {
+        return ColumnBuffer(values.data() + (col * (col + 1)) / 2, col + 1, this->_rows);
     }
-    inline DenseMatrixGenericPtrBuffer<const T> _column(size_t col) const {
-        return DenseMatrixGenericPtrBuffer<const T>(values.data() + (col * (col + 1)) / 2, col + 1);
+    inline ConstColumnBuffer _column(size_t col) const {
+        return ConstColumnBuffer(values.data() + (col * (col + 1)) / 2, col + 1, this->_rows);
     }
 };
 

@@ -3,6 +3,7 @@
 
 #include "../STLKR_TestBase.h"
 #include "../../DataStructures/Iterators/FixedStrideIteratorBase.h"  // Path to FixedStrideIterator
+#include "../../DataStructures/Iterators/LinearStrideIterator.h"  // Path to LinearStrideIterator
 #include <cmath>  // For std::abs in floating-point comparisons
 
 namespace STLKR_Tests {
@@ -17,7 +18,7 @@ namespace STLKR_Tests {
             _testContiguousIteratorArithmetic();
             _testContiguousIteratorComparison();
             _testContiguousIteratorRandomAccess();
-            // _testNonContiguousIterator();
+            _testNonContiguousIterator();
         }
 
     private:
@@ -73,44 +74,54 @@ namespace STLKR_Tests {
             printTestCaseResult(it[3] == 7, "Contiguous iterator random access operator");
         }
 
-        void _testNonContiguousIterator() {
-            // int data[12] = {1, 2, 3, 4,
-            //                 5, 6, 7, 8,
-            //                 9, 10, 11, 12}; // Simulate 3x4 row-major
-            // std::size_t totalRows = 3;
+    void _testNonContiguousIterator() {
+    // Simulated data for a 4x4 upper triangular matrix in row-major order:
+    // Row-major storage: 0 1 2 3
+    //                    0 5 6 7
+    //                    0 0 10 11
+    //                    0 0 0 15
+    std::size_t totalRows = 4;
+    std::size_t targetColumn = 3;
+    auto upperTriangularData = new int[10] {0, 1, 2, 3, 5, 6, 7, 10, 11, 15};
 
-            // UpperTriangularMatrixIterator<int> it(data, totalRows); // Column in row-major
-            // // Basic dereference
-            // printTestCaseResult(*it == 1, "Non-contiguous iterator dereference operator (basic)");
+    // Iterator for Column 4 in row-major storage:
+    LinearStrideIterator<int, false> it(upperTriangularData + targetColumn, totalRows - 1); // Column 1 starts at index 1 with a stride of totalRows - 1
+    printTestCaseResult(*it == 3, "Upper triangular row-major: dereference column 3, row 0");
 
-            // //column 0 traversal
-            // ++it; // Move to next row
-            // printTestCaseResult(*it == 5, "Non-contiguous iterator pre-increment operator");
-            // it++; // Move to next row
-            // printTestCaseResult(*it == 9, "Non-contiguous iterator post-increment operator");
+    // Pre-increment
+    ++it; // Move to next row
+    printTestCaseResult(*it == 7, "Upper triangular row-major: pre-increment column 3 to row 1");
 
-            // --it; // Move to previous row
-            // printTestCaseResult(*it == 5, "Non-contiguous iterator pre-decrement operator");
+    // Post-increment
+    it++;
+    printTestCaseResult(*it == 11, "Upper triangular row-major: post-increment column 3 to row 2");
 
-            // it--; // Move to previous row
-            // printTestCaseResult(*it == 1, "Non-contiguous iterator post-decrement operator");
+    // Pre-decrement
+    --it; // Move back one row
+    printTestCaseResult(*it == 7, "Upper triangular row-major: pre-decrement column 3 to row 1");
 
-            // // Advance
-            // it.advance(4); // Skip a full column
-            // printTestCaseResult(*it == 6, "Non-contiguous iterator advance operator");
+    // Post-decrement
+    it--;
+    printTestCaseResult(*it == 3, "Upper triangular row-major: post-decrement column 3 to row 0");
 
-            // // Distance
-            // NonContiguousBlockIterator<int> it2(data, 4, totalRows, 1, 1); // 2nd row of 2nd column
-            // printTestCaseResult(*it2 == 6, "Non-contiguous iterator dereference operator (Non - zero start)");
-            // printTestCaseResult(it == it2, "Non-contiguous iterator equality");
-            // printTestCaseResult(it <= it2, "Non-contiguous iterator less-than-or-equal");
-            // // printTestCaseResult(it.distance(it2) == 1, "Non-contiguous iterator distance");
-            // ++it; // Move to the first row of the next column
-            // // Relational operators
-            // printTestCaseResult(it != it2, "Non-contiguous iterator inequality");
-            // printTestCaseResult(it2 < it, "Non-contiguous iterator less-than");
-            // printTestCaseResult(it > it2, "Non-contiguous iterator greater-than");
+    // Random access and distance checks
+    it += 2; // Jump to the third row
+    printTestCaseResult(*it == 11, "Upper triangular row-major: compound addition operator");
+
+    LinearStrideIterator<int, false> it2 = it - 2; // Go back to the first row
+    printTestCaseResult(*it2 == 3, "Upper triangular row-major: compound subtraction operator");
+    printTestCaseResult(it2 - it == -2, "Upper triangular row-major: distance between iterators");
+
+    // Comparison operators
+    printTestCaseResult(it2 < it, "Upper triangular row-major: less-than operator");
+    printTestCaseResult(it > it2, "Upper triangular row-major: greater-than operator");
+    printTestCaseResult(!(it == it2), "Upper triangular row-major: equal operator");
+    printTestCaseResult(it2 <= it, "Upper triangular row-major: less-than-or-equal operator");
+    printTestCaseResult(it >= it2, "Upper triangular row-major: greater-than-or-equal operator");
+
 }
+
+
 
     };
 

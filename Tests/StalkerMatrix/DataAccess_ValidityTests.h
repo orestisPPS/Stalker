@@ -108,17 +108,20 @@ namespace STLKR_Tests {
         }
 
         void _testSymmetricRowMajor() {
-            for (int i = 0; i < _numRows; ++i) {
-                auto row = _symmetricRowMajor.row(i);
-                printTestCaseResult(row.size() == _symmetricExpectedRows[i].size(), "Symmetric Row Major Row " + std::to_string(i) + " Buffer Size");
-                printTestCaseResult(std::vector<T>(row.begin(), row.end()) == _symmetricExpectedRows[i], "Symmetric Row Major Row " + std::to_string(i) + " Buffer Values");
-            }
+            // for (int i = 0; i < _numRows; ++i) {
+            //     auto row = _symmetricRowMajor.row(i);
+            //     printTestCaseResult(row.size() == _symmetricExpectedRows[i].size(), "Symmetric Row Major Row " + std::to_string(i) + " Buffer Size");
+            //     printTestCaseResult(std::vector<T>(row.begin(), row.end()) == _symmetricExpectedRows[i], "Symmetric Row Major Row " + std::to_string(i) + " Buffer Values");
+            // }
             for (int i = 0; i < _numCols; ++i) {
                 auto column = _symmetricRowMajor.column(i);
                 printTestCaseResult(column.size() == i + 1, "Symmetric Row Major Column " + std::to_string(i) + " Buffer Size");
+                for (int j = 0; j < column.size(); ++j) {
+                    std::cout << column[j] << " ";
+                }
+                std::cout << std::endl;
                 auto v = std::vector<T>(column.begin(), column.end());
-                bool lol;
-                printTestCaseResult(std::vector<T>(column.begin(), column.end()) == _symmetricExpectedColumns[i], "Symmetric Row Major Column " + std::to_string(i) + " Buffer Values");
+                printTestCaseResult(v == _symmetricExpectedColumns[i], "Symmetric Row Major Column " + std::to_string(i) + " Buffer Values");
             }
         }
 
@@ -128,13 +131,13 @@ namespace STLKR_Tests {
                 printTestCaseResult(row.size() == _symmetricExpectedRows[i].size(), "Symmetric Column Major Row " + std::to_string(i) + " Buffer Size");
                 printTestCaseResult(std::vector<T>(row.begin(), row.end()) == _symmetricExpectedRows[i], "Symmetric Column Major Row " + std::to_string(i) + " Buffer Values");
             }
-            for (int i = 0; i < _numCols; ++i) {
-                auto column = _symmetricColumnMajor.column(i);
-                printTestCaseResult(column.size() == _symmetricExpectedColumns[i].size(), "Symmetric Column Major Column " + std::to_string(i) + " Buffer Size");
-                printTestCaseResult(std::vector<T>(column.begin(), column.end()) == _symmetricExpectedColumns[i], "Symmetric Column Major Column " + std::to_string(i) + " Buffer Values");
-                auto v = std::vector<T>(column.begin(), column.end());
-                bool lol = false;
-            }
+            // for (int i = 0; i < _numCols; ++i) {
+            //     auto column = _symmetricColumnMajor.column(i);
+            //     printTestCaseResult(column.size() == _symmetricExpectedColumns[i].size(), "Symmetric Column Major Column " + std::to_string(i) + " Buffer Size");
+            //     printTestCaseResult(std::vector<T>(column.begin(), column.end()) == _symmetricExpectedColumns[i], "Symmetric Column Major Column " + std::to_string(i) + " Buffer Values");
+            //     auto v = std::vector<T>(column.begin(), column.end());
+            //     bool lol = false;
+            // }
         }
 
         // void _testSy

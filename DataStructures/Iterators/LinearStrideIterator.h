@@ -7,7 +7,7 @@ template <typename T, bool Ascending>
 class LinearStrideIterator : public DynamicStrideIteratorBase<LinearStrideIterator<T, Ascending>, T> {
     using Base = DynamicStrideIteratorBase<LinearStrideIterator<T, Ascending>, T>;
 
-public:
+public:                                                                                                
     LinearStrideIterator(T* startPtr, std::ptrdiff_t start_stride, std::ptrdiff_t stride = 1)
         : Base(startPtr, stride), _start_stride(start_stride) {}
 
@@ -19,9 +19,10 @@ protected:
         return _start_stride + index * this->_stride; 
     }
 
-    inline void _advance(typename Base::difference_type n) {
-        this->_current += n * this->_stride;
-        this->_index += n;
+    inline void _advanceFunction(typename Base::difference_type n) {
+        for (std::ptrdiff_t i = 0; i < n; ++i) {
+            this->_increment();
+        }
     }
 };
 
@@ -31,7 +32,7 @@ class LinearStrideIterator<T, false> : public DynamicStrideIteratorBase<LinearSt
 
 public:
     LinearStrideIterator(T* startPtr, std::ptrdiff_t start_stride, std::ptrdiff_t stride = 1)
-        : Base(startPtr, stride), _start_stride(start_stride){}
+        : Base(startPtr, stride), _start_stride(start_stride) {}
 
 protected:
     friend Base;
@@ -41,9 +42,10 @@ protected:
         return _start_stride - index * this->_stride; 
     }
 
-    inline void _advance(typename Base::difference_type n) {
-        this->_current += n * this->_stride;
-        this->_index += n;
+    inline void _advanceFunction(typename Base::difference_type n) {
+        for (std::ptrdiff_t i = 0; i < n; ++i) {
+            this->_increment();
+        }
     }
 };
 

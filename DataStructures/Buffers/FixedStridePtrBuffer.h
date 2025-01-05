@@ -6,14 +6,14 @@
 
 template <typename T>
 class FixedStridePtrBuffer : public PtrBufferBase<T, FixedStridePtrBuffer<T>> {
+    using Base = PtrBufferBase<T, FixedStridePtrBuffer<T>>;
 public:
 
-    FixedStridePtrBuffer(T* data_start, std::size_t size, std::ptrdiff_t stride = 1)
-        : PtrBufferBase<T, FixedStridePtrBuffer<T>>(data_start, size, stride) {}
+    FixedStridePtrBuffer(T* data_start, std::size_t size, std::ptrdiff_t stride = 1) : Base(data_start, size, stride) {}
 
-    FixedStridePtrBuffer(const T* data_start, std::size_t size, std::ptrdiff_t stride = 1)
-        : PtrBufferBase<T, FixedStridePtrBuffer<T>>(const_cast<T*>(data_start), size, stride) {}
-
+    FixedStridePtrBuffer(const T* data_start, std::size_t size, std::ptrdiff_t stride = 1) : Base(const_cast<T*>(data_start), size, stride) {}
+protected:
+    friend Base;
 
     inline T& _at(std::size_t i) {
         return *(this->_data_start + i * this->_stride);

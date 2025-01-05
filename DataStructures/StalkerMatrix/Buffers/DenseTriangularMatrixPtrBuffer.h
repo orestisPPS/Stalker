@@ -3,34 +3,73 @@
 
 #include "../../Buffers/PtrBufferBase.h"
 #include "../../Iterators/LinearStrideIterator.h"
+#include "../../Iterators/FixedStrideIteratorBase.h"
 #include "../MatrixTypes.h"
 
-template <typename T, FormType FormT, OrderType OrderT>
-class DenseTriangularMatrixPtrBuffer : public PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormT, OrderT>> {
-    using Base = PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormT, OrderT>>;
+template <typename T, FormType FormT, OrderType OrderT, RegionType RegionT>
+class DenseTriangularMatrixPtrBuffer : public PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormT, OrderT, RegionT>> {
+    using Base = PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormT, OrderT, RegionT>>;
 
 public:
     DenseTriangularMatrixPtrBuffer(T* data_start, std::size_t size, std::size_t rows, std::ptrdiff_t stride = 1)
-        : Base(data_start, size, stride), _rows(rows) {}
+        : Base(data_start, size, stride){}
 
     DenseTriangularMatrixPtrBuffer(const T* data_start, std::size_t size, std::size_t rows, std::ptrdiff_t stride = 1)
-        : Base(const_cast<T*>(data_start), size, stride), _rows(rows) {}
+        : Base(const_cast<T*>(data_start), size, stride){}
 
 protected:
     friend Base;
-    std::size_t _rows; ///< Total number of rows in the triangular matrix.
-
-    inline T& _at(std::size_t i) { return *(this->_data_start + i); }
-    inline const T& _at(std::size_t i) const { return *(this->_data_start + i); }
-    inline LinearStrideIterator<T, true> _begin() { return LinearStrideIterator<T, true>(this->_data_start, _rows, -1); }
-    inline LinearStrideIterator<T, true> _end() { return LinearStrideIterator<T, true>(this->_data_start + this->_size, _rows, -1); }
-    inline LinearStrideIterator<const T, true> _cbegin() const { return LinearStrideIterator<const T, true>(this->_data_start, _rows, -1); }
-    inline LinearStrideIterator<const T, true> _cend() const { return LinearStrideIterator<const T, true>(this->_data_start + this->_size, _rows, -1); }
+    inline T& _at(std::size_t i) { return *(this->_data_start + i * this->_stride); }
+    inline const T& _at(std::size_t i) const { return *(this->_data_start + i * this->_stride); }
+    inline FixedStrideIterator<T> _begin() { return FixedStrideIterator<T>(this->_data_start, this->_stride); }
+    inline FixedStrideIterator<T> _end() { return FixedStrideIterator<T>(this->_data_start + this->_size * this->_stride, this->_stride); }
+    inline FixedStrideIterator<const T> _cbegin() const { return FixedStrideIterator<const T>(this->_data_start, this->_stride); }
+    inline FixedStrideIterator<const T> _cend() const { return FixedStrideIterator<const T>(this->_data_start + this->_size * this->_stride, this->_stride); }
 };
+
+
 template <typename T>
-class DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::ColumnMajor>
-    : public PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::ColumnMajor>> {
-    using Base = PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::ColumnMajor>>;
+class DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Column>
+    : public PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Column>> {
+    using Base = PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Column>>;
+
+public:
+    DenseTriangularMatrixPtrBuffer(T* data_start, std::size_t size, std::size_t colIndex, std::size_t rows, std::ptrdiff_t stride = 1)
+        : Base(data_start, size, stride), _rows(rows), _colIndex(colIndex) {
+            std::cout << "Upper Triangular Row Major Column Region" << std::endl;
+        }
+
+    DenseTriangularMatrixPtrBuffer(const T* data_start, std::size_t size, std::size_t colIndex, std::size_t rows, std::ptrdiff_t stride = 1)
+        : Base(const_cast<T*>(data_start), size, stride), _rows(rows), _colIndex(colIndex) {}
+
+protected:
+    friend Base;
+    std::size_t _rows;
+    std::size_t _colIndex;
+    inline T& _at(std::size_t i) {
+        return *(this->_data_start + i * (2 * _rows - i + 1) / 2 + (_colIndex - i));
+    }
+    inline const T& _at(std::size_t i) const {
+        return *(this->_data_start + i * (2 * _rows - i + 1) / 2 + (_colIndex - i));
+    }
+    inline LinearStrideIterator<T, false> _begin() {
+        return LinearStrideIterator<T, false>(this->_data_start + _colIndex, _rows - 1);
+    }
+    inline LinearStrideIterator<T, false> _end() {
+        return LinearStrideIterator<T, false>(this->_data_start + _colIndex * (2 * _rows - _colIndex + 1) / 2 , _rows - 1);
+    }
+    inline LinearStrideIterator<const T, false> _cbegin() const {
+        return LinearStrideIterator<const T, false>(this->_data_start + _colIndex, _rows - 1);
+    }
+    inline LinearStrideIterator<const T, false> _cend() const {
+        return LinearStrideIterator<T, false>(this->_data_start + _colIndex * (2 * _rows - _colIndex + 1) / 2 , _rows - 1);
+    }
+};
+
+template <typename T>
+class DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>
+    : public PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>> {
+    using Base = PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>>;
 
 public:
     DenseTriangularMatrixPtrBuffer(T* data_start, std::size_t size, std::size_t rows, std::ptrdiff_t stride = 1)
@@ -44,16 +83,16 @@ protected:
     std::size_t _rows;
     inline T& _at(std::size_t i) { return *(this->_data_start + i); }
     inline const T& _at(std::size_t i) const { return *(this->_data_start + i); }
-    inline LinearStrideIterator<T, true> _begin() { return LinearStrideIterator<T, true>(this->_data_start, 1, 1); }
-    inline LinearStrideIterator<T, true> _end() { return LinearStrideIterator<T, true>(this->_data_start + this->_size, 1, 1); }
-    inline LinearStrideIterator<const T, true> _cbegin() const { return LinearStrideIterator<const T, true>(this->_data_start, 1, 1); }
-    inline LinearStrideIterator<const T, true> _cend() const { return LinearStrideIterator<const T, true>(this->_data_start + this->_size, 1, 1); }
+    inline LinearStrideIterator<T, true> _begin() { return LinearStrideIterator<T, true>(this->_data_start, 1); }
+    inline LinearStrideIterator<T, true> _end() { return LinearStrideIterator<T, true>(this->_data_start + this->_size, 1); }
+    inline LinearStrideIterator<const T, true> _cbegin() const { return LinearStrideIterator<const T, true>(this->_data_start, 1); }
+    inline LinearStrideIterator<const T, true> _cend() const { return LinearStrideIterator<const T, true>(this->_data_start + this->_size, 1); }
 };
 
 template <typename T>
-class DenseTriangularMatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::RowMajor>
-    : public PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::RowMajor>> {
-    using Base = PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::RowMajor>>;
+class DenseTriangularMatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Column>
+    : public PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Column>> {
+    using Base = PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Column>>;
 
 public:
     DenseTriangularMatrixPtrBuffer(T* data_start, std::size_t size, std::size_t rows, std::ptrdiff_t stride = 1)
@@ -68,16 +107,16 @@ protected:
 
     inline T& _at(std::size_t i) { return *(this->_data_start + i); }
     inline const T& _at(std::size_t i) const { return *(this->_data_start + i); }
-    inline LinearStrideIterator<T, false> _begin() { return LinearStrideIterator<T, false>(this->_data_start, _rows, 1); }
-    inline LinearStrideIterator<T, false> _end() { return LinearStrideIterator<T, false>(this->_data_start + this->_size, _rows, 1); }
-    inline LinearStrideIterator<const T, false> _cbegin() const { return LinearStrideIterator<const T, false>(this->_data_start, _rows, 1); }
-    inline LinearStrideIterator<const T, false> _cend() const { return LinearStrideIterator<const T, false>(this->_data_start + this->_size, _rows, 1); }
+    inline LinearStrideIterator<T, false> _begin() { return LinearStrideIterator<T, false>(this->_data_start, _rows); }
+    inline LinearStrideIterator<T, false> _end() { return LinearStrideIterator<T, false>(this->_data_start + this->_size, _rows); }
+    inline LinearStrideIterator<const T, false> _cbegin() const { return LinearStrideIterator<const T, false>(this->_data_start, _rows); }
+    inline LinearStrideIterator<const T, false> _cend() const { return LinearStrideIterator<const T, false>(this->_data_start + this->_size, _rows); }
 };
 
 template <typename T>
-class DenseTriangularMatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::ColumnMajor>
-    : public PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::ColumnMajor>> {
-    using Base = PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::ColumnMajor>>;
+class DenseTriangularMatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>
+    : public PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>> {
+    using Base = PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>>;
 
 public:
     DenseTriangularMatrixPtrBuffer(T* data_start, std::size_t size, std::size_t rows, std::ptrdiff_t stride = 1)
