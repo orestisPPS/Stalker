@@ -31,7 +31,7 @@ namespace STLKR_Tests {
             _runBufferTests(contiguousRowBuffer, "FixedStridePtrBuffer (Row in Row-Major)");
 
             // // Test NonContiguousBlockPtrBuffer (Column in Row-Major)
-            DenseMatrixGenericPtrBuffer<int> nonContiguousColumnBuffer(matrixData.data(), 4, 4, 1); // Row-major column buffer
+            DenseMatrixGenericPtrBuffer<int> nonContiguousColumnBuffer(matrixData.data(), 4, 4); // Row-major column buffer
             _runBufferTests(nonContiguousColumnBuffer, "NonContiguousBlockPtrBuffer (Column in Row-Major)");
 
             // Test FixedStridePtrBuffer (Column in Column-Major)
@@ -39,7 +39,7 @@ namespace STLKR_Tests {
             _runBufferTests(contiguousColumnBuffer, "FixedStridePtrBuffer (Column in Column-Major)");
 
             // // Test NonContiguousBlockPtrBuffer (Row in Column-Major)
-            DenseMatrixGenericPtrBuffer<int> nonContiguousRowBuffer(matrixData.data(), 5, 4, 1); // Column-major row buffer
+            DenseMatrixGenericPtrBuffer<int> nonContiguousRowBuffer(matrixData.data(), 5, 4); // Column-major row buffer
             _runBufferTests(nonContiguousRowBuffer, "NonContiguousBlockPtrBuffer (Row in Column-Major)");
         }
 

@@ -22,6 +22,8 @@ protected:
     DynamicStrideIteratorBase(T* startPtr, std::ptrdiff_t stride) : Base(startPtr, stride), _index(0) {}
     DynamicStrideIteratorBase(const T* startPtr, std::ptrdiff_t stride) : Base(startPtr, stride), _index(0) {}
 
+    std::size_t _index; ///< The current logical index.
+    
     inline void _increment() {
         this->_current += child()._strideFunction(_index); // Advance by the stride at the current index
         ++_index;
@@ -49,11 +51,11 @@ protected:
         return static_cast<std::ptrdiff_t>(_index - other._index);
     }
     inline bool _equals(const DynamicStrideIteratorBase& other) const { return this->_current == other._current && _index == other._index; }
+    // inline bool _less_than(const DynamicStrideIteratorBase& other) const { return _index < other._index; }
     inline bool _less_than(const DynamicStrideIteratorBase& other) const { return _index < other._index; }
     inline std::size_t index() const { return _index; }
 
 private:
-    std::size_t _index; ///< The current logical index.
     inline Derived& child() { return *static_cast<Derived*>(this); }
     inline const Derived& child() const { return *static_cast<const Derived*>(this); }
 };

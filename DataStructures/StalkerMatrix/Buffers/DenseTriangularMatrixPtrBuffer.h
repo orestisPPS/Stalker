@@ -11,11 +11,8 @@ class DenseTriangularMatrixPtrBuffer : public PtrBufferBase<T, DenseTriangularMa
     using Base = PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormT, OrderT, RegionT>>;
 
 public:
-    DenseTriangularMatrixPtrBuffer(T* data_start, std::size_t size, std::size_t rows, std::ptrdiff_t stride = 1)
-        : Base(data_start, size, stride){}
-
-    DenseTriangularMatrixPtrBuffer(const T* data_start, std::size_t size, std::size_t rows, std::ptrdiff_t stride = 1)
-        : Base(const_cast<T*>(data_start), size, stride){}
+    DenseTriangularMatrixPtrBuffer(T* data_start, std::size_t size) : Base(data_start, size, 1){}
+    DenseTriangularMatrixPtrBuffer(const T* data_start, std::size_t size) : Base(const_cast<T*>(data_start), size, 1){}
 
 protected:
     friend Base;
@@ -34,13 +31,11 @@ class DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::Ro
     using Base = PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Column>>;
 
 public:
-    DenseTriangularMatrixPtrBuffer(T* data_start, std::size_t size, std::size_t colIndex, std::size_t rows, std::ptrdiff_t stride = 1)
-        : Base(data_start, size, stride), _rows(rows), _colIndex(colIndex) {
-            std::cout << "Upper Triangular Row Major Column Region" << std::endl;
-        }
+    DenseTriangularMatrixPtrBuffer(T* data_start, std::size_t size, std::size_t colIndex, std::size_t rows)
+        : Base(data_start, size, 1), _rows(rows), _colIndex(colIndex) {}
 
-    DenseTriangularMatrixPtrBuffer(const T* data_start, std::size_t size, std::size_t colIndex, std::size_t rows, std::ptrdiff_t stride = 1)
-        : Base(const_cast<T*>(data_start), size, stride), _rows(rows), _colIndex(colIndex) {}
+    DenseTriangularMatrixPtrBuffer(const T* data_start, std::size_t size, std::size_t colIndex, std::size_t rows)
+        : Base(const_cast<T*>(data_start), size, 1), _rows(rows), _colIndex(colIndex) {}
 
 protected:
     friend Base;
@@ -56,13 +51,13 @@ protected:
         return LinearStrideIterator<T, false>(this->_data_start + _colIndex, _rows - 1);
     }
     inline LinearStrideIterator<T, false> _end() {
-        return LinearStrideIterator<T, false>(this->_data_start + _colIndex * (2 * _rows - _colIndex + 1) / 2 , _rows - 1);
+        return LinearStrideIterator<T, false>(this->_data_start + _colIndex + 1, _rows - 1, _colIndex + 1);
     }
     inline LinearStrideIterator<const T, false> _cbegin() const {
         return LinearStrideIterator<const T, false>(this->_data_start + _colIndex, _rows - 1);
     }
     inline LinearStrideIterator<const T, false> _cend() const {
-        return LinearStrideIterator<T, false>(this->_data_start + _colIndex * (2 * _rows - _colIndex + 1) / 2 , _rows - 1);
+        return LinearStrideIterator<T, false>(this->_data_start + _colIndex + 1, _rows - 1, _colIndex + 1);
     }
 };
 
@@ -72,11 +67,11 @@ class DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::Co
     using Base = PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>>;
 
 public:
-    DenseTriangularMatrixPtrBuffer(T* data_start, std::size_t size, std::size_t rows, std::ptrdiff_t stride = 1)
-        : Base(data_start, size, stride), _rows(rows) {}
+    DenseTriangularMatrixPtrBuffer(T* data_start, std::size_t size, std::size_t rows)
+        : Base(data_start, size, 1), _rows(rows) {}
 
-    DenseTriangularMatrixPtrBuffer(const T* data_start, std::size_t size, std::size_t rows, std::ptrdiff_t stride = 1)
-        : Base(const_cast<T*>(data_start), size, stride), _rows(rows) {}
+    DenseTriangularMatrixPtrBuffer(const T* data_start, std::size_t size, std::size_t rows)
+        : Base(const_cast<T*>(data_start), size, 1), _rows(rows) {}
 
 protected:
     friend Base;
@@ -95,11 +90,11 @@ class DenseTriangularMatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::Ro
     using Base = PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Column>>;
 
 public:
-    DenseTriangularMatrixPtrBuffer(T* data_start, std::size_t size, std::size_t rows, std::ptrdiff_t stride = 1)
-        : Base(data_start, size, stride), _rows(rows) {}
+    DenseTriangularMatrixPtrBuffer(T* data_start, std::size_t size, std::size_t rows)
+        : Base(data_start, size, 1), _rows(rows) {}
 
-    DenseTriangularMatrixPtrBuffer(const T* data_start, std::size_t size, std::size_t rows, std::ptrdiff_t stride = 1)
-        : Base(const_cast<T*>(data_start), size, stride), _rows(rows) {}
+    DenseTriangularMatrixPtrBuffer(const T* data_start, std::size_t size, std::size_t rows)
+        : Base(const_cast<T*>(data_start), size, 1), _rows(rows) {}
 
 protected:
     friend Base;
@@ -119,11 +114,11 @@ class DenseTriangularMatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::Co
     using Base = PtrBufferBase<T, DenseTriangularMatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>>;
 
 public:
-    DenseTriangularMatrixPtrBuffer(T* data_start, std::size_t size, std::size_t rows, std::ptrdiff_t stride = 1)
-        : Base(data_start, size, stride), _rows(rows) {}
+    DenseTriangularMatrixPtrBuffer(T* data_start, std::size_t size, std::size_t rows)
+        : Base(data_start, size, 1), _rows(rows) {}
 
-    DenseTriangularMatrixPtrBuffer(const T* data_start, std::size_t size, std::size_t rows, std::ptrdiff_t stride = 1)
-        : Base(const_cast<T*>(data_start), size, stride), _rows(rows) {}
+    DenseTriangularMatrixPtrBuffer(const T* data_start, std::size_t size, std::size_t rows)
+        : Base(const_cast<T*>(data_start), size, 1), _rows(rows) {}
 
 protected:
     friend Base;

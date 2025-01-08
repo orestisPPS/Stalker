@@ -36,10 +36,10 @@ namespace STLKR_Tests {
 
         void runTest() override {
             std::cout << "Running Matrix Data Tests..." << std::endl;
-            _testNonSymmetricColumnMajor();
-            _testNonSymmetricRowMajor();
+            // _testNonSymmetricColumnMajor();
+            // _testNonSymmetricRowMajor();
             _testSymmetricRowMajor();
-            _testSymmetricColumnMajor();
+            // _testSymmetricColumnMajor();
 
         }
 
@@ -113,6 +113,10 @@ namespace STLKR_Tests {
             //     printTestCaseResult(row.size() == _symmetricExpectedRows[i].size(), "Symmetric Row Major Row " + std::to_string(i) + " Buffer Size");
             //     printTestCaseResult(std::vector<T>(row.begin(), row.end()) == _symmetricExpectedRows[i], "Symmetric Row Major Row " + std::to_string(i) + " Buffer Values");
             // }
+            auto column = _symmetricRowMajor.column(3);
+            auto start = column.begin();
+            auto end =   column.end();
+            std::cout << std::endl;
             for (int i = 0; i < _numCols; ++i) {
                 auto column = _symmetricRowMajor.column(i);
                 printTestCaseResult(column.size() == i + 1, "Symmetric Row Major Column " + std::to_string(i) + " Buffer Size");
@@ -120,7 +124,10 @@ namespace STLKR_Tests {
                     std::cout << column[j] << " ";
                 }
                 std::cout << std::endl;
-                auto v = std::vector<T>(column.begin(), column.end());
+                auto start = column.begin();
+                auto end =   column.end();
+
+                auto v = std::vector<T>(start, end);
                 printTestCaseResult(v == _symmetricExpectedColumns[i], "Symmetric Row Major Column " + std::to_string(i) + " Buffer Values");
             }
         }

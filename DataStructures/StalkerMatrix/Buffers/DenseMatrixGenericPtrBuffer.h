@@ -22,7 +22,7 @@ public:
      * 
      * @tparam T The type of the elements in the matrix.
      */
-    DenseMatrixGenericPtrBuffer(T* data_start, std::size_t size, std::ptrdiff_t _stride = 1) : Base(data_start, size, _stride) {}
+    DenseMatrixGenericPtrBuffer(T* data_start, std::size_t size) : Base(data_start, size, 1) {}
         
     /**
      * @brief Constructs a DenseMatrixGenericPtrBuffer with a given constant data start pointer, size, and stride.
@@ -34,7 +34,7 @@ public:
      * @param size The size of the buffer (row or col).
      * @param stride The stride between elements (default is 1).
      */
-    DenseMatrixGenericPtrBuffer(const T* data_start, std::size_t size, std::ptrdiff_t _stride) : Base(const_cast<T*>(data_start), size, _stride) {}
+    DenseMatrixGenericPtrBuffer(const T* data_start, std::size_t size) : Base(const_cast<T*>(data_start), size, 1) {}
 
     /**
      * @brief Constructs a DenseMatrixGenericPtrBuffer with a given data start pointer, size, primary dimension size, and stride.
@@ -47,7 +47,7 @@ public:
      * @param primaryDimSize The size of the primary dimension. Number of rows for row-major matrices, number of columns for column-major matrices.
      * @param stride The stride between elements (default is 1).
      */
-    DenseMatrixGenericPtrBuffer(T* data_start, std::size_t size, std::size_t primaryDimSize, std::ptrdiff_t stride = 1) : Base(data_start, size, (primaryDimSize - 1) + stride) {}
+    DenseMatrixGenericPtrBuffer(T* data_start, std::size_t size, std::size_t primaryDimSize) : Base(data_start, size, primaryDimSize - 1) {}
 
     /**
      * @brief Constructs a DenseMatrixGenericPtrBuffer with a given constant data start pointer, size, primary dimension size, and stride.
@@ -60,7 +60,7 @@ public:
      * @param primaryDimSize The size of the primary dimension. Number of rows for row-major matrices, number of columns for column-major matrices.
      * @param stride The stride between elements (default is 1).
      */
-    DenseMatrixGenericPtrBuffer(const T* data_start, std::size_t size, std::size_t primaryDimSize, std::ptrdiff_t stride = 1) : Base(const_cast<T*>(data_start), size, (primaryDimSize - 1) + stride) {}
+    DenseMatrixGenericPtrBuffer(const T* data_start, std::size_t size, std::size_t primaryDimSize) : Base(const_cast<T*>(data_start), size, primaryDimSize - 1) {}
 
     inline T& _at(std::size_t i) { return *(this->_data_start + i * this->_stride); }
     inline const T& _at(std::size_t i) const { return *(this->_data_start + i * this->_stride); }

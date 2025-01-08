@@ -9,6 +9,8 @@ template <typename T, FormType FormT, OrderType OrderT>
 class DenseMatrixAccessor : public MatrixAccessorBase<DenseMatrixAccessor<T, FormT, OrderT>, T, FormT, OrderT> {
 
 using Base = MatrixAccessorBase<DenseMatrixAccessor<T, FormT, OrderT>, T, FormT, OrderT>;
+using Buffer = DenseMatrixGenericPtrBuffer<T>;
+using ConstBuffer = DenseMatrixGenericPtrBuffer<const T>;
 
 public:
 
@@ -32,17 +34,17 @@ protected:
     inline const T& _element(size_t i, size_t j) const {
         return values[i * this->_cols + j];
     }
-    inline DenseMatrixGenericPtrBuffer<T> _row(size_t row) {
-        return DenseMatrixGenericPtrBuffer<T>(values.data() + row * this->_cols, this->_cols);
+    inline Buffer _row(size_t row) {
+        return Buffer(values.data() + row * this->_cols, this->_cols);
     }
-    inline DenseMatrixGenericPtrBuffer<const T> _row(size_t row) const {
-        return DenseMatrixGenericPtrBuffer<const T>(values.data() + row * this->_cols, this->_cols);
+    inline ConstBuffer _row(size_t row) const {
+        return ConstBuffer(values.data() + row * this->_cols, this->_cols);
     }
-    inline DenseMatrixGenericPtrBuffer<T> _column(size_t col) {
-        return DenseMatrixGenericPtrBuffer<T>(values.data() + col, this->_rows, this->_rows);
+    inline Buffer _column(size_t col) {
+        return Buffer(values.data() + col, this->_rows, this->_rows);
     }
-    inline DenseMatrixGenericPtrBuffer<const T> _column(size_t col) const {
-        return DenseMatrixGenericPtrBuffer<const T>(values.data() + col, this->_rows, this->_rows);
+    inline ConstBuffer _column(size_t col) const {
+        return ConstBuffer(values.data() + col, this->_rows, this->_rows);
     }
 };
 
@@ -54,6 +56,8 @@ class DenseMatrixAccessor<T, FormType::Full, OrderType::ColumnMajor>
     : public MatrixAccessorBase<DenseMatrixAccessor<T, FormType::Full, OrderType::ColumnMajor>, T, FormType::Full, OrderType::ColumnMajor> {
     
     using Base = MatrixAccessorBase<DenseMatrixAccessor<T, FormType::Full, OrderType::ColumnMajor>, T, FormType::Full, OrderType::ColumnMajor>;
+    using Buffer = DenseMatrixGenericPtrBuffer<T>;
+    using ConstBuffer = DenseMatrixGenericPtrBuffer<const T>;
 
 public:
 
@@ -76,17 +80,17 @@ protected:
     inline const T& _element(size_t i, size_t j) const {
         return values[j * this->_rows + i];
     }
-    inline DenseMatrixGenericPtrBuffer<T> _row(size_t row) {
-        return DenseMatrixGenericPtrBuffer<T>(values.data() + row, this->_cols, this->_cols);
+    inline Buffer _row(size_t row) {
+        return Buffer(values.data() + row, this->_cols, this->_cols);
     }
-    inline DenseMatrixGenericPtrBuffer<const T> _row(size_t row) const {
-        return DenseMatrixGenericPtrBuffer<const T>(values.data() + row, this->_cols, this->_cols);
+    inline ConstBuffer _row(size_t row) const {
+        return ConstBuffer(values.data() + row, this->_cols, this->_cols);
     }
-    inline DenseMatrixGenericPtrBuffer<T> _column(size_t col) {
-        return DenseMatrixGenericPtrBuffer<T>(values.data() + col * this->_rows, this->_rows);
+    inline Buffer _column(size_t col) {
+        return Buffer(values.data() + col * this->_rows, this->_rows);
     }
-    inline DenseMatrixGenericPtrBuffer<const T> _column(size_t col) const {
-        return DenseMatrixGenericPtrBuffer<const T>(values.data() + col * this->_rows, this->_rows);
+    inline ConstBuffer _column(size_t col) const {
+        return ConstBuffer(values.data() + col * this->_rows, this->_rows);
     }
 };
 

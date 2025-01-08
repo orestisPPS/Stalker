@@ -41,16 +41,16 @@ protected:
         return values[i * (2 * this->_rows - i + 1) / 2 + (j - i)];
     }
     inline RowBuffer _row(size_t row) {
-        return RowBuffer(values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row, 1); 
+        return RowBuffer(values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row); 
     }
     inline ConstRowBuffer _row(size_t row) const {
-        return ConstRowBuffer(values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row, 1);
+        return ConstRowBuffer(values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row);
     }
     inline ColumnBuffer _column(size_t col) {
-        return ColumnBuffer(values.data(), col + 1, col, this->_rows, 1);
+        return ColumnBuffer(values.data(), col + 1, col, this->_rows);
     }
     inline ConstColumnBuffer _column(size_t col) const {
-        return ConstColumnBuffer(values.data(), col + 1, col, this->_rows, 1);
+        return ConstColumnBuffer(values.data(), col + 1, col, this->_rows);
     }
 };
 
