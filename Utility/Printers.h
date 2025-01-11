@@ -5,6 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <stdexcept>
+#include <iomanip>
 
 /**
  * @enum ColourType
@@ -18,12 +19,17 @@ enum class ColourType {
     MAGENTA,
     CYAN,
     WHITE,
+    BRIGHT_WHITE,
     GRAY,
     RESET,
     ORANGE,
     TOXIC_GREEN,
     DEEP_RED,
-    LIGHT_BLUE
+    LIGHT_BLUE,
+    SHIT_BROWN,
+    FERRARI_RED,
+    BARBIE_PINK,
+    GANDALF_GRAY,
 };
 
 class Printers {
@@ -37,19 +43,25 @@ public:
  */
 static inline const std::string& getColourCode(ColourType colour) {
     static const std::unordered_map<ColourType, std::string> colourMap = {
-        {ColourType::RED,         "\033[31m"},
-        {ColourType::GREEN,       "\033[32m"},
-        {ColourType::YELLOW,      "\033[33m"},
-        {ColourType::BLUE,        "\033[34m"},
-        {ColourType::MAGENTA,     "\033[35m"},
-        {ColourType::CYAN,        "\033[36m"},
-        {ColourType::WHITE,       "\033[37m"},
-        {ColourType::GRAY,        "\033[90m"},
-        {ColourType::ORANGE,      "\033[38;5;208m"},
-        {ColourType::TOXIC_GREEN, "\033[38;5;118m"},
-        {ColourType::DEEP_RED,    "\033[38;5;52m"},
-        {ColourType::LIGHT_BLUE,  "\033[38;5;104m"},
-        {ColourType::RESET,       "\033[0m"}
+        {ColourType::RED,         "\033[38;5;196m"},  // Punchy Red
+        {ColourType::GREEN,       "\033[38;5;46m"},   // Lush Green
+        {ColourType::YELLOW,      "\033[38;5;226m"},  // Bright Yellow
+        {ColourType::BLUE,        "\033[38;5;21m"},   // Vivid Blue
+        {ColourType::MAGENTA,     "\033[38;5;201m"},  // Funky Magenta
+        {ColourType::CYAN,        "\033[38;5;51m"},   // Electric Cyan
+        {ColourType::WHITE,       "\033[38;5;15m"},   // Blinding White
+        {ColourType::GRAY,        "\033[38;5;240m"},  // Subtle Gray
+        {ColourType::BRIGHT_WHITE,"\033[1;97m"},      // Bold Bright White
+        {ColourType::ORANGE,      "\033[38;5;214m"},  // Zesty Orange
+        {ColourType::TOXIC_GREEN, "\033[38;5;118m"},  // Toxic Green
+        {ColourType::DEEP_RED,    "\033[38;5;88m"},   // Deep Red
+        {ColourType::LIGHT_BLUE,  "\033[38;5;39m"},   // Light Blue
+        {ColourType::SHIT_BROWN,  "\033[38;5;94m"},   // Shit Brown
+        {ColourType::FERRARI_RED, "\033[1;31m"},      // Ferrari Red
+        {ColourType::BARBIE_PINK, "\033[38;5;200m"},  // Barbie Pink.
+        {ColourType::GANDALF_GRAY, "\033[38;5;244m"},  // Gandalf Gray
+        
+        {ColourType::RESET,       "\033[0m"},         // Reset
     };
     auto it = colourMap.find(colour);
     if (it != colourMap.end()) {
@@ -90,7 +102,7 @@ static inline void print(const std::string& message, ColourType colour = ColourT
  */
 static inline std::string stringWithTitle(const std::string& title, const std::string& message, ColourType titleColour = ColourType::WHITE, ColourType messageColour = ColourType::WHITE) {
     try {
-        return getColourCode(titleColour) + title + ": " + getColourCode(messageColour) + message + resetColour();
+        return getColourCode(titleColour) + title + ": " + resetColour() + getColourCode(messageColour) + message + resetColour();
     } catch (const std::out_of_range& e) {
         std::cerr << "Error: Invalid colour type." << std::endl;
         return title + ": " + message; // Return a default formatted string in case of an error
@@ -116,7 +128,7 @@ static inline void printWithTitle(const std::string& title, const std::string& m
  * @param message The error message content.
  * @return Formatted error message string with ANSI colour codes.
  */
-static inline std::string errorMessage(const std::string& message) { return stringWithTitle("Error", message, ColourType::RED); }
+static inline std::string errorMessage(const std::string& message) { return stringWithTitle("Error", message, ColourType::FERRARI_RED); }
 
 /**
  * @brief Prints an error message in red.
@@ -142,7 +154,7 @@ static inline void printWarning(const std::string& message) { std::cout << warni
  * @param message The success message content.
  * @return Formatted success message string with ANSI colour codes.
  */
-static inline std::string successMessage(const std::string& message) { return stringWithTitle("Success", message, ColourType::GREEN); }
+static inline std::string successMessage(const std::string& message) { return stringWithTitle("Success", message, ColourType::TOXIC_GREEN); }
 
 /**
  * @brief Prints a success message in green.
@@ -155,13 +167,16 @@ static inline void printSuccess(const std::string& message) { std::cout << succe
  * @param message The failure message content.
  * @return Formatted failure message string with ANSI colour codes.
  */
-static inline std::string failureMessage(const std::string& message) { return stringWithTitle("Failure", message, ColourType::DEEP_RED); }
+static inline std::string failureMessage(const std::string& message) { return stringWithTitle("FAIL", message, ColourType::FERRARI_RED, ColourType::WHITE); }
 
 /**
  * @brief Prints a failure message in red.
  * @param message The failure message to print.
  */
 static inline void printFailure(const std::string& message) { std::cout << failureMessage(message) << std::endl; }
+
+
+static inline void printConditionalSuccess(bool condition, const std::string& message) { condition ? printSuccess(message) : printFailure(message); }
 
 /**
  * @brief Generates an informational message string formatted in cyan.
@@ -189,6 +204,37 @@ static inline std::string debugMessage(const std::string& message) { return stri
  */
 static inline void printDebug(const std::string& message) { std::cout << debugMessage(message) << std::endl; }
 
-};
+static void printTitle(const std::string& title, std::string symbol,  ColourType colour = ColourType::WHITE, int padding = 20) {
+    if (padding > 50) {
+        padding = 50; // Limit the padding to a maximum of 50 to avoid excessively large padding
+    }
+    int totalLength = title.length() + 2 * padding;
+    std::string border(totalLength, symbol[0]);
+    std::string paddedTitle = std::string(padding, ' ') + title + std::string(padding, ' ');
+
+    std::cout << Printers::getColourCode(colour) << border << std::endl;
+    std::cout << paddedTitle << std::endl;
+    std::cout << border << Printers::resetColour() << std::endl;
+}
+
+
+// ==========================================================================
+
+template <typename T>
+static inline std::string arrayToString(const T* array, std::size_t size, int precision = 2) {
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(precision);
+    oss << "[";
+    for (std::size_t i = 0; i < size; ++i) {
+        oss << array[i];
+        if (i < size - 1) {
+            oss << ", ";
+        }
+    }
+    oss << "]";
+    return oss.str();
+}
+
+};;
 
 #endif // PRINTERS_H

@@ -5,6 +5,7 @@
 #include "../StalkerMatrix/Data/DenseMatrixAccessor_FullTSpecialization.h"
 #include "../StalkerMatrix/Data/DenseMatrixAccessor_SymmetricTSpecialization.h"
 // #include "../StalkerMatrix/Data/DenseMatrixAccessor_UpperTriangularTSpecialization.h"
+#include "../TestUtility.h"
 #include <iostream>
 #include <vector>
 #include <map>
@@ -35,10 +36,18 @@ namespace STLKR_Tests {
               _lowerTriangularColumnMajor(_numRows, _numCols, _lowerTriangularColumnMajorValues.data(), _lowerTriangularColumnMajorValues.size()) {}
 
         void runTest() override {
-            std::cout << "Running Matrix Data Tests..." << std::endl;
+            Printers::printTitle("Matrix Data Accessor Tests", "=", ColourType::BRIGHT_WHITE);
+            _testAccessor("Non-Symmetric Row Major", _nonSymmetricRowMajor, _nonSymmetricRowMajorValues, _nonSymmetricExpectedRows, _nonSymmetricExpectedColumns);
+            _testAccessor("Non-Symmetric Column Major", _nonSymmetricColumnMajor, _nonSymmetricColumnMajorValues, _nonSymmetricExpectedRows, _nonSymmetricExpectedColumns);
+            _testAccessor("Symmetric Row Major", _symmetricRowMajor, _symmetricRowMajorValues, _symmetricExpectedRows, _symmetricExpectedColumns);
+            // _testAccessor("Symmetric Column Major", _symmetricColumnMajor, _symmetricColumnMajorValues, _nonSymmetricExpectedRows, _nonSymmetricExpectedColumns);
             // _testNonSymmetricColumnMajor();
             // _testNonSymmetricRowMajor();
-            _testSymmetricRowMajor();
+            // _testSymmetricRowMajor();
+            // Printers::conditionalSuccessMessage(true, "gamiesai");
+            // Printers::printSuccess("gamiesai");
+            // Printers::printFailure("den gamiesai");
+            // Printers::printConditionalSuccess(true, "gamiesai");
             // _testSymmetricColumnMajor();
 
         }
@@ -81,75 +90,6 @@ namespace STLKR_Tests {
             {3, 7, 11, 15}
         };
 
-        void _testNonSymmetricRowMajor() {
-            for (int i = 0; i < _numRows; ++i) {
-                auto row = _nonSymmetricRowMajor.row(i);
-                printTestCaseResult(row.size() == _numCols, "Non-Symmetric Row Major Row " + std::to_string(i) + " Buffer Size");
-                printTestCaseResult(std::vector<T>(row.begin(), row.end()) == _nonSymmetricExpectedRows[i], "Non-Symmetric Row Major Row " + std::to_string(i) + " Buffer Values");
-            }
-            for (int i = 0; i < _numCols; ++i) {
-                auto column = _nonSymmetricRowMajor.column(i);
-                printTestCaseResult(column.size() == _numRows, "Non-Symmetric Row Major Column " + std::to_string(i) + " Buffer Size");
-                printTestCaseResult(std::vector<T>(column.begin(), column.end()) == _nonSymmetricExpectedColumns[i], "Non-Symmetric Row Major Column " + std::to_string(i) + " Buffer Values");
-            }
-        }
-
-        void _testNonSymmetricColumnMajor() {
-            for (int i = 0; i < _numRows; ++i) {
-                auto row = _nonSymmetricColumnMajor.row(i);
-                printTestCaseResult(row.size() == _numCols, "Non-Symmetric Column Major Row " + std::to_string(i) + " Buffer Size");
-                printTestCaseResult(std::vector<T>(row.begin(), row.end()) == _nonSymmetricExpectedRows[i], "Non-Symmetric Column Major Row " + std::to_string(i) + " Buffer Values");
-            }
-            for (int i = 0; i < _numCols; ++i) {
-                auto column = _nonSymmetricColumnMajor.column(i);
-                printTestCaseResult(column.size() == _numRows, "Non-Symmetric Column Major Column " + std::to_string(i) + " Buffer Size");
-                printTestCaseResult(std::vector<T>(column.begin(), column.end()) == _nonSymmetricExpectedColumns[i], "Non-Symmetric Column Major Column " + std::to_string(i) + " Buffer Values");
-            }
-        }
-
-        void _testSymmetricRowMajor() {
-            // for (int i = 0; i < _numRows; ++i) {
-            //     auto row = _symmetricRowMajor.row(i);
-            //     printTestCaseResult(row.size() == _symmetricExpectedRows[i].size(), "Symmetric Row Major Row " + std::to_string(i) + " Buffer Size");
-            //     printTestCaseResult(std::vector<T>(row.begin(), row.end()) == _symmetricExpectedRows[i], "Symmetric Row Major Row " + std::to_string(i) + " Buffer Values");
-            // }
-            auto column = _symmetricRowMajor.column(3);
-            auto start = column.begin();
-            auto end =   column.end();
-            std::cout << std::endl;
-            for (int i = 0; i < _numCols; ++i) {
-                auto column = _symmetricRowMajor.column(i);
-                printTestCaseResult(column.size() == i + 1, "Symmetric Row Major Column " + std::to_string(i) + " Buffer Size");
-                for (int j = 0; j < column.size(); ++j) {
-                    std::cout << column[j] << " ";
-                }
-                std::cout << std::endl;
-                auto start = column.begin();
-                auto end =   column.end();
-
-                auto v = std::vector<T>(start, end);
-                printTestCaseResult(v == _symmetricExpectedColumns[i], "Symmetric Row Major Column " + std::to_string(i) + " Buffer Values");
-            }
-        }
-
-        void _testSymmetricColumnMajor() {
-            for (int i = 0; i < _numRows; ++i) {
-                auto row = _symmetricColumnMajor.row(i);
-                printTestCaseResult(row.size() == _symmetricExpectedRows[i].size(), "Symmetric Column Major Row " + std::to_string(i) + " Buffer Size");
-                printTestCaseResult(std::vector<T>(row.begin(), row.end()) == _symmetricExpectedRows[i], "Symmetric Column Major Row " + std::to_string(i) + " Buffer Values");
-            }
-            // for (int i = 0; i < _numCols; ++i) {
-            //     auto column = _symmetricColumnMajor.column(i);
-            //     printTestCaseResult(column.size() == _symmetricExpectedColumns[i].size(), "Symmetric Column Major Column " + std::to_string(i) + " Buffer Size");
-            //     printTestCaseResult(std::vector<T>(column.begin(), column.end()) == _symmetricExpectedColumns[i], "Symmetric Column Major Column " + std::to_string(i) + " Buffer Values");
-            //     auto v = std::vector<T>(column.begin(), column.end());
-            //     bool lol = false;
-            // }
-        }
-
-        // void _testSy
-
-
         std::vector<std::vector<T>> _symmetricExpectedRows = {
             {0, 1, 2, 3},
             {5, 6, 7},
@@ -191,6 +131,40 @@ namespace STLKR_Tests {
             {10, 14},
             {15}
         };
+
+
+        template <FormType form, OrderType order>
+        void _testAccessor(std::string name, DenseMatrixAccessor<T, form, order>& accessor, const std::vector<T>& values,
+                           const std::vector<std::vector<T>>& expectedRows, const std::vector<std::vector<T>>& expectedColumns) {
+
+            Printers::printTitle(name, "*", ColourType::GANDALF_GRAY);
+
+            std::vector<size_t> computedRowSizes(accessor.getNumRows());
+            std::vector<size_t> expectedRowSizes(expectedRows.size());
+            for (size_t i = 0; i < accessor.getNumRows(); ++i){
+                computedRowSizes[i] = accessor.row(i).size();
+                expectedRowSizes[i] = expectedRows[i].size();
+            }
+            TestUtility::printComparisonTable(computedRowSizes, expectedRowSizes, "Rows Sizes", false);
+
+            std::vector<size_t> computedColSizes(accessor.getNumCols());
+            std::vector<size_t> expectedColSizes(expectedRows.size());
+            for (size_t i = 0; i < accessor.getNumCols(); ++i){
+                computedColSizes[i] = accessor.column(i).size();
+                expectedColSizes[i] = expectedColumns[i].size();
+            }
+            TestUtility::printComparisonTable(computedRowSizes, expectedRowSizes, "Columns Sizes", false);
+
+            for (size_t i = 0; i < accessor.getNumRows(); ++i) {
+                auto row = accessor.row(i);
+                TestUtility::printComparisonTable(std::vector<T>(row.begin(), row.end()), expectedRows[i], "Row " + std::to_string(i) + " Values", false);
+            }
+
+            for (size_t i = 0; i < accessor.getNumCols(); ++i) {
+                auto column = accessor.column(i);
+                TestUtility::printComparisonTable(std::vector<T>(column.begin(), column.end()), expectedColumns[i], "Column " + std::to_string(i) + " Values", false);
+            }
+        }
     };
 } // namespace STLKR_Tests
 
