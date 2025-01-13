@@ -3,7 +3,6 @@
 
 #include "../STLKR_TestBase.h"
 #include "../../DataStructures/Buffers/FixedStridePtrBuffer.h"
-#include "../../DataStructures/StalkerMatrix/Buffers/DenseMatrixGenericPtrBuffer.h"
 #include <iostream>
 #include <cassert>
 
@@ -27,19 +26,19 @@ namespace STLKR_Tests {
             std::vector<int> matrixData = _generateMatrixData(4, 5);
 
             // Test FixedStridePtrBuffer (Row in Row-Major)
-            DenseMatrixGenericPtrBuffer<int> contiguousRowBuffer(matrixData.data(), 5); // Row-major row buffer
+            FixedStridePtrBuffer<int> contiguousRowBuffer(matrixData.data(), 5); // Row-major row buffer
             _runBufferTests(contiguousRowBuffer, "FixedStridePtrBuffer (Row in Row-Major)");
 
             // // Test NonContiguousBlockPtrBuffer (Column in Row-Major)
-            DenseMatrixGenericPtrBuffer<int> nonContiguousColumnBuffer(matrixData.data(), 4, 4); // Row-major column buffer
+            FixedStridePtrBuffer<int> nonContiguousColumnBuffer(matrixData.data(), 4, 4); // Row-major column buffer
             _runBufferTests(nonContiguousColumnBuffer, "NonContiguousBlockPtrBuffer (Column in Row-Major)");
 
             // Test FixedStridePtrBuffer (Column in Column-Major)
-            DenseMatrixGenericPtrBuffer<int> contiguousColumnBuffer(matrixData.data(), 4); // Column-major column buffer
+            FixedStridePtrBuffer<int> contiguousColumnBuffer(matrixData.data(), 4); // Column-major column buffer
             _runBufferTests(contiguousColumnBuffer, "FixedStridePtrBuffer (Column in Column-Major)");
 
             // // Test NonContiguousBlockPtrBuffer (Row in Column-Major)
-            DenseMatrixGenericPtrBuffer<int> nonContiguousRowBuffer(matrixData.data(), 5, 4); // Column-major row buffer
+            FixedStridePtrBuffer<int> nonContiguousRowBuffer(matrixData.data(), 5, 4); // Column-major row buffer
             _runBufferTests(nonContiguousRowBuffer, "NonContiguousBlockPtrBuffer (Row in Column-Major)");
         }
 

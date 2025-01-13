@@ -16,7 +16,7 @@ namespace STLKR_Tests {
     class DataAccess_ValidityTests : public STLKR_TestBase {
     public:
         explicit DataAccess_ValidityTests()
-            : STLKR_TestBase("Matrix Data Tests"),
+            : STLKR_TestBase("Matrix Data Accessor Tests"),
               _numRows(4), _numCols(4),
               _nonSymmetricRowMajorValues{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
               _nonSymmetricColumnMajorValues{0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15},
@@ -36,20 +36,11 @@ namespace STLKR_Tests {
               _lowerTriangularColumnMajor(_numRows, _numCols, _lowerTriangularColumnMajorValues.data(), _lowerTriangularColumnMajorValues.size()) {}
 
         void runTest() override {
-            Printers::printTitle("Matrix Data Accessor Tests", "=", ColourType::BRIGHT_WHITE);
+            Printers::printTitle(this->_testName, "=", ColourType::BRIGHT_WHITE);
             _testAccessor("Non-Symmetric Row Major", _nonSymmetricRowMajor, _nonSymmetricRowMajorValues, _nonSymmetricExpectedRows, _nonSymmetricExpectedColumns);
             _testAccessor("Non-Symmetric Column Major", _nonSymmetricColumnMajor, _nonSymmetricColumnMajorValues, _nonSymmetricExpectedRows, _nonSymmetricExpectedColumns);
             _testAccessor("Symmetric Row Major", _symmetricRowMajor, _symmetricRowMajorValues, _symmetricExpectedRows, _symmetricExpectedColumns);
-            // _testAccessor("Symmetric Column Major", _symmetricColumnMajor, _symmetricColumnMajorValues, _nonSymmetricExpectedRows, _nonSymmetricExpectedColumns);
-            // _testNonSymmetricColumnMajor();
-            // _testNonSymmetricRowMajor();
-            // _testSymmetricRowMajor();
-            // Printers::conditionalSuccessMessage(true, "gamiesai");
-            // Printers::printSuccess("gamiesai");
-            // Printers::printFailure("den gamiesai");
-            // Printers::printConditionalSuccess(true, "gamiesai");
-            // _testSymmetricColumnMajor();
-
+            _testAccessor("Symmetric Column Major", _symmetricColumnMajor, _symmetricColumnMajorValues, _symmetricExpectedRows, _symmetricExpectedColumns);
         }
 
     private:

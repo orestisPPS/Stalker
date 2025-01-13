@@ -91,7 +91,7 @@ public:
 
     inline std::vector<T> toVector() const {
         std::vector<T> vector(this->_size);
-        std::memcpy(vector.data(), this->_data_start, this->_size * sizeof(T));
+        std::memcpy(vector.data(), this->_dataPtr, this->_size * sizeof(T));
         return vector;
     }
 
@@ -99,24 +99,24 @@ protected:
     /**
      * @brief Constructs a buffer with the given parameters.
      *
-     * @param data_start Pointer to the first element of the buffer.
+     * @param dataPtr Pointer to the first element of the buffer.
      * @param size Number of elements in the buffer.
      * @param stride Stride between elements in memory.
      */
-    PtrBufferBase(T* data_start, std::size_t size, std::ptrdiff_t stride)
-        : _data_start(data_start), _size(size), _stride(stride) {}
+    PtrBufferBase(T* dataPtr, std::size_t size, std::ptrdiff_t stride)
+        : _dataPtr(dataPtr), _size(size), _stride(stride) {}
 
     /**
      * @brief Constructs a const buffer with the given parameters.
      *
-     * @param data_start Pointer to the first element of the const buffer.
+     * @param dataPtr Pointer to the first element of the const buffer.
      * @param size Number of elements in the buffer.
      * @param stride Stride between elements in memory.
      */
-    PtrBufferBase(const T* data_start, std::size_t size, std::ptrdiff_t stride)
-        : _data_start(const_cast<T*>(data_start)), _size(size), _stride(stride) {}
+    PtrBufferBase(const T* dataPtr, std::size_t size, std::ptrdiff_t stride)
+        : _dataPtr(const_cast<T*>(dataPtr)), _size(size), _stride(stride) {}
 
-    T* _data_start;        ///< Pointer to the start of the buffer.
+    T* _dataPtr;        ///< Pointer to the start of the buffer.
     std::size_t _size;     ///< Number of elements in the buffer.
     std::ptrdiff_t _stride; ///< Stride between elements.
 
