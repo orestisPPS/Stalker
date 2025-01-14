@@ -52,11 +52,11 @@ protected:
     inline LinearStrideIterator<T, false> _begin() {
         return LinearStrideIterator<T, false>(this->_dataPtr + _colIndex, _rows - 1);
     }
-    inline LinearStrideIterator<T, false> _end() {
-        return LinearStrideIterator<T, false>(this->_dataPtr + _colIndex + 1, _rows - 1, _colIndex + 1);
-    }
     inline LinearStrideIterator<const T, false> _cbegin() const {
         return LinearStrideIterator<const T, false>(this->_dataPtr + _colIndex, _rows - 1);
+    }
+    inline LinearStrideIterator<T, false> _end() {
+        return LinearStrideIterator<T, false>(this->_dataPtr + _colIndex + 1, _rows - 1, _colIndex + 1);
     }
     inline LinearStrideIterator<const T, false> _cend() const {
         return LinearStrideIterator<T, false>(this->_dataPtr + _colIndex + 1, _rows - 1, _colIndex + 1);
@@ -81,10 +81,10 @@ protected:
     std::size_t _rowIndex;
     inline T& _at(std::size_t i) { return *(this->_dataPtr + i * (i + 1) / 2 + _rowIndex); }
     inline const T& _at(std::size_t i) const { return *(this->_dataPtr + i * (i + 1) / 2 + _rowIndex); }
-    inline LinearStrideIterator<T, true> _begin() { return LinearStrideIterator<T, true>(this->_dataPtr + _rowIndex * (_rowIndex + 1) / 2 + _rowIndex, 1); }
-    inline LinearStrideIterator<T, true> _end() { return LinearStrideIterator<T, true>(this->_dataPtr + (this->_rows - 1) * this->_rows / 2 + _rowIndex, 1); }
-    inline LinearStrideIterator<const T, true> _cbegin() const { return LinearStrideIterator<const T, true>(this->_dataPtr + _rowIndex * (_rowIndex + 1) / 2 + _rowIndex, _rowIndex); }
-    inline LinearStrideIterator<const T, true> _cend() const { return LinearStrideIterator<const T, true>(this->_dataPtr + (this->_rows - 1) * this->_rows / 2 + _rowIndex, _rowIndex); }
+    inline LinearStrideIterator<T, true> _begin() { return LinearStrideIterator<T, true>(this->_dataPtr + _rowIndex * (_rowIndex + 1) / 2 + _rowIndex, _rowIndex + 1, 0); }
+    inline LinearStrideIterator<const T, true> _cbegin() const { return LinearStrideIterator<const T, true>(this->_dataPtr + _rowIndex * (_rowIndex + 1) / 2 + _rowIndex, _rowIndex + 1, 0); }
+    inline LinearStrideIterator<T, true> _end() { return LinearStrideIterator<T, true>(this->_dataPtr + (this->_rows * (this->_rows + 1)) / 2, _rowIndex + 1, this->_rows - _rowIndex); }
+    inline LinearStrideIterator<const T, true> _cend() const { return LinearStrideIterator<const T, true>(this->_dataPtr + (this->_rows * (this->_rows + 1)) / 2, _rowIndex + 1, this->_rows - _rowIndex); }
 };
 
 template <typename T>
