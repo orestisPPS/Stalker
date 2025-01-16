@@ -32,26 +32,21 @@ protected:
         --_index;
         this->_current -= child()._strideFunction(_index); // Retreat by the stride at the decremented index
     }
-    // inline void _advance(std::ptrdiff_t n) {
-    //     child()._advanceFunction(n);
-    // }
-        inline void _advance(std::ptrdiff_t n) {
-        if (n > 0) {
-            for (std::ptrdiff_t i = 0; i < n; ++i) {
+
+    inline void _advance(std::ptrdiff_t n) {
+        if (n > 0)
+            for (std::ptrdiff_t i = 0; i < n; ++i)
                 this->_increment();
-            }
-        } else {
-            for (std::ptrdiff_t i = 0; i < -n; ++i) {
+        else
+            for (std::ptrdiff_t i = 0; i < -n; ++i)
                 this->_decrement();
-            }
-        }
+            
     }
 
     inline std::ptrdiff_t _distance(const DynamicStrideIteratorBase& other) const {
         return static_cast<std::ptrdiff_t>(_index - other._index);
     }
     inline bool _equals(const DynamicStrideIteratorBase& other) const { return this->_current == other._current && _index == other._index; }
-    // inline bool _less_than(const DynamicStrideIteratorBase& other) const { return _index < other._index; }
     inline bool _less_than(const DynamicStrideIteratorBase& other) const { return _index < other._index; }
     inline std::size_t index() const { return _index; }
 
