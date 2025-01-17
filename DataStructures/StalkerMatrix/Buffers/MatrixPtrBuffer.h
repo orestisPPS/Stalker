@@ -178,8 +178,8 @@ class MatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::ColumnMajor, Regi
     : public PtrBufferBase<T, MatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>>
 {
     using Base = PtrBufferBase<T, MatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>>;
-    using Iterator = IndexDependentStrideIterator<T, true>;
-    using ConstIterator = IndexDependentStrideIterator<const T, true>;
+    using Iterator = LinearStrideIterator<T, false>;
+    using ConstIterator = LinearStrideIterator<const T, false>;
 
 public:
     MatrixPtrBuffer(T* matrixDataStart, std::size_t size, std::size_t rowIndex, std::size_t rows)
@@ -206,28 +206,17 @@ protected:
     }
 
     inline Iterator _begin() {
-        return Iterator(this->_dataPtr + _rowIndex, _rowIndex + 1, 0);
+        return Iterator(this->_dataPtr + _rowIndex, _rows - 1);
     }
-
     inline ConstIterator _cbegin() const {
-        return ConstIterator(this->_dataPtr + _rowIndex, _rowIndex + 1, 0);
+        return ConstIterator(this->_dataPtr + _rowIndex, _rows - 1);
     }
-
-inline Iterator _end() {
-    return Iterator(
-        this->_dataPtr + _rowIndex * (2 * this->_rows - _rowIndex + 1) / 2 + (this->_rows - _rowIndex),
-        /*baseOffset=*/0,
-        /*initialIndex=*/(this->_rows - _rowIndex)
-    );
-}
-
-inline ConstIterator _cend() const {
-    return ConstIterator(
-        this->_dataPtr + _rowIndex * (2 * this->_rows - _rowIndex + 1) / 2 + (this->_rows - _rowIndex),
-        /*baseOffset=*/0,
-        /*initialIndex=*/(this->_rows - _rowIndex)
-    );
-}
+    inline Iterator _end() {
+        return Iterator(this->_dataPtr + _rowIndex + 1, _rows - 1, _rowIndex + 1);
+    }
+    inline ConstIterator _cend() const {
+        return ConstIterator(this->_dataPtr + _rowIndex + 1, _rows - 1, _rowIndex + 1);
+    }
 };
 
 #endif // DENSE_TRIANGULAR_MATRIX_PTR_BUFFER_H

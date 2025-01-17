@@ -21,9 +21,9 @@ protected:
 
     inline std::ptrdiff_t _strideFunction(size_t index) const {
         if constexpr (Ascending)
-            return _startStride + index * this->_stride - 1;
+            return _startStride + index * this->_stride;
         else
-            return _startStride - index * this->_stride - 1; 
+            return _startStride - index * this->_stride; 
     }
 };
 

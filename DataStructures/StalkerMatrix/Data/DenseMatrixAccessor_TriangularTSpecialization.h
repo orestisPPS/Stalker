@@ -47,10 +47,10 @@ protected:
         return ConstRowBuffer(values.data() + row * (2 * this->_rows - row + 1) / 2, this->_rows - row);
     }
     inline ColumnBuffer _column(size_t col) {
-        return ColumnBuffer(values.data(), this->_rows - col, col, this->_rows - col);
+        return ColumnBuffer(values.data(), col + 1, col, this->_rows);
     }
     inline ConstColumnBuffer _column(size_t col) const {
-        return ConstColumnBuffer(values.data(), this->_rows - col, col, this->_rows - col);
+        return ConstColumnBuffer(values.data(), col + 1, col, this->_rows);
     }
 };
 
