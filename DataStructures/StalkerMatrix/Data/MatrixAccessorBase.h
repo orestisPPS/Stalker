@@ -8,7 +8,7 @@
 // =============================
 // Base MatrixDataBase Class
 // =============================
-template <typename Derived, typename T, FormType Form, OrderType Order>
+template <typename Derived, typename T, StorageLayout Layout, FormType Form, OrderType Order>
 class MatrixAccessorBase {
 public:
     MatrixAccessorBase(size_t rows, size_t cols) : _rows(rows), _cols(cols) {}

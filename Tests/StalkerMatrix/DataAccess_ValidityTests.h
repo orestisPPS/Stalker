@@ -5,11 +5,13 @@
 #include "../StalkerMatrix/Data/DenseMatrixAccessor_FullTSpecialization.h"
 #include "../StalkerMatrix/Data/DenseMatrixAccessor_SymmetricTSpecialization.h"
 #include "../StalkerMatrix/Data/DenseMatrixAccessor_TriangularTSpecialization.h"
-// #include "../StalkerMatrix/Data/DenseMatrixAccessor_UpperTriangularTSpecialization.h"
+#include "../StalkerMatrix/Data/MatrixAccessor_COOTSpecialization.h"
+// #include "../StalkerMatrix/Data/MatrixAccessor_UpperTriangularTSpecialization.h"
 #include "../TestUtility.h"
 #include <iostream>
 #include <vector>
 #include <map>
+
 
 namespace STLKR_Tests {
 
@@ -36,12 +38,12 @@ namespace STLKR_Tests {
 
         void runTest() override {
             Printers::printTitle(this->_testName, "=", ColourType::BRIGHT_WHITE);
-            // _testAccessor("Dense Full Row Major", _nonSymmetricRowMajor, _nonSymmetricRowMajorValues, _nonSymmetricExpectedRows, _nonSymmetricExpectedColumns);
-            // _testAccessor("Dense Full Column Major", _nonSymmetricColumnMajor, _nonSymmetricColumnMajorValues, _nonSymmetricExpectedRows, _nonSymmetricExpectedColumns);
-            // _testAccessor("Dense Symmetric Row Major", _symmetricRowMajor, _symmetricRowMajorValues, _symmetricExpectedRows, _symmetricExpectedColumns);
-            // _testAccessor("Dense Symmetric Column Major", _symmetricColumnMajor, _symmetricColumnMajorValues, _symmetricExpectedRows, _symmetricExpectedColumns);
-            // _testAccessor("Dense Upper Triangular Row Major", _upperTriangularRowMajor, _symmetricRowMajorValues, _symmetricExpectedRows, _symmetricExpectedColumns);
-            // _testAccessor("Dense Upper Triangular Column Major", _upperTriangularColumnMajor, _symmetricRowMajorValues, _symmetricExpectedRows, _symmetricExpectedColumns);
+            _testAccessor("Dense Full Row Major", _nonSymmetricRowMajor, _nonSymmetricRowMajorValues, _nonSymmetricExpectedRows, _nonSymmetricExpectedColumns);
+            _testAccessor("Dense Full Column Major", _nonSymmetricColumnMajor, _nonSymmetricColumnMajorValues, _nonSymmetricExpectedRows, _nonSymmetricExpectedColumns);
+            _testAccessor("Dense Symmetric Row Major", _symmetricRowMajor, _symmetricRowMajorValues, _symmetricExpectedRows, _symmetricExpectedColumns);
+            _testAccessor("Dense Symmetric Column Major", _symmetricColumnMajor, _symmetricColumnMajorValues, _symmetricExpectedRows, _symmetricExpectedColumns);
+            _testAccessor("Dense Upper Triangular Row Major", _upperTriangularRowMajor, _symmetricRowMajorValues, _symmetricExpectedRows, _symmetricExpectedColumns);
+            _testAccessor("Dense Upper Triangular Column Major", _upperTriangularColumnMajor, _symmetricRowMajorValues, _symmetricExpectedRows, _symmetricExpectedColumns);
             _testAccessor("Dense Lower Triangular Row Major", _lowerTriangularRowMajor, _lowerTriangularRowMajorValues, _lowerTriangularExpectedRows, _lowerTriangularExpectedColumns);
             _testAccessor("Dense Lower Triangular Column Major", _lowerTriangularColumnMajor, _lowerTriangularColumnMajorValues, _lowerTriangularExpectedRows, _lowerTriangularExpectedColumns);
         }
@@ -59,14 +61,14 @@ namespace STLKR_Tests {
         std::vector<T> _lowerTriangularColumnMajorValues;
 
         // Matrix data
-        DenseMatrixAccessor<T, FormType::Full,            OrderType::RowMajor   > _nonSymmetricRowMajor;
-        DenseMatrixAccessor<T, FormType::Full,            OrderType::ColumnMajor> _nonSymmetricColumnMajor;
-        DenseMatrixAccessor<T, FormType::Symmetric,       OrderType::RowMajor   > _symmetricRowMajor;
-        DenseMatrixAccessor<T, FormType::Symmetric,       OrderType::ColumnMajor> _symmetricColumnMajor;
-        DenseMatrixAccessor<T, FormType::UpperTriangular, OrderType::RowMajor   > _upperTriangularRowMajor;
-        DenseMatrixAccessor<T, FormType::UpperTriangular, OrderType::ColumnMajor> _upperTriangularColumnMajor;
-        DenseMatrixAccessor<T, FormType::LowerTriangular, OrderType::RowMajor   > _lowerTriangularRowMajor;
-        DenseMatrixAccessor<T, FormType::LowerTriangular, OrderType::ColumnMajor> _lowerTriangularColumnMajor;
+        MatrixAccessor<T, StorageLayout::Dense, FormType::Full,            OrderType::RowMajor   > _nonSymmetricRowMajor;
+        MatrixAccessor<T, StorageLayout::Dense, FormType::Full,            OrderType::ColumnMajor> _nonSymmetricColumnMajor;
+        MatrixAccessor<T, StorageLayout::Dense, FormType::Symmetric,       OrderType::RowMajor   > _symmetricRowMajor;
+        MatrixAccessor<T, StorageLayout::Dense, FormType::Symmetric,       OrderType::ColumnMajor> _symmetricColumnMajor;
+        MatrixAccessor<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor   > _upperTriangularRowMajor;
+        MatrixAccessor<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor> _upperTriangularColumnMajor;
+        MatrixAccessor<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor   > _lowerTriangularRowMajor;
+        MatrixAccessor<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor> _lowerTriangularColumnMajor;
 
         std::vector<std::vector<T>> _nonSymmetricExpectedRows = {
             {0, 1, 2, 3},
@@ -112,7 +114,7 @@ namespace STLKR_Tests {
 
 
         template <FormType form, OrderType order>
-        void _testAccessor(std::string name, DenseMatrixAccessor<T, form, order>& accessor, const std::vector<T>& values,
+        void _testAccessor(std::string name, MatrixAccessor<T, StorageLayout::Dense, form, order>& accessor, const std::vector<T>& values,
                            const std::vector<std::vector<T>>& expectedRows, const std::vector<std::vector<T>>& expectedColumns) {
 
             Printers::printTitle(name, "*", ColourType::GANDALF_GRAY);

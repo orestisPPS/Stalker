@@ -1,26 +1,26 @@
-#ifndef DENSEMATRIXACCESSOR_TRIANGULARTSPECIALIZATION_H
-#define DENSEMATRIXACCESSOR_TRIANGULARTSPECIALIZATION_H
+#ifndef MatrixAccessor_TRIANGULARTSPECIALIZATION_H
+#define MatrixAccessor_TRIANGULARTSPECIALIZATION_H
 
 #include "DenseMatrixAccessor_FullTSpecialization.h"
 #include "../Buffers/MatrixPtrBuffer.h"
 
 template <typename T>
-class DenseMatrixAccessor<T, FormType::UpperTriangular, OrderType::RowMajor>
-    : public MatrixAccessorBase<DenseMatrixAccessor<T, FormType::UpperTriangular, OrderType::RowMajor>, T, FormType::UpperTriangular, OrderType::RowMajor> {
+class MatrixAccessor<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor>
+    : public MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor>, T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor> {
 
-    using Base = MatrixAccessorBase<DenseMatrixAccessor<T, FormType::UpperTriangular, OrderType::RowMajor>, T, FormType::UpperTriangular, OrderType::RowMajor>;
-    using RowBuffer = MatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Row>;
-    using ConstRowBuffer = MatrixPtrBuffer<const T, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Row>;
-    using ColumnBuffer = MatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Column>;
-    using ConstColumnBuffer = MatrixPtrBuffer<const T, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Column>;
+    using Base = MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor>, T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor>;
+    using RowBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Row>;
+    using ConstRowBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Row>;
+    using ColumnBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Column>;
+    using ConstColumnBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Column>;
 
 public:
 
-    DenseMatrixAccessor(size_t rows, size_t cols) : Base(rows, cols), values(rows * (rows + 1) / 2) {}
-    DenseMatrixAccessor(size_t rows, size_t cols, const T& value) : Base(rows, cols), values(rows * (rows + 1) / 2, value) {}
-    DenseMatrixAccessor(size_t rows, size_t cols, const T* values, size_t numValues) : Base(rows, cols) {
+    MatrixAccessor(size_t rows, size_t cols) : Base(rows, cols), values(rows * (rows + 1) / 2) {}
+    MatrixAccessor(size_t rows, size_t cols, const T& value) : Base(rows, cols), values(rows * (rows + 1) / 2, value) {}
+    MatrixAccessor(size_t rows, size_t cols, const T* values, size_t numValues) : Base(rows, cols) {
         if constexpr (RawDoggySize) {
-            checkSize(numValues, rows * (rows + 1) / 2, "DenseMatrixAccessor:: Constructor");  
+            checkSize(numValues, rows * (rows + 1) / 2, "MatrixAccessor:: Constructor");  
         }
         this->values = std::vector<T>(values, values + numValues);
     }
@@ -55,22 +55,22 @@ protected:
 };
 
 template <typename T>
-class DenseMatrixAccessor<T, FormType::UpperTriangular, OrderType::ColumnMajor>
-    : public MatrixAccessorBase<DenseMatrixAccessor<T, FormType::UpperTriangular, OrderType::ColumnMajor>, T, FormType::UpperTriangular, OrderType::ColumnMajor> {
+class MatrixAccessor<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor>
+    : public MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor>, T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor> {
 
-    using Base = MatrixAccessorBase<DenseMatrixAccessor<T, FormType::UpperTriangular, OrderType::ColumnMajor>, T, FormType::UpperTriangular, OrderType::ColumnMajor>;
-    using RowBuffer = MatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>;
-    using ConstRowBuffer = MatrixPtrBuffer<const T, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>;
-    using ColumnBuffer = MatrixPtrBuffer<T, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Column>;
-    using ConstColumnBuffer = MatrixPtrBuffer<const T, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Column>;
+    using Base = MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor>, T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor>;
+    using RowBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>;
+    using ConstRowBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>;
+    using ColumnBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Column>;
+    using ConstColumnBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Column>;
 
 public:
 
-    DenseMatrixAccessor(size_t rows, size_t cols) : Base(rows, cols), values(rows * (rows + 1) / 2) {}
-    DenseMatrixAccessor(size_t rows, size_t cols, const T& value) : Base(rows, cols), values(rows * (rows + 1) / 2, value) {}
-    DenseMatrixAccessor(size_t rows, size_t cols, const T* values, size_t numValues) : Base(rows, cols) {
+    MatrixAccessor(size_t rows, size_t cols) : Base(rows, cols), values(rows * (rows + 1) / 2) {}
+    MatrixAccessor(size_t rows, size_t cols, const T& value) : Base(rows, cols), values(rows * (rows + 1) / 2, value) {}
+    MatrixAccessor(size_t rows, size_t cols, const T* values, size_t numValues) : Base(rows, cols) {
         if constexpr (RawDoggySize)
-            checkSize(numValues, rows * (rows + 1) / 2, "DenseMatrixAccessor:: Constructor");  
+            checkSize(numValues, rows * (rows + 1) / 2, "MatrixAccessor:: Constructor");  
         this->values = std::vector<T>(values, values + numValues);
     }
 
@@ -104,22 +104,22 @@ protected:
 };
 
 template <typename T>
-class DenseMatrixAccessor<T, FormType::LowerTriangular, OrderType::RowMajor>
-    : public MatrixAccessorBase<DenseMatrixAccessor<T, FormType::LowerTriangular, OrderType::RowMajor>, T, FormType::LowerTriangular, OrderType::RowMajor> {
+class MatrixAccessor<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor>
+    : public MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor>, T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor> {
 
-    using Base = MatrixAccessorBase<DenseMatrixAccessor<T, FormType::LowerTriangular, OrderType::RowMajor>, T, FormType::LowerTriangular, OrderType::RowMajor>;
-    using RowBuffer = MatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Row>;
-    using ConstRowBuffer = MatrixPtrBuffer<const T, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Row>;
-    using ColumnBuffer = MatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Column>;
-    using ConstColumnBuffer = MatrixPtrBuffer<const T, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Column>;
+    using Base = MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor>, T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor>;
+    using RowBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Row>;
+    using ConstRowBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Row>;
+    using ColumnBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Column>;
+    using ConstColumnBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Column>;
 
 public:
 
-    DenseMatrixAccessor(size_t rows, size_t cols) : Base(rows, cols), values(rows * (rows + 1) / 2) {}
-    DenseMatrixAccessor(size_t rows, size_t cols, const T& value) : Base(rows, cols), values(rows * (rows + 1) / 2, value) {}
-    DenseMatrixAccessor(size_t rows, size_t cols, const T* values, size_t numValues) : Base(rows, cols) {
+    MatrixAccessor(size_t rows, size_t cols) : Base(rows, cols), values(rows * (rows + 1) / 2) {}
+    MatrixAccessor(size_t rows, size_t cols, const T& value) : Base(rows, cols), values(rows * (rows + 1) / 2, value) {}
+    MatrixAccessor(size_t rows, size_t cols, const T* values, size_t numValues) : Base(rows, cols) {
         if constexpr (RawDoggySize) {
-            checkSize(numValues, rows * (rows + 1) / 2, "DenseMatrixAccessor:: Constructor");  
+            checkSize(numValues, rows * (rows + 1) / 2, "MatrixAccessor:: Constructor");  
         }
         this->values = std::vector<T>(values, values + numValues);
     }
@@ -154,22 +154,22 @@ protected:
 };
 
 template <typename T>
-class DenseMatrixAccessor<T, FormType::LowerTriangular, OrderType::ColumnMajor>
-    : public MatrixAccessorBase<DenseMatrixAccessor<T, FormType::LowerTriangular, OrderType::ColumnMajor>, T, FormType::LowerTriangular, OrderType::ColumnMajor> {
+class MatrixAccessor<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor>
+    : public MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor>, T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor> {
 
-    using Base = MatrixAccessorBase<DenseMatrixAccessor<T, FormType::LowerTriangular, OrderType::ColumnMajor>, T, FormType::LowerTriangular, OrderType::ColumnMajor>;
-    using RowBuffer = MatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>;
-    using ConstRowBuffer = MatrixPtrBuffer<const T, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>;
-    using ColumnBuffer = MatrixPtrBuffer<T, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Column>;
-    using ConstColumnBuffer = MatrixPtrBuffer<const T, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Column>;
+    using Base = MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor>, T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor>;
+    using RowBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>;
+    using ConstRowBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>;
+    using ColumnBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Column>;
+    using ConstColumnBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Column>;
 
 public:
 
-    DenseMatrixAccessor(size_t rows, size_t cols) : Base(rows, cols), values(rows * (rows + 1) / 2) {}
-    DenseMatrixAccessor(size_t rows, size_t cols, const T& value) : Base(rows, cols), values(rows * (rows + 1) / 2, value) {}
-    DenseMatrixAccessor(size_t rows, size_t cols, const T* values, size_t numValues) : Base(rows, cols) {
+    MatrixAccessor(size_t rows, size_t cols) : Base(rows, cols), values(rows * (rows + 1) / 2) {}
+    MatrixAccessor(size_t rows, size_t cols, const T& value) : Base(rows, cols), values(rows * (rows + 1) / 2, value) {}
+    MatrixAccessor(size_t rows, size_t cols, const T* values, size_t numValues) : Base(rows, cols) {
         if constexpr (RawDoggySize)
-            checkSize(numValues, rows * (rows + 1) / 2, "DenseMatrixAccessor:: Constructor");  
+            checkSize(numValues, rows * (rows + 1) / 2, "MatrixAccessor:: Constructor");  
         this->values = std::vector<T>(values, values + numValues);
     }
 
@@ -205,4 +205,4 @@ protected:
 
 
 
-#endif // DENSEMATRIXACCESSOR_TRIANGULARTSPECIALIZATION_H
+#endif // MatrixAccessor_TRIANGULARTSPECIALIZATION_H

@@ -20,7 +20,7 @@
  * - COO: Coordinate list storage.
  * - None: No specific storage layout.
  */
-enum class MatrixStorageLayout {
+enum class StorageLayout {
     Dense,              ///< Dense matrix storage.
     CompressedSparse,   ///< Compressed sparse row or column storage.
     COO,                ///< Coordinate list storage.
