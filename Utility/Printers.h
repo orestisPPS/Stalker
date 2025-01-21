@@ -21,7 +21,6 @@ enum class ColourType {
     WHITE,
     BRIGHT_WHITE,
     GRAY,
-    RESET,
     ORANGE,
     TOXIC_GREEN,
     DEEP_RED,
@@ -30,6 +29,9 @@ enum class ColourType {
     FERRARI_RED,
     BARBIE_PINK,
     GANDALF_GRAY,
+    BUTIAS_ORANGE,
+    PATSIOURA_RED,
+    RESET
 };
 
 class Printers {
@@ -43,25 +45,26 @@ public:
  */
 static inline const std::string& getColourCode(ColourType colour) {
     static const std::unordered_map<ColourType, std::string> colourMap = {
-        {ColourType::RED,         "\033[38;5;196m"},  // Punchy Red
-        {ColourType::GREEN,       "\033[38;5;46m"},   // Lush Green
-        {ColourType::YELLOW,      "\033[38;5;226m"},  // Bright Yellow
-        {ColourType::BLUE,        "\033[38;5;21m"},   // Vivid Blue
-        {ColourType::MAGENTA,     "\033[38;5;201m"},  // Funky Magenta
-        {ColourType::CYAN,        "\033[38;5;51m"},   // Electric Cyan
-        {ColourType::WHITE,       "\033[38;5;15m"},   // Blinding White
-        {ColourType::GRAY,        "\033[38;5;240m"},  // Subtle Gray
-        {ColourType::BRIGHT_WHITE,"\033[1;97m"},      // Bold Bright White
-        {ColourType::ORANGE,      "\033[38;5;214m"},  // Zesty Orange
-        {ColourType::TOXIC_GREEN, "\033[38;5;118m"},  // Toxic Green
-        {ColourType::DEEP_RED,    "\033[38;5;88m"},   // Deep Red
-        {ColourType::LIGHT_BLUE,  "\033[38;5;39m"},   // Light Blue
-        {ColourType::SHIT_BROWN,  "\033[38;5;94m"},   // Shit Brown
-        {ColourType::FERRARI_RED, "\033[1;31m"},      // Ferrari Red
-        {ColourType::BARBIE_PINK, "\033[38;5;200m"},  // Barbie Pink.
-        {ColourType::GANDALF_GRAY, "\033[38;5;244m"},  // Gandalf Gray
-        
-        {ColourType::RESET,       "\033[0m"},         // Reset
+        {ColourType::RED,                   "\033[38;5;196m"},  // Punchy Red
+        {ColourType::GREEN,                 "\033[38;5;46m"},   // Lush Green
+        {ColourType::YELLOW,                "\033[38;5;226m"},  // Bright Yellow
+        {ColourType::BLUE,                  "\033[38;5;21m"},   // Vivid Blue
+        {ColourType::MAGENTA,               "\033[38;5;201m"},  // Funky Magenta
+        {ColourType::CYAN,                  "\033[38;5;51m"},   // Electric Cyan
+        {ColourType::WHITE,                 "\033[38;5;15m"},   // Blinding White
+        {ColourType::GRAY,                  "\033[38;5;240m"},  // Subtle Gray
+        {ColourType::BRIGHT_WHITE,          "\033[1;97m"},      // Bold Bright White
+        {ColourType::ORANGE,                "\033[38;5;214m"},  // Zesty Orange
+        {ColourType::TOXIC_GREEN,           "\033[38;5;118m"},  // Toxic Green
+        {ColourType::DEEP_RED,              "\033[38;5;88m"},   // Deep Red
+        {ColourType::LIGHT_BLUE,            "\033[38;5;39m"},   // Light Blue
+        {ColourType::SHIT_BROWN,            "\033[38;5;94m"},   // Shit Brown
+        {ColourType::FERRARI_RED,           "\033[1;31m"},      // Ferrari Red
+        {ColourType::BARBIE_PINK,           "\033[38;5;200m"},  // Barbie Pink
+        {ColourType::GANDALF_GRAY,          "\033[38;5;244m"},  // Gandalf Gray
+        {ColourType::BUTIAS_ORANGE,         "\033[38;2;254;111;45m"},  // Fotini Patsioura Erwtodikio 1997
+        {ColourType::PATSIOURA_RED,   "\033[38;2;253;53;19m"}, // Mr Butias Erwtodikio 1997
+        {ColourType::RESET,                 "\033[0m"},         // Reset
     };
     auto it = colourMap.find(colour);
     if (it != colourMap.end()) {
@@ -167,7 +170,7 @@ static inline void printSuccess(const std::string& message) { std::cout << succe
  * @param message The failure message content.
  * @return Formatted failure message string with ANSI colour codes.
  */
-static inline std::string failureMessage(const std::string& message) { return stringWithTitle("FAIL", message, ColourType::FERRARI_RED, ColourType::WHITE); }
+static inline std::string failureMessage(const std::string& message) { return stringWithTitle("FAIL", message, ColourType::PATSIOURA_RED, ColourType::WHITE); }
 
 /**
  * @brief Prints a failure message in red.

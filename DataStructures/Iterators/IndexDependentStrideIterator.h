@@ -14,11 +14,6 @@ public:
         this->_index = initialIndex;
     }
 
-    IndexDependentStrideIterator(const T* startPtr, std::ptrdiff_t baseOffset, std::size_t initialIndex = 0)
-        : Base(startPtr, 1), _baseOffset(baseOffset){
-        this->_index = initialIndex;
-    }
-
 protected:
     friend Base;
     std::ptrdiff_t _baseOffset;

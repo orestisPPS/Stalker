@@ -48,28 +48,25 @@ static bool compareVectors(const std::vector<T>& computed, const std::vector<T>&
 
 template <typename T>
 static void printComparisonTable(const std::vector<T>& computed, const std::vector<T>& expected,
-                                 const std::string& message, bool printSuccess, ColourType colour = ColourType::SHIT_BROWN, int columnWidth = 10) {
+                                 const std::string& message, bool printSuccess, ColourType colour = ColourType::GANDALF_GRAY, int columnWidth = 10) {
     
     bool testSuccess = computed == expected;
-    TestUtility::printConditionalSuccess(testSuccess, message, ColourType::SHIT_BROWN);
+    TestUtility::printConditionalSuccess(testSuccess, message, colour);
 
     if (!testSuccess || printSuccess) {
         std::cout << std::setw(columnWidth) << "Indices: ";
-        for (std::size_t i = 0; i < computed.size(); ++i) {
+        for (std::size_t i = 0; i < computed.size(); ++i)
             std::cout << std::setw(columnWidth) << i;
-        }
         std::cout << std::endl;
 
         std::cout << std::setw(columnWidth) << "Computed: ";
-        for (std::size_t i = 0; i < computed.size(); ++i) {
+        for (std::size_t i = 0; i < computed.size(); ++i)
             std::cout << std::setw(columnWidth) << computed[i];
-        }
         std::cout << std::endl;
 
         std::cout << std::setw(columnWidth) << "Expected: ";
-        for (std::size_t i = 0; i < expected.size(); ++i) {
+        for (std::size_t i = 0; i < expected.size(); ++i)
             std::cout << std::setw(columnWidth) << expected[i];
-        }
         std::cout << std::endl;
         std::cout << std::string(columnWidth * (computed.size() + 1), '-') << std::endl;
     }
@@ -89,7 +86,7 @@ static void printPassed(const std::string& message, ColourType colour = ColourTy
 }
 
 static void printFail(const std::string& message, ColourType colour = ColourType::WHITE) {
-    Printers::printWithTitle("[FAIL]", message, ColourType::FERRARI_RED, colour);
+    Printers::printWithTitle("[FAIL]", message, ColourType::PATSIOURA_RED, colour);
 }
 
 static void printConditionalSuccess(bool condition, const std::string& message, ColourType colour = ColourType::WHITE) {

@@ -11,9 +11,6 @@ public:
     LinearStrideIterator(T* startPtr, std::ptrdiff_t startStride, size_t index = 0) : Base(startPtr, 1), _startStride(startStride) {
         this->_index = index;
     }
-    LinearStrideIterator(const T* startPtr, std::ptrdiff_t startStride, size_t index = 0) : Base(startPtr, 1), _startStride(startStride) {
-        this->_index = index;
-    }
 
 protected:
     friend Base;

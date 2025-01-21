@@ -20,7 +20,6 @@ class DynamicStrideIteratorBase : public StrideIteratorBase<Derived, T> {
 protected:
     friend Base;
     DynamicStrideIteratorBase(T* startPtr, std::ptrdiff_t stride) : Base(startPtr, stride), _index(0) {}
-    DynamicStrideIteratorBase(const T* startPtr, std::ptrdiff_t stride) : Base(startPtr, stride), _index(0) {}
 
     std::size_t _index; ///< The current logical index.
     

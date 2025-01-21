@@ -18,6 +18,9 @@ public:
     MatrixPtrBuffer(const T* dataStart, std::size_t size) : Base(const_cast<T*>(dataStart), size, 1){}
     MatrixPtrBuffer(T* dataStart, std::size_t size, std::size_t primaryDimSize) : Base(dataStart, size, primaryDimSize){}
     MatrixPtrBuffer(const T* dataStart, std::size_t size, std::size_t primaryDimSize) : Base(const_cast<T*>(dataStart), size, primaryDimSize){}
+    
+    inline size_t startIndex() const { return 0; }
+    inline size_t endIndex() const { return this->_size; }
 
 protected:
     friend Base;
@@ -54,6 +57,9 @@ public:
 
     MatrixPtrBuffer(const T* matrixDataStart, std::size_t size, std::size_t colIndex, std::size_t rows)
         : Base(const_cast<T*>(matrixDataStart), size, 1), _rows(rows), _colIndex(colIndex) {}
+            
+    inline size_t startIndex() const { return 0; }
+    inline size_t endIndex() const { return _colIndex + 1; }
 
 protected:
     friend Base;
@@ -93,18 +99,20 @@ public:
     MatrixPtrBuffer(const T* matrixDataStart, std::size_t size, std::size_t rowIndex, std::size_t rows)
         : Base(const_cast<T*>(matrixDataStart), size, 1), _rows(rows), _rowIndex(rowIndex) {}
 
+    inline size_t startIndex() const { return _rowIndex; }
+    inline size_t endIndex() const { return _rows - 1; }
+    
 protected:
     friend Base;
     std::size_t _rows;
     std::size_t _rowIndex;
+
     inline T& _at(std::size_t i) {
-        if (i < _rowIndex)
-            throw std::out_of_range("Accessing upper triangular part of a lower triangular matrix");
+        i+=_rowIndex;
         return *(this->_dataPtr + i * (i + 1) / 2 + _rowIndex);
     }
     inline const T& _at(std::size_t i) const {
-        if (i < _rowIndex)
-            throw std::out_of_range("Accessing upper triangular part of a lower triangular matrix");
+        i+=_rowIndex;
         return *(this->_dataPtr + i * (i + 1) / 2 + _rowIndex);
     }
     inline Iterator _begin() {
@@ -136,6 +144,9 @@ public:
     MatrixPtrBuffer(const T* matrixDataStart, std::size_t size, std::size_t colIndex, std::size_t rows)
         : Base(const_cast<T*>(matrixDataStart), size, 1), _rows(rows), _colIndex(colIndex) {}
 
+    inline size_t startIndex() const { return _colIndex; }
+    inline size_t endIndex() const { return _rows - 1; }
+
 protected:
     friend Base;
 
@@ -143,15 +154,11 @@ protected:
     std::size_t _colIndex;
 
     inline T& _at(std::size_t i) {
-        
-        if (i < _colIndex)
-            throw std::out_of_range("Accessing upper triangular part of a lower triangular matrix");
-        // Row i offset is i*(i+1)/2, plus _colIndex to move to the specific column
+        i+=_colIndex;
         return *(this->_dataPtr + i * (i + 1) / 2 + _colIndex);
     }
     inline const T& _at(std::size_t i) const {
-        if (i < _colIndex)
-            throw std::out_of_range("Accessing upper triangular part of a lower triangular matrix");
+        i+=_colIndex;
         return *(this->_dataPtr + i * (i + 1) / 2 + _colIndex);
     }
 
@@ -188,20 +195,18 @@ public:
     MatrixPtrBuffer(const T* matrixDataStart, std::size_t size, std::size_t rowIndex, std::size_t rows)
         : Base(const_cast<T*>(matrixDataStart), size, 1), _rows(rows), _rowIndex(rowIndex) {}
 
+    inline size_t startIndex() const { return 0; }
+    inline size_t endIndex() const { return _rowIndex + 1; }
 protected:
     friend Base;
     std::size_t _rows;
     std::size_t _rowIndex;
 
     inline T& _at(std::size_t j) {
-        if (j < _rowIndex)
-            throw std::out_of_range("Accessing upper triangular part of a lower triangular matrix");
         return *(this->_dataPtr + j * (2 * _rows - j + 1) / 2 + (_rowIndex - j));
     }
 
     inline const T& _at(std::size_t j) const {
-        if (j < _rowIndex)
-            throw std::out_of_range("Accessing upper triangular part of a lower triangular matrix");
         return *(this->_dataPtr + j * (2 * _rows - j + 1) / 2 + (_rowIndex - j));
     }
 

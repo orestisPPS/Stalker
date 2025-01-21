@@ -66,6 +66,18 @@ public:
     inline size_t size() const { return _size; }
 
     /**
+     * @brief Returns a pointer to the first element of the buffer.
+     * @return T Pointer to the first element of the buffer
+     */
+    inline T* data() { return _dataPtr; }
+
+    /**
+     * @brief Returns a const pointer to the first element of the buffer.
+     * @return Const T Pointer to the first element of the buffer
+     */
+    inline const T* data() const { return _dataPtr; }
+
+    /**
      * @brief Returns an iterator to the beginning of the buffer.
      * @return Iterator pointing to the first element.
      */

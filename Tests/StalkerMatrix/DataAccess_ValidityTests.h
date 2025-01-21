@@ -2,16 +2,8 @@
 #define MATRIXDATA_VALIDITYTESTS_H
 
 #include "../STLKR_TestBase.h"
-#include "../StalkerMatrix/Data/DenseMatrixAccessor_FullTSpecialization.h"
-#include "../StalkerMatrix/Data/DenseMatrixAccessor_SymmetricTSpecialization.h"
-#include "../StalkerMatrix/Data/DenseMatrixAccessor_TriangularTSpecialization.h"
-#include "../StalkerMatrix/Data/MatrixAccessor_COOTSpecialization.h"
-// #include "../StalkerMatrix/Data/MatrixAccessor_UpperTriangularTSpecialization.h"
+#include "../StalkerMatrix/StalkerMatrix.h"
 #include "../TestUtility.h"
-#include <iostream>
-#include <vector>
-#include <map>
-
 
 namespace STLKR_Tests {
 
@@ -19,7 +11,7 @@ namespace STLKR_Tests {
     class DataAccess_ValidityTests : public STLKR_TestBase {
     public:
         explicit DataAccess_ValidityTests()
-            : STLKR_TestBase("Matrix Data Accessor Tests"),
+            : STLKR_TestBase("Matrix Data matrix Tests"),
               _numRows(4), _numCols(4),
               _nonSymmetricRowMajorValues{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
               _nonSymmetricColumnMajorValues{0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15},
@@ -60,15 +52,14 @@ namespace STLKR_Tests {
         std::vector<T> _lowerTriangularRowMajorValues;
         std::vector<T> _lowerTriangularColumnMajorValues;
 
-        // Matrix data
-        MatrixAccessor<T, StorageLayout::Dense, FormType::Full,            OrderType::RowMajor   > _nonSymmetricRowMajor;
-        MatrixAccessor<T, StorageLayout::Dense, FormType::Full,            OrderType::ColumnMajor> _nonSymmetricColumnMajor;
-        MatrixAccessor<T, StorageLayout::Dense, FormType::Symmetric,       OrderType::RowMajor   > _symmetricRowMajor;
-        MatrixAccessor<T, StorageLayout::Dense, FormType::Symmetric,       OrderType::ColumnMajor> _symmetricColumnMajor;
-        MatrixAccessor<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor   > _upperTriangularRowMajor;
-        MatrixAccessor<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor> _upperTriangularColumnMajor;
-        MatrixAccessor<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor   > _lowerTriangularRowMajor;
-        MatrixAccessor<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor> _lowerTriangularColumnMajor;
+        StalkerMatrix<T, StorageLayout::Dense, FormType::Full,            OrderType::RowMajor   > _nonSymmetricRowMajor;
+        StalkerMatrix<T, StorageLayout::Dense, FormType::Full,            OrderType::ColumnMajor> _nonSymmetricColumnMajor;
+        StalkerMatrix<T, StorageLayout::Dense, FormType::Symmetric,       OrderType::RowMajor   > _symmetricRowMajor;
+        StalkerMatrix<T, StorageLayout::Dense, FormType::Symmetric,       OrderType::ColumnMajor> _symmetricColumnMajor;
+        StalkerMatrix<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor   > _upperTriangularRowMajor;
+        StalkerMatrix<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor> _upperTriangularColumnMajor;
+        StalkerMatrix<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor   > _lowerTriangularRowMajor;
+        StalkerMatrix<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor> _lowerTriangularColumnMajor;
 
         std::vector<std::vector<T>> _nonSymmetricExpectedRows = {
             {0, 1, 2, 3},
@@ -114,35 +105,46 @@ namespace STLKR_Tests {
 
 
         template <FormType form, OrderType order>
-        void _testAccessor(std::string name, MatrixAccessor<T, StorageLayout::Dense, form, order>& accessor, const std::vector<T>& values,
+        void _testAccessor(std::string name, StalkerMatrix<T, StorageLayout::Dense, form, order>& matrix, const std::vector<T>& values,
                            const std::vector<std::vector<T>>& expectedRows, const std::vector<std::vector<T>>& expectedColumns) {
 
-            Printers::printTitle(name, "*", ColourType::GANDALF_GRAY);
-
-            std::vector<size_t> computedRowSizes(accessor.getNumRows());
+            Printers::printTitle(name, "*", ColourType::BUTIAS_ORANGE);
+            //Rows size
+            std::vector<size_t> computedRowSizes(matrix.getNumRows());
             std::vector<size_t> expectedRowSizes(expectedRows.size());
-            for (size_t i = 0; i < accessor.getNumRows(); ++i){
-                computedRowSizes[i] = accessor.row(i).size();
+            for (size_t i = 0; i < matrix.getNumRows(); ++i){
+                computedRowSizes[i] = matrix.getRow(i).size();
                 expectedRowSizes[i] = expectedRows[i].size();
             }
             TestUtility::printComparisonTable(computedRowSizes, expectedRowSizes, "Rows Sizes", false);
 
-            std::vector<size_t> computedColSizes(accessor.getNumCols());
+            //Columns size
+            std::vector<size_t> computedColSizes(matrix.getNumColumns());
             std::vector<size_t> expectedColSizes(expectedRows.size());
-            for (size_t i = 0; i < accessor.getNumCols(); ++i){
-                computedColSizes[i] = accessor.column(i).size();
+            for (size_t i = 0; i < matrix.getNumColumns(); ++i){
+                computedColSizes[i] = matrix.getColumn(i).size();
                 expectedColSizes[i] = expectedColumns[i].size();
             }
             TestUtility::printComparisonTable(computedRowSizes, expectedRowSizes, "Columns Sizes", false);
 
-            for (size_t i = 0; i < accessor.getNumRows(); ++i) {
-                auto row = accessor.row(i);
-                TestUtility::printComparisonTable(std::vector<T>(row.begin(), row.end()), expectedRows[i], "Row " + std::to_string(i) + " Values", false);
+            for (size_t i = 0; i < matrix.getNumRows(); ++i) {
+                auto row = matrix.getRow(i);
+                TestUtility::printComparisonTable(std::vector<T>(row.begin(), row.end()), expectedRows[i], "Row " + std::to_string(i) + " Iterator Based Values", false);
+                TestUtility::printComparisonTable(std::vector<T>(row.cbegin(), row.cend()), expectedRows[i], "Row " + std::to_string(i) + " Iterator Based Const Values", false);
+                auto indexValues = std::vector<T>(row.size());
+                for (size_t j = 0; j < row.size(); ++j)
+                    indexValues[j] = row[j];
+                TestUtility::printComparisonTable(indexValues, expectedRows[i], "Row " + std::to_string(i) + " Index Based Values", false);
             }
 
-            for (size_t i = 0; i < accessor.getNumCols(); ++i) {
-                auto column = accessor.column(i);
-                TestUtility::printComparisonTable(std::vector<T>(column.begin(), column.end()), expectedColumns[i], "Column " + std::to_string(i) + " Values", false);
+            for (size_t i = 0; i < matrix.getNumColumns(); ++i) {
+                auto column = matrix.getColumn(i);
+                TestUtility::printComparisonTable(std::vector<T>(column.begin(), column.end()), expectedColumns[i], "Column " + std::to_string(i) + " Iterator Based Values", false);
+                TestUtility::printComparisonTable(std::vector<T>(column.cbegin(), column.cend()), expectedColumns[i], "Column " + std::to_string(i) + " Iterator Based Const Values", false);
+                auto indexValues = std::vector<T>(column.size());
+                for (size_t j = 0; j < column.size(); ++j)
+                    indexValues[j] = column[j];
+                TestUtility::printComparisonTable(indexValues, expectedColumns[i], "Column " + std::to_string(i) + " Index Based Values", false);
             }
         }
     };

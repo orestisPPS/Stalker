@@ -49,8 +49,7 @@ public:
      */
     template <typename U, typename = std::enable_if_t<std::is_convertible_v<U*, T*>>>
     StrideIteratorBase(U* startPtr, std::ptrdiff_t stride)
-        : _current(const_cast<T*>(startPtr)), _stride(stride) {}
-
+        : _current(startPtr), _stride(stride) {}
 
     /**
      * @brief Dereference operator.

@@ -10,8 +10,7 @@ class FixedStrideIteratorBase : public StrideIteratorBase<Derived, T> {
 protected:
     friend Base;
 
-   template <typename U, typename = std::enable_if_t<std::is_convertible_v<U*, T*>>>
-    FixedStrideIteratorBase(U* startPtr, std::ptrdiff_t stride) : Base(startPtr, stride) {}
+    FixedStrideIteratorBase(T* startPtr, std::ptrdiff_t stride) : Base(startPtr, stride) {}
 
     inline constexpr void _increment() { this->_current += child()._stride(); }
     inline constexpr void _decrement() { this->_current -= child()._stride(); }

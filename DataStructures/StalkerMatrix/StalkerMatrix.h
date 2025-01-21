@@ -2,39 +2,82 @@
 #define STALKER_MATRIX_H
 #include <type_traits>
 #include "MatrixTypes.h"
+#include "Data/DenseMatrixAccessor_FullTSpecialization.h"
+#include "Data/DenseMatrixAccessor_SymmetricTSpecialization.h"
+#include "Data/DenseMatrixAccessor_TriangularTSpecialization.h"
+// #include "Data/MatrixAccessor_COOTSpecialization.h"
     
-    template<typename T>
-    class StalkerMatrix {
-        public:
-        static_assert(std::is_same<T, double>::value || std::is_same<T, int>::value ||
-                      std::is_same<T, unsigned>::value || std::is_same<T, short>::value ||
-                      std::is_same<T, float>::value, "StalkerMatrix only supports double, int, unsigned, short, and float types.");
+template<typename T, StorageLayout Layout = StorageLayout::Dense, FormType FormT = FormType::Full, OrderType OrderT = OrderType::RowMajor>       
+class StalkerMatrix {
+   
+public:
+    StalkerMatrix() : _rows(0), _columns(0), _matrixAccessor(0, 0) {}
+    StalkerMatrix(unsigned rows, unsigned columns) : _rows(rows), _columns(columns) {}
+    StalkerMatrix(unsigned rows, unsigned columns, const T& value) : _rows(rows), _columns(columns), _matrixAccessor(rows, columns, value) {}
+    StalkerMatrix(unsigned rows, unsigned columns, const T* values, size_t numValues) : _rows(rows), _columns(columns), _matrixAccessor(rows, columns, values, numValues) {}
+    // Destructor
+    ~StalkerMatrix() = default;
+    // Copy Constructor
+    StalkerMatrix(const StalkerMatrix& other) : _rows(other._rows), _columns(other._columns), _matrixAccessor(other._matrixAccessor) {}
+    // Move Constructor
+    StalkerMatrix(StalkerMatrix&& other) noexcept :
+        _rows(other._rows), _columns(other._columns), _matrixAccessor(std::move(other._matrixAccessor)) {
+        other._rows = 0;
+        other._columns = 0;
+    }
+    // Copy Assignment Operator
+    StalkerMatrix& operator=(const StalkerMatrix& other) {
+        if (this != &other) {
+            _rows = other._rows;
+            _columns = other._columns;
+            _matrixAccessor = other._matrixAccessor;
+        }
+        return *this;
+    }
+    // Move Assignment Operator
+    StalkerMatrix& operator=(StalkerMatrix&& other) noexcept {
+        if (this != &other) {
+            _rows = other._rows;
+            _columns = other._columns;
+            _matrixAccessor = std::move(other._matrixAccessor);
 
-                      
-            StalkerMatrix(unsigned rows, unsigned columns, MatrixStorageLayout storageType = General, FormType FormT = NonSymmetric, OrderType OrderT = RowMajor) :
-                          _rows(rows), _columns(columns), _order(order), _storageType(storageType), _FormT(FormT), _order(OrderT) {}
+            other._rows = 0;
+            other._columns = 0;
+        }
+        return *this;
+    }
 
-            T& operator()(unsigned row, unsigned col) {
+    inline T& operator()(size_t row, size_t col) {
+        return _matrixAccessor.element(row, col);
+    }
 
-            }
+    inline const T& operator()(size_t row, size_t col) const {
+        return _matrixAccessor.element(row, col);
+    }
 
-            const T& operator()(unsigned row, unsigned col) const {
+    auto getRow(size_t row) {
+        return _matrixAccessor.row(row);
+    }
 
-            }
-            
-            unsigned getNumRows() const { return _rows; }
-            unsigned getNumColumns() const { return _columns; }
-            OrderType getElementsOrderType() const { return _order; }
-            MatrixStorageLayout getStorageType() const { return _storageType; }
-            FormType getFormType() const { return _FormT; }
+    auto getRow(size_t row) const {
+        return _matrixAccessor.row(row);
+    }
 
+    auto getColumn(size_t col) {
+        return _matrixAccessor.column(col);
+    }
 
-        protected:
-            unsigned _rows;
-            unsigned _columns;
-            MatrixStorageLayout _storageType;
-            FormType _FormT;
-            OrderType _order;
+    auto getColumn(size_t col) const {
+        return _matrixAccessor.column(col);
+    }
+    
+    unsigned getNumRows() const { return _rows; }
+    unsigned getNumColumns() const { return _columns; }
 
-    };
+protected:
+    unsigned _rows;
+    unsigned _columns;
+    MatrixAccessor<T, Layout, FormT, OrderT> _matrixAccessor;
+
+};
 #endif // STALKER_MATRIX_H
