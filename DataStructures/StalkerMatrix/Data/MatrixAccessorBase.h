@@ -55,6 +55,19 @@ public:
         return derived()._column(col);
     }
 
+    inline auto &getValues() {
+        return derived()._values();
+    }
+
+    inline const auto &getValues() const {
+        return derived()._values();
+    }
+
+    template <typename Container>
+    inline void setValues(const Container& values) {
+        derived()._values() = values;
+    }
+
 
 protected:
     size_t _rows; ///< Number of rows

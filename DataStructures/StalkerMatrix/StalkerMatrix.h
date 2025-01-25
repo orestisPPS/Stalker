@@ -2,9 +2,9 @@
 #define STALKER_MATRIX_H
 #include <type_traits>
 #include "MatrixTypes.h"
-#include "Data/DenseMatrixAccessor_FullTSpecialization.h"
-#include "Data/DenseMatrixAccessor_SymmetricTSpecialization.h"
-#include "Data/DenseMatrixAccessor_TriangularTSpecialization.h"
+#include "Data/MatrixAccessor_FullTSpecialization.h"
+#include "Data/MatrixAccessor_SymmetricTSpecialization.h"
+#include "Data/MatrixAccessor_TriangularTSpecialization.h"
 // #include "Data/MatrixAccessor_COOTSpecialization.h"
     
 template<typename T, StorageLayout Layout = StorageLayout::Dense, FormType FormT = FormType::Full, OrderType OrderT = OrderType::RowMajor>       

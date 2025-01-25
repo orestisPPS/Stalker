@@ -1,7 +1,7 @@
 #ifndef MATRIXACCESSOR_SYMMETRICTSPECIALIZATION_H
 #define MATRIXACCESSOR_SYMMETRICTSPECIALIZATION_H
 
-#include "DenseMatrixAccessor_FullTSpecialization.h"
+#include "MatrixAccessor_FullTSpecialization.h"
 #include "../Buffers/MatrixPtrBuffer.h"
 
 template <typename T>

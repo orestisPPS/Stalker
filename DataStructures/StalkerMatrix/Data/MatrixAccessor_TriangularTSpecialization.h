@@ -1,7 +1,7 @@
-#ifndef MatrixAccessor_TRIANGULARTSPECIALIZATION_H
-#define MatrixAccessor_TRIANGULARTSPECIALIZATION_H
+#ifndef MATRIXACCESSOR_TRIANGULARTSPECIALIZATION_H
+#define MATRIXACCESSOR_TRIANGULARTSPECIALIZATION_H
 
-#include "DenseMatrixAccessor_FullTSpecialization.h"
+#include "MatrixAccessor_FullTSpecialization.h"
 #include "../Buffers/MatrixPtrBuffer.h"
 
 template <typename T>
@@ -205,4 +205,4 @@ protected:
 
 
 
-#endif // MatrixAccessor_TRIANGULARTSPECIALIZATION_H
+#endif // MATRIXACCESSOR_TRIANGULARTSPECIALIZATION_H

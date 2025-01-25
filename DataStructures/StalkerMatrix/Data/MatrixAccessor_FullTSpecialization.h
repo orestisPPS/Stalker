@@ -1,5 +1,5 @@
-#ifndef DENSEMATRIXDATAACCESSOR_TSPECIALIZATION_H
-#define DENSEMATRIXDATAACCESSOR_TSPECIALIZATION_H
+#ifndef MATRIXACCESSOR_TSPECIALIZATION_H
+#define MATRIXACCESSOR_TSPECIALIZATION_H
 #include "MatrixAccessorBase.h"
 
 //=================================================================================================
@@ -98,4 +98,4 @@ protected:
     }
 };
 
-#endif // DENSEMATRIXDATAACCESSOR_TSPECIALIZATION_H
+#endif // MATRIXACCESSOR_TSPECIALIZATION_H
