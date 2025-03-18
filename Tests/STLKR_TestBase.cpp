@@ -7,7 +7,7 @@
 namespace STLKR_Tests {
     
     STLKR_TestBase::STLKR_TestBase(std::string testName) : _testName(std::move(testName)), _manager(CPU_Manager()){
-        //_welcomeMessage();
+        TestUtility::printTestTitle(_testName, "=", ColourType::BRIGHT_WHITE);
     }
 
     void STLKR_TestBase::runTest(unsigned int iterations) {

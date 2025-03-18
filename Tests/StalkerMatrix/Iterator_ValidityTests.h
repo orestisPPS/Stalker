@@ -14,10 +14,12 @@ namespace STLKR_Tests {
             : STLKR_TestBase("Matrix Block Iterator Test") {}
 
         void runTest() override {
+            Printers::printSubtitle("Contiguous Iterator", ColourType::PATSIOURA_RED);
             _testContiguousIteratorBasic();
             _testContiguousIteratorArithmetic();
             _testContiguousIteratorComparison();
             _testContiguousIteratorRandomAccess();
+            Printers::printSubtitle("Non-Contiguous Iterator (Column in Upper Triangular Row Major Matrix)", ColourType::PATSIOURA_RED);
             _testNonContiguousIterator();
         }
 
@@ -27,15 +29,15 @@ namespace STLKR_Tests {
             int data[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
             FixedStrideIterator<int> it(data, 2); // Stride of 2
 
-            printTestCaseResult(*it == 1, "Contiguous iterator dereference operator (basic)");
+            TestUtility::compareValues<int>(*it, 1, "Dereference operator (basic)");
             ++it;
-            printTestCaseResult(*it == 3, "Contiguous iterator pre-increment operator");
+            TestUtility::compareValues<int>(*it, 3, "Pre-increment operator");
             it++;
-            printTestCaseResult(*it == 5, "Contiguous iterator post-increment operator");
+            TestUtility::compareValues<int>(*it, 5, "Post-increment operator");
             --it;
-            printTestCaseResult(*it == 3, "Contiguous iterator pre-decrement operator");
+            TestUtility::compareValues<int>(*it, 3, "Pre-decrement operator");
             it--;
-            printTestCaseResult(*it == 1, "Contiguous iterator post-decrement operator");
+            TestUtility::compareValues<int>(*it, 1, "Post-decrement operator");
         }
 
         void _testContiguousIteratorArithmetic() {
@@ -43,16 +45,16 @@ namespace STLKR_Tests {
             FixedStrideIterator<int> it(data, 2); // Stride of 2
 
             FixedStrideIterator<int> it2 = it + 3;
-            printTestCaseResult(*it2 == 7, "Contiguous iterator addition operator");
+            TestUtility::compareValues<int>(*it2, 7, "Addition operator");
             it += 2;
-            printTestCaseResult(*it == 5, "Contiguous iterator compound addition operator");
+            TestUtility::compareValues<int>(*it, 5, "Compound addition operator");
 
             FixedStrideIterator<int> it3 = it - 2;
-            printTestCaseResult(*it3 == 1, "Contiguous iterator subtraction operator");
+            TestUtility::compareValues<int>(*it3, 1, "Subtraction operator");
             it -= 1;
-            printTestCaseResult(*it == 3, "Contiguous iterator compound subtraction operator");
+            TestUtility::compareValues<int>(*it, 3, "Compound subtraction operator");
 
-            printTestCaseResult(it3 - it == -1, "Contiguous iterator distance between iterators");
+            TestUtility::compareValues<int>(it3 - it, -1, "Distance between iterators");
         }
 
         void _testContiguousIteratorComparison() {
@@ -60,18 +62,18 @@ namespace STLKR_Tests {
             FixedStrideIterator<int> it1(data, 2);
             FixedStrideIterator<int> it2 = it1 + 2;
 
-            printTestCaseResult(it1 != it2, "Contiguous iterator inequality operator");
-            printTestCaseResult(it1 < it2, "Contiguous iterator less-than operator");
-            printTestCaseResult(it2 > it1, "Contiguous iterator greater-than operator");
-            printTestCaseResult(it1 <= it2, "Contiguous iterator less-than-or-equal operator");
-            printTestCaseResult(it2 >= it1, "Contiguous iterator greater-than-or-equal operator");
+            TestUtility::compareValues<bool>(it1 != it2, true, "!=");
+            TestUtility::compareValues<bool>(it1 < it2, true, "<");
+            TestUtility::compareValues<bool>(it2 > it1, true, ">");
+            TestUtility::compareValues<bool>(it1 <= it2, true, "<=");
+            TestUtility::compareValues<bool>(it2 >= it1, true, ">=");
         }
 
         void _testContiguousIteratorRandomAccess() {
             int data[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
             FixedStrideIterator<int> it(data, 2);
 
-            printTestCaseResult(it[3] == 7, "Contiguous iterator random access operator");
+            TestUtility::compareValues<int>(it[3], 7, "random access operator");
         }
 
     void _testNonContiguousIterator() {
@@ -86,38 +88,38 @@ namespace STLKR_Tests {
 
     // Iterator for Column 4 in row-major storage:
     LinearStrideIterator<int, false> it(upperTriangularData + targetColumn, totalRows - 1); // Column 1 starts at index 1 with a stride of totalRows - 1
-    printTestCaseResult(*it == 3, "Upper triangular row-major: dereference column 3, row 0");
+    TestUtility::compareValues<int>(*it, 3, "Dereference column 3, row 0");
 
     // Pre-increment
     ++it; // Move to next row
-    printTestCaseResult(*it == 7, "Upper triangular row-major: pre-increment column 3 to row 1");
+    TestUtility::compareValues<int>(*it, 7, "Pre-increment column 3 to row 1");
 
     // Post-increment
     it++;
-    printTestCaseResult(*it == 11, "Upper triangular row-major: post-increment column 3 to row 2");
+    TestUtility::compareValues<int>(*it, 11, "Post-increment column 3 to row 2");
 
     // Pre-decrement
     --it; // Move back one row
-    printTestCaseResult(*it == 7, "Upper triangular row-major: pre-decrement column 3 to row 1");
+    TestUtility::compareValues<int>(*it, 7, "Pre-decrement column 3 to row 1");
 
     // Post-decrement
     it--;
-    printTestCaseResult(*it == 3, "Upper triangular row-major: post-decrement column 3 to row 0");
+    TestUtility::compareValues<int>(*it, 3, "Post-decrement column 3 to row 0");
 
     // Random access and distance checks
     it += 2; // Jump to the third row
-    printTestCaseResult(*it == 11, "Upper triangular row-major: compound addition operator");
+    TestUtility::compareValues<int>(*it, 11, "Compound addition operator");
 
     LinearStrideIterator<int, false> it2 = it - 2; // Go back to the first row
-    printTestCaseResult(*it2 == 3, "Upper triangular row-major: compound subtraction operator");
-    printTestCaseResult(it2 - it == -2, "Upper triangular row-major: distance between iterators");
+    TestUtility::compareValues<int>(*it2, 3, "Compound subtraction operator");
+    TestUtility::compareValues<int>(it2 - it, -2, "Distance between iterators");
 
     // Comparison operators
-    printTestCaseResult(it2 < it, "Upper triangular row-major: less-than operator");
-    printTestCaseResult(it > it2, "Upper triangular row-major: greater-than operator");
-    printTestCaseResult(!(it == it2), "Upper triangular row-major: equal operator");
-    printTestCaseResult(it2 <= it, "Upper triangular row-major: less-than-or-equal operator");
-    printTestCaseResult(it >= it2, "Upper triangular row-major: greater-than-or-equal operator");
+    TestUtility::compareValues<bool>(it2 < it, true, "<");
+    TestUtility::compareValues<bool>(it > it2, true, ">");
+    TestUtility::compareValues<bool>(!(it == it2), true, "!=");
+    TestUtility::compareValues<bool>(it2 <= it, true, "<=");
+    TestUtility::compareValues<bool>(it >= it2, true, ">=");
 
 }
 

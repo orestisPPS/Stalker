@@ -11,7 +11,7 @@ namespace STLKR_Tests {
     class DataAccess_ValidityTests : public STLKR_TestBase {
     public:
         explicit DataAccess_ValidityTests()
-            : STLKR_TestBase("Matrix Data matrix Tests"),
+            : STLKR_TestBase("Stalker Matrix Data Access Tests"),
               _numRows(4), _numCols(4),
               _nonSymmetricRowMajorValues{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
               _nonSymmetricColumnMajorValues{0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15},
@@ -29,7 +29,6 @@ namespace STLKR_Tests {
               _lowerTriangularColumnMajor(_numRows, _numCols, _lowerTriangularColumnMajorValues.data(), _lowerTriangularColumnMajorValues.size()) {}
 
         void runTest() override {
-            Printers::printTitle(this->_testName, "=", ColourType::BRIGHT_WHITE);
             _testAccessor("Dense Full Row Major", _nonSymmetricRowMajor, _nonSymmetricRowMajorValues, _nonSymmetricExpectedRows, _nonSymmetricExpectedColumns);
             _testAccessor("Dense Full Column Major", _nonSymmetricColumnMajor, _nonSymmetricColumnMajorValues, _nonSymmetricExpectedRows, _nonSymmetricExpectedColumns);
             _testAccessor("Dense Symmetric Row Major", _symmetricRowMajor, _symmetricRowMajorValues, _symmetricExpectedRows, _symmetricExpectedColumns);
@@ -108,43 +107,75 @@ namespace STLKR_Tests {
         void _testAccessor(std::string name, StalkerMatrix<T, StorageLayout::Dense, form, order>& matrix, const std::vector<T>& values,
                            const std::vector<std::vector<T>>& expectedRows, const std::vector<std::vector<T>>& expectedColumns) {
 
-            Printers::printTitle(name, "*", ColourType::BUTIAS_ORANGE);
-            //Rows size
-            std::vector<size_t> computedRowSizes(matrix.getNumRows());
-            std::vector<size_t> expectedRowSizes(expectedRows.size());
-            for (size_t i = 0; i < matrix.getNumRows(); ++i){
-                computedRowSizes[i] = matrix.getRow(i).size();
-                expectedRowSizes[i] = expectedRows[i].size();
-            }
-            TestUtility::printComparisonTable(computedRowSizes, expectedRowSizes, "Rows Sizes", false);
+            Printers::printTitle(name, "-", ColourType::WHITE);
 
-            //Columns size
-            std::vector<size_t> computedColSizes(matrix.getNumColumns());
-            std::vector<size_t> expectedColSizes(expectedRows.size());
-            for (size_t i = 0; i < matrix.getNumColumns(); ++i){
-                computedColSizes[i] = matrix.getColumn(i).size();
-                expectedColSizes[i] = expectedColumns[i].size();
-            }
-            TestUtility::printComparisonTable(computedRowSizes, expectedRowSizes, "Columns Sizes", false);
+            Printers::printSubtitle("Size", ColourType::PATSIOURA_RED);
+            {
+                // Rows size
+                std::vector<size_t> computedRowSizes(matrix.getNumRows());
+                std::vector<size_t> expectedRowSizes(expectedRows.size());
+                for (size_t i = 0; i < matrix.getNumRows(); ++i) {
+                    computedRowSizes[i] = matrix.getRow(i).size();
+                    expectedRowSizes[i] = expectedRows[i].size();
+                }
+                TestUtility::printComparisonTable(computedRowSizes, expectedRowSizes, "Rows", false);
 
-            for (size_t i = 0; i < matrix.getNumRows(); ++i) {
-                auto row = matrix.getRow(i);
-                TestUtility::printComparisonTable(std::vector<T>(row.begin(), row.end()), expectedRows[i], "Row " + std::to_string(i) + " Iterator Based Values", false);
-                TestUtility::printComparisonTable(std::vector<T>(row.cbegin(), row.cend()), expectedRows[i], "Row " + std::to_string(i) + " Iterator Based Const Values", false);
-                auto indexValues = std::vector<T>(row.size());
-                for (size_t j = 0; j < row.size(); ++j)
-                    indexValues[j] = row[j];
-                TestUtility::printComparisonTable(indexValues, expectedRows[i], "Row " + std::to_string(i) + " Index Based Values", false);
+                // Columns size
+                std::vector<size_t> computedColSizes(matrix.getNumColumns());
+                std::vector<size_t> expectedColSizes(expectedColumns.size());
+                for (size_t i = 0; i < matrix.getNumColumns(); ++i) {
+                    computedColSizes[i] = matrix.getColumn(i).size();
+                    expectedColSizes[i] = expectedColumns[i].size();
+                }
+                TestUtility::printComparisonTable(computedColSizes, expectedColSizes, "Columns", false);
             }
 
-            for (size_t i = 0; i < matrix.getNumColumns(); ++i) {
-                auto column = matrix.getColumn(i);
-                TestUtility::printComparisonTable(std::vector<T>(column.begin(), column.end()), expectedColumns[i], "Column " + std::to_string(i) + " Iterator Based Values", false);
-                TestUtility::printComparisonTable(std::vector<T>(column.cbegin(), column.cend()), expectedColumns[i], "Column " + std::to_string(i) + " Iterator Based Const Values", false);
-                auto indexValues = std::vector<T>(column.size());
-                for (size_t j = 0; j < column.size(); ++j)
-                    indexValues[j] = column[j];
-                TestUtility::printComparisonTable(indexValues, expectedColumns[i], "Column " + std::to_string(i) + " Index Based Values", false);
+            Printers::printSubtitle("Iterator Based Values", ColourType::PATSIOURA_RED);
+            {
+                // Rows (iterator)
+                for (size_t i = 0; i < matrix.getNumRows(); ++i) {
+                    auto row = matrix.getRow(i);
+                    TestUtility::printComparisonTable(std::vector<T>(row.begin(), row.end()), expectedRows[i], "Row " + std::to_string(i), false);
+                }
+                // Columns (iterator)
+                for (size_t i = 0; i < matrix.getNumColumns(); ++i) {
+                    auto column = matrix.getColumn(i);
+                    TestUtility::printComparisonTable(std::vector<T>(column.begin(), column.end()), expectedColumns[i], "Column " + std::to_string(i), false);
+                }
+            }
+
+            Printers::printSubtitle("Const Iterator Based Values", ColourType::PATSIOURA_RED);
+            {
+                // Rows (const iterator)
+                for (size_t i = 0; i < matrix.getNumRows(); ++i) {
+                    auto row = matrix.getRow(i);
+                    TestUtility::printComparisonTable(std::vector<T>(row.cbegin(), row.cend()), expectedRows[i], "Row " + std::to_string(i), false);
+                }
+                // Columns (const iterator)
+                for (size_t i = 0; i < matrix.getNumColumns(); ++i) {
+                    auto column = matrix.getColumn(i);
+                    TestUtility::printComparisonTable(std::vector<T>(column.cbegin(), column.cend()), expectedColumns[i], "Column " + std::to_string(i), false);
+                }
+            }
+
+            Printers::printSubtitle("Index Based Values", ColourType::PATSIOURA_RED);
+            {
+                // Rows (index-based)
+                for (size_t i = 0; i < matrix.getNumRows(); ++i) {
+                    auto row = matrix.getRow(i);
+                    auto indexValues = std::vector<T>(row.size());
+                    for (size_t j = 0; j < row.size(); ++j)
+                        indexValues[j] = row[j];
+                    TestUtility::printComparisonTable(indexValues, expectedRows[i], "Row " + std::to_string(i), false);
+                }
+                // Columns (index-based)
+                for (size_t i = 0; i < matrix.getNumColumns(); ++i) {
+                    auto column = matrix.getColumn(i);
+                    auto indexValues = std::vector<T>(column.size());
+                    for (size_t j = 0; j < column.size(); ++j)
+                        indexValues[j] = column[j];
+                    TestUtility::printComparisonTable(indexValues, expectedColumns[i], "Column " + std::to_string(i), false);
+                }
             }
         }
     };

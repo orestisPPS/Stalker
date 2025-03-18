@@ -9,6 +9,8 @@
 #include <string>
 #include <iostream>
 #include <limits.h>
+#include "TestUtility.h"
+#include "../Utility/Linspace.h"
 #include "../Threading/CPUTopology/CPU_Manager.h"
 
 

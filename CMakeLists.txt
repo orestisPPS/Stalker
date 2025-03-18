@@ -53,14 +53,16 @@ add_library(stalker_core INTERFACE)
 target_include_directories(stalker_core INTERFACE
         ${PROJECT_SOURCE_DIR}/DataStructures/StalkerVector
         ${PROJECT_SOURCE_DIR}/DataStructures/StalkerMatrix
+        ${PROJECT_SOURCE_DIR}/DataStructures/StalkerMatrix
         ${PROJECT_SOURCE_DIR}/DataStructures/Iterators
         ${PROJECT_SOURCE_DIR}/DataStructures/Buffers
+        ${PROJECT_SOURCE_DIR}/StalkerMathematics
         ${PROJECT_SOURCE_DIR}/Threading
         ${PROJECT_SOURCE_DIR}/Utility
 )
 # Define the stalker_tests library
 add_library(stalker_tests STATIC
-        Tests/TestBase.h
+        Tests/StalkerTestRunner.h
         Tests/STLKR_PerformanceTests/STLKR_PerformanceTestBase.h
         Tests/STLKR_TestBase.cpp
         Tests/STLKR_TestBase.h
@@ -70,7 +72,9 @@ add_library(stalker_tests STATIC
         Tests/CPUTopologyTest.h
         Tests/StalkerMatrix/DataAccess_ValidityTests.h
         Tests/StalkerMatrix/Iterator_ValidityTests.h
-        Tests/StalkerMatrix/Buffers_ValidityTests.h
+        Tests/StalkerMatrix/FixedStridePtrBuffer_ValidityTest.h
+        Tests/StalkerMathematics/Differentiation_ValidityTests.h
+        Tests/StalkerMathematics/MetaMath_ValidityTests.h
 )
 
 # Link the stalker_tests library with stalker_core

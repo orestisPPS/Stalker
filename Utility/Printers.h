@@ -207,9 +207,9 @@ static inline std::string debugMessage(const std::string& message) { return stri
  */
 static inline void printDebug(const std::string& message) { std::cout << debugMessage(message) << std::endl; }
 
-static void printTitle(const std::string& title, std::string symbol,  ColourType colour = ColourType::WHITE, int padding = 20) {
+static void printTitle(const std::string& title, std::string symbol, ColourType colour = ColourType::WHITE, int padding = 20) {
     if (padding > 50) {
-        padding = 50; // Limit the padding to a maximum of 50 to avoid excessively large padding
+        padding = 50;
     }
     int totalLength = title.length() + 2 * padding;
     std::string border(totalLength, symbol[0]);
@@ -218,6 +218,10 @@ static void printTitle(const std::string& title, std::string symbol,  ColourType
     std::cout << Printers::getColourCode(colour) << border << std::endl;
     std::cout << paddedTitle << std::endl;
     std::cout << border << Printers::resetColour() << std::endl;
+}
+
+static void printSubtitle(const std::string& subtitle, ColourType colour = ColourType::WHITE) {
+    std::cout << Printers::getColourCode(colour) << "- " << subtitle << Printers::resetColour() << std::endl;
 }
 
 

@@ -1,0 +1,99 @@
+#ifndef INTEGRATION_VALIDITYTESTS_H
+#define INTEGRATION_VALIDITYTESTS_H
+
+#include "../../StalkerMathematics/Integration/Integral.h"
+#include "../../StalkerMathematics/Polynomial/MetaPolynomial.h"
+
+namespace STLKR_Tests {
+
+
+    class Integration_ValidityTests : public STLKR_TestBase {
+    public:
+        explicit Integration_ValidityTests()
+            : STLKR_TestBase("Numeric Integration Tests"){
+
+            }
+              
+        void runTest() override {
+            _testExponential();
+            _testPolynomial();
+        }
+
+    private:
+        //Test from Numerical Methods: 4_Ολοκλήρωση.pdf - UTH, Prof. D. Valougeorgis
+        //Integral of exp(-x) from 0.2 to 1.0 with 5 points
+        //Trapezoidal:  0.4523
+        //Simpson1:     0.4508
+        //Simpson2: Not Applicable
+        void _testExponential() {
+            Printers::printSubtitle("Exponential Function: exp(-x)", ColourType::PATSIOURA_RED);
+            constexpr size_t nPoints = 101;
+            constexpr double a = 0.2;
+            constexpr double b = 1.0;
+            constexpr auto x = linspace<nPoints>(a, b);
+            constexpr double stepSize = (b - a) / (nPoints - 1);
+            constexpr auto f_x = [x]<std::size_t... Is>(std::index_sequence<Is...>) {
+                return std::array<double, sizeof...(Is)>{ { std::exp(-x[Is])... } };
+            }(std::make_index_sequence<nPoints>{});
+            constexpr double expectedAnalytical = std::exp(-a) - std::exp(-b);
+
+            auto resultTrapezoidal = Integral<IntegrationType::Trapezoidal, double>::evaluate(f_x.data(), f_x.size(), stepSize);
+            auto resultSimpson1 = Integral<IntegrationType::Simpson1, double>::evaluate(f_x.data(), f_x.size(), stepSize);
+            // auto resultSimpson2 = Integral<IntegrationType::Simpson2, double>::evaluate(f_x.data(), f_x.size(), stepSize);
+
+            auto printerConfig = TestUtility::DoublePrinterConfig();
+            printerConfig.precision = 6;            
+            printerConfig.tolerance = 1E-3;
+
+            TestUtility::compareDoubles(resultTrapezoidal, expectedAnalytical, "Trapezoidal", printerConfig);
+            TestUtility::compareDoubles(resultSimpson1, expectedAnalytical, "Simpson1", printerConfig);
+            // TestUtility::compareDoubles(resultSimpson2, expectedAnalytical, "Simpson2", printerConfig);
+
+            constexpr auto ConstexprTrapezoidal = Integral<IntegrationType::Trapezoidal, double>::evaluate(f_x.data(), f_x.size(), stepSize);
+            constexpr auto ConstexprSimpson1    = Integral<IntegrationType::Simpson1, double>::evaluate(f_x.data(), f_x.size(), stepSize);
+            // constexpr auto ConstexprResultSimpson2 = Integral<IntegrationType::Simpson2, double>::evaluate(f_x.data(), f_x.size(), stepSize);
+
+            static_assert(std::fabs(ConstexprTrapezoidal - expectedAnalytical) < 1E-4, "Trapezoidal");
+            static_assert(std::fabs(ConstexprSimpson1 - expectedAnalytical) < 1E-8, "Simpson1");
+            // static_assert(std::fabs(ConstexprResultSimpson2 - expectedAnalytical) < 1E-6, "Simpson2");
+        }
+
+        void _testPolynomial() {
+            Printers::printSubtitle("Polynomial Function: P(x) = 100 + 3x + 0.5x² - 3x³ + (1/12)x⁴ + 20x⁵", ColourType::PATSIOURA_RED);
+            constexpr auto coefficients = std::array<double, 6>{100, 3, 0.5, -3, 1.0/12.0, 20};
+            constexpr MetaPolynomial<double, 5> p(coefficients);
+            constexpr auto expectedIntegral = p.integral(0.0, 1.0);
+            constexpr auto nPoints = 1001;
+            constexpr auto stepSize = 1.0 / (nPoints - 1);
+            
+            constexpr auto f_x = p.sample<nPoints>(0.0, 1.0);
+
+            auto printerConfig = TestUtility::DoublePrinterConfig();
+            printerConfig.precision = 9;
+            printerConfig.tolerance = 1E-4;
+
+            constexpr auto constexprTrapezoidal = Integral<IntegrationType::Trapezoidal, double>::evaluate(f_x.data(), f_x.size(), stepSize);
+            constexpr auto constexprSimpson1 = Integral<IntegrationType::Simpson1, double>::evaluate(f_x.data(), f_x.size(), stepSize);
+            constexpr auto constexprSimpson2 = Integral<IntegrationType::Simpson2, double>::evaluate(f_x.data(), f_x.size(), stepSize);
+
+            auto resultTrapezoidal = Integral<IntegrationType::Trapezoidal, double>::evaluate(f_x.data(), f_x.size(), stepSize);
+            auto resultSimpson1 = Integral<IntegrationType::Simpson1, double>::evaluate(f_x.data(), f_x.size(), stepSize);
+            auto resultSimpson2 = Integral<IntegrationType::Simpson2, double>::evaluate(f_x.data(), f_x.size(), stepSize);
+            
+            TestUtility::compareDoubles(resultTrapezoidal, expectedIntegral, "Trapezoidal", printerConfig);
+            TestUtility::compareDoubles(resultSimpson1, expectedIntegral, "Simpson1", printerConfig);
+            // TestUtility::compareDoubles(resultSimpson2, expectedIntegral, "Simpson2", printerConfig);
+
+            static_assert(std::fabs(constexprTrapezoidal - expectedIntegral) < 1E-5, "Trapezoidal");
+            static_assert(std::fabs(constexprSimpson1 - expectedIntegral) < 1E-11, "Simpson1");
+            // static_assert(std::fabs(constexprSimpson2 - expectedIntegral) < 1E-6, "Simpson2");
+
+
+        }
+
+    };
+
+
+} // namespace STLKR_Tests
+
+#endif // INTEGRATION_VALIDITYTESTS_H
