@@ -7,7 +7,6 @@
 #include "CPU.h"
 #include <unordered_map>
 #include <mutex>
-#include "../StalkerVector/AVX2/MemoryTraits.h"
 
 enum CoreAffinityConfig{
     HT_CoreSet,                // Hyperthreading is enabled and all core threads are bound to a single cpu_set_t.

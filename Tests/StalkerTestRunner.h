@@ -12,6 +12,7 @@
 #include "StalkerMathematics/MetaMath_ValidityTests.h"
 #include "StalkerMathematics/Differentiation_ValidityTests.h"
 #include "StalkerMathematics/Integration_ValidityTests.h"
+#include "StalkerMathematics/Operations/SIMD_ValidityTests.h"
 #include "Linspace_ValidityTest.h"
 #include "Exporter_ValidityTest.h"
 #include "CPUTopologyTest.h"
@@ -27,7 +28,7 @@ namespace STLKR_Tests {
         ~StalkerTestRunner() = default;
 
         void runTests() {
-                std::cout << "SLET" << std::endl;
+            std::cout << "SLET" << std::endl;
         
         //    auto readerTest = STLKR_Tests::CPUTopologyTest();
         //    readerTest.runTest();
@@ -42,6 +43,7 @@ namespace STLKR_Tests {
         Integration_ValidityTests().runTest();
         Differentiation_ValidityTests().runTest();
         STLKR_Tests::Exporter_ValidityTests().runTest();
+        SIMD_ValidityTests().runTest();
 
         
         auto exportPath = "/home/hal9000/code/stalker/Tests/STLKR_PerformanceTests/StalkerVector/logs";
