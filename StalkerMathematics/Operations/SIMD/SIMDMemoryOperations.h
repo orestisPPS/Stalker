@@ -4,472 +4,421 @@
 
 #ifndef STALKER_MemoryTraits_H
 #define STALKER_MemoryTraits_H
-// AVX register sizes in terms of elements per register
-#define DOUBLE_AVX_REGISTER_SIZE 4     // 256 bits / 64 bits per double
-#define FLOAT_AVX_REGISTER_SIZE 8      // 256 bits / 32 bits per float
-#define INT_AVX_REGISTER_SIZE 8        // 256 bits / 32 bits per int
-#define SHORT_AVX_REGISTER_SIZE 16     // 256 bits / 16 bits per short
-#define UNSIGNED_AVX_REGISTER_SIZE 8   // 256 bits / 32 bits per unsigned int
 
-#include <immintrin.h>
+#include <utility>
+#include "../../../GlobalDefinitions.h"
+#include "SIMDTypeTraits.h"
 
-template<typename T, unsigned int unrollFactor>
-struct MemoryTraits;
+enum class SIMDStoreType {
+    Cached,
+    Streamed
+};
 
-// Float Specialization
-template<unsigned int unrollFactor>
-struct MemoryTraits<float, unrollFactor> {
-    using T_simd = __m256;
-    using T_data = float;
-    static constexpr unsigned registerSize = FLOAT_AVX_REGISTER_SIZE;
-    static constexpr unsigned elementsPerCacheLine = 64 / sizeof(float);
-    static constexpr unsigned UnrollFactor = unrollFactor;
-    static constexpr unsigned cacheLinesProcessed = (unrollFactor * registerSize) / elementsPerCacheLine;
-    static constexpr unsigned blockSize = registerSize * UnrollFactor;
-    
-    static constexpr inline void loadRegister(const T_data* source, T_simd* destination) {
-        _loadAVXRegister<UnrollFactor>(source, destination);
-    }
+// Forward declarations for specialized SIMDMemoryOperations:
+template<typename T, SIMDType Type> struct SIMDMemoryOperations; 
+template<> struct SIMDMemoryOperations<float, SIMDType::AVX2>;
+template<> struct SIMDMemoryOperations<int, SIMDType::AVX2>;
+template<> struct SIMDMemoryOperations<short, SIMDType::AVX2>;
+template<> struct SIMDMemoryOperations<unsigned, SIMDType::AVX2>;
+template<> struct SIMDMemoryOperations<double, SIMDType::AVX2>;
 
-    static constexpr inline void temporalStore(const T_simd* source, T_data* destination) {
-        _storeAVXRegisterTemporal<UnrollFactor>(source, destination);
-    }
+template<typename T, SIMDType Type, typename Child>
+struct SIMDMemoryOperationsBase {
 
-    static constexpr inline void nonTemporalStore(const T_simd* source, T_data* destination) {
-        _storeAVXRegisterNonTemporal<UnrollFactor>(source, destination);
-    }
-    
-    static constexpr inline void prefetchL1(const T_data* data) {
-        _prefetchL1<4>(data);
+    using T_simd = typename SIMDTypeTraits<T, Type>::typeSIMD;
+    using T_data = typename SIMDTypeTraits<T, Type>::typeData;
+
+public:
+
+    template<unsigned UnrollFactor = UnrollFactorSIMD>
+    constexpr inline static void load(const T_data* source, T_simd* destination, unsigned size) {
+        constexpr auto blockSize = SIMDTypeTraits<T, Type>::BlockSize;
+        auto limit = size - (size % blockSize);
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::_load(source + i, destination + i, std::make_index_sequence<UnrollFactor>{});
+        for (size_t i = limit; i < size; i++)
+            destination[i] = source[i];
     }
 
-    static constexpr inline void setZeroAVXRegister(T_simd* destination) {
-        _setZeroAVXRegister<UnrollFactor>(destination);
+    template<unsigned Size>
+    constexpr inline void load(const T_data* source, T_simd* destination) {
+        constexpr auto limit = Size - (Size % SIMDTypeTraits<T, Type>::BlockSize);
+        Child::_load(source, destination, std::make_index_sequence<limit>{});
+        for (size_t i = limit; i < Size; i++)
+            destination[i] = source[i];
     }
 
-    static constexpr inline void setValue(T_simd* destination, const T_data& value) {
-        _setValue<UnrollFactor>(destination, value);
-    }
-    
-    static constexpr inline bool areEqual(const T_simd* a, const T_simd* b) {
-        return _areEqual<UnrollFactor>(a, b);
-    }
-
-private:
-    template <unsigned iUnroll>
-    static constexpr inline void _loadAVXRegister(const T_data* source, T_simd* destination) {
-        if constexpr (iUnroll > 0) {
-            *(destination + iUnroll - 1) = _mm256_load_ps(source + (iUnroll - 1) * FLOAT_AVX_REGISTER_SIZE);
-            _loadAVXRegister<iUnroll - 1>(source, destination);
-        }
-        else return;
+    template<unsigned UnrollFactor = UnrollFactorSIMD, SIMDStoreType Policy = SIMDStoreType::Cached>
+    constexpr inline static void store(const T_simd* source, T_data* destination, unsigned size) {
+        constexpr auto blockSize = SIMDTypeTraits<T, Type>::BlockSize;
+        auto limit = size - (size % blockSize);
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::_store<Policy>(source + i, destination + i, std::make_index_sequence<UnrollFactor>{});
+        for (size_t i = limit; i < size; i++)
+            destination[i] = source[i];
     }
 
-    template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterTemporal(const T_simd* source, T_data* destination) {
-        if constexpr (iUnroll > 0) {
-            _mm256_store_ps(destination + (iUnroll - 1) * FLOAT_AVX_REGISTER_SIZE, *(source + iUnroll - 1));
-            _storeAVXRegisterTemporal<iUnroll - 1>(source, destination);
-        }
-        else return;
+    template<unsigned Size, SIMDStoreType Policy = SIMDStoreType::Cached>
+    constexpr inline void store(const T_simd* source, T_data* destination) {
+        constexpr auto limit = Size - (Size % SIMDTypeTraits<T, Type>::BlockSize);
+        Child::_store<Policy>(source, destination, std::make_index_sequence<limit>{});
+        for (size_t i = limit; i < Size; i++)
+            destination[i] = source[i];
     }
 
-    template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterNonTemporal(const T_simd* source, T_data* destination) {
-        if constexpr (iUnroll > 0) {
-            _mm256_stream_ps(destination + (iUnroll - 1) * FLOAT_AVX_REGISTER_SIZE, *(source + iUnroll - 1));
-            _storeAVXRegisterNonTemporal<iUnroll - 1>(source, destination);
-        }
-        else return;
+    template<unsigned UnrollFactor = UnrollFactorSIMD, SIMDStoreType Policy = SIMDStoreType::Cached>
+    constexpr inline static void copy(const T_data* source, T_data* destination, unsigned size) {
+        constexpr auto blockSize = SIMDTypeTraits<T, Type>::BlockSize;
+        auto limit = size - (size % blockSize);
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::template _copy<Policy>(source + i, destination + i, std::make_index_sequence<UnrollFactor>{});
+        for (size_t i = limit; i < size; i++)
+            destination[i] = source[i];
     }
 
-    template <unsigned iPrefetch>
-    static constexpr inline void _prefetchL1(const T_data* data) {
-//        if constexpr (iPrefetch > 0) {
-//            _mm_prefetch(reinterpret_cast<const char*>(&data[iPrefetch + prefetch_distance]), _MM_HINT_T0);
-//            _prefetchL1<iPrefetch - 1>(data);
-//        }
-//        else return;
+    template<unsigned Size, SIMDStoreType Policy = SIMDStoreType::Cached>
+    constexpr inline void copy(const T_data* source, T_data* destination) {
+        constexpr auto limit = Size - (Size % SIMDTypeTraits<T, Type>::BlockSize);
+        Child::template _copy<Policy>(source, destination, std::make_index_sequence<limit>{});
+        for (size_t i = limit; i < Size; i++)
+            destination[i] = source[i];
     }
 
-    template <unsigned iUnroll>
-    static constexpr inline void _setZeroAVXRegister(T_simd* destination) {
-        if constexpr (iUnroll > 0) {
-            *(destination + iUnroll - 1) = _mm256_setzero_ps();
-            _setZeroAVXRegister<iUnroll - 1>(destination);
-        }
-        else return;
+    template<unsigned UnrollFactor = UnrollFactorSIMD, SIMDStoreType Policy = SIMDStoreType::Cached>
+    constexpr inline static void setValue(T_data *data, T_data value, unsigned size) {
+        constexpr auto blockSize = SIMDTypeTraits<T, Type>::BlockSize;
+        auto limit = size - (size % blockSize);
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::template _setValue<Policy>(data + i, value, std::make_index_sequence<UnrollFactor>{});
+        for (size_t i = limit; i < size; i++)
+            data[i] = value;
     }
-    
-    template <unsigned iUnroll>
-    static constexpr inline void _setValue(T_simd* destination, const T_data& value) {
-        if constexpr (iUnroll > 0) {
-            *(destination + iUnroll - 1) = _mm256_set1_ps(value);
-            _setValue<iUnroll - 1>(destination, value);
-        }
-        else return;
+
+    template<unsigned Size, SIMDStoreType Policy = SIMDStoreType::Cached>
+    constexpr inline void setValue(T_data *data, T_data value) {
+        constexpr auto limit = Size - (Size % SIMDTypeTraits<T, Type>::BlockSize);
+        Child::template _setValue<Policy>(data, value, std::make_index_sequence<limit>{});
+        for (size_t i = limit; i < Size; i++)
+            data[i] = value;
     }
-    
-    template <unsigned iUnroll>
-    static constexpr inline bool _areEqual(const T_simd* a, const T_simd* b) {
-        if constexpr (iUnroll > 0) {
-            if (_mm256_movemask_ps(_mm256_cmp_ps(*(a + iUnroll - 1), *(b + iUnroll - 1), _CMP_NEQ_UQ)) != 0) {
-                return false;
-            }
-            _areEqual<iUnroll - 1>(a, b);
-        }
-        else return true;
+
+
+    template<unsigned UnrollFactor = UnrollFactorSIMD, SIMDStoreType Policy = SIMDStoreType::Cached>
+    constexpr inline static void setZero(T_data *data, unsigned size) {
+        constexpr auto blockSize = SIMDTypeTraits<T, Type>::BlockSize;
+        auto limit = size - (size % blockSize);
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::template _setZero<Policy>(data + i, std::make_index_sequence<UnrollFactor>{});
+        for (size_t i = limit; i < size; i++)
+            data[i] = 0;
+    }
+
+    template<unsigned Size, SIMDStoreType Policy = SIMDStoreType::Cached>
+    constexpr inline void setZero(T_data *data) {
+        constexpr auto limit = Size - (Size % SIMDTypeTraits<T, Type>::BlockSize);
+        Child::template _setZero<Policy>(data, std::make_index_sequence<limit>{});
+        for (size_t i = limit; i < Size; i++)
+            data[i] = 0;
+    }
+
+    constexpr inline static bool areEqual(const T_data *a, const T_data *b, unsigned size){
+        bool result = true;
+        constexpr auto blockSize = SIMDTypeTraits<T, Type>::BlockSize;
+        auto limit = size - (size % blockSize);
+        for (size_t i = 0; i < limit; i += blockSize)
+            result = result && Child::template_areEqual(a + i, b + i, std::make_index_sequence<UnrollFactorSIMD>{});
+        for (size_t i = limit; i < size; i++)
+            result = result && (a[i] == b[i]);
+        return result;
+    }
+
+    template<unsigned Size>
+    constexpr inline bool areEqual(const T_data *a, const T_data *b){
+        constexpr auto limit = Size - (Size % SIMDTypeTraits<T, Type>::BlockSize);
+        bool result = true;
+        result = result && Child::template _areEqual(a, b, std::make_index_sequence<limit>{});
+        for (size_t i = limit; i < Size; i++)
+            result = result && (a[i] == b[i]);
+        return result;
     }
 };
 
 // Double Specialization
-template<unsigned int unrollFactor>
-struct MemoryTraits<double, unrollFactor> {
-    using T_simd = __m256d;
-    using T_data = double;
-    static constexpr unsigned registerSize = DOUBLE_AVX_REGISTER_SIZE;
-    static constexpr unsigned elementsPerCacheLine = 64 / sizeof(double);
-    static constexpr unsigned UnrollFactor = unrollFactor;
-    static constexpr unsigned cacheLinesProcessed = (unrollFactor * registerSize) / elementsPerCacheLine;
-    static constexpr unsigned blockSize = registerSize * UnrollFactor;
+template<>
+struct SIMDMemoryOperations<double, SIMDType::AVX2>
+    : public SIMDMemoryOperationsBase<double, SIMDType::AVX2, SIMDMemoryOperations<double, SIMDType::AVX2>> {
 
-    static constexpr inline void loadRegister(const T_data* source, T_simd* destination) {
-        _loadAVXRegister<UnrollFactor>(source, destination);
-    }
-
-    static constexpr inline void temporalStore(const T_simd* source, T_data* destination) {
-        _storeAVXRegisterTemporal<UnrollFactor>(source, destination);
-    }
-
-    static constexpr inline void nonTemporalStore(const T_simd* source, T_data* destination) {
-        _storeAVXRegisterNonTemporal<UnrollFactor>(source, destination);
-    }
-
-    static constexpr inline void setZeroAVXRegister(T_simd* destination) {
-        _setZeroAVXRegister<UnrollFactor>(destination);
-    }
-
-    static constexpr inline void setValue(T_simd* destination, double value) {
-        _setValue<UnrollFactor>(destination, value);
-    }
-    
-    static constexpr inline bool areEqual(const T_simd* a, const T_simd* b) {
-        return _areEqual<UnrollFactor>(a, b);
-    }
+    using Base = SIMDMemoryOperationsBase<double, SIMDType::AVX2, SIMDMemoryOperations<double, SIMDType::AVX2>>;
+    friend Base;
 
 private:
-
-    template <unsigned iUnroll>
-    static constexpr inline void _loadAVXRegister(const T_data* source, T_simd* destination) {
-        if constexpr (iUnroll > 0) {
-            *(destination + iUnroll - 1) = _mm256_load_pd(source + (iUnroll - 1) * DOUBLE_AVX_REGISTER_SIZE);
-            _loadAVXRegister<iUnroll - 1>(source, destination);
+    template <SIMDStoreType Policy>
+    struct StoreFunction {
+        static constexpr inline void store(Base::T_data* __restrict destination, const Base::T_simd source) {
+            if constexpr (Policy == SIMDStoreType::Cached)
+                _mm256_store_pd(destination, source);
+            else
+                _mm256_stream_pd(destination, source);
         }
+    };
+
+    static constexpr unsigned _registerSize = SIMDTypeTraits<double, SIMDType::AVX2>::RegisterSize;
+
+    template <size_t... Is>
+    static constexpr inline void _load(const Base::T_data* __restrict source, Base::T_simd* __restrict destination, std::index_sequence<Is...>) {
+        ((destination[Is] = _mm256_load_pd(source + Is * _registerSize)), ...);
     }
 
-    template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterTemporal(const T_simd* source, T_data* destination) {
-        if constexpr (iUnroll > 0) {
-            _mm256_store_pd(destination + (iUnroll - 1) * DOUBLE_AVX_REGISTER_SIZE, *(source + iUnroll - 1));
-            _storeAVXRegisterTemporal<iUnroll - 1>(source, destination);
-        }
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _store(const Base::T_simd* __restrict source, Base::T_data* __restrict destination, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(destination + Is * _registerSize, source[Is])), ...);
     }
 
-    template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterNonTemporal(const T_simd* source, T_data* destination) {
-        if constexpr (iUnroll > 0) {
-            _mm256_stream_pd(destination + (iUnroll - 1) * DOUBLE_AVX_REGISTER_SIZE, *(source + iUnroll - 1));
-            _storeAVXRegisterNonTemporal<iUnroll - 1>(source, destination);
-        }
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _copy(const Base::T_data* __restrict source, Base::T_data* __restrict destination, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(destination + Is * _registerSize, _mm256_load_pd(source + Is * _registerSize))), ...);
     }
 
-    template <unsigned iUnroll>
-    static constexpr inline void _setZeroAVXRegister(T_simd* destination) {
-        if constexpr (iUnroll > 0) {
-            *(destination + iUnroll - 1) = _mm256_setzero_pd();
-            _setZeroAVXRegister<iUnroll - 1>(destination);
-        }
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _setZero(Base::T_data* __restrict destination, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(destination + Is * _registerSize, _mm256_setzero_pd())), ...);
     }
 
-    template <unsigned iUnroll>
-    static constexpr inline void _setValue(T_simd* destination, const T_data& value) {
-        if constexpr (iUnroll > 0) {
-            *(destination + iUnroll - 1) = _mm256_set1_pd(value);
-            _setValue<iUnroll - 1>(destination, value);
-        }
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _setValue(Base::T_data* __restrict destination, const Base::T_data& value, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(destination + Is * _registerSize, _mm256_set1_pd(value))), ...);
     }
-    
-    template <unsigned iUnroll>
-    static constexpr inline bool _areEqual(const T_simd* a, const T_simd* b) {
-        if constexpr (iUnroll > 0) {
-            if (_mm256_movemask_pd(_mm256_cmp_pd(*(a + iUnroll - 1), *(b + iUnroll - 1), _CMP_NEQ_UQ)) != 0) {
-                return false;
-            }
-            _areEqual<iUnroll - 1>(a, b);
+
+    template <size_t... Is>
+    static constexpr inline bool _areEqual(const Base::T_data* __restrict a, const Base::T_data* __restrict b, std::index_sequence<Is...>) {
+        bool result = true;
+        ((result = result && _mm256_testc_pd(_mm256_load_pd(a + Is * _registerSize), _mm256_load_pd(b + Is * _registerSize))), ...);
+        return result;
+    };
+};
+
+// Float Specialization
+template<>
+struct SIMDMemoryOperations<float, SIMDType::AVX2>
+    : public SIMDMemoryOperationsBase<float, SIMDType::AVX2, SIMDMemoryOperations<float, SIMDType::AVX2>> {
+
+    using Base = SIMDMemoryOperationsBase<float, SIMDType::AVX2, SIMDMemoryOperations<float, SIMDType::AVX2>>;
+
+private:
+    friend Base;
+
+    template <SIMDStoreType Policy>
+    struct StoreFunction {
+        static constexpr inline void store(Base::T_data* __restrict destination, const Base::T_simd source) {
+            if constexpr (Policy == SIMDStoreType::Cached)
+                _mm256_store_ps(destination, source);
+            else
+                _mm256_stream_ps(destination, source);
         }
-        else return true;
+    };
+    static constexpr unsigned _registerSize = SIMDTypeTraits<float, SIMDType::AVX2>::RegisterSize;
+
+    template <size_t... Is>
+    static constexpr inline void _load(const Base::T_data* src, Base::T_simd* dst, std::index_sequence<Is...>) {
+        ((dst[Is] = _mm256_load_ps(src + Is * _registerSize)), ...);
+    }
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _store(const Base::T_simd* src, Base::T_data* dst, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(dst + Is * _registerSize, src[Is])), ...);
+    }
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _copy(const Base::T_data* src, Base::T_data* dst, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_load_ps(src + Is * _registerSize))), ...);
+    }
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _setZero(Base::T_data* dst, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_setzero_ps())), ...);
+    }
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _setValue(Base::T_data* dst, const Base::T_data& val, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_set1_ps(val))), ...);
+    }
+    template <size_t... Is>
+    static constexpr inline bool _areEqual(const Base::T_data* a, const Base::T_data* b, std::index_sequence<Is...>) {
+        bool result = true;
+        ((result = result && _mm256_testc_ps(_mm256_load_ps(a + Is * _registerSize), _mm256_load_ps(b + Is * _registerSize))), ...);
+        return result;
     }
 };
 
 // Int Specialization
-template<unsigned int unrollFactor>
-struct MemoryTraits<int, unrollFactor> {
-    using T_simd = __m256i;
-    using T_data = int;
-    static constexpr unsigned registerSize = INT_AVX_REGISTER_SIZE;
-    static constexpr unsigned elementsPerCacheLine = 64 / sizeof(int);
-    static constexpr unsigned UnrollFactor = unrollFactor;
-    static constexpr unsigned cacheLinesProcessed = (unrollFactor * registerSize) / elementsPerCacheLine;
-    static constexpr unsigned blockSize = registerSize * UnrollFactor;
-    
-    static constexpr inline void loadRegister(const T_data* source, T_simd* destination) {
-        _loadAVXRegister<UnrollFactor>(source, destination);
-    }
+template<>
+struct SIMDMemoryOperations<int, SIMDType::AVX2>
+    : public SIMDMemoryOperationsBase<int, SIMDType::AVX2, SIMDMemoryOperations<int, SIMDType::AVX2>> {
 
-    static constexpr inline void temporalStore(const T_simd* source, T_data* destination) {
-        _storeAVXRegisterTemporal<UnrollFactor>(source, destination);
-    }
-
-    static constexpr inline void nonTemporalStore(const T_simd* source, T_data* destination) {
-        _storeAVXRegisterNonTemporal<UnrollFactor>(source, destination);
-    }
-
-    static constexpr inline void setZeroAVXRegister(T_simd* destination) {
-        _setZeroAVXRegister<UnrollFactor>(destination);
-    }
-
-    static constexpr inline void setValue(T_simd* destination, int value) {
-        _setValue<UnrollFactor>(destination, value);
-    }
-
-    static constexpr inline bool areEqual(const T_simd* a, const T_simd* b) {
-        return _areEqual<UnrollFactor>(a, b);
-    }
+    using Base = SIMDMemoryOperationsBase<int, SIMDType::AVX2, SIMDMemoryOperations<int, SIMDType::AVX2>>;
 
 private:
-    template <unsigned iUnroll>
-    static constexpr inline void _loadAVXRegister(const T_data* source, T_simd* destination) {
-        if constexpr (iUnroll > 0) {
-            *(destination + iUnroll - 1) = _mm256_load_si256(reinterpret_cast<const __m256i*>(source + (iUnroll - 1) * INT_AVX_REGISTER_SIZE));
-            _loadAVXRegister<iUnroll - 1>(source, destination);
+    friend Base;
+    static constexpr unsigned _registerSize = SIMDTypeTraits<int, SIMDType::AVX2>::RegisterSize;
+
+    template <SIMDStoreType Policy>
+    struct StoreFunction {
+        static constexpr inline void store(Base::T_data* __restrict destination, const Base::T_simd source) {
+            if constexpr (Policy == SIMDStoreType::Cached)
+                _mm256_store_si256(reinterpret_cast<__m256i*>(destination), source);
+            else
+                _mm256_stream_si256(reinterpret_cast<__m256i*>(destination), source);
         }
+    };
+
+    template <size_t... Is>
+    static constexpr inline void _load(const Base::T_data* src, Base::T_simd* dst, std::index_sequence<Is...>) {
+        ((dst[Is] = _mm256_load_si256(reinterpret_cast<const __m256i*>(src + Is * _registerSize))), ...);
     }
 
-    template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterTemporal(const T_simd* source, T_data* destination) {
-        if constexpr (iUnroll > 0) {
-            _mm256_store_si256(reinterpret_cast<__m256i*>(destination + (iUnroll - 1) * INT_AVX_REGISTER_SIZE), *(source + iUnroll - 1));
-            _storeAVXRegisterTemporal<iUnroll - 1>(source, destination);
-        }
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _store(const Base::T_simd* src, Base::T_data* dst, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(dst + Is * _registerSize, src[Is])), ...);
     }
 
-    template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterNonTemporal(const T_simd* source, T_data* destination) {
-        if constexpr (iUnroll > 0) {
-            _mm256_stream_si256(reinterpret_cast<__m256i*>(destination + (iUnroll - 1) * INT_AVX_REGISTER_SIZE), *(source + iUnroll - 1));
-            _storeAVXRegisterNonTemporal<iUnroll - 1>(source, destination);
-        }
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _copy(const Base::T_data* __restrict src, Base::T_data* __restrict dst, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_load_si256(reinterpret_cast<const __m256i*>(src + Is * _registerSize)))), ...);
     }
 
-    template <unsigned iUnroll>
-    static constexpr inline void _setZeroAVXRegister(T_simd* destination) {
-        if constexpr (iUnroll > 0) {
-            *(destination + iUnroll - 1) = _mm256_setzero_si256();
-            _setZeroAVXRegister<iUnroll - 1>(destination);
-        }
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _setZero(Base::T_data* __restrict dst, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_setzero_si256())), ...);
     }
 
-    template <unsigned iUnroll>
-    static constexpr inline void _setValue(T_simd* destination, const T_data& value) {
-        if constexpr (iUnroll > 0) {
-            *(destination + iUnroll - 1) = _mm256_set1_epi32(value);
-            _setValue<iUnroll - 1>(destination, value);
-        }
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _setValue(Base::T_data* __restrict dst, const Base::T_data& val, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_set1_epi32(val))), ...);
     }
 
-    template <unsigned iUnroll>
-    static constexpr inline bool _areEqual(const T_simd* a, const T_simd* b) {
-        if constexpr (iUnroll > 0) {
-            if (_mm256_movemask_epi8(_mm256_cmpeq_epi32(*(a + iUnroll - 1), *(b + iUnroll - 1))) != 0xFFFFFFFF) {
-                return false;
-            }
-            _areEqual<iUnroll - 1>(a, b);
+    template <size_t... Is>
+    static constexpr inline bool _areEqual(const Base::T_data* __restrict a, const Base::T_data* __restrict b, std::index_sequence<Is...>) {
+        bool result = true;
+        ((result = result &&
+            _mm256_testc_si256(
+                _mm256_load_si256(reinterpret_cast<const __m256i*>(a + Is * _registerSize)),
+                _mm256_load_si256(reinterpret_cast<const __m256i*>(b + Is * _registerSize))
+            )), ...);
+        return result;
+    }
+
+};
+
+template<>
+struct SIMDMemoryOperations<unsigned, SIMDType::AVX2>
+    : public SIMDMemoryOperationsBase<unsigned, SIMDType::AVX2, SIMDMemoryOperations<unsigned, SIMDType::AVX2>> {
+    using Base = SIMDMemoryOperationsBase<unsigned, SIMDType::AVX2, SIMDMemoryOperations<unsigned, SIMDType::AVX2>>;
+private:
+    friend Base;
+    static constexpr unsigned _registerSize = SIMDTypeTraits<unsigned, SIMDType::AVX2>::RegisterSize;
+
+    template <SIMDStoreType Policy>
+    struct StoreFunction {
+        static constexpr inline void store(Base::T_data* __restrict destination, const Base::T_simd source) {
+            if constexpr (Policy == SIMDStoreType::Cached)
+                _mm256_store_si256(reinterpret_cast<__m256i*>(destination), source);
+            else
+                _mm256_stream_si256(reinterpret_cast<__m256i*>(destination), source);
         }
-        else return true;
+    };
+
+    template <size_t... Is>
+    static constexpr inline void _load(const Base::T_data* src, Base::T_simd* dst, std::index_sequence<Is...>) {
+        ((dst[Is] = _mm256_load_si256(reinterpret_cast<const __m256i*>(src + Is * _registerSize))), ...);
+    }
+
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _store(const Base::T_simd* src, Base::T_data* dst, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(dst + Is * _registerSize, src[Is])), ...);
+    }
+
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _copy(const Base::T_data* __restrict src, Base::T_data* __restrict dst, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_load_si256(reinterpret_cast<const __m256i*>(src + Is * _registerSize)))), ...);
+    }
+
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _setZero(Base::T_data* __restrict dst, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_setzero_si256())), ...);
+    }
+
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _setValue(Base::T_data* __restrict dst, const Base::T_data& val, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_set1_epi32(val))), ...);
+    }
+
+    template <size_t... Is>
+    static constexpr inline bool _areEqual(const Base::T_data* __restrict a, const Base::T_data* __restrict b, std::index_sequence<Is...>) {
+        bool result = true;
+        ((result = result &&
+            _mm256_testc_si256(
+                _mm256_load_si256(reinterpret_cast<const __m256i*>(a + Is * _registerSize)),
+                _mm256_load_si256(reinterpret_cast<const __m256i*>(b + Is * _registerSize))
+            )), ...);
+        return result;
     }
 };
 
-template<unsigned int unrollFactor>
-struct MemoryTraits<short, unrollFactor> {
-    using T_simd = __m256i;
-    using T_data = short;
-    static constexpr unsigned registerSize = SHORT_AVX_REGISTER_SIZE;
-    static constexpr unsigned elementsPerCacheLine = 64 / sizeof(short);
-    static constexpr unsigned UnrollFactor = unrollFactor;
-    static constexpr unsigned cacheLinesProcessed = (unrollFactor * registerSize) / elementsPerCacheLine;
-    static constexpr unsigned blockSize = registerSize * UnrollFactor;
+// Short Specialization
+template<>
+struct SIMDMemoryOperations<short, SIMDType::AVX2>
+    : public SIMDMemoryOperationsBase<short, SIMDType::AVX2, SIMDMemoryOperations<short, SIMDType::AVX2>> {
 
-    static constexpr inline void loadRegister(const T_data* source, T_simd* destination) {
-        _loadAVXRegister<UnrollFactor>(source, destination);
-    }
-
-    static constexpr inline void temporalStore(const T_simd* source, T_data* destination) {
-        _storeAVXRegisterTemporal<UnrollFactor>(source, destination);
-    }
-
-    static constexpr inline void nonTemporalStore(const T_simd* source, T_data* destination) {
-        _storeAVXRegisterNonTemporal<UnrollFactor>(source, destination);
-    }
-
-    static constexpr inline void setZeroAVXRegister(T_simd* destination) {
-        _setZeroAVXRegister<UnrollFactor>(destination);
-    }
-
-    static constexpr inline void setValue(T_simd* destination, short value) {
-        _setValue<UnrollFactor>(destination, value);
-    }
-
-    static constexpr inline bool areEqual(const T_simd* a, const T_simd* b) {
-        return _areEqual<UnrollFactor>(a, b);
-    }
+    using Base = SIMDMemoryOperationsBase<short, SIMDType::AVX2, SIMDMemoryOperations<short, SIMDType::AVX2>>;
 
 private:
-    template <unsigned iUnroll>
-    static constexpr inline void _loadAVXRegister(const T_data* source, T_simd* destination) {
-        if constexpr (iUnroll > 0) {
-            *(destination + iUnroll - 1) = _mm256_load_si256(reinterpret_cast<const __m256i*>(source + (iUnroll - 1) * SHORT_AVX_REGISTER_SIZE));
-            _loadAVXRegister<iUnroll - 1>(source, destination);
+
+    friend Base;
+    template <SIMDStoreType Policy>
+    struct StoreFunction {
+        static constexpr inline void store(Base::T_data* __restrict destination, const Base::T_simd source) {
+            if constexpr (Policy == SIMDStoreType::Cached)
+                _mm256_store_si256(reinterpret_cast<__m256i*>(destination), source);
+            else
+                _mm256_stream_si256(reinterpret_cast<__m256i*>(destination), source);
         }
+    };
+
+    static constexpr unsigned _registerSize = SIMDTypeTraits<short, SIMDType::AVX2>::RegisterSize;
+
+    template <size_t... Is>
+    static constexpr inline void _load(const Base::T_data* src, Base::T_simd* dst, std::index_sequence<Is...>) {
+        ((dst[Is] = _mm256_load_si256(reinterpret_cast<const __m256i*>(src + Is * _registerSize))), ...);
     }
 
-    template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterTemporal(const T_simd* source, T_data* destination) {
-        if constexpr (iUnroll > 0) {
-            _mm256_store_si256(reinterpret_cast<__m256i*>(destination + (iUnroll - 1) * SHORT_AVX_REGISTER_SIZE), *(source + iUnroll - 1));
-            _storeAVXRegisterTemporal<iUnroll - 1>(source, destination);
-        }
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _store(const Base::T_simd* src, Base::T_data* dst, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(dst + Is * _registerSize, src[Is])), ...);
     }
 
-    template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterNonTemporal(const T_simd* source, T_data* destination) {
-        if constexpr (iUnroll > 0) {
-            _mm256_stream_si256(reinterpret_cast<__m256i*>(destination + (iUnroll - 1) * SHORT_AVX_REGISTER_SIZE), *(source + iUnroll - 1));
-            _storeAVXRegisterNonTemporal<iUnroll - 1>(source, destination);
-        }
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _copy(const Base::T_data* __restrict src, Base::T_data* __restrict dst, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_load_si256(reinterpret_cast<const __m256i*>(src + Is * _registerSize)))), ...);
     }
 
-    template <unsigned iUnroll>
-    static constexpr inline void _setZeroAVXRegister(T_simd* destination) {
-        if constexpr (iUnroll > 0) {
-            *(destination + iUnroll - 1) = _mm256_setzero_si256();
-            _setZeroAVXRegister<iUnroll - 1>(destination);
-        }
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _setZero(Base::T_data* __restrict dst, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_setzero_si256())), ...);
     }
 
-    template <unsigned iUnroll>
-    static constexpr inline void _setValue(T_simd* destination, const T_data& value) {
-        if constexpr (iUnroll > 0) {
-            *(destination + iUnroll - 1) = _mm256_set1_epi16(value);
-            _setValue<iUnroll - 1>(destination, value);
-        }
+    template <SIMDStoreType Policy, size_t... Is>
+    static constexpr inline void _setValue(Base::T_data* __restrict dst, const Base::T_data& val, std::index_sequence<Is...>) {
+        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_set1_epi16(val))), ...);
     }
 
-    template <unsigned iUnroll>
-    static constexpr inline bool _areEqual(const T_simd* a, const T_simd* b) {
-        if constexpr (iUnroll > 0) {
-            if (_mm256_movemask_epi8(_mm256_cmpeq_epi16(*(a + iUnroll - 1), *(b + iUnroll - 1))) != 0xFFFFFFFF) {
-                return false;
-            }
-            _areEqual<iUnroll - 1>(a, b);
-        }
-        else return true;
+    template <size_t... Is>
+    static constexpr inline bool _areEqual(const Base::T_data* __restrict a, const Base::T_data* __restrict b, std::index_sequence<Is...>) {
+        bool result = true;
+        ((result = result &&
+            _mm256_testc_si256(
+                _mm256_load_si256(reinterpret_cast<const __m256i*>(a + Is * _registerSize)),
+                _mm256_load_si256(reinterpret_cast<const __m256i*>(b + Is * _registerSize))
+            )), ...);
+        return result;
     }
 };
 
-template<unsigned int unrollFactor>
-struct MemoryTraits<unsigned, unrollFactor> {
-    using T_simd = __m256i;
-    using T_data = unsigned;
-    static constexpr unsigned registerSize = UNSIGNED_AVX_REGISTER_SIZE;
-    static constexpr unsigned elementsPerCacheLine = 64 / sizeof(unsigned);
-    static constexpr unsigned UnrollFactor = unrollFactor;
-    static constexpr unsigned cacheLinesProcessed = (unrollFactor * registerSize) / elementsPerCacheLine;
-    static constexpr unsigned blockSize = registerSize * UnrollFactor;
+// Unsigned Specialization
 
-    static constexpr inline void loadRegister(const T_data* source, T_simd* destination) {
-        _loadAVXRegister<UnrollFactor>(source, destination);
-    }
-
-    static constexpr inline void temporalStore(const T_simd* source, T_data* destination) {
-        _storeAVXRegisterTemporal<UnrollFactor>(source, destination);
-    }
-
-    static constexpr inline void nonTemporalStore(const T_simd* source, T_data* destination) {
-        _storeAVXRegisterNonTemporal<UnrollFactor>(source, destination);
-    }
-
-    static constexpr inline void setZeroAVXRegister(T_simd* destination) {
-        _setZeroAVXRegister<UnrollFactor>(destination);
-    }
-
-    static constexpr inline void setValue(T_simd* destination, unsigned value) {
-        _setValue<UnrollFactor>(destination, value);
-    }
-
-    static constexpr inline bool areEqual(const T_simd* a, const T_simd* b) {
-        return _areEqual<UnrollFactor>(a, b);
-    }
-
-private:
-    template <unsigned iUnroll>
-    static constexpr inline void _loadAVXRegister(const T_data* source, T_simd* destination) {
-        if constexpr (iUnroll > 0) {
-            *(destination + iUnroll - 1) = _mm256_load_si256(reinterpret_cast<const __m256i*>(source + (iUnroll - 1) * UNSIGNED_AVX_REGISTER_SIZE));
-            _loadAVXRegister<iUnroll - 1>(source, destination);
-        }
-    }
-
-    template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterTemporal(const T_simd* source, T_data* destination) {
-        if constexpr (iUnroll > 0) {
-            _mm256_store_si256(reinterpret_cast<__m256i*>(destination + (iUnroll - 1) * UNSIGNED_AVX_REGISTER_SIZE), *(source + iUnroll - 1));
-            _storeAVXRegisterTemporal<iUnroll - 1>(source, destination);
-        }
-    }
-
-    template <unsigned iUnroll>
-    static constexpr inline void _storeAVXRegisterNonTemporal(const T_simd* source, T_data* destination) {
-        if constexpr (iUnroll > 0) {
-            _mm256_stream_si256(reinterpret_cast<__m256i*>(destination + (iUnroll - 1) * UNSIGNED_AVX_REGISTER_SIZE), *(source + iUnroll - 1));
-            _storeAVXRegisterNonTemporal<iUnroll - 1>(source, destination);
-        }
-    }
-
-    template <unsigned iUnroll>
-    static constexpr inline void _setZeroAVXRegister(T_simd* destination) {
-        if constexpr (iUnroll > 0) {
-            *(destination + iUnroll - 1) = _mm256_setzero_si256();
-            _setZeroAVXRegister<iUnroll - 1>(destination);
-        }
-    }
-
-    template <unsigned iUnroll>
-    static constexpr inline void _setValue(T_simd* destination, const T_data& value) {
-        if constexpr (iUnroll > 0) {
-            *(destination + iUnroll - 1) = _mm256_set1_epi32(value);
-            _setValue<iUnroll - 1>(destination, value);
-        }
-    }
-
-    template <unsigned iUnroll>
-    static constexpr inline bool _areEqual(const T_simd* a, const T_simd* b) {
-        if constexpr (iUnroll > 0) {
-            if (_mm256_movemask_epi8(_mm256_cmpeq_epi32(*(a + iUnroll - 1), *(b + iUnroll - 1))) != 0xFFFFFFFF) {
-                return false;
-            }
-            _areEqual<iUnroll - 1>(a, b);
-        }
-        else return true;
-    }
-};
 #endif //STALKER_MemoryTraits_H

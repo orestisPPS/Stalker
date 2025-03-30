@@ -6,7 +6,10 @@
 
 namespace STLKR_Tests {
     
-    STLKR_TestBase::STLKR_TestBase(std::string testName) : _testName(std::move(testName)), _manager(CPU_Manager()){
+    STLKR_TestBase::STLKR_TestBase(std::string testName) : _testName(testName), _manager(CPU_Manager()), _logs(Logs(testName)){
+        auto fullPath = std::filesystem::absolute(std::filesystem::path(__FILE__));
+        auto basePath = fullPath.parent_path().parent_path() / "Tests";
+        setPath("Tests", basePath.string());
         TestUtility::printTestTitle(_testName, "=", ColourType::BRIGHT_WHITE);
     }
 
@@ -15,6 +18,17 @@ namespace STLKR_Tests {
             runTest();
         }
     }
+
+    const std::string& STLKR_TestBase::getPath(const std::string& pathName) {
+        return _paths[pathName];
+    }
+
+    void STLKR_TestBase::setPath(const std::string& pathName, const std::string& path) {
+        auto createDirectory = TestUtility::mkdir(path);
+        if (createDirectory)
+            _paths[pathName] = path;
+    }
+
 
     void STLKR_TestBase::printSuccess() {
         std::cout << "\033[1;32m[PASSED]\033[0m";

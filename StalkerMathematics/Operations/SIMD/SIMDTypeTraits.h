@@ -30,6 +30,7 @@ inline constexpr unsigned UNSIGNED_AVX2_REGISTER_SIZE = 8;  // 256 bits / 32 bit
 
 
 template<typename T, SIMDType Type> struct SIMDTypeTraits; 
+template<> struct SIMDTypeTraits<double, SIMDType::AVX2>;
 template<> struct SIMDTypeTraits<float, SIMDType::AVX2>;
 template<> struct SIMDTypeTraits<int, SIMDType::AVX2>;
 template<> struct SIMDTypeTraits<short, SIMDType::AVX2>;

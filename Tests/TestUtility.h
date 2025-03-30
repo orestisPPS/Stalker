@@ -2,6 +2,7 @@
 #define TESTUTILITY_H
 #include <iostream>
 #include <vector>
+#include <filesystem>
 #include <string>
 #include <stdexcept>
 #include <cmath>
@@ -186,6 +187,47 @@ static void printTestTitle(const std::string& title, const std::string& symbol =
     std::cout << std::endl;
     Printers::printTitle(title, symbol, colour);
     std::cout << std::endl;
+}
+
+template<typename T>
+static std::string getTypeString(){
+    if (std::is_same<T, float>::value) {
+        return "float";
+    } else if (std::is_same<T, double>::value) {
+        return "double";
+    } else if (std::is_same<T, int>::value) {
+        return "int";
+    } else if (std::is_same<T, short>::value) {
+        return "short";
+    } else if (std::is_same<T, unsigned>::value) {
+        return "unsigned";
+    } else {
+        return "unknown";
+    }
+}
+
+static bool mkdir(const std::string& directoryPath) {
+    namespace fs = std::filesystem;
+    try {
+        fs::path dir(directoryPath);
+        if (fs::exists(dir)) {
+            Printers::printInfo("Directory already exists: " + directoryPath);
+            return true;
+        }
+        if (fs::create_directories(dir)) {
+            Printers::printSuccess("Successfully created directory: " + directoryPath);
+            return true;
+        } else {
+            Printers::printError("Failed to create directory: " + directoryPath);
+            return false;
+        }
+    } catch (const fs::filesystem_error& e) {
+        Printers::printError("Filesystem error: " + std::string(e.what()));
+        return false;
+    } catch (const std::exception& e) {
+        Printers::printError("Exception: " + std::string(e.what()));
+        return false;
+    }
 }
 
 
