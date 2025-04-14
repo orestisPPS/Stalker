@@ -29,10 +29,11 @@ struct SIMDMemoryOperationsBase {
     using T_data = typename SIMDTypeTraits<T, Type>::typeData;
 
 public:
+    static constexpr unsigned blockSize = SIMDTypeTraits<T, Type>::BlockSize;
+    static constexpr unsigned registerSize = SIMDTypeTraits<T, Type>::RegisterSize;
 
     template<unsigned UnrollFactor = UnrollFactorSIMD>
     constexpr inline static void load(const T_data* source, T_simd* destination, unsigned size) {
-        constexpr auto blockSize = SIMDTypeTraits<T, Type>::BlockSize;
         auto limit = size - (size % blockSize);
         for (size_t i = 0; i < limit; i += blockSize)
             Child::_load(source + i, destination + i, std::make_index_sequence<UnrollFactor>{});
@@ -48,9 +49,8 @@ public:
             destination[i] = source[i];
     }
 
-    template<unsigned UnrollFactor = UnrollFactorSIMD, SIMDStoreType Policy = SIMDStoreType::Cached>
+    template<unsigned UnrollFactor = UnrollFactorSIMD, SIMDStoreType Policy = SIMDStoreType::Streamed>
     constexpr inline static void store(const T_simd* source, T_data* destination, unsigned size) {
-        constexpr auto blockSize = SIMDTypeTraits<T, Type>::BlockSize;
         auto limit = size - (size % blockSize);
         for (size_t i = 0; i < limit; i += blockSize)
             Child::_store<Policy>(source + i, destination + i, std::make_index_sequence<UnrollFactor>{});
@@ -58,7 +58,7 @@ public:
             destination[i] = source[i];
     }
 
-    template<unsigned Size, SIMDStoreType Policy = SIMDStoreType::Cached>
+    template<unsigned Size, SIMDStoreType Policy = SIMDStoreType::Streamed>
     constexpr inline void store(const T_simd* source, T_data* destination) {
         constexpr auto limit = Size - (Size % SIMDTypeTraits<T, Type>::BlockSize);
         Child::_store<Policy>(source, destination, std::make_index_sequence<limit>{});
@@ -66,9 +66,8 @@ public:
             destination[i] = source[i];
     }
 
-    template<unsigned UnrollFactor = UnrollFactorSIMD, SIMDStoreType Policy = SIMDStoreType::Cached>
+    template<unsigned UnrollFactor = UnrollFactorSIMD, SIMDStoreType Policy = SIMDStoreType::Streamed>
     constexpr inline static void copy(const T_data* source, T_data* destination, unsigned size) {
-        constexpr auto blockSize = SIMDTypeTraits<T, Type>::BlockSize;
         auto limit = size - (size % blockSize);
         for (size_t i = 0; i < limit; i += blockSize)
             Child::template _copy<Policy>(source + i, destination + i, std::make_index_sequence<UnrollFactor>{});
@@ -76,7 +75,7 @@ public:
             destination[i] = source[i];
     }
 
-    template<unsigned Size, SIMDStoreType Policy = SIMDStoreType::Cached>
+    template<unsigned Size, SIMDStoreType Policy = SIMDStoreType::Streamed>
     constexpr inline void copy(const T_data* source, T_data* destination) {
         constexpr auto limit = Size - (Size % SIMDTypeTraits<T, Type>::BlockSize);
         Child::template _copy<Policy>(source, destination, std::make_index_sequence<limit>{});
@@ -84,9 +83,9 @@ public:
             destination[i] = source[i];
     }
 
-    template<unsigned UnrollFactor = UnrollFactorSIMD, SIMDStoreType Policy = SIMDStoreType::Cached>
+    template<unsigned UnrollFactor = UnrollFactorSIMD, SIMDStoreType Policy = SIMDStoreType::Streamed>
     constexpr inline static void setValue(T_data *data, T_data value, unsigned size) {
-        constexpr auto blockSize = SIMDTypeTraits<T, Type>::BlockSize;
+        
         auto limit = size - (size % blockSize);
         for (size_t i = 0; i < limit; i += blockSize)
             Child::template _setValue<Policy>(data + i, value, std::make_index_sequence<UnrollFactor>{});
@@ -94,7 +93,7 @@ public:
             data[i] = value;
     }
 
-    template<unsigned Size, SIMDStoreType Policy = SIMDStoreType::Cached>
+    template<unsigned Size, SIMDStoreType Policy = SIMDStoreType::Streamed>
     constexpr inline void setValue(T_data *data, T_data value) {
         constexpr auto limit = Size - (Size % SIMDTypeTraits<T, Type>::BlockSize);
         Child::template _setValue<Policy>(data, value, std::make_index_sequence<limit>{});
@@ -103,9 +102,8 @@ public:
     }
 
 
-    template<unsigned UnrollFactor = UnrollFactorSIMD, SIMDStoreType Policy = SIMDStoreType::Cached>
+    template<unsigned UnrollFactor = UnrollFactorSIMD, SIMDStoreType Policy = SIMDStoreType::Streamed>
     constexpr inline static void setZero(T_data *data, unsigned size) {
-        constexpr auto blockSize = SIMDTypeTraits<T, Type>::BlockSize;
         auto limit = size - (size % blockSize);
         for (size_t i = 0; i < limit; i += blockSize)
             Child::template _setZero<Policy>(data + i, std::make_index_sequence<UnrollFactor>{});
@@ -113,7 +111,7 @@ public:
             data[i] = 0;
     }
 
-    template<unsigned Size, SIMDStoreType Policy = SIMDStoreType::Cached>
+    template<unsigned Size, SIMDStoreType Policy = SIMDStoreType::Streamed>
     constexpr inline void setZero(T_data *data) {
         constexpr auto limit = Size - (Size % SIMDTypeTraits<T, Type>::BlockSize);
         Child::template _setZero<Policy>(data, std::make_index_sequence<limit>{});
@@ -123,7 +121,6 @@ public:
 
     constexpr inline static bool areEqual(const T_data *a, const T_data *b, unsigned size){
         bool result = true;
-        constexpr auto blockSize = SIMDTypeTraits<T, Type>::BlockSize;
         auto limit = size - (size % blockSize);
         for (size_t i = 0; i < limit; i += blockSize)
             result = result && Child::template_areEqual(a + i, b + i, std::make_index_sequence<UnrollFactorSIMD>{});
@@ -157,42 +154,41 @@ private:
         static constexpr inline void store(Base::T_data* __restrict destination, const Base::T_simd source) {
             if constexpr (Policy == SIMDStoreType::Cached)
                 _mm256_store_pd(destination, source);
-            else
+            else{
                 _mm256_stream_pd(destination, source);
+            }
         }
     };
 
-    static constexpr unsigned _registerSize = SIMDTypeTraits<double, SIMDType::AVX2>::RegisterSize;
-
     template <size_t... Is>
     static constexpr inline void _load(const Base::T_data* __restrict source, Base::T_simd* __restrict destination, std::index_sequence<Is...>) {
-        ((destination[Is] = _mm256_load_pd(source + Is * _registerSize)), ...);
+        ((destination[Is] = _mm256_load_pd(source + Is * Base::registerSize)), ...);
     }
 
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _store(const Base::T_simd* __restrict source, Base::T_data* __restrict destination, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(destination + Is * _registerSize, source[Is])), ...);
+        ((StoreFunction<Policy>::store(destination + Is * Base::registerSize, source[Is])), ...);
     }
 
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _copy(const Base::T_data* __restrict source, Base::T_data* __restrict destination, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(destination + Is * _registerSize, _mm256_load_pd(source + Is * _registerSize))), ...);
+        ((StoreFunction<Policy>::store(destination + Is * Base::registerSize, _mm256_load_pd(source + Is * Base::registerSize))), ...);
     }
 
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _setZero(Base::T_data* __restrict destination, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(destination + Is * _registerSize, _mm256_setzero_pd())), ...);
+        ((StoreFunction<Policy>::store(destination + Is * Base::registerSize, _mm256_setzero_pd())), ...);
     }
 
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _setValue(Base::T_data* __restrict destination, const Base::T_data& value, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(destination + Is * _registerSize, _mm256_set1_pd(value))), ...);
+        ((StoreFunction<Policy>::store(destination + Is * Base::registerSize, _mm256_set1_pd(value))), ...);
     }
 
     template <size_t... Is>
     static constexpr inline bool _areEqual(const Base::T_data* __restrict a, const Base::T_data* __restrict b, std::index_sequence<Is...>) {
         bool result = true;
-        ((result = result && _mm256_testc_pd(_mm256_load_pd(a + Is * _registerSize), _mm256_load_pd(b + Is * _registerSize))), ...);
+        ((result = result && _mm256_testc_pd(_mm256_load_pd(a + Is * Base::registerSize), _mm256_load_pd(b + Is * Base::registerSize))), ...);
         return result;
     };
 };
@@ -216,32 +212,31 @@ private:
                 _mm256_stream_ps(destination, source);
         }
     };
-    static constexpr unsigned _registerSize = SIMDTypeTraits<float, SIMDType::AVX2>::RegisterSize;
 
     template <size_t... Is>
     static constexpr inline void _load(const Base::T_data* src, Base::T_simd* dst, std::index_sequence<Is...>) {
-        ((dst[Is] = _mm256_load_ps(src + Is * _registerSize)), ...);
+        ((dst[Is] = _mm256_load_ps(src + Is * Base::registerSize)), ...);
     }
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _store(const Base::T_simd* src, Base::T_data* dst, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(dst + Is * _registerSize, src[Is])), ...);
+        ((StoreFunction<Policy>::store(dst + Is * Base::registerSize, src[Is])), ...);
     }
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _copy(const Base::T_data* src, Base::T_data* dst, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_load_ps(src + Is * _registerSize))), ...);
+        ((StoreFunction<Policy>::store(dst + Is * Base::registerSize, _mm256_load_ps(src + Is * Base::registerSize))), ...);
     }
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _setZero(Base::T_data* dst, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_setzero_ps())), ...);
+        ((StoreFunction<Policy>::store(dst + Is * Base::registerSize, _mm256_setzero_ps())), ...);
     }
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _setValue(Base::T_data* dst, const Base::T_data& val, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_set1_ps(val))), ...);
+        ((StoreFunction<Policy>::store(dst + Is * Base::registerSize, _mm256_set1_ps(val))), ...);
     }
     template <size_t... Is>
     static constexpr inline bool _areEqual(const Base::T_data* a, const Base::T_data* b, std::index_sequence<Is...>) {
         bool result = true;
-        ((result = result && _mm256_testc_ps(_mm256_load_ps(a + Is * _registerSize), _mm256_load_ps(b + Is * _registerSize))), ...);
+        ((result = result && _mm256_testc_ps(_mm256_load_ps(a + Is * Base::registerSize), _mm256_load_ps(b + Is * Base::registerSize))), ...);
         return result;
     }
 };
@@ -255,8 +250,6 @@ struct SIMDMemoryOperations<int, SIMDType::AVX2>
 
 private:
     friend Base;
-    static constexpr unsigned _registerSize = SIMDTypeTraits<int, SIMDType::AVX2>::RegisterSize;
-
     template <SIMDStoreType Policy>
     struct StoreFunction {
         static constexpr inline void store(Base::T_data* __restrict destination, const Base::T_simd source) {
@@ -269,27 +262,27 @@ private:
 
     template <size_t... Is>
     static constexpr inline void _load(const Base::T_data* src, Base::T_simd* dst, std::index_sequence<Is...>) {
-        ((dst[Is] = _mm256_load_si256(reinterpret_cast<const __m256i*>(src + Is * _registerSize))), ...);
+        ((dst[Is] = _mm256_load_si256(reinterpret_cast<const __m256i*>(src + Is * Base::registerSize))), ...);
     }
 
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _store(const Base::T_simd* src, Base::T_data* dst, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(dst + Is * _registerSize, src[Is])), ...);
+        ((StoreFunction<Policy>::store(dst + Is * Base::registerSize, src[Is])), ...);
     }
 
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _copy(const Base::T_data* __restrict src, Base::T_data* __restrict dst, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_load_si256(reinterpret_cast<const __m256i*>(src + Is * _registerSize)))), ...);
+        ((StoreFunction<Policy>::store(dst + Is * Base::registerSize, _mm256_load_si256(reinterpret_cast<const __m256i*>(src + Is * Base::registerSize)))), ...);
     }
 
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _setZero(Base::T_data* __restrict dst, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_setzero_si256())), ...);
+        ((StoreFunction<Policy>::store(dst + Is * Base::registerSize, _mm256_setzero_si256())), ...);
     }
 
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _setValue(Base::T_data* __restrict dst, const Base::T_data& val, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_set1_epi32(val))), ...);
+        ((StoreFunction<Policy>::store(dst + Is * Base::registerSize, _mm256_set1_epi32(val))), ...);
     }
 
     template <size_t... Is>
@@ -297,8 +290,8 @@ private:
         bool result = true;
         ((result = result &&
             _mm256_testc_si256(
-                _mm256_load_si256(reinterpret_cast<const __m256i*>(a + Is * _registerSize)),
-                _mm256_load_si256(reinterpret_cast<const __m256i*>(b + Is * _registerSize))
+                _mm256_load_si256(reinterpret_cast<const __m256i*>(a + Is * Base::registerSize)),
+                _mm256_load_si256(reinterpret_cast<const __m256i*>(b + Is * Base::registerSize))
             )), ...);
         return result;
     }
@@ -311,8 +304,6 @@ struct SIMDMemoryOperations<unsigned, SIMDType::AVX2>
     using Base = SIMDMemoryOperationsBase<unsigned, SIMDType::AVX2, SIMDMemoryOperations<unsigned, SIMDType::AVX2>>;
 private:
     friend Base;
-    static constexpr unsigned _registerSize = SIMDTypeTraits<unsigned, SIMDType::AVX2>::RegisterSize;
-
     template <SIMDStoreType Policy>
     struct StoreFunction {
         static constexpr inline void store(Base::T_data* __restrict destination, const Base::T_simd source) {
@@ -325,27 +316,27 @@ private:
 
     template <size_t... Is>
     static constexpr inline void _load(const Base::T_data* src, Base::T_simd* dst, std::index_sequence<Is...>) {
-        ((dst[Is] = _mm256_load_si256(reinterpret_cast<const __m256i*>(src + Is * _registerSize))), ...);
+        ((dst[Is] = _mm256_load_si256(reinterpret_cast<const __m256i*>(src + Is * Base::registerSize))), ...);
     }
 
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _store(const Base::T_simd* src, Base::T_data* dst, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(dst + Is * _registerSize, src[Is])), ...);
+        ((StoreFunction<Policy>::store(dst + Is * Base::registerSize, src[Is])), ...);
     }
 
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _copy(const Base::T_data* __restrict src, Base::T_data* __restrict dst, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_load_si256(reinterpret_cast<const __m256i*>(src + Is * _registerSize)))), ...);
+        ((StoreFunction<Policy>::store(dst + Is * Base::registerSize, _mm256_load_si256(reinterpret_cast<const __m256i*>(src + Is * Base::registerSize)))), ...);
     }
 
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _setZero(Base::T_data* __restrict dst, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_setzero_si256())), ...);
+        ((StoreFunction<Policy>::store(dst + Is * Base::registerSize, _mm256_setzero_si256())), ...);
     }
 
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _setValue(Base::T_data* __restrict dst, const Base::T_data& val, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_set1_epi32(val))), ...);
+        ((StoreFunction<Policy>::store(dst + Is * Base::registerSize, _mm256_set1_epi32(val))), ...);
     }
 
     template <size_t... Is>
@@ -353,8 +344,8 @@ private:
         bool result = true;
         ((result = result &&
             _mm256_testc_si256(
-                _mm256_load_si256(reinterpret_cast<const __m256i*>(a + Is * _registerSize)),
-                _mm256_load_si256(reinterpret_cast<const __m256i*>(b + Is * _registerSize))
+                _mm256_load_si256(reinterpret_cast<const __m256i*>(a + Is * Base::registerSize)),
+                _mm256_load_si256(reinterpret_cast<const __m256i*>(b + Is * Base::registerSize))
             )), ...);
         return result;
     }
@@ -380,31 +371,29 @@ private:
         }
     };
 
-    static constexpr unsigned _registerSize = SIMDTypeTraits<short, SIMDType::AVX2>::RegisterSize;
-
     template <size_t... Is>
     static constexpr inline void _load(const Base::T_data* src, Base::T_simd* dst, std::index_sequence<Is...>) {
-        ((dst[Is] = _mm256_load_si256(reinterpret_cast<const __m256i*>(src + Is * _registerSize))), ...);
+        ((dst[Is] = _mm256_load_si256(reinterpret_cast<const __m256i*>(src + Is * Base::registerSize))), ...);
     }
 
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _store(const Base::T_simd* src, Base::T_data* dst, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(dst + Is * _registerSize, src[Is])), ...);
+        ((StoreFunction<Policy>::store(dst + Is * Base::registerSize, src[Is])), ...);
     }
 
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _copy(const Base::T_data* __restrict src, Base::T_data* __restrict dst, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_load_si256(reinterpret_cast<const __m256i*>(src + Is * _registerSize)))), ...);
+        ((StoreFunction<Policy>::store(dst + Is * Base::registerSize, _mm256_load_si256(reinterpret_cast<const __m256i*>(src + Is * Base::registerSize)))), ...);
     }
 
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _setZero(Base::T_data* __restrict dst, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_setzero_si256())), ...);
+        ((StoreFunction<Policy>::store(dst + Is * Base::registerSize, _mm256_setzero_si256())), ...);
     }
 
     template <SIMDStoreType Policy, size_t... Is>
     static constexpr inline void _setValue(Base::T_data* __restrict dst, const Base::T_data& val, std::index_sequence<Is...>) {
-        ((StoreFunction<Policy>::store(dst + Is * _registerSize, _mm256_set1_epi16(val))), ...);
+        ((StoreFunction<Policy>::store(dst + Is * Base::registerSize, _mm256_set1_epi16(val))), ...);
     }
 
     template <size_t... Is>
@@ -412,8 +401,8 @@ private:
         bool result = true;
         ((result = result &&
             _mm256_testc_si256(
-                _mm256_load_si256(reinterpret_cast<const __m256i*>(a + Is * _registerSize)),
-                _mm256_load_si256(reinterpret_cast<const __m256i*>(b + Is * _registerSize))
+                _mm256_load_si256(reinterpret_cast<const __m256i*>(a + Is * Base::registerSize)),
+                _mm256_load_si256(reinterpret_cast<const __m256i*>(b + Is * Base::registerSize))
             )), ...);
         return result;
     }

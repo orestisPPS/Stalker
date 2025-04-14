@@ -16,9 +16,15 @@ namespace STLKR_Tests {
                 setPath("SIMD_Logs", getPath("Tests") + "/StalkerMathematics/Operations/logs/SIMD");
             }
 
-        void runTest() override {
+       void runTest() override {
+
+
             for (size_t i = 0; i < 10; i++) {
                 Printers::printSubtitle("Iteration: " + std::to_string(i), ColourType::PATSIOURA_RED);
+                _logs.addParameter("size", std::to_string(Size));
+                _logs.addParameter("unrollFactor", UnrollFactorSIMD);
+                _logs.addParameter("alignment", 64);
+                _logs.addParameter("compiler flag", "o3");
                 _testCopyAllTypes();
                 _logs.exportToCSV(getPath("SIMD_Logs"), "SIMD_Performance");
                 _logs.clearAllLogs();
@@ -49,15 +55,15 @@ namespace STLKR_Tests {
             //classic copy
             auto name = TestUtility::getTypeString<T>();
             _logs.startSingleObservationTimer("Classic Copy " + name, unit);
-            _logs.startSingleObservationTimer("Classic Copy" + name, unit);
+            _logs.startSingleObservationTimer("Classic Copy " + name, unit);
             for (size_t i = 0; i < Size; i++)
                 destination[i] = source[i];
-            _logs.stopSingleObservationTimer("Classic Copy" + name, unit);
+            _logs.stopSingleObservationTimer("Classic Copy " + name, unit);
 
             //memcpy copy
-            _logs.startSingleObservationTimer("Memcpy Copy" + name, unit);
+            _logs.startSingleObservationTimer("Memcpy Copy " + name, unit);
             std::memcpy(destination, source, sizeof(T) * Size);
-            _logs.stopSingleObservationTimer("Memcpy Copy" + name, unit);
+            _logs.stopSingleObservationTimer("Memcpy Copy " + name, unit);
 
             delete[] source;
             delete[] destination;
@@ -66,9 +72,9 @@ namespace STLKR_Tests {
             T* simdSource = _createAlignedPtr<T>(Size, 64);
             T* simdDestination = _createEmptyAlignedPtr<T>(Size, 64);
 
-            _logs.startSingleObservationTimer("SIMD Copy" + name, unit);
+            _logs.startSingleObservationTimer("SIMD Copy " + name, unit);
             SIMDMemoryOperations<T, SIMDType::AVX2>::copy(simdSource, simdDestination, Size);
-            _logs.stopSingleObservationTimer("SIMD Copy" + name, unit);
+            _logs.stopSingleObservationTimer("SIMD Copy " + name, unit);
             _freeAlignedArray(simdSource);
             _freeAlignedArray(simdDestination);
         }
