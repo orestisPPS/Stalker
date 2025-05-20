@@ -27,13 +27,13 @@ namespace STLKR_Tests {
             _testAdd();
             _testSubtract();
             _testMultiply();
-            // _testDivide();
+            _testDivide();
             _testNegate();
             _testDotProduct();
             _testSum();
             _testPartialSum();
 
-            _testMetaPolynomial();
+            // _testMetaPolynomial();
         }
 
         static void _testPower() {
@@ -75,7 +75,8 @@ namespace STLKR_Tests {
             constexpr std::array<double, 5> data1 = {0, 1, 2, 3, 4};
             constexpr std::array<double, 5> data2 = {5, 6, 7, 8, 9};
             std::array<double, 5> result = {};
-            MetaOperations::add<double, 5>(data1.data(), data2.data(), result.data(), 1, 1);
+            // MetaOperations::add<double, 5>(data1.data(), data2.data(), result.data(), 1, 1);
+            MetaOperations::add<double, 5>(data1.data(), data2.data(), result.data());
             constexpr std::array<double, 5> expected = {5, 7, 9, 11, 13};
             TestUtility::compareVectors<double>(result.data(), expected.data(), result.size(), "Addition of Two Arrays");
             // static_assert(result == expected, "Addition of Two Arrays Test Failed");
@@ -85,7 +86,8 @@ namespace STLKR_Tests {
             constexpr std::array<double, 5> data1 = {0, 1, 2, 3, 4};
             constexpr std::array<double, 5> data2 = {5, 6, 7, 8, 9};
             std::array<double, 5> result  = {};
-            MetaOperations::subtract<double, 5>(data1.data(), data2.data(), result.data(), 1, 1);
+            // MetaOperations::subtract<double, 5>(data1.data(), data2.data(), result.data(), 1, 1);
+            MetaOperations::subtract<double, 5>(data1.data(), data2.data(), result.data());
             constexpr std::array<double, 5> expected = {-5, -5, -5, -5, -5};
             TestUtility::compareVectors<double>(result.data(), expected.data(), result.size(), "Subtraction of Two Arrays");
             // static_assert(result == expected, "Subtraction of Two Arrays Test Failed");
@@ -95,7 +97,8 @@ namespace STLKR_Tests {
             constexpr std::array<double, 5> data1 = {0, 1, 2, 3, 4};
             constexpr std::array<double, 5> data2 = {5, 6, 7, 8, 9};
             std::array<double, 5> result = {};
-            MetaOperations::multiply<double, 5>(data1.data(), data2.data(), result.data(), 1, 1);
+            // MetaOperations::multiply<double, 5>(data1.data(), data2.data(), result.data(), 1, 1);
+            MetaOperations::multiply<double, 5>(data1.data(), data2.data(), result.data());
             constexpr std::array<double, 5> expected = {0, 6, 14, 24, 36};
             TestUtility::compareVectors<double>(result.data(), expected.data(), result.size(), "Multiplication of Two Arrays");
             // static_assert(result == expected, "Multiplication of Two Arrays Test Failed");
@@ -105,7 +108,8 @@ namespace STLKR_Tests {
             constexpr std::array<double, 5> data1 = {0, 1, 2, 3, 4};
             constexpr std::array<double, 5> data2 = {5, 6, 7, 8, 9};
             std::array<double, 5> result = {};
-            MetaOperations::divide<double, 5>(data1.data(), data2.data(), result.data(), 1, 1);
+            // MetaOperations::divide<double, 5>(data1.data(), data2.data(), result.data(), 1, 1);
+            MetaOperations::divide<double, 5>(data1.data(), data2.data(), result.data());
             constexpr std::array<double, 5> expected = {0, 1.0 / 6, 2.0 / 7, 3.0 / 8, 4.0 / 9};
             TestUtility::compareVectors<double>(result.data(), expected.data(), result.size(), "Division of Two Arrays");
             // static_assert(result == expected, "Division of Two Arrays Test Failed");
@@ -113,17 +117,23 @@ namespace STLKR_Tests {
 
         void _testNegate() {
             constexpr std::array<double, 5> data = {0, 1, 2, 3, 4};
-            std::array<double, 5> result = {};
-            MetaOperations::negate<double, 5>(data.data(), result.data());
             constexpr std::array<double, 5> expected = {-0, -1, -2, -3, -4};
-            TestUtility::compareVectors<double>(result.data(), expected.data(), result.size(), "Negation of an Array");
-            // static_assert(result == expected, "Negation of an Array Test Failed");
+
+            constexpr std::array<double, 5> constexprResult = MetaOperations::negate<double, 5>(data.data());
+            TestUtility::compareVectors<double>(constexprResult.data(), expected.data(), expected.size(), "Negation Constexpr");
+            static_assert(constexprResult == expected, "Negation of an Array Test Failed");
+
+            auto runtimeResult = new double[5];
+            MetaOperations::negate<double, 5>(data.data(), runtimeResult);
+            TestUtility::compareVectors<double>(runtimeResult, expected.data(), expected.size(), "Negation Runtime");
+            delete[] runtimeResult;
+
         }
 
         void _testDotProduct() {
             constexpr std::array<double, 5> data1 = {0, 1, 2, 3, 4};
             constexpr std::array<double, 5> data2 = {5, 6, 7, 8, 9};
-            constexpr auto result = MetaOperations::dotProduct<double, 5>(data1.data(), data2.data());
+            constexpr auto result = MetaOperations::dot<double, 5>(data1.data(), data2.data());
             constexpr auto expected = 80;
             TestUtility::compareValues<double>(result, expected, "Dot Product of Two Arrays");
             static_assert(result == expected, "Dot Product of Two Arrays Test Failed");

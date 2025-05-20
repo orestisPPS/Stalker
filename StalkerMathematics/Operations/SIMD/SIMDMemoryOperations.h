@@ -33,7 +33,7 @@ public:
     static constexpr unsigned registerSize = SIMDTypeTraits<T, Type>::RegisterSize;
 
     template<unsigned UnrollFactor = UnrollFactorSIMD>
-    constexpr inline static void load(const T_data* source, T_simd* destination, unsigned size) {
+    constexpr inline static void load(const T_data* __restrict source, T_simd* __restrict destination, unsigned size) {
         auto limit = size - (size % blockSize);
         for (size_t i = 0; i < limit; i += blockSize)
             Child::_load(source + i, destination + i, std::make_index_sequence<UnrollFactor>{});
@@ -42,7 +42,7 @@ public:
     }
 
     template<unsigned Size>
-    constexpr inline void load(const T_data* source, T_simd* destination) {
+    constexpr inline void load(const T_data* __restrict source, T_simd* __restrict destination) {
         constexpr auto limit = Size - (Size % SIMDTypeTraits<T, Type>::BlockSize);
         Child::_load(source, destination, std::make_index_sequence<limit>{});
         for (size_t i = limit; i < Size; i++)
@@ -50,7 +50,7 @@ public:
     }
 
     template<unsigned UnrollFactor = UnrollFactorSIMD, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    constexpr inline static void store(const T_simd* source, T_data* destination, unsigned size) {
+    constexpr inline static void store(const T_simd* __restrict source, T_data* __restrict destination, unsigned size) {
         auto limit = size - (size % blockSize);
         for (size_t i = 0; i < limit; i += blockSize)
             Child::_store<Policy>(source + i, destination + i, std::make_index_sequence<UnrollFactor>{});
@@ -59,15 +59,15 @@ public:
     }
 
     template<unsigned Size, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    constexpr inline void store(const T_simd* source, T_data* destination) {
+    constexpr inline void store(const T_simd* __restrict source, T_data* __restrict destination) {
         constexpr auto limit = Size - (Size % SIMDTypeTraits<T, Type>::BlockSize);
         Child::_store<Policy>(source, destination, std::make_index_sequence<limit>{});
         for (size_t i = limit; i < Size; i++)
             destination[i] = source[i];
     }
 
-    template<unsigned UnrollFactor = UnrollFactorSIMD, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    constexpr inline static void copy(const T_data* source, T_data* destination, unsigned size) {
+    template<unsigned UnrollFactor = UnrollFactorSIMD, SIMDStoreType Policy = SIMDStoreType::Cached>
+    constexpr inline static void copy(const T_data* __restrict source, T_data* __restrict destination, unsigned size) {
         auto limit = size - (size % blockSize);
         for (size_t i = 0; i < limit; i += blockSize)
             Child::template _copy<Policy>(source + i, destination + i, std::make_index_sequence<UnrollFactor>{});
@@ -76,7 +76,7 @@ public:
     }
 
     template<unsigned Size, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    constexpr inline void copy(const T_data* source, T_data* destination) {
+    constexpr inline void copy(const T_data* __restrict source, T_data* __restrict destination) {
         constexpr auto limit = Size - (Size % SIMDTypeTraits<T, Type>::BlockSize);
         Child::template _copy<Policy>(source, destination, std::make_index_sequence<limit>{});
         for (size_t i = limit; i < Size; i++)
@@ -84,7 +84,7 @@ public:
     }
 
     template<unsigned UnrollFactor = UnrollFactorSIMD, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    constexpr inline static void setValue(T_data *data, T_data value, unsigned size) {
+    constexpr inline static void setValue(T_data* __restrict data, T_data value, unsigned size) {
         
         auto limit = size - (size % blockSize);
         for (size_t i = 0; i < limit; i += blockSize)
@@ -94,7 +94,7 @@ public:
     }
 
     template<unsigned Size, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    constexpr inline void setValue(T_data *data, T_data value) {
+    constexpr inline void setValue(T_data* __restrict data, T_data value) {
         constexpr auto limit = Size - (Size % SIMDTypeTraits<T, Type>::BlockSize);
         Child::template _setValue<Policy>(data, value, std::make_index_sequence<limit>{});
         for (size_t i = limit; i < Size; i++)
@@ -103,7 +103,7 @@ public:
 
 
     template<unsigned UnrollFactor = UnrollFactorSIMD, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    constexpr inline static void setZero(T_data *data, unsigned size) {
+    constexpr inline static void setZero(T_data* __restrict data, unsigned size) {
         auto limit = size - (size % blockSize);
         for (size_t i = 0; i < limit; i += blockSize)
             Child::template _setZero<Policy>(data + i, std::make_index_sequence<UnrollFactor>{});
@@ -112,14 +112,14 @@ public:
     }
 
     template<unsigned Size, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    constexpr inline void setZero(T_data *data) {
+    constexpr inline void setZero(T_data* __restrict data) {
         constexpr auto limit = Size - (Size % SIMDTypeTraits<T, Type>::BlockSize);
         Child::template _setZero<Policy>(data, std::make_index_sequence<limit>{});
         for (size_t i = limit; i < Size; i++)
             data[i] = 0;
     }
 
-    constexpr inline static bool areEqual(const T_data *a, const T_data *b, unsigned size){
+    constexpr inline static bool areEqual(const T_data* a, const T_data *b, unsigned size){
         bool result = true;
         auto limit = size - (size % blockSize);
         for (size_t i = 0; i < limit; i += blockSize)
@@ -186,7 +186,7 @@ private:
     }
 
     template <size_t... Is>
-    static constexpr inline bool _areEqual(const Base::T_data* __restrict a, const Base::T_data* __restrict b, std::index_sequence<Is...>) {
+    static constexpr inline bool _areEqual(const Base::T_data*  a, const Base::T_data* b, std::index_sequence<Is...>) {
         bool result = true;
         ((result = result && _mm256_testc_pd(_mm256_load_pd(a + Is * Base::registerSize), _mm256_load_pd(b + Is * Base::registerSize))), ...);
         return result;
@@ -286,7 +286,7 @@ private:
     }
 
     template <size_t... Is>
-    static constexpr inline bool _areEqual(const Base::T_data* __restrict a, const Base::T_data* __restrict b, std::index_sequence<Is...>) {
+    static constexpr inline bool _areEqual(const Base::T_data*  a, const Base::T_data* b, std::index_sequence<Is...>) {
         bool result = true;
         ((result = result &&
             _mm256_testc_si256(
@@ -340,7 +340,7 @@ private:
     }
 
     template <size_t... Is>
-    static constexpr inline bool _areEqual(const Base::T_data* __restrict a, const Base::T_data* __restrict b, std::index_sequence<Is...>) {
+    static constexpr inline bool _areEqual(const Base::T_data*  a, const Base::T_data* b, std::index_sequence<Is...>) {
         bool result = true;
         ((result = result &&
             _mm256_testc_si256(
@@ -397,7 +397,7 @@ private:
     }
 
     template <size_t... Is>
-    static constexpr inline bool _areEqual(const Base::T_data* __restrict a, const Base::T_data* __restrict b, std::index_sequence<Is...>) {
+    static constexpr inline bool _areEqual(const Base::T_data*  a, const Base::T_data* b, std::index_sequence<Is...>) {
         bool result = true;
         ((result = result &&
             _mm256_testc_si256(

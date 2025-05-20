@@ -6,7 +6,7 @@
 // #include "../../../DataStructures/StalkerVector/AVX2/MemoryTraits.h"
 #include "../../../StalkerMathematics/Operations/SIMD/SIMDTypeTraits.h"
 #include "../../../StalkerMathematics/Operations/SIMD/SIMDMemoryOperations.h"
-#include "../../../StalkerMathematics/Operations/SIMD/SIMDMathOperations.h"
+// #include "../../../StalkerMathematics/Operations/SIMD/SIMDMathOperations.h"
 
 namespace STLKR_Tests {
     

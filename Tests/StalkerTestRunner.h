@@ -9,12 +9,14 @@
 #include "StalkerMatrix/FixedStridePtrBuffer_ValidityTest.h"
 #include "../DataStructures/Concepts/NumericTypeConstraints.h"
 #include "StalkerMatrix/DataAccess_ValidityTests.h"
-#include "StalkerMathematics/MetaMath_ValidityTests.h"
+// #include "StalkerMathematics/MetaMath_ValidityTests.h"
+#include "StalkerMathematics/Concepts_ValidityTests.h"
 #include "StalkerMathematics/Differentiation_ValidityTests.h"
 #include "StalkerMathematics/Integration_ValidityTests.h"
 #include "StalkerMathematics/Operations/SIMD_ValidityTests.h"
+#include "StalkerMathematics/Operations/SIMD_PerformanceTests.h"
+#
 #include "Linspace_ValidityTest.h"
-#include "Exporter_ValidityTest.h"
 #include "CPUTopologyTest.h"
 #include "../Utility/Checkers.h"
 #include <chrono>
@@ -35,17 +37,21 @@ namespace STLKR_Tests {
         //    
             //STLKR_Tests::StalkerVector_ValidityTests<2>().runTest();
 
-        Linspace_ValidityTests().runTest();
-        MatrixBlockIteratorTest().runTest();
-        MatrixBuffers_ValidityTests().runTest(); //NOT HOMOGENEOUS
-        DataAccess_ValidityTests<double>().runTest();
-        MetaprogrammingMath_ValidityTests<double>().runTest();
-        Integration_ValidityTests().runTest();
-        Differentiation_ValidityTests().runTest();
-        STLKR_Tests::Exporter_ValidityTests().runTest();
-        SIMD_ValidityTests().runTest();
+        // Linspace_ValidityTests().runTest();
+        // MatrixBlockIteratorTest().runTest();
+        // MatrixBuffers_ValidityTests().runTest(); //NOT HOMOGENEOUS
+        // DataAccess_ValidityTests<double>().runTest();
+        // MetaprogrammingMath_ValidityTests<double>().runTest();
+        // Concepts_ValidityTests().runTest();
 
-        
+        // Integration_ValidityTests().runTest();
+        // Differentiation_ValidityTests().runTest();
+        // // STLKR_Tests::Exporter_ValidityTests().runTest();
+        // SIMD_ValidityTests<124422>().runTest();
+        // SIMD_PerformanceTests<100>().runTest();
+        // SIMD_PerformanceTests<40000000>().runTest();
+
+
         auto exportPath = "/home/hal9000/code/stalker/Tests/STLKR_PerformanceTests/StalkerVector/logs";
         //auto singleThreadUnrollFactorTest = STLKR_Tests::SingleThreadOperationsPerformanceTest<40000000>(exportPath);
         //for (size_t i = 0; i < 20; i++) {

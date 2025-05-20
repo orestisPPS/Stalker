@@ -4,11 +4,7 @@
 #include <vector>
 #include <stdexcept>
 #include <utility> // for std::pair
-
 #include <array>
-#include <vector>
-#include <stdexcept>
-#include <utility>
 
 template <typename T = double, typename StartType, typename EndType>
 static inline void linspace(T* result, StartType start, EndType stop, int num = 50, bool endpoint = true) {
@@ -18,9 +14,11 @@ static inline void linspace(T* result, StartType start, EndType stop, int num = 
     const T startValue = static_cast<T>(start);
     const T endValue  = static_cast<T>(stop);
 
-    if (num == 1 && endpoint) {
+    if (num == 0)
+        return;
+
+    if (num == 1) {
         result[0] = startValue;
-        result[1] = endValue;
         return;
     }
 
@@ -35,21 +33,19 @@ static inline void linspace(T* result, StartType start, EndType stop, int num = 
 
 template <typename T = double, typename StartType, typename EndType>
 static inline void linspace(std::vector<double>& result, StartType start, EndType stop, int num = 50, bool endpoint = true) {
-    auto size = (num == 1 && endpoint) ? 2 : (endpoint ? num + 1 : num);
-    if (size <= 0)
-        throw std::invalid_argument("linspace: invalid vector size");
+    if (num < 0)
+        throw std::invalid_argument("linspace: number of samples must be non-negative");
 
-    result.resize(size);
+    result.resize(num);
     linspace(result.data(), start, stop, num, endpoint);
 }
 
 template <typename T = double, typename StartType, typename EndType>
 static inline std::vector<double> linspace(StartType start, EndType stop, int num = 50, bool endpoint = true) {
-    auto size = (num == 1 && endpoint) ? 2 : (endpoint ? num + 1 : num);
-    if (size <= 0)
+    if (num < 0)
         throw std::invalid_argument("linspace: invalid return size");
 
-    std::vector<double> result(size);
+    std::vector<double> result(num);
     linspace(result.data(), start, stop, num, endpoint);
     return result;
 }
@@ -60,9 +56,9 @@ constexpr std::array<double, Num> linspace(StartType start, EndType end, bool en
 
     return []<size_t... IndexSequence>(StartType s, EndType e, bool ep, std::index_sequence<IndexSequence...>) {
         std::array<double, Num> result{};
-        if constexpr (Num == 1)
+        if constexpr (Num == 1) {
             result[0] = s;
-        else {
+        } else {
             const double denom = ep ? (Num - 1) : Num;
             const double step  = (e - s) / denom;
             ((result[IndexSequence] = s + IndexSequence * step), ...);
