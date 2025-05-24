@@ -39,52 +39,77 @@
 #        Threading/CPUTopology/Cache.h
 #)
 
+# cmake_minimum_required(VERSION 3.27)
+# project(stalker)
+
+# set(CMAKE_CXX_STANDARD 20)
+# set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2 -mfma -O3")
+
+# # Define the stalker_core header-only library
+# add_library(stalker_core INTERFACE)
+
+# # Add include directories to the stalker_core library
+# target_include_directories(stalker_core INTERFACE
+#         ${PROJECT_SOURCE_DIR}/DataStructures/StalkerVector
+#         ${PROJECT_SOURCE_DIR}/DataStructures/StalkerMatrix
+#         ${PROJECT_SOURCE_DIR}/DataStructures/StalkerMatrix
+#         ${PROJECT_SOURCE_DIR}/DataStructures/Iterators
+#         ${PROJECT_SOURCE_DIR}/DataStructures/Buffers
+#         ${PROJECT_SOURCE_DIR}/StalkerMathematics
+#         ${PROJECT_SOURCE_DIR}/Threading
+#         ${PROJECT_SOURCE_DIR}/Utility
+
+
+# )
+# # Define the stalker_tests library
+# add_library(stalker_tests STATIC
+#         Tests/StalkerTestRunner.h
+#         Tests/STLKR_PerformanceTests/STLKR_PerformanceTestBase.h
+#         Tests/STLKR_TestBase.cpp
+#         Tests/STLKR_TestBase.h
+#         Tests/StalkerVector_ValidityTests.h
+#         Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_PerformanceTests.h
+#         Tests/STLKR_PerformanceTests/StalkerVector/SingleThreadPerformance/SingleThreadOperationsPerformanceTest.h
+#         Tests/CPUTopologyTest.h
+#         Tests/StalkerMatrix/DataAccess_ValidityTests.h
+#         Tests/StalkerMatrix/Iterator_ValidityTests.h
+#         Tests/StalkerMatrix/FixedStridePtrBuffer_ValidityTest.h
+#         Tests/StalkerMathematics/Differentiation_ValidityTests.h
+#         Tests/StalkerMathematics/MetaMath_ValidityTests.h
+# )
+
+# # Link the stalker_tests library with stalker_core
+# target_link_libraries(stalker_tests PRIVATE stalker_core)
+
+# # Add the main executable
+# add_executable(stalker main.cpp
+#         Utility/Readers.h
+#         Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_OperationsTests.h)
+
+# # Link the executable with stalker_core and stalker_tests
+# target_link_libraries(stalker stalker_core stalker_tests)
+
 cmake_minimum_required(VERSION 3.27)
-project(stalker)
+project(Stalker LANGUAGES CXX)
+
+# Global SIMD option for whole project
+option(STALKER_ENABLE_SIMD "Enable SIMD (vectorization) support" ON)
+
+# Optionally: instruction set (for more advanced use)
+set(STALKER_SIMD_INSTRUCTION_SET "avx2" CACHE STRING "SIMD instruction set (avx2, avx512, esp-dsp, none)")
+
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2 -mfma -O3")
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Define the stalker_core header-only library
-add_library(stalker_core INTERFACE)
+add_subdirectory(Core)
+add_subdirectory(Threading)
+add_subdirectory(Utility)
+add_subdirectory(Containers)
+add_subdirectory(Mathematics)
 
-# Add include directories to the stalker_core library
-target_include_directories(stalker_core INTERFACE
-        ${PROJECT_SOURCE_DIR}/DataStructures/StalkerVector
-        ${PROJECT_SOURCE_DIR}/DataStructures/StalkerMatrix
-        ${PROJECT_SOURCE_DIR}/DataStructures/StalkerMatrix
-        ${PROJECT_SOURCE_DIR}/DataStructures/Iterators
-        ${PROJECT_SOURCE_DIR}/DataStructures/Buffers
-        ${PROJECT_SOURCE_DIR}/StalkerMathematics
-        ${PROJECT_SOURCE_DIR}/Threading
-        ${PROJECT_SOURCE_DIR}/Utility
-)
-# Define the stalker_tests library
-add_library(stalker_tests STATIC
-        Tests/StalkerTestRunner.h
-        Tests/STLKR_PerformanceTests/STLKR_PerformanceTestBase.h
-        Tests/STLKR_TestBase.cpp
-        Tests/STLKR_TestBase.h
-        Tests/StalkerVector_ValidityTests.h
-        Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_PerformanceTests.h
-        Tests/STLKR_PerformanceTests/StalkerVector/SingleThreadPerformance/SingleThreadOperationsPerformanceTest.h
-        Tests/CPUTopologyTest.h
-        Tests/StalkerMatrix/DataAccess_ValidityTests.h
-        Tests/StalkerMatrix/Iterator_ValidityTests.h
-        Tests/StalkerMatrix/FixedStridePtrBuffer_ValidityTest.h
-        Tests/StalkerMathematics/Differentiation_ValidityTests.h
-        Tests/StalkerMathematics/MetaMath_ValidityTests.h
-)
-
-# Link the stalker_tests library with stalker_core
-target_link_libraries(stalker_tests PRIVATE stalker_core)
-
-# Add the main executable
-add_executable(stalker main.cpp
-        Utility/Readers.h
-        Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_OperationsTests.h)
-
-# Link the executable with stalker_core and stalker_tests
-target_link_libraries(stalker stalker_core stalker_tests)
-
+add_executable(stalker main.cpp)
+# target_link_libraries(stalker PRIVATE StalkerCore StalkerThreading)
+target_link_libraries(stalker PRIVATE StalkerCore)

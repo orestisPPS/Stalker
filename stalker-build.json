@@ -1,0 +1,23 @@
+{
+  "help": {
+    "buildDir": "Path to the directory where all build files will be generated. Example: 'build'",
+    "enableSimd": "Set to true to enable SIMD optimizations (vectorization). Set to false to disable.",
+    "simdInstructionSet": "Which SIMD instruction set to use. Options: 'avx2', 'avx512', 'esp-dsp', 'none'. Default is 'avx2' if SIMD is enabled.",
+    "buildType": "Type of build. Options: 'Release', 'Debug', 'AllGasNoBrakes' (for maximum performance).",
+    "jobs": "Number of parallel compilation jobs. Set to the number of CPU cores for fastest builds.",
+    "target": "Build target. Usually 'all' to build everything, or specify a target name.",
+    "config": "Build configuration for multi-config generators (like Visual Studio or Xcode). Use 'Release' or 'Debug'."
+  },
+
+  "buildDir": "build",
+  "enableSimd": true,
+  "simdInstructionSet": "avx512",
+  "unrollFactor": 128,
+  "enableOpenMP": false,
+  "enableInternalThreading": false,
+  "buildType": "Debug",
+  "jobs": 16,
+  "target": "all",
+  "config": "Release"
+}
+
