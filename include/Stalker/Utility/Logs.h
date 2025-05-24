@@ -1,15 +1,13 @@
 //
 // Created by hal9000 on 11/21/23.
 //
+#pragma once
 
-#ifndef UNTITLED_LOGS_H
-#define UNTITLED_LOGS_H
 #include <iostream>
 #include <memory>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
-#include "Timer.h"
 #include <string>
 #include <list>
 #include <unordered_map>
@@ -18,8 +16,10 @@
 #include <algorithm>
 #include <thread>
 #include <random>
+#include <Stalker/Utility/Timer.h>
 using namespace std;
 
+namespace Stalker::Utility{
 class Logs {
     
     public:
@@ -52,7 +52,7 @@ class Logs {
         _parametersIndex.emplace(parameterName, _parameters->size());
     }
 
-    void startSingleObservationTimer(const string &logName, STLKR_TimeUnit unit) {
+    inline void startSingleObservationTimer(const string &logName, STLKR_TimeUnit unit) {
 
         if (_currentTimers->find(logName) == _currentTimers->end())
             _currentTimers->insert(make_pair(logName, Timer(unit)));
@@ -60,7 +60,7 @@ class Logs {
         _currentTimers->at(logName).start();
     }
 
-    void stopSingleObservationTimer(const string &logName, STLKR_TimeUnit unit) {
+    inline void stopSingleObservationTimer(const string &logName, STLKR_TimeUnit unit) {
         if (_currentTimers->find(logName) == _currentTimers->end())
             throw std::runtime_error("stopSingleObservationTimer: Timer " + logName + " does not exist.");
 
@@ -72,14 +72,14 @@ class Logs {
         _singleObservationTimerIndex.emplace(logName, _singleObservationTimers->size());
     }
 
-    void startMultipleObservationsTimer(const std::string &logName, STLKR_TimeUnit unit) {
+    inline void startMultipleObservationsTimer(const std::string &logName, STLKR_TimeUnit unit) {
         auto timer = Timer(unit);
         if (_currentTimers->find(logName) == _currentTimers->end())
             _currentTimers->insert(make_pair(logName, timer));
         _currentTimers->at(logName).start();
     }
 
-    void stopMultipleObservationsTimer(const std::string &logName) {
+    inline void stopMultipleObservationsTimer(const std::string &logName) {
         if (_currentTimers->find(logName) == _currentTimers->end())
             throw std::runtime_error("stopMultipleObservationsTimer: Timer " + logName + " does not exist.");
 
@@ -96,7 +96,7 @@ class Logs {
     }
 
 
-    void storeAndResetCurrentLogs() {
+    inline void storeAndResetCurrentLogs() {
         for (auto &timerPair : *_multipleObservationTimers) {
             timerPair.second.emplace_back();
         }
@@ -107,7 +107,7 @@ class Logs {
         }
     }
 
-    void setSingleObservationLogData(const std::string &logName, double value) {
+    inline void setSingleObservationLogData(const std::string &logName, double value) {
         if (_singleObservationData->find(logName) == _singleObservationData->end())
             _singleObservationData->emplace(logName, list<double>());
         _singleObservationData->at(logName).push_back(value);
@@ -115,7 +115,7 @@ class Logs {
         _singleObservationDataIndex.emplace(logName, _singleObservationData->size());
     }
 
-    void setMultipleObservationsLogData(const std::string &logName, double value) {
+    inline void setMultipleObservationsLogData(const std::string &logName, double value) {
         // Check if logName exists in the map
         if (_multipleObservationData->find(logName) == _multipleObservationData->end()) {
             _multipleObservationData->emplace(logName, list<list<double>>{list<double>()});
@@ -125,7 +125,7 @@ class Logs {
         _singleObservationDataIndex.emplace(logName, _multipleObservationData->size());
     }
 
-    void setMultipleObservationsLogData(const std::string &logName, const list<double> &values) {
+    inline void setMultipleObservationsLogData(const std::string &logName, const list<double> &values) {
         if (_multipleObservationData->find(logName) == _multipleObservationData->end()) {
             _multipleObservationData->emplace(logName, list<list<double>>());
         }
@@ -376,7 +376,6 @@ class Logs {
                 << std::setw(12) << dis(gen);
             return oss.str();
         }
-};
 
-
-#endif //UNTITLED_LOGS_H
+    };
+} // namespace Stalker::Utility

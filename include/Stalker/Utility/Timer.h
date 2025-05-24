@@ -1,55 +1,55 @@
 //
 // Created by hal9000 on 4/28/24.
 //
+#pragma once
 
-#ifndef STALKER_TIMER_H
-#define STALKER_TIMER_H
 #include <chrono>
-#include "../Utility/Units/STLKR_Units.h"
+#include <Stalker/Core/Units.h>
 
+namespace Stalker::Utility {
 
 class Timer {
 public:
-    Timer(STLKR_TimeUnit unit) : _unit(unit) {}
+    Timer(TimeUnit unit) : _unit(unit) {}
 
-    void start() {
+    inline void start() {
         _start = std::chrono::high_resolution_clock::now();
         _running = true;
     }
 
-    void stop() {
+    inline void stop() {
         _end = std::chrono::high_resolution_clock::now();
         _running = false;
     }
 
-    STLKR_TimeUnit getUnit() {
+    TimeUnit getUnit() {
         return _unit;
     }
 
-    void setUnit(STLKR_TimeUnit unit) {
+    void setUnit(TimeUnit unit) {
         _unit = unit;
     }
 
-    std::chrono::duration<double> duration() {
+    inline std::chrono::duration<double> duration() {
         if (_running) {
             stop();
         }
         switch (_unit) {
-            case STLKR_TimeUnit::nanoseconds:
+            case TimeUnit::nanoseconds:
                 return std::chrono::duration_cast<std::chrono::nanoseconds>(_end - _start);
-            case STLKR_TimeUnit::microseconds:
+            case TimeUnit::microseconds:
                 return std::chrono::duration_cast<std::chrono::microseconds>(_end - _start);
-            case STLKR_TimeUnit::milliseconds:
+            case TimeUnit::milliseconds:
                 return std::chrono::duration_cast<std::chrono::milliseconds>(_end - _start);
-            case STLKR_TimeUnit::seconds:
+            case TimeUnit::seconds:
                 return std::chrono::duration_cast<std::chrono::seconds>(_end - _start);
-            case STLKR_TimeUnit::minutes:
+            case TimeUnit::minutes:
                 return std::chrono::duration_cast<std::chrono::minutes>(_end - _start);
-            case STLKR_TimeUnit::hours:
+            case TimeUnit::hours:
                 return std::chrono::duration_cast<std::chrono::hours>(_end - _start);
-            case STLKR_TimeUnit::days:
+            case TimeUnit::days:
                 return std::chrono::duration_cast<std::chrono::hours>(_end - _start) / 24;
-            case STLKR_TimeUnit::weeks:
+            case TimeUnit::weeks:
                 return std::chrono::duration_cast<std::chrono::hours>(_end - _start) / 168;
         }
         return std::chrono::duration<double>(0);
@@ -57,10 +57,9 @@ public:
     
 private:
     bool _running = false;
-    STLKR_TimeUnit _unit = STLKR_TimeUnit::seconds;
+    TimeUnit _unit = TimeUnit::seconds;
     std::chrono::time_point<std::chrono::high_resolution_clock> _start;
     std::chrono::time_point<std::chrono::high_resolution_clock> _end;
 };
 
-
-#endif //STALKER_TIMER_H
+} // namespace Stalker::Utility

@@ -1,11 +1,12 @@
-#ifndef PRINTERS_H
-#define PRINTERS_H
+#pragma once
 
 #include <iostream>
 #include <string>
 #include <unordered_map>
 #include <stdexcept>
 #include <iomanip>
+
+namespace Stalker::Utility{
 
 /**
  * @enum ColourType
@@ -33,9 +34,6 @@ enum class ColourType {
     PATSIOURA_RED,
     RESET
 };
-
-class Printers {
-public:
 
 /**
  * @brief Retrieves the ANSI escape code for the given ColourType.
@@ -215,13 +213,13 @@ static void printTitle(const std::string& title, std::string symbol, ColourType 
     std::string border(totalLength, symbol[0]);
     std::string paddedTitle = std::string(padding, ' ') + title + std::string(padding, ' ');
 
-    std::cout << Printers::getColourCode(colour) << border << std::endl;
+    std::cout << getColourCode(colour) << border << std::endl;
     std::cout << paddedTitle << std::endl;
-    std::cout << border << Printers::resetColour() << std::endl;
+    std::cout << border << resetColour() << std::endl;
 }
 
 static void printSubtitle(const std::string& subtitle, ColourType colour = ColourType::WHITE) {
-    std::cout << Printers::getColourCode(colour) << "- " << subtitle << Printers::resetColour() << std::endl;
+    std::cout << getColourCode(colour) << "- " << subtitle << resetColour() << std::endl;
 }
 
 
@@ -241,7 +239,4 @@ static inline std::string arrayToString(const T* array, std::size_t size, int pr
     oss << "]";
     return oss.str();
 }
-
-};;
-
-#endif // PRINTERS_H
+} // namespace Stalker::Utility
