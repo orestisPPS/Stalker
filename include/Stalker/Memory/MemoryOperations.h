@@ -1,6 +1,8 @@
 #include <cstring>
 #include <bit>
 
+namespace Stalker::Memory {
+
 /**
  * @class MemoryManagement
  * @tparam T Managed type (must be complete at instantiation)
@@ -276,3 +278,5 @@ struct MemoryManagement {
         return new_ptr;
     }
 };
+
+} // namespace Stalker::Memory

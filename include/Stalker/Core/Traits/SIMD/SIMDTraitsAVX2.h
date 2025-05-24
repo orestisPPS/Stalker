@@ -2,30 +2,6 @@
 
 #include <Stalker/Core/Traits/SIMD/SIMDTraitsBase.h>
 
-/**
- * @file SIMDTraitsAVX2.h
- * @brief Specializations of SIMDTypeTraits for AVX2 SIMDType.
- *
- * This file provides template specializations of the SIMDTypeTraits struct for the supported fundamental types
- * (double, float, int, short, unsigned) using the AVX2 instruction set. Each specialization defines the
- * appropriate SIMD register type, the underlying data type, and the register size (number of elements per register).
- *
- * These specializations inherit from SIMDTypeTraitsBase using the Curiously Recurring Template Pattern (CRTP),
- * which allows the base class to access members of the derived class at compile time, enabling static polymorphism
- * and compile-time optimizations.
- *
- * @tparam T The fundamental data type (double, float, int, short, unsigned).
- * @tparam SIMDType The SIMD instruction set type (here, always SIMDType::AVX2).
- *
- * @note
- * - typeSIMD: The AVX2 SIMD register type for the given data type.
- * - typeData: The underlying scalar data type.
- * - _RegisterSize: Number of elements of typeData that fit in a 256-bit AVX2 register.
- *
- * @see SIMDTypeTraitsBase
- * @see SIMDType
- */
-
 namespace Stalker::Core
 {
     // AVX2 Specialization for doubles

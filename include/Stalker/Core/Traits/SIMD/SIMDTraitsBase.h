@@ -15,20 +15,20 @@ enum class SIMDType {
 
 template<typename T, SIMDType Type, typename Child>
 struct SIMDTypeTraitsBase {
-    static constexpr unsigned RegisterSize() {
+    static constexpr unsigned inline RegisterSize() {
         return Child::_RegisterSize;
     }
-    static constexpr unsigned ElementsPerCacheLine() {
+    static constexpr unsigned inline ElementsPerCacheLine() {
         return STALKER_CACHE_LINE_SIZE / sizeof(typename Child::typeData);
     }
 
     template<size_t UnrollFactor = STALKER_UNROLL_FACTOR>
-    static constexpr unsigned CacheLinesProcessed() { 
+    static constexpr unsigned inline CacheLinesProcessed() { 
         return (UnrollFactor * Child::_RegisterSize) / ElementsPerCacheLine(); 
     }
 
     template<size_t UnrollFactor = STALKER_UNROLL_FACTOR>
-    static constexpr unsigned BlockSize() {
+    static constexpr unsigned inline BlockSize() {
         return Child::_RegisterSize * UnrollFactor;
     }
 };
