@@ -1,9 +1,9 @@
 #pragma once
 
 #include <Stalker/Core/Traits/SIMD/SIMDTraitsAVX2.h>
-#include <Stalker/Memory/MemoryOperationsSIMD.h>
+#include <Stalker/Memory/SIMD/MemoryOperationsSIMDBase.h>
 
-namespace Stalker::Memory {
+namespace Stalker::Memory::SIMD {
     
 template<>
 struct MemoryOperationsSIMD<double, SIMDType::AVX2>

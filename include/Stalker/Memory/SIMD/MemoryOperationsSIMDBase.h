@@ -5,7 +5,7 @@
 #include <utility>
 #include <Stalker/Core/Traits/SIMD/SIMDTraitsBase.h>
 
-namespace Stalker::Memory {
+namespace Stalker::Memory::SIMD {
 
 enum class SIMDStoreType {
     Cached,

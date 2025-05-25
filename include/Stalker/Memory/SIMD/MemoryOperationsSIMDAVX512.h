@@ -1,8 +1,9 @@
 #pragma once
-#include <Stalker/Core/Traits/SIMD/SIMDTraitsAVX512.h>
-#include <Stalker/Memory/MemoryOperationsSIMD.h>
 
-namespace Stalker::Memory {
+#include <Stalker/Core/Traits/SIMD/SIMDTraitsAVX512.h>
+#include <Stalker/Memory/SIMD/MemoryOperationsSIMDBase.h>
+
+namespace Stalker::Memory::SIMD {
 
 // Double Specialization
 template<>
