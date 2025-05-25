@@ -3,6 +3,8 @@
 
 #include "IntegrationMethods.h"
 
+namespace Stalker::Mathematics {
+
 template <IntegrationType Type, typename T>
 class Integral {
 public:
@@ -29,4 +31,5 @@ public:
 
 };
 
+} // namespace Stalker::Mathematics
 #endif // INTEGRAL_H

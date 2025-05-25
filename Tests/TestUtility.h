@@ -6,11 +6,13 @@
 #include <string>
 #include <stdexcept>
 #include <cmath>
-#include "../Utility/Printers.h"
-#include "../StalkerMathematics/Error.h"
+#include <Stalker/Utility/Printers.h>
+#include <Stalker/Core/Error.h>
 
 namespace STLKR_Tests {
 
+using namespace Stalker::Utility;
+using namespace Stalker::Core;
 class TestUtility {
 
 public:
@@ -59,7 +61,7 @@ static bool compareDoubles(double computed, double expected, const std::string& 
     computedStream << computed;
     expectedStream << expected;
 
-    double absError = Error<double>::percentageError(expected, computed);
+    double absError = errorPercent<double>(expected, computed);
     absErrorStream << absError;
 
     std::ostringstream printMessage;
@@ -172,11 +174,11 @@ static void printComparisonValues(T computed, T expected, const std::string& mes
 }
 
 static void printPassed(const std::string& message, ColourType colour = ColourType::WHITE) {
-    Printers::printWithTitle("[PASS]", message, ColourType::GREEN, colour);
+    printWithTitle("[PASS]", message, ColourType::GREEN, colour);
 }
 
 static void printFail(const std::string& message, ColourType colour = ColourType::WHITE) {
-    Printers::printWithTitle("[FAIL]", message, ColourType::PATSIOURA_RED, colour);
+    printWithTitle("[FAIL]", message, ColourType::PATSIOURA_RED, colour);
 }
 
 static void printConditionalSuccess(bool condition, const std::string& message, ColourType colour = ColourType::WHITE) {
@@ -185,7 +187,7 @@ static void printConditionalSuccess(bool condition, const std::string& message, 
 
 static void printTestTitle(const std::string& title, const std::string& symbol = "=", ColourType colour = ColourType::WHITE) {
     std::cout << std::endl;
-    Printers::printTitle(title, symbol, colour);
+    printTitle(title, symbol, colour);
     std::cout << std::endl;
 }
 
@@ -211,21 +213,21 @@ static bool mkdir(const std::string& directoryPath) {
     try {
         fs::path dir(directoryPath);
         if (fs::exists(dir)) {
-            Printers::printInfo("Directory already exists: " + directoryPath);
+            printInfo("Directory already exists: " + directoryPath);
             return true;
         }
         if (fs::create_directories(dir)) {
-            Printers::printSuccess("Successfully created directory: " + directoryPath);
+            printSuccess("Successfully created directory: " + directoryPath);
             return true;
         } else {
-            Printers::printError("Failed to create directory: " + directoryPath);
+            printError("Failed to create directory: " + directoryPath);
             return false;
         }
     } catch (const fs::filesystem_error& e) {
-        Printers::printError("Filesystem error: " + std::string(e.what()));
+        printError("Filesystem error: " + std::string(e.what()));
         return false;
     } catch (const std::exception& e) {
-        Printers::printError("Exception: " + std::string(e.what()));
+        printError("Exception: " + std::string(e.what()));
         return false;
     }
 }

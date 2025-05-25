@@ -6,7 +6,8 @@
 #include <type_traits>
 
 
-static constexpr double pi() { return std::acos(-1); }
+namespace Stalker::Mathematics {
+
 
 template<size_t Power>
 static inline constexpr auto power(auto base) {
@@ -60,4 +61,5 @@ template<> struct Fibonacci<1> { static constexpr int value = 1; };
 
 
 
+} // namespace Stalker::Mathematics
 #endif // META_MATH_H

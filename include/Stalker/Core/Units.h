@@ -14,5 +14,3 @@ namespace Stalker::Core {
         weeks,
     };
 } // namespace Stalker::Core
-
-#endif //STALKER_STLKR_UNITS_H

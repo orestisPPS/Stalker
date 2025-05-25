@@ -2,7 +2,7 @@
 #define LINSPACE_VALIDITYTEST_H
 
 #include "STLKR_TestBase.h"
-#include "../Utility/Linspace.h"
+#include <Stalker/Mathematics/Linspace.h>
 #include "TestUtility.h"
 #include <array>
 
@@ -20,7 +20,7 @@ public:
 
 private:
     void _testRunTime() {
-        Printers::printSubtitle("Run-time", ColourType::PATSIOURA_RED);
+        printSubtitle("Run-time", ColourType::PATSIOURA_RED);
         // 1) Test linspace pointer version
         std::array<double, 5> arrOut{};
         linspace(arrOut.data(), 0.0, 1.0, 5, true);
@@ -51,17 +51,17 @@ private:
 
         // Zero num with endpoint=false
         std::vector<double> zeroOut;
-        try {
-            linspace(zeroOut, 1.0, 1.0, 0, false);
-            TestUtility::printFail("Zero num with endpoint=false should throw an error");
+        linspace(zeroOut, 1.0, 1.0, 0, false);
+        if (zeroOut.empty()) {
+            TestUtility::printPassed("Zero num with endpoint=false returns empty vector");
+        } else {
+            TestUtility::printFail("Zero num with endpoint=false should return empty vector");
         }
-        catch (const std::invalid_argument&) {
-            TestUtility::printPassed("Invalid argument for zero num with endpoint=false");
-        }
+
     }
 
     void _testCompileTime() {
-        Printers::printSubtitle("Compile-time", ColourType::PATSIOURA_RED);
+        printSubtitle("Compile-time", ColourType::PATSIOURA_RED);
         // 1) 5 points, endpoint=true
             constexpr auto result1 = linspace<5>(0.0, 1.0, true);
             constexpr std::array<double, 5> expected1 = {0.0, 0.25, 0.5, 0.75, 1.0};

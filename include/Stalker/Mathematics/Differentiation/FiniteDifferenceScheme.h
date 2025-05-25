@@ -1,7 +1,9 @@
-#ifndef FINITE_DIFFERENCE_SCHEME_H
-#define FINITE_DIFFERENCE_SCHEME_H
+#pragma once
 
 #include <array>
+#include <cstddef>
+
+namespace Stalker::Mathematics::Differentiation {
 
 enum class SchemeType {
         Forward,
@@ -333,4 +335,4 @@ struct FiniteDifferenceScheme<2, SchemeType::Backward, ErrorOrder::O_5> {
     static constexpr inline double                denominator(double h) { return 180 * h * h; }
 };
 
-#endif // FINITE_DIFFERENCE_SCHEME_H
+} // namespace Stalker::Mathematics::Differentiation 

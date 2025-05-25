@@ -4,6 +4,8 @@
 #include "../MetaMath.h"
 #include <numeric>
 
+namespace Stalker::Mathematics {
+
 enum class IntegrationType {
     Trapezoidal,
     Simpson1,
@@ -111,11 +113,5 @@ struct IntegrationMethod<IntegrationType::Simpson2, T> {
     }
 };
 
-
-
-
-
-
-
-
+} // namespace Stalker::Mathematics
 #endif // NUMERICALINTEGRATIONMETHODS_H

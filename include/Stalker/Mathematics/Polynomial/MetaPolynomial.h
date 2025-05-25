@@ -1,11 +1,10 @@
 #ifndef TPOLYNOMIAL_H
 #define TPOLYNOMIAL_H
 
-#include <array>
-#include <vector>
-#include <cstddef>
 #include "../MetaMath.h"
-#include "../Utility/Linspace.h"
+#include <Stalker/Mathematics/Linspace.h>
+
+namespace Stalker::Mathematics {
 
 template <typename T, size_t Order>
 class  MetaPolynomial {
@@ -93,4 +92,5 @@ private:
 
 };
 
+} // namespace Stalker::Mathematics
 #endif // TPOLYNOMIAL_H

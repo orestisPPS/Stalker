@@ -6,6 +6,8 @@
 #include <utility> // for std::pair
 #include <array>
 
+namespace Stalker::Mathematics {
+
 template <typename T = double, typename StartType, typename EndType>
 static inline void linspace(T* result, StartType start, EndType stop, int num = 50, bool endpoint = true) {
     if (num < 0)
@@ -68,4 +70,5 @@ constexpr std::array<double, Num> linspace(StartType start, EndType end, bool en
     (start, end, endpoint, std::make_index_sequence<Num>{});
 }
 
+} // namespace Stalker::Mathematics
 #endif // LINSPACE_H

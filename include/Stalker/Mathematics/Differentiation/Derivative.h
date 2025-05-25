@@ -1,9 +1,7 @@
-#ifndef STALKER_MATHEMATICS_DERIVATIVE_CALCULATOR_H
-#define STALKER_MATHEMATICS_DERIVATIVE_CALCULATOR_H
+#pragma once
 
-#include "FiniteDifferenceScheme.h"
-#include "../MetaMath.h"
-
+#include <Stalker/Mathematics/Differentiation/FiniteDifferenceScheme.h>
+namespace Stalker::Mathematics::Differentiation {
 
 using DerivativeOrder = unsigned int;
 
@@ -41,4 +39,4 @@ private:
     }
 };
 
-#endif // STALKER_MATHEMATICS_DERIVATIVE_CALCULATOR_H
+} // namespace Stalker::Mathematics::Differentiation 

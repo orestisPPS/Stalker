@@ -9,6 +9,8 @@
 namespace Stalker::Utility {
 
 class Timer {
+
+    using TimeUnit = Stalker::Core::TimeUnit;
 public:
     Timer(TimeUnit unit) : _unit(unit) {}
 

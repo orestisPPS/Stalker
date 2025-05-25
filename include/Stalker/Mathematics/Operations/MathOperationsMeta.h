@@ -2,7 +2,9 @@
 #define META_MATH_OPERATIONS_H
 #include <cstddef>
 
-struct MetaMathOperations {
+namespace Stalker::Mathematics {
+
+struct MathOperationsMeta {
 public:
 
     template <typename T, size_t UnrollFactor, typename ResultT = T>
@@ -91,7 +93,7 @@ public:
     static constexpr inline void scale(const T* __restrict  data, size_t size, T scalar) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
-            _scale<T, ResultT>(data + i, scalar, std::make_index_sequence<UnrollFactor>{});
+            _scale<T, T>(data + i, scalar, std::make_index_sequence<UnrollFactor>{});
         for (size_t i = limit; i < size; ++i)
             data[i] *= scalar;
     }
@@ -103,7 +105,7 @@ public:
     }
     template <typename T, size_t Size>
     static constexpr inline void addConstant(const T* __restrict data, T constant) {
-        _addConstant<T, ResultT, Size>(data, constant, std::make_index_sequence<Size>{});
+        _addConstant<T, T, Size>(data, constant, std::make_index_sequence<Size>{});
     }
     //needs test
     template <typename T, size_t UnrollFactor, typename ResultT = T>
@@ -127,8 +129,8 @@ public:
     // Sum
     template <typename T, size_t Size>
     static constexpr inline T sum(const T* __restrict data) {
-        ResultT result = ResultT{};
-        _sum<T, ResultT>(data, result, std::make_index_sequence<Size>{});
+        T result = T{};
+        _sum<T, T>(data, result, std::make_index_sequence<Size>{});
         return result;
     }
     template <typename T, size_t Size>
@@ -136,24 +138,24 @@ public:
         T result = 0;
         auto limit = size - (size % Size);
         for (size_t i = 0; i < limit; i += Size)
-            _sum<T, ResultT>(data + i, result, std::make_index_sequence<Size>{});
+            _sum<T, T>(data + i, result, std::make_index_sequence<Size>{});
         for (size_t i = limit; i < size; ++i)
             result += data[i];
         return result;
     }
     // Dot Product
-    template <typename T, size_t UnrollFactor>
+    template <typename T, size_t UnrollFactor, typename ResultT = T>
     static constexpr inline T dot(const T* a, const T* b, size_t size) {
         T result = 0;
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
-            _dot<T, ResultT, false>(a + i, b + i, result, std::make_index_sequence<UnrollFactor>{});
+            _dot<T, T, false>(a + i, b + i, result, std::make_index_sequence<UnrollFactor>{});
         for (size_t i = limit; i < size; ++i)
             result += a[i] * b[i];
         return result;
     }
 
-    template <typename T, size_t UnrollFactor>
+    template <typename T, size_t UnrollFactor, typename ResultT = T>
     static constexpr inline T dot(const T* a, const T* b, size_t size, T scalarA, T scalarB) {
         T result = 0;
         auto limit = size - (size % UnrollFactor);
@@ -345,4 +347,5 @@ private:
 
 };
 
+} // namespace Stalker::Mathematics
 #endif // META_MATH_OPERATIONS_H

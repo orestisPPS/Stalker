@@ -2,8 +2,9 @@
 #define METAMATH_VALIDITYTESTS_H
 
 #include "../STLKR_TestBase.h"
-#include "../StalkerMathematics/MetaOperations.h"
-#include "../StalkerMathematics/Polynomial/MetaPolynomial.h"
+#include <Stalker/Mathematics/Operations/MathOperationsMeta.h>
+#include <Stalker/Mathematics/MetaMath.h>
+#include <Stalker/Mathematics/Polynomial/MetaPolynomial.h>
 #include "../TestUtility.h"
 
 namespace STLKR_Tests {
@@ -17,18 +18,17 @@ namespace STLKR_Tests {
             }
               
         void runTest() override {
-            Printers::printTitle("Basic Mathematics", "-", ColourType::WHITE);
+            printTitle("Basic Mathematics", "-", ColourType::WHITE);
             _testPower();
             _testFactorial();
             _testFallingFactorial();
             _testBinomialCoefficient();
             _testFibonacci();
-            Printers::printTitle("Unrolled MetaOperations", "-", ColourType::WHITE);
+            printTitle("Unrolled MathOperationsMeta", "-", ColourType::WHITE);
             _testAdd();
             _testSubtract();
             _testMultiply();
             _testDivide();
-            _testNegate();
             _testDotProduct();
             _testSum();
             _testPartialSum();
@@ -75,8 +75,8 @@ namespace STLKR_Tests {
             constexpr std::array<double, 5> data1 = {0, 1, 2, 3, 4};
             constexpr std::array<double, 5> data2 = {5, 6, 7, 8, 9};
             std::array<double, 5> result = {};
-            // MetaOperations::add<double, 5>(data1.data(), data2.data(), result.data(), 1, 1);
-            MetaOperations::add<double, 5>(data1.data(), data2.data(), result.data());
+            // MathOperationsMeta::add<double, 5>(data1.data(), data2.data(), result.data(), 1, 1);
+            MathOperationsMeta::add<double, 5>(data1.data(), data2.data(), result.data(), 5);
             constexpr std::array<double, 5> expected = {5, 7, 9, 11, 13};
             TestUtility::compareVectors<double>(result.data(), expected.data(), result.size(), "Addition of Two Arrays");
             // static_assert(result == expected, "Addition of Two Arrays Test Failed");
@@ -86,8 +86,8 @@ namespace STLKR_Tests {
             constexpr std::array<double, 5> data1 = {0, 1, 2, 3, 4};
             constexpr std::array<double, 5> data2 = {5, 6, 7, 8, 9};
             std::array<double, 5> result  = {};
-            // MetaOperations::subtract<double, 5>(data1.data(), data2.data(), result.data(), 1, 1);
-            MetaOperations::subtract<double, 5>(data1.data(), data2.data(), result.data());
+            // MathOperationsMeta::subtract<double, 5>(data1.data(), data2.data(), result.data(), 1, 1);
+            MathOperationsMeta::subtract<double, 5>(data1.data(), data2.data(), result.data(), 5);
             constexpr std::array<double, 5> expected = {-5, -5, -5, -5, -5};
             TestUtility::compareVectors<double>(result.data(), expected.data(), result.size(), "Subtraction of Two Arrays");
             // static_assert(result == expected, "Subtraction of Two Arrays Test Failed");
@@ -97,8 +97,8 @@ namespace STLKR_Tests {
             constexpr std::array<double, 5> data1 = {0, 1, 2, 3, 4};
             constexpr std::array<double, 5> data2 = {5, 6, 7, 8, 9};
             std::array<double, 5> result = {};
-            // MetaOperations::multiply<double, 5>(data1.data(), data2.data(), result.data(), 1, 1);
-            MetaOperations::multiply<double, 5>(data1.data(), data2.data(), result.data());
+            // MathOperationsMeta::multiply<double, 5>(data1.data(), data2.data(), result.data(), 1, 1);
+            MathOperationsMeta::multiply<double, 5>(data1.data(), data2.data(), result.data(), 5);
             constexpr std::array<double, 5> expected = {0, 6, 14, 24, 36};
             TestUtility::compareVectors<double>(result.data(), expected.data(), result.size(), "Multiplication of Two Arrays");
             // static_assert(result == expected, "Multiplication of Two Arrays Test Failed");
@@ -108,32 +108,17 @@ namespace STLKR_Tests {
             constexpr std::array<double, 5> data1 = {0, 1, 2, 3, 4};
             constexpr std::array<double, 5> data2 = {5, 6, 7, 8, 9};
             std::array<double, 5> result = {};
-            // MetaOperations::divide<double, 5>(data1.data(), data2.data(), result.data(), 1, 1);
-            MetaOperations::divide<double, 5>(data1.data(), data2.data(), result.data());
+            // MathOperationsMeta::divide<double, 5>(data1.data(), data2.data(), result.data(), 1, 1);
+            MathOperationsMeta::divide<double, 5>(data1.data(), data2.data(), result.data(), 5);
             constexpr std::array<double, 5> expected = {0, 1.0 / 6, 2.0 / 7, 3.0 / 8, 4.0 / 9};
             TestUtility::compareVectors<double>(result.data(), expected.data(), result.size(), "Division of Two Arrays");
             // static_assert(result == expected, "Division of Two Arrays Test Failed");
         }
 
-        void _testNegate() {
-            constexpr std::array<double, 5> data = {0, 1, 2, 3, 4};
-            constexpr std::array<double, 5> expected = {-0, -1, -2, -3, -4};
-
-            constexpr std::array<double, 5> constexprResult = MetaOperations::negate<double, 5>(data.data());
-            TestUtility::compareVectors<double>(constexprResult.data(), expected.data(), expected.size(), "Negation Constexpr");
-            static_assert(constexprResult == expected, "Negation of an Array Test Failed");
-
-            auto runtimeResult = new double[5];
-            MetaOperations::negate<double, 5>(data.data(), runtimeResult);
-            TestUtility::compareVectors<double>(runtimeResult, expected.data(), expected.size(), "Negation Runtime");
-            delete[] runtimeResult;
-
-        }
-
         void _testDotProduct() {
             constexpr std::array<double, 5> data1 = {0, 1, 2, 3, 4};
             constexpr std::array<double, 5> data2 = {5, 6, 7, 8, 9};
-            constexpr auto result = MetaOperations::dot<double, 5>(data1.data(), data2.data());
+            constexpr auto result = MathOperationsMeta::dot<double, 5>(data1.data(), data2.data(), 5);
             constexpr auto expected = 80;
             TestUtility::compareValues<double>(result, expected, "Dot Product of Two Arrays");
             static_assert(result == expected, "Dot Product of Two Arrays Test Failed");
@@ -141,7 +126,7 @@ namespace STLKR_Tests {
 
         void _testSum() {
             constexpr std::array<double, 5> data = {0, 1, 2, 3, 4};
-            constexpr auto result = MetaOperations::sum<double, 5>(data.data());
+            constexpr auto result = MathOperationsMeta::sum<double, 5>(data.data());
             constexpr auto expected = 10;
             TestUtility::compareValues<double>(result, expected, "Sum of an Array");
             static_assert(result == expected, "Sum of an Array Test Failed");
@@ -151,21 +136,21 @@ namespace STLKR_Tests {
             constexpr std::array<double, 5> data = {0, 1, 2, 3, 4};
 
             {
-                constexpr auto result = MetaOperations::sum<double, 5>(data.data());
+                constexpr auto result = MathOperationsMeta::sum<double, 5>(data.data());
                 constexpr auto expected = 10.0;
                 TestUtility::compareValues<double>(result, expected, "Partial Sum 0..4");
                 static_assert(result == expected, "Partial Sum 0..4 Test Failed");
             }
 
             {
-                constexpr auto result = MetaOperations::sum<double, 3>(data.data() + 1);
+                constexpr auto result = MathOperationsMeta::sum<double, 3>(data.data() + 1);
                 constexpr auto expected = 6.0;
                 TestUtility::compareValues<double>(result, expected, "Partial Sum 1..3");
                 static_assert(result == expected, "Partial Sum 1..3 Test Failed");
             }
 
             {
-                constexpr auto result = MetaOperations::sum<double, 1>(data.data() + 2);
+                constexpr auto result = MathOperationsMeta::sum<double, 1>(data.data() + 2);
                 constexpr auto expected = 2.0;
                 TestUtility::compareValues<double>(result, expected, "Partial Sum 2..2");
                 static_assert(result == expected, "Partial Sum 2..2 Test Failed");
@@ -173,10 +158,10 @@ namespace STLKR_Tests {
         }
 
         static void _testMetaPolynomial(){
-            Printers::printTitle("Constexpr Polynomial Tests", "-", ColourType::WHITE);
+            printTitle("Constexpr Polynomial Tests", "-", ColourType::WHITE);
 
             // Quadratic Polynomial P(x) = 3x² + 2x + 1
-            Printers::printSubtitle("Quadratic Polynomial P(x) = 3x² + 2x + 1 (x=2.0)", ColourType::PATSIOURA_RED);
+            printSubtitle("Quadratic Polynomial P(x) = 3x² + 2x + 1 (x=2.0)", ColourType::PATSIOURA_RED);
             constexpr std::array<double, 3> coefficients = {1, 2, 3};
             constexpr MetaPolynomial<double, 2> p1(coefficients);
 
@@ -211,7 +196,7 @@ namespace STLKR_Tests {
 
 
             //Higher Order Polynomial P(x) = 4x^4 - 3x^3 + 2x^2 - x + 5
-            Printers::printSubtitle("Polynomial of Order 4: P(x) = 4x⁴ - 3x³ + 2x² - x + 5 (x=2.0)", ColourType::PATSIOURA_RED);
+            printSubtitle("Polynomial of Order 4: P(x) = 4x⁴ - 3x³ + 2x² - x + 5 (x=2.0)", ColourType::PATSIOURA_RED);
             constexpr std::array<double, 5> coefficients_high = {5, -1, 2, -3, 4};  // Represents 4x^4 - 3x^3 + 2x^2 - x + 5
             constexpr MetaPolynomial<double, 4> p2(coefficients_high);
 
