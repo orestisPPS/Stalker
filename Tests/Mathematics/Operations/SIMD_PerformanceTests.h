@@ -4,8 +4,11 @@
 #include "../../STLKR_TestBase.h"
 #include "../../TestUtility.h"
 // #include "../../../DataStructures/StalkerVector/AVX2/MemoryTraits.h"
-#include "../../../StalkerMathematics/Operations/SIMD/SIMDTypeTraits.h"
-#include "../../../StalkerMathematics/Operations/SIMD/SIMDMemoryOperations.h"
+#include <Stalker/Core/Units.h>
+using namespace Stalker;
+#include <Stalker/Mathematics/Operations/MathOperationsSIMD.h>
+#include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDAVX2.h>
+#include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDAVX512.h>
 // #include "../../../StalkerMathematics/Operations/SIMD/SIMDMathOperations.h"
 namespace STLKR_Tests {
     
@@ -13,16 +16,16 @@ namespace STLKR_Tests {
     class SIMD_PerformanceTests : public STLKR_TestBase {
     public:
         explicit SIMD_PerformanceTests() : STLKR_TestBase("SIMD Performance Tests VTEC KICKED IN YO") {
-                setPath("SIMD_Logs", getPath("Tests") + "/StalkerMathematics/Operations/logs/SIMD");
+                setPath("SIMD_Logs", getPath("Tests") + "/Mathematics/Operations/logs/SIMD");
             }
 
        void runTest() override {
 
 
             for (size_t i = 0; i < 10; i++) {
-                Printers::printSubtitle("Iteration: " + std::to_string(i), ColourType::PATSIOURA_RED);
+                printSubtitle("Iteration: " + std::to_string(i), ColourType::PATSIOURA_RED);
                 _logs.addParameter("size", std::to_string(Size));
-                _logs.addParameter("unrollFactor", UnrollFactorSIMD);
+                _logs.addParameter("unrollFactor", STALKER_UNROLL_FACTOR);
                 _logs.addParameter("alignment", 64);
                 _logs.addParameter("compiler flag", "o3");
                 _testCopyAllTypes();
@@ -35,7 +38,7 @@ namespace STLKR_Tests {
     private:
 
         void _testCopyAllTypes(){
-            Printers::printTitle("SIMD Copy Performance", "-", ColourType::WHITE);
+            printTitle("SIMD Copy Performance", "-", ColourType::WHITE);
             _testSIMDCopy<double>();
             _testSIMDCopy<float>();
             _testSIMDCopy<int>();
@@ -51,7 +54,7 @@ namespace STLKR_Tests {
             T* destination = new T[Size];
             for (size_t i = 0; i < Size; i++)
                 source[i] = static_cast<T>(i);
-            auto unit = STLKR_TimeUnit::nanoseconds;
+            auto unit = Core::TimeUnit::nanoseconds;
             //classic copy
             auto name = TestUtility::getTypeString<T>();
             _logs.startSingleObservationTimer("Classic Copy " + name, unit);
@@ -73,7 +76,7 @@ namespace STLKR_Tests {
             T* simdDestination = _createEmptyAlignedPtr<T>(Size, 64);
 
             _logs.startSingleObservationTimer("SIMD Copy " + name, unit);
-            SIMDMemoryOperations<T, SIMDType::AVX2>::copy(simdSource, simdDestination, Size);
+            Stalker::Memory::SIMD::MemoryOperationsSIMD<T, SIMDType::AVX512>::copy(simdSource, simdDestination, Size);
             _logs.stopSingleObservationTimer("SIMD Copy " + name, unit);
             _freeAlignedArray(simdSource);
             _freeAlignedArray(simdDestination);

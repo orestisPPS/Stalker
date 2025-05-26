@@ -36,13 +36,8 @@ struct MemoryOperationsSIMDBase {
     }
     
     template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    constexpr inline static void store(const T_simd* __restrict source, T_data* __restrict destination, unsigned size) {
-        constexpr unsigned blockSize = Traits::template BlockSize<UnrollFactor>();
-        auto limit = size - (size % blockSize);
-        for (size_t i = 0; i < limit; i += blockSize)
-            Child::template _store<Policy>(source + i, destination + i, std::make_index_sequence<UnrollFactor>{});
-        for (size_t i = limit; i < size; i++)
-            destination[i] = source[i];
+    constexpr inline static void store(const T_simd* __restrict source, T_data* __restrict destination) {
+        Child::template _store<Policy>(source, destination, std::make_index_sequence<UnrollFactor>{});
     }
     
     template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Cached>
@@ -73,6 +68,11 @@ struct MemoryOperationsSIMDBase {
             Child::template _setZero<Policy>(data + i, std::make_index_sequence<UnrollFactor>{});
         for (size_t i = limit; i < size; i++)
             data[i] = 0;
+    }
+
+    template<unsigned UnrollFactor = 1>
+    constexpr inline static void broadcast(T_simd* __restrict destination, T scalar) {
+        Child::_broadcast(destination, scalar, std::make_index_sequence<UnrollFactor>{});
     }
 
     template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>

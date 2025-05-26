@@ -54,6 +54,14 @@ namespace STLKR_Tests {
             MemoryOperationsSIMD<T, SimdT>::copy(expectedCopy, result, Size);
             TestUtility::compareVectors<T>(expectedCopy, result, Size, "Copy");
 
+            typename SIMDTypeTraits<T, SimdT>::typeSIMD simdRegister;
+            T* broadCastResult = static_cast<T*>(_mm_malloc(SIMDTypeTraits<T, SimdT>::RegisterSize() * sizeof(T), 64));            // Broadcast the value into the SIMD register and then store back to the vector
+            MemoryOperationsSIMD<T, SimdT>::broadcast(&simdRegister, static_cast<T>(1));
+            MemoryOperationsSIMD<T, SimdT>::template store<1>( &simdRegister, broadCastResult);
+
+            TestUtility::compareVectors(broadCastResult, expectedSetValue, SIMDTypeTraits<T, SimdT>::RegisterSize(), "Broadcast");
+
+
             _freeAlignedArray(expectedZero);
             _freeAlignedArray(expectedSetValue);
             _freeAlignedArray(expectedCopy);

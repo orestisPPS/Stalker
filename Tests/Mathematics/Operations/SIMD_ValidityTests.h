@@ -4,109 +4,83 @@
 #include "../../STLKR_TestBase.h"
 #include "../../TestUtility.h"
 // #include "../../../DataStructures/StalkerVector/AVX2/MemoryTraits.h"
-#include "../../../StalkerMathematics/Operations/SIMD/SIMDTypeTraits.h"
-#include "../../../StalkerMathematics/Operations/SIMD/SIMDMemoryOperations.h"
+#include <Stalker/Mathematics/Operations/MathOperationsSIMD.h>
+#include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDAVX2.h>
+#include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDAVX512.h>
 // #include "../../../StalkerMathematics/Operations/SIMD/SIMDMathOperations.h"
 
 namespace STLKR_Tests {
+    using namespace Stalker::Mathematics;
     
     template<size_t Size = 32>
     class SIMD_ValidityTests : public STLKR_TestBase {
-    public:
-        explicit SIMD_ValidityTests() : STLKR_TestBase("SIMD Validity Tests") {
+    
+        public:
+        explicit SIMD_ValidityTests() : STLKR_TestBase("MathOperationsSIMD Validity Tests") {
 
             }
 
         void runTest() override {
-            _testAllTypeTraits();
-            _testAllMemoryOperations();
             _testAllMathOperations();
         }
 
     private:
 
-        static void _testAllTypeTraits(){
-            Printers::printTitle("Type Traits", "-", ColourType::WHITE);
-            _testTypeTrait<double>();
-            _testTypeTrait<float>();
-            _testTypeTrait<int>();
-            _testTypeTrait<short>();
-            _testTypeTrait<unsigned>();
-        }
-
-        static void _testAllMemoryOperations(){
-            Printers::printTitle("Memory Operations", "-", ColourType::WHITE);
-            _testSIMDMemory<double>();
-            _testSIMDMemory<float>();
-            _testSIMDMemory<int>();
-            _testSIMDMemory<short>();
-            _testSIMDMemory<unsigned>();
-        }
-
         static void _testAllMathOperations(){
-            Printers::printTitle("Math Operations", "-", ColourType::WHITE);
-            _testSIMDMath<double>();
-            _testSIMDMath<float>();
-            _testSIMDMath<int>();
-            _testSIMDMath<short>();
-            _testSIMDMath<unsigned>();
+            printTitle("AVX2", "-", ColourType::WHITE);
+            _testSIMDMath<double, SIMDType::AVX2>();
+            _testSIMDMath<float, SIMDType::AVX2>();
+            _testSIMDMath<int, SIMDType::AVX2>();
+            _testSIMDMath<short, SIMDType::AVX2>();
+            _testSIMDMath<unsigned, SIMDType::AVX2>();
+            printTitle("AVX512", "-", ColourType::WHITE);
+            _testSIMDMath<double, SIMDType::AVX512>();
+            _testSIMDMath<float, SIMDType::AVX512>();
+            _testSIMDMath<int, SIMDType::AVX512>();
+            _testSIMDMath<unsigned, SIMDType::AVX512>();
+            _testSIMDMath<short, SIMDType::AVX512>();
         }
 
-        template<typename T>
-        static void _testTypeTrait(){
-            Printers::printSubtitle(TestUtility::getTypeString<T>(), ColourType::PATSIOURA_RED);
-            constexpr unsigned expectedRegisterSize =
-            std::is_same_v<T, double> ? DOUBLE_AVX2_REGISTER_SIZE :
-            std::is_same_v<T, float>  ? FLOAT_AVX2_REGISTER_SIZE  :
-            std::is_same_v<T, int>    ? INT_AVX2_REGISTER_SIZE    :
-            std::is_same_v<T, short>  ? SHORT_AVX2_REGISTER_SIZE  :
-            std::is_same_v<T, unsigned> ? UNSIGNED_AVX2_REGISTER_SIZE : 0;
-            constexpr unsigned expectedElementsPerCacheLine = 64 / sizeof(T);
-            constexpr unsigned expectedCacheLinesProcessed = (UnrollFactorSIMD * expectedRegisterSize) / expectedElementsPerCacheLine;
-            constexpr unsigned expectedBlockSize = expectedRegisterSize * UnrollFactorSIMD;
-            
-            TestUtility::compareValues<unsigned>(SIMDTypeTraits<T, SIMDType::AVX2>::RegisterSize, expectedRegisterSize, "Register Size");
-            TestUtility::compareValues<unsigned>(SIMDTypeTraits<T, SIMDType::AVX2>::ElementsPerCacheLine, expectedElementsPerCacheLine, "Elements Per Cache Line");
-            TestUtility::compareValues<unsigned>(SIMDTypeTraits<T, SIMDType::AVX2>::CacheLinesProcessed, expectedCacheLinesProcessed, "Cache Lines Processed");
-            TestUtility::compareValues<unsigned>(SIMDTypeTraits<T, SIMDType::AVX2>::BlockSize, expectedBlockSize, "Block Size");
-            
-            static_assert(SIMDTypeTraits<T, SIMDType::AVX2>::RegisterSize == expectedRegisterSize, "Register Size is not correct");
-            static_assert(SIMDTypeTraits<T, SIMDType::AVX2>::ElementsPerCacheLine == expectedElementsPerCacheLine, "Elements Per Cache Line is not correct");
-            static_assert(SIMDTypeTraits<T, SIMDType::AVX2>::CacheLinesProcessed == expectedCacheLinesProcessed, "Cache Lines Processed is not correct");
-            static_assert(SIMDTypeTraits<T, SIMDType::AVX2>::BlockSize == expectedBlockSize, "Block Size is not correct");
-        }
 
-        template<typename T>
-        static void _testSIMDMemory(){
-            Printers::printSubtitle(TestUtility::getTypeString<T>(), ColourType::PATSIOURA_RED);
+        template<typename T, SIMDType Type>
+        static void _testSIMDMath(){
+            printSubtitle(TestUtility::getTypeString<T>(), ColourType::PATSIOURA_RED);
 
-            auto expectedZero = _createEmptyAlignedPtr<T>(Size, 64);
-            auto expectedSetValue = _createAlignedPtr<T>(Size, 64, 1);
-            auto expectedCopy = _createAlignedPtr<T>(Size, 64);
+            T valA = static_cast<T>(std::is_floating_point<T>::value ? 1.5 : 2);
+            T valB = static_cast<T>(std::is_floating_point<T>::value ? 2.5 : 3);
+            auto a = _createAlignedPtr<T>(Size, 64, valA);
+            auto b = _createAlignedPtr<T>(Size, 64, valB);
 
+            // Compute expected results for each type
+            auto expectedAdd = _createAlignedPtr<T>(Size, 64, valA + valB);
+            auto expectedSubtract = _createAlignedPtr<T>(Size, 64, valA - valB);
+            auto expectedMultiply = _createAlignedPtr<T>(Size, 64, valA * valB);
             auto result = static_cast<T*>(_mm_malloc(Size * sizeof(T), 64));
 
-            SIMDMemoryOperations<T, SIMDType::AVX2>::setZero(result, Size);
-            TestUtility::compareVectors(expectedZero, result, Size, "Set Zero");
 
-            SIMDMemoryOperations<T, SIMDType::AVX2>::setValue(result, static_cast<T>(1), Size);
-            TestUtility::compareVectors(expectedSetValue, result, Size, "Set Value");
-            
-            SIMDMemoryOperations<T, SIMDType::AVX2>::copy(expectedCopy, result, Size);
-            TestUtility::compareVectors<T>(expectedCopy, result, Size, "Copy");
 
-            _freeAlignedArray(expectedZero);
-            _freeAlignedArray(expectedSetValue);
-            _freeAlignedArray(expectedCopy);
+            Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::add(a, b, result, Size);
+            TestUtility::compareVectors(result, expectedAdd, Size, "Add");
+            // Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::add(a, b, result, Size, 1.0, 1.0);
+            // TestUtility::compareVectors(result, expectedAdd, Size, "Add with scale");
+
+            Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::subtract(a, b, result, Size);
+            TestUtility::compareVectors(result, expectedSubtract, Size, "Subtract");
+            // Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::subtract(a, b, result, Size, 1.0, 1.0);
+            // TestUtility::compareVectors(result, expectedSubtract, Size, "Subtract with scale");
+
+            Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::multiply(a, b, result, Size);
+            TestUtility::compareVectors(result, expectedMultiply, Size, "Multiply");
+            // Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::multiply(a, b, result, Size, 1.0, 1.0);
+            // TestUtility::compareVectors(result, expectedMultiply, Size, "Multiply with scale");
+
+
+            _freeAlignedArray(a);
+            _freeAlignedArray(b);
+            _freeAlignedArray(expectedAdd);
+            _freeAlignedArray(expectedSubtract);
+            _freeAlignedArray(expectedMultiply);
             _freeAlignedArray(result);
-        }
-
-        template<typename T>
-        static void _testSIMDMath(){
-            Printers::printSubtitle(TestUtility::getTypeString<T>(), ColourType::PATSIOURA_RED);
-
-            // auto v1 = _createAlignedArray<T, 8>(1);
-            // auto v2 = _createAlignedArray<T, 8>(0);
 
         }
 
