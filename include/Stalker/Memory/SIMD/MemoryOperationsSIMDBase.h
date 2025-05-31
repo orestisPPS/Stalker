@@ -77,9 +77,9 @@ struct MemoryOperationsSIMDBase {
 
     template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
     constexpr inline static bool areEqual(const T_data* a, const T_data *b, unsigned size){
-        bool result = true;
         constexpr unsigned blockSize = Traits::template BlockSize<STALKER_UNROLL_FACTOR>();
         auto limit = size - (size % blockSize);
+        bool result = true;
         for (size_t i = 0; i < limit; i += blockSize)
             result = result && Child::template_areEqual(a + i, b + i, std::make_index_sequence<STALKER_UNROLL_FACTOR>{});
         for (size_t i = limit; i < size; i++)

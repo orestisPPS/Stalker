@@ -3,6 +3,8 @@
 
 #include <cmath>
 
+namespace Stalker::Mathematics {
+
 struct MathOperations {
 public:
     template <typename T, typename ResultT = T>
@@ -205,7 +207,5 @@ struct Norms {
 
 };
 
-
-
-
+} // namespace Stalker::Mathematics
 #endif // MATH_OPERATIONS_H

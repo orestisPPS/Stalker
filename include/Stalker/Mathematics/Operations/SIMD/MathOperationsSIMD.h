@@ -32,7 +32,7 @@ public:
         Memory::SIMD::MemoryOperationsSIMD<T, Type>::broadcast(&scalarSIMD1, scaleA);
         Memory::SIMD::MemoryOperationsSIMD<T, Type>::broadcast(&scalarSIMD2, scaleB);
         for (size_t i = 0; i < limit; i += blockSize)
-            Child::template _add<Policy, true>(a + i, b + i, result + 1, std::make_index_sequence<UnrollFactor>{}, &scalarSIMD1, &scalarSIMD2);
+            Child::template _add<Policy, true>(a + i, b + i, result  + i, std::make_index_sequence<UnrollFactor>{}, &scalarSIMD1, &scalarSIMD2);
         for (size_t i = limit; i < size; i++)
             result[i] = a[i] * scaleA + b[i] * scaleB;
     }
@@ -52,12 +52,17 @@ public:
         constexpr unsigned blockSize = Traits::template BlockSize<UnrollFactor>();
         auto limit = size - (size % blockSize);
         T_simd scalarSIMD1, scalarSIMD2;
-        Memory::SIMD::MemoryOperationsSIMD<T, Type>::broadcast(&scalarSIMD1, scaleA);
-        Memory::SIMD::MemoryOperationsSIMD<T, Type>::broadcast(&scalarSIMD2, scaleB);
+        if constexpr (std::is_floating_point_v<T>) {
+            Memory::SIMD::MemoryOperationsSIMD<T, Type>::broadcast(&scalarSIMD1, scaleA);
+            Memory::SIMD::MemoryOperationsSIMD<T, Type>::broadcast(&scalarSIMD2, -scaleB);
+        } else {
+            Memory::SIMD::MemoryOperationsSIMD<T, Type>::broadcast(&scalarSIMD1, scaleA);
+            Memory::SIMD::MemoryOperationsSIMD<T, Type>::broadcast(&scalarSIMD2, scaleB);
+        }
         for (size_t i = 0; i < limit; i += blockSize)
-            Child::template _subtract<Policy, true>(a + i, b + i, result + 1, std::make_index_sequence<UnrollFactor>{}, &scalarSIMD1, &scalarSIMD2);
+            Child::template _subtract<Policy, true>(a + i, b + i, result  + i, std::make_index_sequence<UnrollFactor>{}, &scalarSIMD1, &scalarSIMD2);
         for (size_t i = limit; i < size; i++)
-            result[i] = a[i] * scaleA - b[i] * scaleB;
+            result[i] = a[i] * scaleA - b[i] * scaleB;  
     }
 
     template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
@@ -78,7 +83,7 @@ public:
         Memory::SIMD::MemoryOperationsSIMD<T, Type>::broadcast(&scalarSIMD1, scaleA);
         Memory::SIMD::MemoryOperationsSIMD<T, Type>::broadcast(&scalarSIMD2, scaleB);
         for (size_t i = 0; i < limit; i += blockSize)
-            Child::template _multiply<Policy, true>(a + i, b + i, result + 1, std::make_index_sequence<UnrollFactor>{}, &scalarSIMD1, &scalarSIMD2);
+            Child::template _multiply<Policy, true>(a + i, b + i, result  + i, std::make_index_sequence<UnrollFactor>{}, &scalarSIMD1, &scalarSIMD2);
         for (size_t i = limit; i < size; i++)
             result[i] = a[i] * scaleA * b[i] * scaleB;
     }
