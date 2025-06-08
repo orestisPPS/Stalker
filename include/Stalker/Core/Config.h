@@ -10,7 +10,6 @@
  * - Config/Compiler.h: Compiler-specific macros and settings.
  * - Config/SIMD.h: SIMD (Single Instruction, Multiple Data) support.
  * - Config/CUDA.h: CUDA (Compute Unified Device Architecture) integration.
- * - Config/OpenMP.h: OpenMP (Open Multi-Processing) support.
  * - Config/Parallel.h: General parallelization options.
  * - Config/Alignment.h: Memory alignment macros and utilities.
  * - Config/LoopUnrolling.h: Loop unrolling optimization macros.
@@ -20,11 +19,11 @@
  */
 #pragma once
 
+#include "Config/Platform.h"
 #include "Config/Alignment.h"
 #include "Config/Compiler.h"
 #include "Config/CUDA.h"
 #include "Config/LoopUnrolling.h"
-#include "Config/OpenMP.h"
 #include "Config/Parallel.h"
 #include "Config/SIMD.h"
 
