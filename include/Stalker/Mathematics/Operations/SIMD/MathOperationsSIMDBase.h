@@ -2,11 +2,10 @@
 // Created by hal9000 on 7/9/24.
 //
 
-#ifndef STALKER_SIMD_MATHOPERATIONS_H
-#define STALKER_SIMD_MATHOPERATIONS_H
+#pragma once
 
 #include <utility>
-#include <Stalker/Core/Traits/SIMD/SIMDTraitsBase.h>
+#include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDBase.h>
 #include <Stalker/Memory/SIMD/MemoryOperationsSIMDBase.h>
 
 namespace Stalker::Mathematics::SIMD {
@@ -20,13 +19,13 @@ namespace Stalker::Mathematics::SIMD {
 template<typename T, SIMDType Type, typename Child>
 struct SIMDMathOperationsBase {
     
-    using Traits = SIMDTypeTraits<T, Type>;
+    using Traits = TypeTraitsSIMD<T, Type>;
     using T_simd = typename Traits::typeSIMD;
     using T_data = typename Traits::typeData;
     using MemoryOps = Stalker::Memory::SIMD::MemoryOperationsSIMD<T, Type>;
     
 public:
-    static constexpr unsigned registerSize = SIMDTypeTraits<T, Type>::RegisterSize();
+    static constexpr unsigned registerSize = TypeTraitsSIMD<T, Type>::RegisterSize();
     
     template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
     inline static void add(T_data *a, T_data  *b, T_data *result, unsigned size, T_data scaleA, T_data scaleB) {
@@ -153,5 +152,4 @@ template<typename T, SIMDType Type> struct SIMDMathOperations;
 
 
 } // namespace Stalker::Mathematics
-#endif // STALKER_SIMD_MATHOPERATIONS_H
 

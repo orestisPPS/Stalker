@@ -10,7 +10,7 @@ namespace Stalker::Core {
 using namespace Core::Config;
 
 template<typename T, SIMDType Type, typename Child>
-struct SIMDTypeTraitsBase {
+struct TypeTraitsSIMDBase {
     static constexpr unsigned inline RegisterSize() {
         return Child::_RegisterSize;
     }
@@ -29,6 +29,6 @@ struct SIMDTypeTraitsBase {
     }
 };
 
-    template<typename T, SIMDType simdType> struct SIMDTypeTraits;
+    template<typename T, SIMDType simdType> struct TypeTraitsSIMD;
 
 } // namespace Stalker::Core

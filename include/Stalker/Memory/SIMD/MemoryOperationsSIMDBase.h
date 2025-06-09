@@ -3,22 +3,18 @@
 //
 #pragma once
 #include <utility>
-#include <Stalker/Core/Traits/SIMD/SIMDTraitsBase.h>
+#include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDBase.h>
 
 namespace Stalker::Memory::SIMD {
 
-enum class SIMDStoreType {
-    Cached,
-    Streamed
-};
-
 using namespace Stalker::Core;
-// Forward declarations for specialized MemoryOperationsSIMD:
+using SIMDType::AVX2;
+using SIMDType::AVX512;
 
 template<typename T, SIMDType Type, typename Child>
 struct MemoryOperationsSIMDBase {
     
-    using Traits = SIMDTypeTraits<T, Type>;
+    using Traits = TypeTraitsSIMD<T, Type>;
     using T_simd = typename Traits::typeSIMD;
     using T_data = typename Traits::typeData;
     
@@ -35,12 +31,12 @@ struct MemoryOperationsSIMDBase {
                 destination[i] = source[i];
     }
     
-    template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    constexpr inline static void store(const T_simd* __restrict source, T_data* __restrict destination) {
-        Child::template _store<Policy>(source, destination, std::make_index_sequence<UnrollFactor>{});
+    template<SIMDStoreType Policy = SIMDStoreType::Streamed>
+    constexpr inline static void store(T_data* __restrict destination, const T_simd __restrict source) {
+        Child::template _store<Policy>(destination, source);
     }
     
-    template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Cached>
+    template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
     constexpr inline static void copy(const T_data* __restrict source, T_data* __restrict destination, unsigned size) {
         constexpr unsigned blockSize = Traits::template BlockSize<UnrollFactor>();
         auto limit = size - (size % blockSize);

@@ -122,7 +122,7 @@ namespace Stalker::Core::Config {
      * 
      * @note Defaults to 1 if loop unrolling is disabled.
      */
-    constexpr int DefaultUnrollFactor() { return STALKER_UNROLL_FACTOR; }
+    constexpr size_t DefaultUnrollFactor() { return STALKER_UNROLL_FACTOR; }
 
     static_assert(STALKER_UNROLL_FACTOR >= 1, "STALKER_UNROLL_FACTOR must be >= 1");
 

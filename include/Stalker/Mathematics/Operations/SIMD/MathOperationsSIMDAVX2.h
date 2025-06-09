@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Stalker/Core/Traits/SIMD/SIMDTraitsAVX2.h>
+#include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDAVX2.h>
 #include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDBase.h>
 #include <Stalker/Memory/SIMD/MemoryOperationsSIMDAVX2.h>
 

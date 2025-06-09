@@ -1,14 +1,14 @@
 #pragma once
 
-#include <Stalker/Core/Traits/SIMD/SIMDTraitsBase.h>
+#include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDBase.h>
 
 namespace Stalker::Core
 {
     // AVX2 Specialization for doubles
     template<>
-    struct SIMDTypeTraits<double, SIMDType::AVX2>
-        : SIMDTypeTraitsBase<double, SIMDType::AVX2, SIMDTypeTraits<double, SIMDType::AVX2>> {
-        using Base = SIMDTypeTraitsBase<double, SIMDType::AVX2, SIMDTypeTraits<double, SIMDType::AVX2>>;
+    struct TypeTraitsSIMD<double, SIMDType::AVX2>
+        : TypeTraitsSIMDBase<double, SIMDType::AVX2, TypeTraitsSIMD<double, SIMDType::AVX2>> {
+        using Base = TypeTraitsSIMDBase<double, SIMDType::AVX2, TypeTraitsSIMD<double, SIMDType::AVX2>>;
         using typeSIMD = __m256d;
         using typeData = double;
     private:
@@ -18,8 +18,8 @@ namespace Stalker::Core
 
     // AVX2 Specialization for floats
     template<>
-    struct SIMDTypeTraits<float, SIMDType::AVX2> : SIMDTypeTraitsBase<float, SIMDType::AVX2, SIMDTypeTraits<float, SIMDType::AVX2>> {
-        using Base = SIMDTypeTraitsBase<float, SIMDType::AVX2, SIMDTypeTraits<float, SIMDType::AVX2>>;
+    struct TypeTraitsSIMD<float, SIMDType::AVX2> : TypeTraitsSIMDBase<float, SIMDType::AVX2, TypeTraitsSIMD<float, SIMDType::AVX2>> {
+        using Base = TypeTraitsSIMDBase<float, SIMDType::AVX2, TypeTraitsSIMD<float, SIMDType::AVX2>>;
         using typeSIMD = __m256;
         using typeData = float;
     private:
@@ -29,8 +29,8 @@ namespace Stalker::Core
 
     // AVX2 Specialization for ints
     template<>
-    struct SIMDTypeTraits<int, SIMDType::AVX2> : SIMDTypeTraitsBase<int, SIMDType::AVX2, SIMDTypeTraits<int, SIMDType::AVX2>> {
-        using Base = SIMDTypeTraitsBase<int, SIMDType::AVX2, SIMDTypeTraits<int, SIMDType::AVX2>>;
+    struct TypeTraitsSIMD<int, SIMDType::AVX2> : TypeTraitsSIMDBase<int, SIMDType::AVX2, TypeTraitsSIMD<int, SIMDType::AVX2>> {
+        using Base = TypeTraitsSIMDBase<int, SIMDType::AVX2, TypeTraitsSIMD<int, SIMDType::AVX2>>;
         using typeSIMD = __m256i;
         using typeData = int;
     private:
@@ -40,8 +40,8 @@ namespace Stalker::Core
 
     // AVX2 Specialization for shorts
     template<>
-    struct SIMDTypeTraits<short, SIMDType::AVX2> : SIMDTypeTraitsBase<short, SIMDType::AVX2, SIMDTypeTraits<short, SIMDType::AVX2>> {
-        using Base = SIMDTypeTraitsBase<short, SIMDType::AVX2, SIMDTypeTraits<short, SIMDType::AVX2>>;
+    struct TypeTraitsSIMD<short, SIMDType::AVX2> : TypeTraitsSIMDBase<short, SIMDType::AVX2, TypeTraitsSIMD<short, SIMDType::AVX2>> {
+        using Base = TypeTraitsSIMDBase<short, SIMDType::AVX2, TypeTraitsSIMD<short, SIMDType::AVX2>>;
         using typeSIMD = __m256i;
         using typeData = short;
     private:
@@ -51,8 +51,8 @@ namespace Stalker::Core
 
     // AVX2 Specialization for unsigned ints
     template<>
-    struct SIMDTypeTraits<unsigned, SIMDType::AVX2> : SIMDTypeTraitsBase<unsigned, SIMDType::AVX2, SIMDTypeTraits<unsigned, SIMDType::AVX2>> {
-        using Base = SIMDTypeTraitsBase<unsigned, SIMDType::AVX2, SIMDTypeTraits<unsigned, SIMDType::AVX2>>;
+    struct TypeTraitsSIMD<unsigned, SIMDType::AVX2> : TypeTraitsSIMDBase<unsigned, SIMDType::AVX2, TypeTraitsSIMD<unsigned, SIMDType::AVX2>> {
+        using Base = TypeTraitsSIMDBase<unsigned, SIMDType::AVX2, TypeTraitsSIMD<unsigned, SIMDType::AVX2>>;
         using typeSIMD = __m256i;
         using typeData = unsigned;
     private:

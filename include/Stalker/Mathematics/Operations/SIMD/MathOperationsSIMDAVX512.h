@@ -1,7 +1,7 @@
 #pragma once
 
 #include <immintrin.h> // <-- Required for AVX-512 intrinsics
-#include <Stalker/Core/Traits/SIMD/SIMDTraitsAVX512.h>
+#include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDAVX512.h>
 #include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDBase.h>
 #include <Stalker/Memory/SIMD/MemoryOperationsSIMDAVX512.h>
 

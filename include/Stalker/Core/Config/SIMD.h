@@ -133,6 +133,45 @@ namespace Stalker::Core::Config {
         ESP_DSP = 128
     };
 
+
+    /**
+     * @enum SIMDStoreType
+     * @brief Specifies the preferred memory store policy for SIMD output.
+     *
+     * SIMD store type determines how vectorized values are written to memory.
+     * This allows fine-grained selection between *cache-friendly* stores (which
+     * may benefit from temporal reuse and caching) and *streamed* (non-temporal)
+     * stores (which minimize cache pollution for large bulk data writes).
+     *
+     * - SIMDStoreType::Cached   : Use normal (temporal) cacheable stores, i.e., _mm256_storeu*, _mm512_storeu*, etc.
+     * - SIMDStoreType::Streamed : Use non-temporal (streaming) stores, i.e., _mm256_stream*, _mm512_stream*, etc.
+     *
+     * Streamed stores can improve performance for very large arrays that are not
+     * reused soon (avoids polluting the cache). Cached stores are better for typical
+     * workloads where data is read/written multiple times.
+     */
+    enum class SIMDStoreType {
+        /**
+         * @brief Normal cached stores (temporal).
+         *
+         * SIMD values are written to memory using regular cacheable store instructions,
+         * allowing cache to retain and reuse written data.
+         *
+         * Example: _mm256_storeu_ps, _mm512_storeu_epi32, etc.
+         */
+        Cached,
+
+        /**
+         * @brief Non-temporal streamed stores.
+         *
+         * SIMD values are written to memory using non-temporal (streaming) store instructions,
+         * which bypass the cache and minimize pollution for large, linear data writes.
+         *
+         * Example: _mm256_stream_ps, _mm512_stream_si512, etc.
+         */
+        Streamed
+    };
+
     /**
      * @brief Returns true if any SIMD instruction set is enabled at compile time.
      * @return true if SIMD is available; false otherwise.
@@ -229,6 +268,37 @@ namespace Stalker::Core::Config {
             case SIMDType::ESP_DSP: return 128;
             default:                return 0;
         }
+    }
+
+    /**
+     * @brief Returns the preferred store type for SIMD memory operations.
+     * @return SIMDStoreType::Cached (normal) or SIMDStoreType::Streamed (non-temporal)
+     *
+     * @details
+     * The preferred store policy is selected at compile time using CMake macros:
+     *   - @b STALKER_SIMD_STORE_TYPE_CACHE   : Forces Cached stores (default if unset)
+     *   - @b STALKER_SIMD_STORE_TYPE_STREAM : Forces Streamed stores
+     *
+     * Use this function in generic SIMD code to select between normal or streaming stores,
+     * for example, to toggle between `_mm256_storeu_ps` and `_mm256_stream_ps` at compile time.
+     *
+     * @section storetype_examples Example
+     * @code{.cpp}
+     * if constexpr (DefaultSIMDStoreType() == SIMDStoreType::Streamed) {
+     *     _mm256_stream_ps(dst, values); // Use streaming (non-temporal) store
+     * } else {
+     *     _mm256_storeu_ps(dst, values); // Use normal cacheable store
+     * }
+     * @endcode
+     */
+    inline constexpr SIMDStoreType DefaultSIMDStoreType() {
+        #if defined(STALKER_SIMD_STORE_TYPE_CACHE)
+            return SIMDStoreType::Cached;
+        #elif defined(STALKER_SIMD_STORE_TYPE_STREAM)
+            return SIMDStoreType::Streamed;
+        #else
+            return SIMDStoreType::Streamed;
+        #endif
     }
 } // namespace Stalker::Core::Config
 
