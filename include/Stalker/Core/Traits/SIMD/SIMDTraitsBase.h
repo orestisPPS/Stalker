@@ -3,15 +3,11 @@
 #include <immintrin.h>
 #include <Stalker/Core/Config/LoopUnrolling.h>
 #include <Stalker/Core/Config/Alignment.h>
+#include <Stalker/Core/Config/SIMD.h>
 
 namespace Stalker::Core {
 
-enum class SIMDType {
-    SSE,
-    AVX,
-    AVX2,
-    AVX512
-};
+using namespace Core::Config;
 
 template<typename T, SIMDType Type, typename Child>
 struct SIMDTypeTraitsBase {
@@ -22,12 +18,12 @@ struct SIMDTypeTraitsBase {
         return STALKER_CACHE_LINE_SIZE / sizeof(typename Child::typeData);
     }
 
-    template<size_t UnrollFactor = STALKER_UNROLL_FACTOR>
+    template<size_t UnrollFactor = DefaultUnrollFactor()>
     static constexpr unsigned inline CacheLinesProcessed() { 
         return (UnrollFactor * Child::_RegisterSize) / ElementsPerCacheLine(); 
     }
 
-    template<size_t UnrollFactor = STALKER_UNROLL_FACTOR>
+    template<size_t UnrollFactor = DefaultUnrollFactor()>
     static constexpr unsigned inline BlockSize() {
         return Child::_RegisterSize * UnrollFactor;
     }

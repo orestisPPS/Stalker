@@ -1,13 +1,15 @@
 #ifndef META_MATH_OPERATIONS_H
 #define META_MATH_OPERATIONS_H
 #include <cstddef>
+#include <Stalker/Core/Config/LoopUnrolling.h>
 
 namespace Stalker::Mathematics {
 
 struct MathOperationsMeta {
+    static constexpr size_t DefaultUnrollFactor() { return Core::Config::DefaultUnrollFactor(); }
 public:
 
-    template <typename T, size_t UnrollFactor, typename ResultT = T>
+    template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
     static constexpr inline void add(const T* a, const T* b, ResultT* result, size_t size) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
@@ -16,7 +18,7 @@ public:
             result[i] = a[i] + b[i];
     }
 
-    template <typename T, size_t UnrollFactor, typename ResultT = T>
+    template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
     static constexpr inline void add(const T* a, const T* b, ResultT* result, size_t size, T scalarA, T scalarB) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
@@ -25,7 +27,7 @@ public:
             result[i] = (a[i] * scalarA) + (b[i] * scalarB);
     }
 
-    template <typename T, size_t UnrollFactor, typename ResultT = T>
+    template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
     static constexpr inline void subtract(const T* a, const T* b, ResultT* result, size_t size) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
@@ -34,7 +36,7 @@ public:
             result[i] = a[i] - b[i];
     }
 
-    template <typename T, size_t UnrollFactor, typename ResultT = T>
+    template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
     static constexpr inline void subtract(const T* a, const T* b, ResultT* result, size_t size, T scalarA, T scalarB) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
@@ -43,7 +45,7 @@ public:
             result[i] = (a[i] * scalarA) - (b[i] * scalarB);
     }
 
-    template <typename T, size_t UnrollFactor, typename ResultT = T>
+    template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
     static constexpr inline void multiply(const T* a, const T* b, ResultT* result, size_t size) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
@@ -52,7 +54,7 @@ public:
             result[i] = a[i] * b[i];
     }
 
-    template <typename T, size_t UnrollFactor, typename ResultT = T>
+    template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
     static constexpr inline void multiply(const T* a, const T* b, ResultT* result, size_t size, T scalarA, T scalarB) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
@@ -62,7 +64,7 @@ public:
     }
     
     // Divide
-    template <typename T, size_t UnrollFactor, typename ResultT = T>
+    template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
     static constexpr inline void divide(const T* a, const T* b, ResultT* result, size_t size) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
@@ -71,7 +73,7 @@ public:
             result[i] = a[i] / b[i];
     }
 
-    template <typename T, size_t UnrollFactor, typename ResultT = T>
+    template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
     static constexpr inline void divide(const T* a, const T* b, ResultT* result, size_t size, T scalarA, T scalarB) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
@@ -80,7 +82,7 @@ public:
             result[i] = (a[i] * scalarA) / (b[i] * scalarB);
     }
     // Scale
-    template <typename T, size_t UnrollFactor, typename ResultT = T>
+    template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
     static constexpr inline void scale(const T* __restrict data, ResultT* __restrict result, size_t size, T scalar) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
@@ -89,7 +91,7 @@ public:
             result[i] = data[i] * scalar;
     }
 
-    template <typename T, size_t UnrollFactor>
+    template <typename T, size_t UnrollFactor = DefaultUnrollFactor()>
     static constexpr inline void scale(const T* __restrict  data, size_t size, T scalar) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
@@ -98,17 +100,8 @@ public:
             data[i] *= scalar;
     }
 
-    // Add Constant
-    template <typename T, size_t Size, typename ResultT = T>
-    static constexpr inline void addConstant(const T* __restrict data, ResultT* __restrict result, T constant) {
-        _addConstant<T, ResultT,  Size>(data, result, constant, std::make_index_sequence<Size>{});
-    }
-    template <typename T, size_t Size>
-    static constexpr inline void addConstant(const T* __restrict data, T constant) {
-        _addConstant<T, T, Size>(data, constant, std::make_index_sequence<Size>{});
-    }
     //needs test
-    template <typename T, size_t UnrollFactor, typename ResultT = T>
+    template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
     static constexpr inline void addConstant(const T* __restrict data, T* __restrict result, size_t size, T constant) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
@@ -117,7 +110,7 @@ public:
             result[i] = data[i] + constant;
     }
     //needs test
-    template <typename T, size_t UnrollFactor, typename ResultT = T>
+    template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
     static constexpr inline void addConstant(const T* __restrict data, size_t size, T constant) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
@@ -144,7 +137,7 @@ public:
         return result;
     }
     // Dot Product
-    template <typename T, size_t UnrollFactor, typename ResultT = T>
+    template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
     static constexpr inline T dot(const T* a, const T* b, size_t size) {
         T result = 0;
         auto limit = size - (size % UnrollFactor);
@@ -155,7 +148,7 @@ public:
         return result;
     }
 
-    template <typename T, size_t UnrollFactor, typename ResultT = T>
+    template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
     static constexpr inline T dot(const T* a, const T* b, size_t size, T scalarA, T scalarB) {
         T result = 0;
         auto limit = size - (size % UnrollFactor);

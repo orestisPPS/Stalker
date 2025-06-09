@@ -6,7 +6,8 @@
 // #include "../../../DataStructures/StalkerVector/AVX2/MemoryTraits.h"
 #include <Stalker/Core/Units.h>
 using namespace Stalker;
-#include <Stalker/Mathematics/Operations/MathOperationsSIMD.h>
+// #include <
+#include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDBase.h>
 #include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDAVX2.h>
 #include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDAVX512.h>
 // #include "../../../StalkerMathematics/Operations/SIMD/SIMDMathOperations.h"

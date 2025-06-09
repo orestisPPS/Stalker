@@ -4,7 +4,7 @@
 #include "../../STLKR_TestBase.h"
 #include "../../TestUtility.h"
 // #include "../../../DataStructures/StalkerVector/AVX2/MemoryTraits.h"
-#include <Stalker/Mathematics/Operations/MathOperationsSIMD.h>
+#include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDBase.h>
 #include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDAVX2.h>
 #include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDAVX512.h>
 // #include "../../../StalkerMathematics/Operations/SIMD/SIMDMathOperations.h"
@@ -55,24 +55,24 @@ namespace STLKR_Tests {
             auto expectedAdd = _createAlignedPtr<T>(Size, 64, valA + valB);
             auto expectedSubtract = _createAlignedPtr<T>(Size, 64, valA - valB);
             auto expectedMultiply = _createAlignedPtr<T>(Size, 64, valA * valB);
-            auto result = static_cast<T*>(_mm_malloc(Size * sizeof(T), 64));
+            auto result = _createAlignedPtr<T>(Size, 64);
 
 
 
             Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::add(a, b, result, Size);
             TestUtility::compareVectors(result, expectedAdd, Size, "Add");
-            // Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::add(a, b, result, Size, 1.0, 1.0);
-            // TestUtility::compareVectors(result, expectedAdd, Size, "Add with scale");
+            Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::add(a, b, result, Size, 1, 1);
+            TestUtility::compareVectors(result, expectedAdd, Size, "Add with scale");
 
             Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::subtract(a, b, result, Size);
             TestUtility::compareVectors(result, expectedSubtract, Size, "Subtract");
-            // Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::subtract(a, b, result, Size, 1.0, 1.0);
-            // TestUtility::compareVectors(result, expectedSubtract, Size, "Subtract with scale");
+            Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::subtract(a, b, result, Size, 1, 1);
+            TestUtility::compareVectors(result, expectedSubtract, Size, "Subtract with scale");
 
             Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::multiply(a, b, result, Size);
             TestUtility::compareVectors(result, expectedMultiply, Size, "Multiply");
-            // Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::multiply(a, b, result, Size, 1.0, 1.0);
-            // TestUtility::compareVectors(result, expectedMultiply, Size, "Multiply with scale");
+            Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::multiply(a, b, result, Size, 1, 1);
+            TestUtility::compareVectors(result, expectedMultiply, Size, "Multiply with scale");
 
 
             _freeAlignedArray(a);
@@ -107,17 +107,26 @@ namespace STLKR_Tests {
 
 
         template <typename T>
-        static auto _createAlignedPtr(size_t size, size_t alignment, T value = 0) {
-            T* ptr = static_cast<T*>(_mm_malloc(size * sizeof(T), alignment));
+        static T* _createAlignedPtr(size_t size, size_t alignment, T value = 0) {
+            size_t padded_bytes = ((size * sizeof(T) + alignment - 1) / alignment) * alignment;
+            void* rawPtr = std::aligned_alloc(alignment, padded_bytes);
+            if (!rawPtr) throw std::bad_alloc();
+            T* typedPtr = static_cast<T*>(rawPtr);
             for (size_t i = 0; i < size; i++) {
-                ptr[i] = (value == 0) ? static_cast<T>(i) : value;
+            typedPtr[i] = (value == 0) ? static_cast<T>(i) : value;
             }
-            return ptr;
+            assert(reinterpret_cast<uintptr_t>(typedPtr) % alignment == 0 && "Pointer is not properly aligned");
+//             printf("Pointer: %p, Alignment: %zu\n", (void*)typedPtr, alignment);
+// assert(reinterpret_cast<uintptr_t>(typedPtr) % alignment == 0 && "Not aligned");
+
+            return typedPtr;
         }
 
         template <typename T>
-        static auto _createEmptyAlignedPtr(size_t size, size_t alignment) {
-            T* ptr = static_cast<T*>(_mm_malloc(size * sizeof(T), alignment));
+        static T* _createEmptyAlignedPtr(size_t size, size_t alignment) {
+            void* rawPtr = std::aligned_alloc(alignment, size * sizeof(T));
+            if (!rawPtr) throw std::bad_alloc();
+            T* ptr = static_cast<T*>(rawPtr);
             for (size_t i = 0; i < size; i++) {
                 ptr[i] = 0;
             }
@@ -126,7 +135,7 @@ namespace STLKR_Tests {
 
         template <typename T>
         static void _freeAlignedArray(T* ptr) {
-            _mm_free(ptr);
+            std::free(ptr);
         }
 
         
