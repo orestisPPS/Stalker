@@ -26,17 +26,3 @@
 #include "Config/LoopUnrolling.h"
 #include "Config/Parallel.h"
 #include "Config/SIMD.h"
-
-
-#include <iostream>
-
-
-
-class tests
-{
-public:
-    static void HelloWorld()
-    {
-        std::cout << "Hello, World!" << std::endl;
-    }
-};

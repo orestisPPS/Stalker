@@ -8,6 +8,8 @@
 #include <numbers>
 
 
+namespace Stalker::Mathematics {
+
 // Fundamental algebraic concepts
 template<typename T>
 concept Additive = requires(T a, T b) {
@@ -146,10 +148,6 @@ concept AlignedNumeric =
     { std::assume_aligned<alignof(T)>(ptr) } -> std::same_as<T*>;
   };
 
-
-
-
-
-
+} // namespace Stalker::Mathematics
 
 #endif // NUMERICAL_CONCEPTS_H

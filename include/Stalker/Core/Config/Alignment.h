@@ -27,7 +27,7 @@
  * By default, the alignment is set to the platform's cache line size,
  * but may be overridden by the user at configure time.
  *
- * @section cmake_macros CMake-Defined Macros
+ * @section config Preprocessor Configuration
  * - @b STALKER_ALIGNMENT (integer, always defined)
  *     The alignment (in bytes) to use for all core memory allocations and structures.
  *     Guaranteed to be a positive power of 2. Default: platform cache line size.

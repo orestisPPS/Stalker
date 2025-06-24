@@ -17,7 +17,7 @@ namespace Stalker::Mathematics::SIMD {
 
 // CRTP Base
 template<typename T, SIMDType Type, typename Child>
-struct SIMDMathOperationsBase {
+struct MathOperationsSIMDBase {
     
     using Traits = TypeTraitsSIMD<T, Type>;
     using T_simd = typename Traits::typeSIMD;
@@ -27,8 +27,8 @@ struct SIMDMathOperationsBase {
 public:
     static constexpr unsigned registerSize = TypeTraitsSIMD<T, Type>::RegisterSize();
     
-    template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    inline static void add(T_data *a, T_data  *b, T_data *result, unsigned size, T_data scaleA, T_data scaleB) {
+    template<unsigned UnrollFactor = DefaultUnrollFactor(), SIMDStoreType Policy = DefaultSIMDStoreType()>
+    inline static void add(size_t size, const T_data *a, const T_data  *b, T_data *result, T_data scaleA, T_data scaleB) {
         constexpr unsigned blockSize = Traits::template BlockSize<UnrollFactor>();
         auto limit = size - (size % blockSize);
         T_simd scalarSIMD1, scalarSIMD2;
@@ -40,8 +40,8 @@ public:
             result[i] = a[i] * scaleA + b[i] * scaleB;
     }
 
-    template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    inline static void add(T_data *a, T_data *b, T_data *result, unsigned size) {
+    template<unsigned UnrollFactor = DefaultUnrollFactor(), SIMDStoreType Policy = DefaultSIMDStoreType()>
+    inline static void add(size_t size, const T_data *a, const T_data *b, T_data *result) {
         constexpr unsigned blockSize = Traits::template BlockSize<UnrollFactor>();
         auto limit = size - (size % blockSize);
         for (size_t i = 0; i < limit; i += blockSize)
@@ -50,8 +50,8 @@ public:
             result[i] = a[i] + b[i];
     }
 
-    template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    inline static void subtract(T_data *a, T_data  *b, T_data *result, unsigned size, T_data scaleA, T_data scaleB) {
+    template<unsigned UnrollFactor = DefaultUnrollFactor(), SIMDStoreType Policy = DefaultSIMDStoreType()>
+    inline static void subtract(size_t size, const T_data *a, const T_data  *b, T_data *result, T_data scaleA, T_data scaleB) {
         constexpr unsigned blockSize = Traits::template BlockSize<UnrollFactor>();
         auto limit = size - (size % blockSize);
         T_simd scalarSIMD1, scalarSIMD2;
@@ -66,8 +66,8 @@ public:
             result[i] = a[i] * scaleA - b[i] * scaleB;  
     }
 
-    template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    inline static void subtract(T_data *a, T_data *b, T_data *result, unsigned size) {
+    template<unsigned UnrollFactor = DefaultUnrollFactor(), SIMDStoreType Policy = DefaultSIMDStoreType()>
+    inline static void subtract(size_t size, const T_data *a, const T_data *b, T_data *result) {
         constexpr unsigned blockSize = Traits::template BlockSize<UnrollFactor>();
         auto limit = size - (size % blockSize);
         for (size_t i = 0; i < limit; i += blockSize)
@@ -76,8 +76,8 @@ public:
             result[i] = a[i] - b[i];
     }
 
-    template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    inline static void multiply(T_data *a, T_data  *b, T_data *result, unsigned size, T_data scaleA, T_data scaleB) {
+    template<unsigned UnrollFactor = DefaultUnrollFactor(), SIMDStoreType Policy = DefaultSIMDStoreType()>
+    inline static void multiply(size_t size, const T_data *a, const T_data  *b, T_data *result, T_data scaleA, T_data scaleB) {
         constexpr unsigned blockSize = Traits::template BlockSize<UnrollFactor>();
         auto limit = size - (size % blockSize);
         T_simd scalarSIMD1, scalarSIMD2;
@@ -89,8 +89,8 @@ public:
             result[i] = a[i] * scaleA * b[i] * scaleB;
     }
 
-    template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    inline static void multiply(T_data *a, T_data *b, T_data *result, unsigned size) {
+    template<unsigned UnrollFactor = DefaultUnrollFactor(), SIMDStoreType Policy = DefaultSIMDStoreType()>
+    inline static void multiply(size_t size, const T_data *a, const T_data *b, T_data *result) {
         constexpr unsigned blockSize = Traits::template BlockSize<UnrollFactor>();
         auto limit = size - (size % blockSize);
         for (size_t i = 0; i < limit; i += blockSize)
@@ -99,8 +99,8 @@ public:
             result[i] = a[i] * b[i];
     }
 
-    template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    inline static void scale(T_data *data, T_data *result, unsigned size, T scalar){
+    template<unsigned UnrollFactor = DefaultUnrollFactor(), SIMDStoreType Policy = DefaultSIMDStoreType()>
+    inline static void scale(size_t size, const T_data *data, T_data *result, T scalar){
         constexpr unsigned blockSize = Traits::template BlockSize<UnrollFactor>();
         auto limit = size - (size % blockSize);
         T_simd scalarSIMD;
@@ -111,8 +111,8 @@ public:
             result[i] = data[i] * scalar;
     }
 
-    template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    inline static void scale(T_data *data, unsigned size, T scalar){
+    template<unsigned UnrollFactor = DefaultUnrollFactor(), SIMDStoreType Policy = DefaultSIMDStoreType()>
+    inline static void scale(size_t size, __restrict T_data *data, T scalar){
         constexpr unsigned blockSize = Traits::template BlockSize<UnrollFactor>();
         auto limit = size - (size % blockSize);
         T_simd scalarSIMD;
@@ -123,8 +123,8 @@ public:
             data[i] *= scalar;
     }
 
-    template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    inline static void addConstant(T_data *data, T_data *result, unsigned size, T constant) {
+    template<unsigned UnrollFactor = DefaultUnrollFactor(), SIMDStoreType Policy = DefaultSIMDStoreType()>
+    inline static void addConstant(size_t size, const T_data *data, T_data *result, T constant) {
         constexpr unsigned blockSize = Traits::template BlockSize<UnrollFactor>();
         auto limit = size - (size % blockSize);
         T_simd scalarSIMD;
@@ -135,8 +135,8 @@ public:
             result[i] = data[i] + constant;
     }
 
-    template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    inline static void addConstant(T_data *data, unsigned size, T constant) {
+    template<unsigned UnrollFactor = DefaultUnrollFactor(), SIMDStoreType Policy = DefaultSIMDStoreType()>
+    inline static void addConstant(size_t size, __restrict T_data *data, T constant) {
         constexpr unsigned blockSize = Traits::template BlockSize<UnrollFactor>();
         auto limit = size - (size % blockSize);
         T_simd scalarSIMD;
@@ -148,7 +148,7 @@ public:
     }
 };
 
-template<typename T, SIMDType Type> struct SIMDMathOperations; 
+template<typename T, SIMDType Type> struct MathOperationsSIMD; 
 
 
 } // namespace Stalker::Mathematics

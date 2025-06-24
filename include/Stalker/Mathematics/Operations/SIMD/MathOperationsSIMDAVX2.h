@@ -7,9 +7,9 @@
 namespace Stalker::Mathematics::SIMD
 {
     template <>
-    struct SIMDMathOperations<double, AVX2>
-            : public SIMDMathOperationsBase<double, AVX2, SIMDMathOperations<double, AVX2>> {
-        using Base = SIMDMathOperationsBase<double, AVX2, SIMDMathOperations<double, AVX2>>;
+    struct MathOperationsSIMD<double, AVX2>
+            : public MathOperationsSIMDBase<double, AVX2, MathOperationsSIMD<double, AVX2>> {
+        using Base = MathOperationsSIMDBase<double, AVX2, MathOperationsSIMD<double, AVX2>>;
         
         private:
 
@@ -21,10 +21,10 @@ namespace Stalker::Mathematics::SIMD
 
             if constexpr (IsScaled)
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_fmadd_pd(_mm256_load_pd(a + Is * Base::registerSize), *scalarA,
-                                                                                                _mm256_mul_pd(_mm256_load_pd(b + Is * Base::registerSize), *scalarB))), ...);
+                                                                                                  _mm256_mul_pd(_mm256_load_pd(b + Is * Base::registerSize), *scalarB))), ...);
             else
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_pd(_mm256_load_pd(a + Is * Base::registerSize),
-                                                                                              _mm256_load_pd(b + Is * Base::registerSize))), ...);
+                                                                                                _mm256_load_pd(b + Is * Base::registerSize))), ...);
         }
 
         template <SIMDStoreType Policy, bool IsScaled, size_t... Is>
@@ -32,10 +32,10 @@ namespace Stalker::Mathematics::SIMD
                                      const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr){
             if constexpr (IsScaled)
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_fmadd_pd(_mm256_load_pd(a + Is * Base::registerSize), *scalarA,
-                                                                                                _mm256_mul_pd(_mm256_load_pd(b + Is * Base::registerSize), *scalarB))), ...);
+                                                                                                  _mm256_mul_pd(_mm256_load_pd(b + Is * Base::registerSize), *scalarB))), ...);
             else
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_sub_pd(_mm256_load_pd(a + Is * Base::registerSize),
-                                                                                              _mm256_load_pd(b + Is * Base::registerSize))), ...);
+                                                                                                _mm256_load_pd(b + Is * Base::registerSize))), ...);
 
         }
 
@@ -47,14 +47,14 @@ namespace Stalker::Mathematics::SIMD
                                                                                               _mm256_load_pd(b + Is * Base::registerSize))), ...);
             else
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mul_pd(_mm256_load_pd(a + Is * Base::registerSize),
-                                                                                              _mm256_load_pd(b + Is * Base::registerSize))), ...);
+                                                                                                _mm256_load_pd(b + Is * Base::registerSize))), ...);
         }
     };
 
     template <>
-    struct SIMDMathOperations<float, AVX2>
-            : public SIMDMathOperationsBase<float, AVX2, SIMDMathOperations<float, AVX2>> {
-        using Base = SIMDMathOperationsBase<float, AVX2, SIMDMathOperations<float, AVX2>>;
+    struct MathOperationsSIMD<float, AVX2>
+            : public MathOperationsSIMDBase<float, AVX2, MathOperationsSIMD<float, AVX2>> {
+        using Base = MathOperationsSIMDBase<float, AVX2, MathOperationsSIMD<float, AVX2>>;
         
         private:
         
@@ -65,10 +65,10 @@ namespace Stalker::Mathematics::SIMD
                                 const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr) {
             if constexpr (IsScaled)
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_fmadd_ps(_mm256_load_ps(a + Is * Base::registerSize), *scalarA,
-                                                                                                _mm256_mul_ps(_mm256_load_ps(b + Is * Base::registerSize), *scalarB))), ...);
+                                                                                                  _mm256_mul_ps(_mm256_load_ps(b + Is * Base::registerSize), *scalarB))), ...);
             else
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_ps(_mm256_load_ps(a + Is * Base::registerSize),
-                                                                                              _mm256_load_ps(b + Is * Base::registerSize))), ...);
+                                                                                                _mm256_load_ps(b + Is * Base::registerSize))), ...);
         }
 
         template <SIMDStoreType Policy, bool IsScaled, size_t... Is>
@@ -79,7 +79,7 @@ namespace Stalker::Mathematics::SIMD
                                                                                                 _mm256_mul_ps(_mm256_load_ps(b + Is * Base::registerSize), *scalarB))), ...);
             else
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_sub_ps(_mm256_load_ps(a + Is * Base::registerSize),
-                                                                                              _mm256_load_ps(b + Is * Base::registerSize))),...);
+                                                                                                _mm256_load_ps(b + Is * Base::registerSize))),...);
         }
 
         template <SIMDStoreType Policy, bool IsScaled, size_t... Is>
@@ -87,18 +87,18 @@ namespace Stalker::Mathematics::SIMD
                                      const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr) {
             if constexpr (IsScaled)
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mul_ps(_mm256_mul_ps(_mm256_load_ps(a + Is * Base::registerSize), *scalarA),
-                                                                                              _mm256_mul_ps(_mm256_load_ps(b + Is * Base::registerSize), *scalarB))),
+                                                                                                _mm256_mul_ps(_mm256_load_ps(b + Is * Base::registerSize), *scalarB))),
                  ...);
             else
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mul_ps(_mm256_load_ps(a + Is * Base::registerSize),
-                                                                                              _mm256_load_ps(b + Is * Base::registerSize))),...);
+                                                                                                _mm256_load_ps(b + Is * Base::registerSize))),...);
         }
     };
 
     template <>
-    struct SIMDMathOperations<int, AVX2>
-            : public SIMDMathOperationsBase<int, AVX2, SIMDMathOperations<int, AVX2>> {
-        using Base = SIMDMathOperationsBase<int, AVX2, SIMDMathOperations<int, AVX2>>;
+    struct MathOperationsSIMD<int, AVX2>
+            : public MathOperationsSIMDBase<int, AVX2, MathOperationsSIMD<int, AVX2>> {
+        using Base = MathOperationsSIMDBase<int, AVX2, MathOperationsSIMD<int, AVX2>>;
         
         private:
         
@@ -145,9 +145,9 @@ namespace Stalker::Mathematics::SIMD
     };
 
     template <>
-    struct SIMDMathOperations<unsigned int, AVX2>
-            : public SIMDMathOperationsBase<unsigned int, AVX2, SIMDMathOperations<unsigned int, AVX2>> {
-        using Base = SIMDMathOperationsBase<unsigned int, AVX2, SIMDMathOperations<unsigned int, AVX2>>;
+    struct MathOperationsSIMD<unsigned int, AVX2>
+            : public MathOperationsSIMDBase<unsigned int, AVX2, MathOperationsSIMD<unsigned int, AVX2>> {
+        using Base = MathOperationsSIMDBase<unsigned int, AVX2, MathOperationsSIMD<unsigned int, AVX2>>;
         
         private:
 
@@ -198,9 +198,9 @@ namespace Stalker::Mathematics::SIMD
     };
 
     template <>
-    struct SIMDMathOperations<short, AVX2>
-            : public SIMDMathOperationsBase<short, AVX2, SIMDMathOperations<short, AVX2>> {
-        using Base = SIMDMathOperationsBase<short, AVX2, SIMDMathOperations<short, AVX2>>;
+    struct MathOperationsSIMD<short, AVX2>
+            : public MathOperationsSIMDBase<short, AVX2, MathOperationsSIMD<short, AVX2>> {
+        using Base = MathOperationsSIMDBase<short, AVX2, MathOperationsSIMD<short, AVX2>>;
         
     private:
 
@@ -228,8 +228,9 @@ namespace Stalker::Mathematics::SIMD
                                                   _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)), *scalarA),
                                                   _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)), *scalarB))), ...);
             else
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_sub_epi16( _mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
-                                                                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))), ...);
+                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_sub_epi16(
+                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
+                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))), ...);
         }
 
         template <SIMDStoreType Policy, bool IsScaled, size_t... Is>
@@ -239,14 +240,11 @@ namespace Stalker::Mathematics::SIMD
             if constexpr (IsScaled)
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mullo_epi16(
                                                   _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)), *scalarA),
-                                                  _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)), *scalarB))),
-                 ...);
+                                                  _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)), *scalarB))),...);
             else
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize,
-                                              _mm256_mullo_epi16(
+                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mullo_epi16(
                                                   _mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
-                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))),
-                 ...);
+                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))),...);
         }
     };
 

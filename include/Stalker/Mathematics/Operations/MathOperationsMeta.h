@@ -4,13 +4,14 @@
 #include <Stalker/Core/Config/LoopUnrolling.h>
 
 namespace Stalker::Mathematics {
+    
+using namespace Stalker::Core::Config;
 
 struct MathOperationsMeta {
-    static constexpr size_t DefaultUnrollFactor() { return Core::Config::DefaultUnrollFactor(); }
 public:
 
     template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
-    static constexpr inline void add(const T* a, const T* b, ResultT* result, size_t size) {
+    static constexpr inline void add(size_t size, const T* a, const T* b, ResultT* result) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
             _add<T, ResultT, false>(a + i, b + i, result + i, std::make_index_sequence<UnrollFactor>{});
@@ -19,7 +20,7 @@ public:
     }
 
     template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
-    static constexpr inline void add(const T* a, const T* b, ResultT* result, size_t size, T scalarA, T scalarB) {
+    static constexpr inline void add(size_t size, const T* a, const T* b, ResultT* result, T scalarA, T scalarB) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
             _add<T, ResultT, true>(a + i, b + i, result + i, std::make_index_sequence<UnrollFactor>{}, scalarA, scalarB);
@@ -28,7 +29,7 @@ public:
     }
 
     template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
-    static constexpr inline void subtract(const T* a, const T* b, ResultT* result, size_t size) {
+    static constexpr inline void subtract(size_t size, const T* a, const T* b, ResultT* result) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
             _subtract<T, ResultT, false>(a + i, b + i, result + i, std::make_index_sequence<UnrollFactor>{});
@@ -37,7 +38,7 @@ public:
     }
 
     template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
-    static constexpr inline void subtract(const T* a, const T* b, ResultT* result, size_t size, T scalarA, T scalarB) {
+    static constexpr inline void subtract(size_t size, const T* a, const T* b, ResultT* result, T scalarA, T scalarB) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
             _subtract<T, ResultT, true>(a + i, b + i, result + i, std::make_index_sequence<UnrollFactor>{}, scalarA, scalarB);
@@ -46,7 +47,7 @@ public:
     }
 
     template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
-    static constexpr inline void multiply(const T* a, const T* b, ResultT* result, size_t size) {
+    static constexpr inline void multiply(size_t size, const T* a, const T* b, ResultT* result) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
             _multiply<T, ResultT, false>(a + i, b + i, result + i, std::make_index_sequence<UnrollFactor>{});
@@ -55,7 +56,7 @@ public:
     }
 
     template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
-    static constexpr inline void multiply(const T* a, const T* b, ResultT* result, size_t size, T scalarA, T scalarB) {
+    static constexpr inline void multiply(size_t size, const T* a, const T* b, ResultT* result, T scalarA, T scalarB) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
             _multiply<T, ResultT, true>(a + i, b + i, result + i, std::make_index_sequence<UnrollFactor>{}, scalarA, scalarB);
@@ -65,7 +66,7 @@ public:
     
     // Divide
     template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
-    static constexpr inline void divide(const T* a, const T* b, ResultT* result, size_t size) {
+    static constexpr inline void divide(size_t size, const T* a, const T* b, ResultT* result) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
             _divide<T, ResultT, false>(a + i, b + i, result + i, std::make_index_sequence<UnrollFactor>{});
@@ -74,7 +75,7 @@ public:
     }
 
     template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
-    static constexpr inline void divide(const T* a, const T* b, ResultT* result, size_t size, T scalarA, T scalarB) {
+    static constexpr inline void divide(size_t size, const T* a, const T* b, ResultT* result, T scalarA, T scalarB) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
             _divide<T, ResultT, true>(a + i, b + i, result + i, std::make_index_sequence<UnrollFactor>{}, scalarA, scalarB);
@@ -83,7 +84,7 @@ public:
     }
     // Scale
     template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
-    static constexpr inline void scale(const T* __restrict data, ResultT* __restrict result, size_t size, T scalar) {
+    static constexpr inline void scale(size_t size, const T* __restrict data, ResultT* __restrict result, T scalar) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
             _scale<T, ResultT>(data + i, result + i, scalar, std::make_index_sequence<UnrollFactor>{});
@@ -92,7 +93,7 @@ public:
     }
 
     template <typename T, size_t UnrollFactor = DefaultUnrollFactor()>
-    static constexpr inline void scale(const T* __restrict  data, size_t size, T scalar) {
+    static constexpr inline void scale(size_t size, const T* __restrict  data, T scalar) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
             _scale<T, T>(data + i, scalar, std::make_index_sequence<UnrollFactor>{});
@@ -102,7 +103,7 @@ public:
 
     //needs test
     template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
-    static constexpr inline void addConstant(const T* __restrict data, T* __restrict result, size_t size, T constant) {
+    static constexpr inline void addConstant(size_t size, const T* __restrict data, T* __restrict result, T constant) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
             _addConstant<T, ResultT>(data + i, result + i, constant, std::make_index_sequence<UnrollFactor>{});
@@ -111,7 +112,7 @@ public:
     }
     //needs test
     template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
-    static constexpr inline void addConstant(const T* __restrict data, size_t size, T constant) {
+    static constexpr inline void addConstant(size_t size, const T* __restrict data, T constant) {
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
             _addConstant<T, ResultT>(data + i, constant, std::make_index_sequence<UnrollFactor>{});
@@ -127,7 +128,7 @@ public:
         return result;
     }
     template <typename T, size_t Size>
-    static constexpr inline T sum(const T* __restrict data, size_t size) {
+    static constexpr inline T sum(size_t size, const T* __restrict data) {
         T result = 0;
         auto limit = size - (size % Size);
         for (size_t i = 0; i < limit; i += Size)
@@ -138,7 +139,7 @@ public:
     }
     // Dot Product
     template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
-    static constexpr inline T dot(const T* a, const T* b, size_t size) {
+    static constexpr inline T dot(size_t size, const T* a, const T* b) {
         T result = 0;
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)
@@ -149,7 +150,7 @@ public:
     }
 
     template <typename T, size_t UnrollFactor = DefaultUnrollFactor(), typename ResultT = T>
-    static constexpr inline T dot(const T* a, const T* b, size_t size, T scalarA, T scalarB) {
+    static constexpr inline T dot(size_t size, const T* a, const T* b, T scalarA, T scalarB) {
         T result = 0;
         auto limit = size - (size % UnrollFactor);
         for (size_t i = 0; i < limit; i += UnrollFactor)

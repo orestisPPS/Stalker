@@ -5,7 +5,7 @@
 #include <Stalker/Mathematics/Linspace.h>
 #include "TestUtility.h"
 #include <array>
-
+#include <sys/sysinfo.h>
 namespace STLKR_Tests {
 
 class Linspace_ValidityTests : public STLKR_TestBase {

@@ -15,9 +15,8 @@
  *
  * @section config Preprocessor Configuration
  * The following macros must be defined by the build system (typically via CMake):
- * - @b STALKER_ENABLE_LOOP_UNROLL
- *   - Set to 1 to enable loop unrolling.
- *   - Set to 0 to disable all unrolling (macros expand to nothing).
+ * - @b STALKER_UNROLL_ENABLE (0/1):
+ *   - Enables or disables threading globally.
  * - @b STALKER_UNROLL_FACTOR
  *   - Compile-time integer constant specifying the unroll count.
  *   - Must be a positive integer, typically a power of two (e.g. 4 or 8).
@@ -67,7 +66,7 @@
  *
  * @section utilities Utilities
  * The namespace @c Stalker::Core::Config provides:
- * - @c constexpr bool isLoopUnrollingEnabled()
+ * - @c constexpr bool IsUnrollEnabled()
  *   - Returns true if loop unrolling is enabled and the factor is greater than 1.
  * - @c constexpr int DefaultUnrollFactor()
  *   - Returns the default compile-time unroll factor.
@@ -81,14 +80,14 @@
     #error "STALKER_UNROLL_FACTOR must be set by CMake!"
 #endif
 
-#ifndef STALKER_ENABLE_LOOP_UNROLL
-    #error "STALKER_ENABLE_LOOP_UNROLL must be set by CMake!"
+#ifndef STALKER_UNROLL_ENABLE
+    #error "STALKER_UNROLL_ENABLE must be set by CMake!"
 #endif
 
 #define STRINGIFY(x) _STRINGIFY(x)
 #define _STRINGIFY(x) #x
 
-#if STALKER_ENABLE_LOOP_UNROLL // 1 or 0
+#if STALKER_UNROLL_ENABLE // 1 or 0
 
     #if defined(__clang__)
         #define STALKER_UNROLL(N) _Pragma(STRINGIFY(clang loop unroll_count(N)))
@@ -114,11 +113,11 @@ namespace Stalker::Core::Config {
      *
      * If this returns false, unroll macros expand to nothing and there is no unrolling.
      */
-    constexpr bool isLoopUnrollingEnabled() { return (STALKER_ENABLE_LOOP_UNROLL != 0) && (STALKER_UNROLL_FACTOR > 1); }
+    constexpr bool IsUnrollEnabled() { return (STALKER_UNROLL_ENABLE != 0) && (STALKER_UNROLL_FACTOR > 1); }
 
     /**
-     * @brief Returns the compile-time unroll factor.
-     * @return Integer unroll factor, set by CMake.
+     * @brief Returns the default compile-time unroll factor.
+     * @return size_t unroll factor, set by CMake.
      * 
      * @note Defaults to 1 if loop unrolling is disabled.
      */

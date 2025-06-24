@@ -7,7 +7,7 @@
 #include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDBase.h>
 #include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDAVX2.h>
 #include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDAVX512.h>
-// #include "../../../StalkerMathematics/Operations/SIMD/SIMDMathOperations.h"
+// #include "../../../StalkerMathematics/Operations/SIMD/MathOperationsSIMD.h"
 
 namespace STLKR_Tests {
     using namespace Stalker::Mathematics;
@@ -59,19 +59,19 @@ namespace STLKR_Tests {
 
 
 
-            Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::add(a, b, result, Size);
+            Stalker::Mathematics::SIMD::MathOperationsSIMD<T, Type>::add(Size, a, b, result);
             TestUtility::compareVectors(result, expectedAdd, Size, "Add");
-            Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::add(a, b, result, Size, 1, 1);
+            Stalker::Mathematics::SIMD::MathOperationsSIMD<T, Type>::add(Size, a, b, result, 1, 1);
             TestUtility::compareVectors(result, expectedAdd, Size, "Add with scale");
 
-            Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::subtract(a, b, result, Size);
+            Stalker::Mathematics::SIMD::MathOperationsSIMD<T, Type>::subtract(Size, a, b, result);
             TestUtility::compareVectors(result, expectedSubtract, Size, "Subtract");
-            Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::subtract(a, b, result, Size, 1, 1);
+            Stalker::Mathematics::SIMD::MathOperationsSIMD<T, Type>::subtract(Size, a, b, result, 1, 1);
             TestUtility::compareVectors(result, expectedSubtract, Size, "Subtract with scale");
 
-            Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::multiply(a, b, result, Size);
+            Stalker::Mathematics::SIMD::MathOperationsSIMD<T, Type>::multiply(Size, a, b, result);
             TestUtility::compareVectors(result, expectedMultiply, Size, "Multiply");
-            Stalker::Mathematics::SIMD::SIMDMathOperations<T, Type>::multiply(a, b, result, Size, 1, 1);
+            Stalker::Mathematics::SIMD::MathOperationsSIMD<T, Type>::multiply(Size, a, b, result, 1, 1);
             TestUtility::compareVectors(result, expectedMultiply, Size, "Multiply with scale");
 
 

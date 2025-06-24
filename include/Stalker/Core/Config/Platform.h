@@ -9,21 +9,26 @@
  * All values are auto-detected by CMake during configuration. 
  * Supported platforms are Windows and Linux 64-bit and esp 32-bit.
  *
- * @section cmake_macros CMake-Defined Macros
+ * @section config Preprocessor Configuration
  * One of the following macros must be defined by CMake for platform and architecture detection:
  * - @b STALKER_PLATFORM_WINDOWS   Defined as 1 if targeting Windows, else undefined.
  * - @b STALKER_PLATFORM_LINUX     Defined as 1 if targeting Linux, else undefined.
  * - @b STALKER_64BIT              Defined as 1 if targeting a 64-bit platform, else undefined.
  * - @b STALKER_32BIT              Defined as 1 if targeting a 32-bit platform, else undefined.
- * - @b STALKER_CACHE_LINE_SIZE    The native cache line size in bytes for this platform.
+ * - @b STALKER_PLATFORM_CACHE_LINE_SIZE    The native cache line size in bytes for this platform.
  *
  * These macros are guaranteed to be consistent with the configuration detected by CMake.
  *
  * @section enumerations Enumerations
  * @enum Platform
- *   Enumerates supported target platforms (Windows, Linux, Unknown).
+ *   Enumerates supported target platforms
+ * -   Platform::Windows : Microsoft Windows OS.
+ * -   Platform::Linux   : Linux OS (all distributions).
+ * -   Platform::Unknown : Unknown or unsupported platform.
  * @enum Bitness
- *   Enumerates platform bitness: x64 (64-bit) or x86 (32-bit).
+ *   Enumerates platform bitness
+ * -   Bitness::x64 : 64-bit architecture (x86_64, amd64, aarch64).
+ * -   Bitness::x86 : 32-bit architecture (i386, i686
  *
  * @section utilities Provided Utilities
  * - @c inline constexpr Platform CurrentPlatform()
@@ -67,8 +72,8 @@
     #error "Either STALKER_PLATFORM_WINDOWS or STALKER_PLATFORM_LINUX must be defined by CMake!"
 #endif
 
-#ifndef STALKER_CACHE_LINE_SIZE
-    #error "STALKER_CACHE_LINE_SIZE must be set by CMake!"
+#ifndef STALKER_PLATFORM_CACHE_LINE_SIZE
+    #error "STALKER_PLATFORM_CACHE_LINE_SIZE must be set by CMake!"
 #endif
 
 namespace Stalker::Core::Config {
@@ -194,8 +199,8 @@ namespace Stalker::Core::Config {
      * @brief Returns the detected cache line size (in bytes) for the current platform.
      * @return 64 (default for 64-bit) or 32 (default for 32-bit platforms).
      */
-    inline constexpr int CacheLineSize() {
-        return STALKER_CACHE_LINE_SIZE;
+    inline constexpr size_t CacheLineSize() {
+        return STALKER_PLATFORM_CACHE_LINE_SIZE;
     }
 
 } // namespace Stalker::Core::Config

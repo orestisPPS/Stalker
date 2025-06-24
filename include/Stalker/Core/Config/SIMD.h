@@ -9,8 +9,8 @@
  * based on CMake-defined macros. Supported instruction sets include AVX-512,
  * AVX2, ESP-DSP, and a scalar fallback.
  *
- * @section preprocessor Preprocessor Configuration
- * - @b STALKER_ENABLE_SIMD: Set to @c 1 to enable SIMD, @c 0 to disable (all SIMD paths excluded).
+ * @section config Preprocessor Configuration
+ * - @b STALKER_SIMD_ENABLE: Set to @c 1 to enable SIMD, @c 0 to disable (all SIMD paths excluded).
  * - Exactly one of the following must be defined when SIMD is enabled:
  *     - @b STALKER_SIMD_INSTRUCTION_SET_AVX512 Defined as 1 if AVX-512 support is enabled, else undefined.
  *     - @b STALKER_SIMD_INSTRUCTION_SET_AVX2 Defined as 1 if AVX2 support is enabled, else undefined.
@@ -57,11 +57,11 @@
  * - ESP-DSP Library: https://docs.espressif.com/projects/esp-dsp
  */
 
-#ifndef STALKER_ENABLE_SIMD
-    #error "STALKER_ENABLE_SIMD must be set by CMake!"
+#ifndef STALKER_SIMD_ENABLE
+    #error "STALKER_SIMD_ENABLE must be set by CMake!"
 #endif
 
-#if defined(STALKER_ENABLE_SIMD) && STALKER_ENABLE_SIMD == 1
+#if defined(STALKER_SIMD_ENABLE) && STALKER_SIMD_ENABLE == 1
 
     #if !defined(STALKER_SIMD_INSTRUCTION_SET_AVX512)  && \
         !defined(STALKER_SIMD_INSTRUCTION_SET_AVX2)    && \
@@ -70,6 +70,10 @@
     #endif
 #endif
 
+
+#if defined(STALKER_SIMD_ENABLE) && STALKER_SIMD_ENABLE == 1
+    #include <immintrin.h>
+#endif
 
 namespace Stalker::Core::Config {
 
@@ -177,7 +181,7 @@ namespace Stalker::Core::Config {
      * @return true if SIMD is available; false otherwise.
      */
     inline constexpr bool IsSIMDEnabled() {
-        #if STALKER_ENABLE_SIMD != 0 && !defined(STALKER_SIMD_INSTRUCTION_SET_NONE)
+        #if STALKER_SIMD_ENABLE != 0 && !defined(STALKER_SIMD_INSTRUCTION_SET_NONE)
             return true;
         #else
             return false;
@@ -189,7 +193,7 @@ namespace Stalker::Core::Config {
      * @return true if AVX2 is active.
      */
     inline constexpr bool IsAVX2Enabled() {
-        #if STALKER_ENABLE_SIMD != 0 && defined(STALKER_SIMD_INSTRUCTION_SET_AVX2)
+        #if STALKER_SIMD_ENABLE != 0 && defined(STALKER_SIMD_INSTRUCTION_SET_AVX2)
             return true;
         #else
             return false;
@@ -201,7 +205,7 @@ namespace Stalker::Core::Config {
      * @return true if AVX-512 is active.
      */
     inline constexpr bool IsAVX512Enabled() {
-        #if STALKER_ENABLE_SIMD != 0 && defined(STALKER_SIMD_INSTRUCTION_SET_AVX512)
+        #if STALKER_SIMD_ENABLE != 0 && defined(STALKER_SIMD_INSTRUCTION_SET_AVX512)
             return true;
         #else
             return false;
@@ -212,7 +216,7 @@ namespace Stalker::Core::Config {
      * @brief Returns true if ESP32 DSP SIMD support is enabled at compile time.
      */
     inline constexpr bool IsESPDSPEnabled() {
-        #if STALKER_ENABLE_SIMD != 0 && defined(STALKER_SIMD_INSTRUCTION_SET_ESP_DSP)
+        #if STALKER_SIMD_ENABLE != 0 && defined(STALKER_SIMD_INSTRUCTION_SET_ESP_DSP)
             return true;
         #else
             return false;
@@ -227,7 +231,7 @@ namespace Stalker::Core::Config {
      * @note Throws a compile-time error if no SIMD instruction set is defined.
      */
     inline constexpr SIMDType DefaultSIMDType() {
-        #if defined(STALKER_ENABLE_SIMD) && STALKER_ENABLE_SIMD != 0
+        #if defined(STALKER_SIMD_ENABLE) && STALKER_SIMD_ENABLE != 0
             #if defined(STALKER_SIMD_INSTRUCTION_SET_AVX512)
                 return SIMDType::AVX512;
             #elif defined(STALKER_SIMD_INSTRUCTION_SET_AVX2)
@@ -286,7 +290,7 @@ namespace Stalker::Core::Config {
      * @code{.cpp}
      * if constexpr (DefaultSIMDStoreType() == SIMDStoreType::Streamed) {
      *     _mm256_stream_ps(dst, values); // Use streaming (non-temporal) store
-     * } else {
+    * } else {
      *     _mm256_storeu_ps(dst, values); // Use normal cacheable store
      * }
      * @endcode

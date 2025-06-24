@@ -56,7 +56,7 @@ namespace STLKR_Tests {
             std::is_same_v<U, short>    ? 16 :
             std::is_same_v<U, unsigned> ? 8  :
             0;
-            constexpr unsigned expectedElementsPerCacheLine = STALKER_CACHE_LINE_SIZE / sizeof(U);
+            constexpr unsigned expectedElementsPerCacheLine = STALKER_PLATFORM_CACHE_LINE_SIZE / sizeof(U);
             constexpr unsigned expectedCacheLinesProcessed = (STALKER_UNROLL_FACTOR * expectedRegisterSize) / expectedElementsPerCacheLine;
             constexpr unsigned expectedBlockSize = expectedRegisterSize * STALKER_UNROLL_FACTOR;
 
@@ -82,7 +82,7 @@ namespace STLKR_Tests {
             std::is_same_v<U, short>    ? 32 :
             std::is_same_v<U, unsigned> ? 16 :
             0;
-            constexpr unsigned expectedElementsPerCacheLine = STALKER_CACHE_LINE_SIZE / sizeof(U);
+            constexpr unsigned expectedElementsPerCacheLine = STALKER_PLATFORM_CACHE_LINE_SIZE / sizeof(U);
             constexpr unsigned expectedCacheLinesProcessed = (STALKER_UNROLL_FACTOR * expectedRegisterSize) / expectedElementsPerCacheLine;
             constexpr unsigned expectedBlockSize = expectedRegisterSize * STALKER_UNROLL_FACTOR;
 

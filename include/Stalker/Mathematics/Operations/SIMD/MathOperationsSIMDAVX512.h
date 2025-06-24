@@ -1,6 +1,5 @@
 #pragma once
 
-#include <immintrin.h> // <-- Required for AVX-512 intrinsics
 #include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDAVX512.h>
 #include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDBase.h>
 #include <Stalker/Memory/SIMD/MemoryOperationsSIMDAVX512.h>
@@ -8,9 +7,9 @@
 namespace Stalker::Mathematics::SIMD {
 
 template<>
-struct SIMDMathOperations<double, AVX512>
-        : public SIMDMathOperationsBase<double, AVX512, SIMDMathOperations<double, AVX512>> {
-    using Base = SIMDMathOperationsBase<double, AVX512, SIMDMathOperations<double, AVX512>>;
+struct MathOperationsSIMD<double, AVX512>
+        : public MathOperationsSIMDBase<double, AVX512, MathOperationsSIMD<double, AVX512>> {
+    using Base = MathOperationsSIMDBase<double, AVX512, MathOperationsSIMD<double, AVX512>>;
 
 private:
     
@@ -55,9 +54,9 @@ private:
 };
 
 template<>
-struct SIMDMathOperations<float, AVX512>
-        : public SIMDMathOperationsBase<float, AVX512, SIMDMathOperations<float, AVX512>> {
-    using Base = SIMDMathOperationsBase<float, AVX512, SIMDMathOperations<float, AVX512>>;
+struct MathOperationsSIMD<float, AVX512>
+        : public MathOperationsSIMDBase<float, AVX512, MathOperationsSIMD<float, AVX512>> {
+    using Base = MathOperationsSIMDBase<float, AVX512, MathOperationsSIMD<float, AVX512>>;
     
 private:
     
@@ -101,9 +100,9 @@ template <SIMDStoreType Policy, bool IsScaled, size_t... Is>
 };
 
 template<>
-struct SIMDMathOperations<int, AVX512>
-        : public SIMDMathOperationsBase<int, AVX512, SIMDMathOperations<int, AVX512>> {
-    using Base = SIMDMathOperationsBase<int, AVX512, SIMDMathOperations<int, AVX512>>;
+struct MathOperationsSIMD<int, AVX512>
+        : public MathOperationsSIMDBase<int, AVX512, MathOperationsSIMD<int, AVX512>> {
+    using Base = MathOperationsSIMDBase<int, AVX512, MathOperationsSIMD<int, AVX512>>;
     
 private:
     
@@ -145,9 +144,9 @@ private:
 };
 
 template<>
-struct SIMDMathOperations<unsigned int, AVX512>
-        : public SIMDMathOperationsBase<unsigned int, AVX512, SIMDMathOperations<unsigned int, AVX512>> {
-    using Base = SIMDMathOperationsBase<unsigned int, AVX512, SIMDMathOperations<unsigned int, AVX512>>;
+struct MathOperationsSIMD<unsigned int, AVX512>
+        : public MathOperationsSIMDBase<unsigned int, AVX512, MathOperationsSIMD<unsigned int, AVX512>> {
+    using Base = MathOperationsSIMDBase<unsigned int, AVX512, MathOperationsSIMD<unsigned int, AVX512>>;
     
 private:
 
@@ -189,9 +188,9 @@ friend Base;
     };
 
 template<>
-struct SIMDMathOperations<short, AVX512>
-        : public SIMDMathOperationsBase<short, AVX512, SIMDMathOperations<short, AVX512>> {
-    using Base = SIMDMathOperationsBase<short, AVX512, SIMDMathOperations<short, AVX512>>;
+struct MathOperationsSIMD<short, AVX512>
+        : public MathOperationsSIMDBase<short, AVX512, MathOperationsSIMD<short, AVX512>> {
+    using Base = MathOperationsSIMDBase<short, AVX512, MathOperationsSIMD<short, AVX512>>;
     
 private:
     
