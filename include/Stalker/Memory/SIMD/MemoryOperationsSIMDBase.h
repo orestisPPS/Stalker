@@ -50,8 +50,10 @@ struct MemoryOperationsSIMDBase {
     constexpr inline static void setValue(T_data* __restrict data, T_data value, unsigned size) {
         constexpr unsigned blockSize = Traits::template BlockSize<UnrollFactor>();
         auto limit = size - (size % blockSize);
+        T_simd scalarSIMD;
+        broadcast(&scalarSIMD, value);
         for (size_t i = 0; i < limit; i += blockSize)
-            Child::template _setValue<Policy>(data + i, value, std::make_index_sequence<UnrollFactor>{});
+            Child::template _setValue<Policy>(data + i, &scalarSIMD, std::make_index_sequence<UnrollFactor>{});
         for (size_t i = limit; i < size; i++)
             data[i] = value;
     }

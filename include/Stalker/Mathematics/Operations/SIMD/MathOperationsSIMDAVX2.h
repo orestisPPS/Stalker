@@ -43,8 +43,8 @@ namespace Stalker::Mathematics::SIMD
         static inline void _multiply(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
                                      const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr) {
             if constexpr (IsScaled)
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mul_pd(_mm256_load_pd(a + Is * Base::registerSize),
-                                                                                              _mm256_load_pd(b + Is * Base::registerSize))), ...);
+                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mul_pd(_mm256_mul_pd(_mm256_load_pd(a + Is * Base::registerSize), *scalarA),
+                                                                                                _mm256_mul_pd(_mm256_load_pd(b + Is * Base::registerSize), *scalarB))), ...);
             else
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mul_pd(_mm256_load_pd(a + Is * Base::registerSize),
                                                                                                 _mm256_load_pd(b + Is * Base::registerSize))), ...);
@@ -87,8 +87,7 @@ namespace Stalker::Mathematics::SIMD
                                      const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr) {
             if constexpr (IsScaled)
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mul_ps(_mm256_mul_ps(_mm256_load_ps(a + Is * Base::registerSize), *scalarA),
-                                                                                                _mm256_mul_ps(_mm256_load_ps(b + Is * Base::registerSize), *scalarB))),
-                 ...);
+                                                                                                _mm256_mul_ps(_mm256_load_ps(b + Is * Base::registerSize), *scalarB))), ...);
             else
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mul_ps(_mm256_load_ps(a + Is * Base::registerSize),
                                                                                                 _mm256_load_ps(b + Is * Base::registerSize))),...);

@@ -15,124 +15,128 @@ namespace Stalker::Mathematics {
 
     class MathOperations {
     public:
-                template<typename T, typename Exec = DefaultExecutionTrait>
+        template<typename T, typename ExecTrait = DefaultExecutionTrait>
         constexpr inline static void add(size_t n, const T* a, const T* b, T* result){
-            _execute<T, Exec, AddOp>(n, a, b, result);
+            OperationExecutor<OperationType::Add, ExecTrait, T>::call(n, a, b, result);
         }
 
         template<typename T, typename Exec = DefaultExecutionTrait>
         constexpr inline static void add(size_t n, const T* a, const T* b, T* result, T scalarA, T scalarB) {
-            _execute<T, Exec, AddOp>(n, a, b, result, scalarA, scalarB);
+            OperationExecutor<OperationType::Add, Exec, T>::call(n, a, b, result, scalarA, scalarB);
         }
 
-        template<typename T, typename Exec = DefaultExecutionTrait>
-        constexpr inline static void subtract(size_t n, const T* a, const T* b, T* result) {
-            _execute<T, Exec, SubtractOp>(n, a, b, result);
+        template<typename T, typename ExecTrait = DefaultExecutionTrait>
+        constexpr inline static void subtract(size_t n, const T* a, const T* b, T* result){
+            OperationExecutor<OperationType::Subtract, ExecTrait, T>::call(n, a, b, result);
         }
 
         template<typename T, typename Exec = DefaultExecutionTrait>
         constexpr inline static void subtract(size_t n, const T* a, const T* b, T* result, T scalarA, T scalarB) {
-            _execute<T, Exec, SubtractOp>(n, a, b, result, scalarA, scalarB);
+            OperationExecutor<OperationType::Subtract, Exec, T>::call(n, a, b, result, scalarA, scalarB);
         }
 
-        template<typename T, typename Exec = DefaultExecutionTrait>
-        constexpr inline static void multiply(size_t n, const T* a, const T* b, T* result) {
-            _execute<T, Exec, MultiplyOp>(n, a, b, result);
+        template<typename T, typename ExecTrait = DefaultExecutionTrait>
+        constexpr inline static void multiply(size_t n, const T* a, const T* b, T* result){
+            OperationExecutor<OperationType::Multiply, ExecTrait, T>::call(n, a, b, result);
         }
 
         template<typename T, typename Exec = DefaultExecutionTrait>
         constexpr inline static void multiply(size_t n, const T* a, const T* b, T* result, T scalarA, T scalarB) {
-            _execute<T, Exec, MultiplyOp>(n, a, b, result, scalarA, scalarB);
-        }
-
-        template<typename T, typename Exec = DefaultExecutionTrait>
-        constexpr inline static void divide(size_t n, const T* a, const T* b, T* result) {
-            _execute<T, Exec, DivideOp>(n, a, b, result);
-        }
-
-        template<typename T, typename Exec = DefaultExecutionTrait>
-        constexpr inline static void divide(size_t n, const T* a, const T* b, T* result, T scalarA, T scalarB) {
-            _execute<T, Exec, DivideOp>(n, a, b, result, scalarA, scalarB);
-        }
-
-        template<typename T, typename Exec = DefaultExecutionTrait>
-        constexpr inline static void scale(size_t n, const T* data, T* result, T scalar) {
-            _execute<T, Exec, ScaleOp>(n, data, result, scalar);
-        }
-
-        template<typename T, typename Exec = DefaultExecutionTrait>
-        constexpr inline static void scale(size_t n, T* data, T scalar) {
-            _execute<T, Exec, ScaleOp>(n, data, scalar);
-        }
-
-        template<typename T, typename Exec = DefaultExecutionTrait>
-        constexpr inline static void addConstant(size_t n, const T* data, T* result, T constant) {
-            _execute<T, Exec, AddConstantOp>(n, data, result, constant);
-        }
-
-        template<typename T, typename Exec = DefaultExecutionTrait>
-        constexpr inline static void addConstant(size_t n, const T* data, T constant) {
-            _execute<T, Exec, AddConstantOp>(n, data, constant);
+            OperationExecutor<OperationType::Multiply, Exec, T>::call(n, a, b, result, scalarA, scalarB);
         }
 
     private:
 
-        template<typename T, typename ExecTrait, typename Operation, typename... Args>
-        constexpr inline static void _execute(Args&&... args) {
-            constexpr auto ExecT = ExecTrait::Type;
-            constexpr auto Unroll = ExecTrait::Unroll;
-            constexpr auto StoreT = ExecTrait::StorePolicy;
-            
-            if constexpr (ExecT == ExecutionTraitType::SIMD && IsSIMDEnabled()) {
-                Operation::template call<MathOperationsSIMD<T, ExecTrait::SIMDArch>, Unroll, StoreT>(std::forward<Args>(args)...);
-            } 
-            else if constexpr (ExecT == ExecutionTraitType::UnrolledMeta && IsUnrollEnabled()) {
-                Operation::template call<MathOperationsMeta, T, Unroll>(std::forward<Args>(args)...);
-            } 
-            else {
-                Operation::template call<MathOperationsClassic, T>(std::forward<Args>(args)...);
-            }
-        }
+        // struct AddOp {
+        //     template<class ExecType, typename ...FArgs, auto ...TArgs>
+        //     static constexpr void call(FArgs&&... args) {
+        //         ExecType::template add<TArgs...>(std::forward<FArgs>(args)...);
+        //     }
+        // };
+        //     template <typename ExecType, typename... TArgs, typename... FArgs>
+        //     constexpr inline static void call(FArgs&&... args) {
+        //         ExecType::template addConstant<TArgs...>(std::forward<FArgs>(args)...);
+        //     }
+        // };
 
-        struct AddOp {
-            template <typename ExecType, typename... Args>
-            constexpr inline static void call(Args&&... args) {
-                ExecType::template add(std::forward<Args>(args)...);
+        enum class OperationType {
+            Add,
+            Subtract,
+            Multiply,
+            Divide,
+            Scale,
+            AddConstant
+        };
+        
+        // template<typename ExecTrait>
+        // constexpr inline static bool IsSIMDEnabled() {
+        //     return ExecTrait::Type == ExecutionTraitType::SIMD && Stalker::Core::IsSIMDEnabled();
+        // }
+
+        // template<typename ExecTrait>
+        // constexpr inline static bool IsUnrollEnabled() {
+        //     return ExecTrait::Type == ExecutionTraitType::UnrolledMeta && Stalker::Core::IsUnrollEnabled();
+        // }
+
+        template<typename Child, OperationType OperationT, typename ExecTrait, typename T>
+        struct OperationExecutorBase {
+        template<typename... Args>
+        constexpr inline static auto call(Args&&... args) {
+            using Ret = decltype(Child::call(std::forward<Args>(args)...));
+            if constexpr ( std::is_void_v<Ret> )
+                Child::call(std::forward<Args>(args)...);
+            else
+                return Child::call(std::forward<Args>(args)...);
             }
         };
 
-        struct SubtractOp {
-            template <typename ExecType, typename... Args>
+        template<OperationType OperationT, typename ExecTrait, typename T> struct OperationExecutor;
+
+        template<typename ExecTrait, typename T>
+        struct OperationExecutor<OperationType::Add, ExecTrait, T>
+            : public OperationExecutorBase<OperationExecutor<OperationType::Add, ExecTrait, T>, OperationType::Add, ExecTrait, T> {
+            template<typename... Args>
             constexpr inline static void call(Args&&... args) {
-                ExecType::template subtract(std::forward<Args>(args)...);
+                constexpr auto execTrait = ExecTrait::Type;
+                if constexpr (execTrait == ExecutionTraitType::SIMD && IsSIMDEnabled())
+                    MathOperationsSIMD<T, ExecTrait::SIMDArch>::template add<ExecTrait::Unroll, ExecTrait::StorePolicy>(std::forward<Args>(args)...);
+                else if constexpr (execTrait == ExecutionTraitType::UnrolledMeta && IsUnrollEnabled())
+                    MathOperationsMeta::add<T, ExecTrait::Unroll>(std::forward<Args>(args)...);
+                else
+                    MathOperationsClassic::add<T>(std::forward<Args>(args)...);    
             }
         };
 
-        struct MultiplyOp {
-            template <typename ExecType, typename... Args>
-            constexpr inline static void call(Args&&... args) {
-                ExecType::template multiply(std::forward<Args>(args)...);
+        template<typename ExecTrait, typename T>
+        struct OperationExecutor<OperationType::Subtract, ExecTrait, T>
+            : public OperationExecutorBase<OperationExecutor<OperationType::Subtract, ExecTrait, T>, OperationType::Subtract, ExecTrait, T> {
+            template<typename... Args>
+            constexpr inline static void call(Args&&... args) { 
+                constexpr auto execTrait = ExecTrait::Type;
+                if constexpr (execTrait == ExecutionTraitType::SIMD && IsSIMDEnabled())
+                    MathOperationsSIMD<T, ExecTrait::SIMDArch>::template subtract<ExecTrait::Unroll, ExecTrait::StorePolicy>(std::forward<Args>(args)...);
+                else if constexpr (execTrait == ExecutionTraitType::UnrolledMeta && IsUnrollEnabled())
+                    MathOperationsMeta::subtract<T, ExecTrait::Unroll>(std::forward<Args>(args)...);
+                else
+                    MathOperationsClassic::subtract<T>(std::forward<Args>(args)...);
             }
         };
-        struct DivideOp {
-            template <typename ExecType, typename... Args>
-            constexpr inline static void call(Args&&... args) {
-                ExecType::template divide(std::forward<Args>(args)...);
-            }
-        };  
 
-        struct ScaleOp {
-            template <typename ExecType, typename... Args>
+        template<typename ExecTrait, typename T>
+        struct OperationExecutor<OperationType::Multiply, ExecTrait, T>
+            : public OperationExecutorBase<OperationExecutor<OperationType::Multiply, ExecTrait, T>, OperationType::Multiply, ExecTrait, T> {
+            template<typename... Args>
             constexpr inline static void call(Args&&... args) {
-                ExecType::template scale(std::forward<Args>(args)...);
-            }
-        };  
-
-        struct AddConstantOp {
-            template <typename ExecType, typename... Args>
-            constexpr inline static void call(Args&&... args) {
-                ExecType::template addConstant(std::forward<Args>(args)...);
+                constexpr auto execTrait = ExecTrait::Type;
+                if constexpr (execTrait == ExecutionTraitType::SIMD && IsSIMDEnabled())
+                    MathOperationsSIMD<T, ExecTrait::SIMDArch>::template multiply<ExecTrait::Unroll, ExecTrait::StorePolicy>(std::forward<Args>(args)...);
+                else if constexpr (execTrait == ExecutionTraitType::UnrolledMeta && IsUnrollEnabled())
+                    MathOperationsMeta::multiply<T, ExecTrait::Unroll>(std::forward<Args>(args)...);
+                else
+                    MathOperationsClassic::multiply<T>(std::forward<Args>(args)...);
             }
         };
+
     };
+        
 };// namespace Stalker::Mathematics::Operations

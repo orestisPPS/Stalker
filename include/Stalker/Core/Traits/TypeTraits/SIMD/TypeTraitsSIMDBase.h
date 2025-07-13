@@ -1,8 +1,8 @@
 #pragma once
 
-#include <immintrin.h>
 #include <Stalker/Core/Config/LoopUnrolling.h>
 #include <Stalker/Core/Config/Alignment.h>
+#include <Stalker/Core/Config/Platform.h>
 #include <Stalker/Core/Config/SIMD.h>
 
 namespace Stalker::Core {
@@ -15,7 +15,7 @@ struct TypeTraitsSIMDBase {
         return Child::_RegisterSize;
     }
     static constexpr unsigned inline ElementsPerCacheLine() {
-        return STALKER_CACHE_LINE_SIZE / sizeof(typename Child::typeData);
+        return CacheLineSize() / sizeof(typename Child::typeData);
     }
 
     template<size_t UnrollFactor = DefaultUnrollFactor()>
