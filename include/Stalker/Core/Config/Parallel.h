@@ -120,9 +120,7 @@
 
 #endif
 
-
 #if STALKER_THREADING_ENABLE
-
     #if STALKER_THREADING_ENABLE_PTHREAD
         #include <pthread.h>
     #elif STALKER_THREADING_ENABLE_STDTHREAD
@@ -130,7 +128,6 @@
     #else
         #error "Threading enabled but no valid backend detected."
     #endif
-
 #endif
 
 namespace Stalker::Core::Config {
@@ -188,6 +185,18 @@ namespace Stalker::Core::Config {
         None
     };
 
+    /**
+     * @brief Type alias for the active thread handle type based on the selected backend.
+     * @details
+     * - If pthread is enabled, this is an alias for `pthread_t`.
+     * - If std::thread is enabled, this is an alias for `std::thread`.
+     */
+    #if STALKER_THREADING_ENABLE_PTHREAD
+        using PlatformThread = pthread_t;
+    #elif STALKER_THREADING_ENABLE_STDTHREAD
+        using PlatformThread = std::thread;
+    #endif
+
 
     /**
      * @brief Returns true if threading is enabled at compile time.
@@ -241,16 +250,31 @@ namespace Stalker::Core::Config {
 
     /**
      * @brief Returns the configured thread count.
-     * @return Integer thread count (0 = auto-detect at runtime).
+     * @return Integer thread count (1 = single-thread fallback).
      *
-     * If threading is disabled, this always returns 0.
-     * If set to 0 at compile time, hardware concurrency is detected at runtime.
+     * If threading is disabled, this always returns 1. If threading is enabled,
+     * and @c STALKER_THREADING_NUM_THREADS is defined, it returns that value.
+     * Otherwise, it defaults to 2 threads.
      */
     constexpr inline int DefaultNumThreads() {
-        #if defined(STALKER_THREADING_NUM_THREADS)
-            return STALKER_THREADING_NUM_THREADS;
+        #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
+            #if defined(STALKER_THREADING_NUM_THREADS)
+                return STALKER_THREADING_NUM_THREADS;
+            #else
+                return 2;
+            #endif
         #else
-            return 0; // Default to auto-detect if not set
+            return 1; // Single-threaded fallback
+        #endif
+    }
+
+    constexpr inline ThreadType DefaultThreadType() {
+        #if defined(STALKER_THREADING_ENABLE_PTHREAD) && STALKER_THREADING_ENABLE_PTHREAD != 0
+            return ThreadType::PThread;
+        #elif defined(STALKER_THREADING_ENABLE_STDTHREAD) && STALKER_THREADING_ENABLE_STDTHREAD != 0
+            return ThreadType::STDThread;
+        #else
+            return ThreadType::None;
         #endif
     }
 

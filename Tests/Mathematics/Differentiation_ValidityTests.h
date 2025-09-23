@@ -2,7 +2,7 @@
 #define DIFFERENTIATION_VALIDITYTESTS_H
 
 #include <Stalker/Mathematics/Differentiation/Derivative.h>
-#include <Stalker/Mathematics/Polynomial/MetaPolynomial.h>
+#include <Stalker/Mathematics/MetaPolynomial.h>
 #include "../STLKR_TestBase.h"
 #include "../TestUtility.h"
 

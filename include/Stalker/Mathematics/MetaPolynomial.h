@@ -1,7 +1,5 @@
-#ifndef TPOLYNOMIAL_H
-#define TPOLYNOMIAL_H
+#pragma once
 
-#include "../MetaMath.h"
 #include <Stalker/Mathematics/Linspace.h>
 
 namespace Stalker::Mathematics {
@@ -93,4 +91,4 @@ private:
 };
 
 } // namespace Stalker::Mathematics
-#endif // TPOLYNOMIAL_H
+

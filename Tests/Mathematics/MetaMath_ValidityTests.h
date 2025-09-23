@@ -4,7 +4,7 @@
 #include "../STLKR_TestBase.h"
 #include <Stalker/Mathematics/Operations/MathOperationsMeta.h>
 #include <Stalker/Mathematics/MetaMath.h>
-#include <Stalker/Mathematics/Polynomial/MetaPolynomial.h>
+#include <Stalker/Mathematics/MetaPolynomial.h>
 #include "../TestUtility.h"
 
 namespace STLKR_Tests {

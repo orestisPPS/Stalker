@@ -44,7 +44,6 @@ temp/
 
 *.docx
 *.pdf
-*.txt
 *.pptx
 *.csv
 *.xlsx
@@ -54,3 +53,7 @@ temp/
 *.jpg
 *.jpeg
 *.png
+
+stalker-venv/
+
+.continue/
