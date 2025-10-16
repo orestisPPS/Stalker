@@ -8,90 +8,90 @@
 namespace Stalker::Memory::SIMD {
 
 using namespace Stalker::Core;
-using SIMDType::AVX2;
-using SIMDType::AVX512;
 
-template<typename T, SIMDType Type, typename Child>
-struct MemoryOperationsSIMDBase {
-    
-    using Traits = TypeTraitsSIMD<T, Type>;
-    using T_simd = typename Traits::typeSIMD;
-    using T_data = typename Traits::typeData;
-    
+    template<typename T, T_SIMD Type, typename Child>
+    struct MemoryOperationsSIMDBase {
+        
+        using Traits = TypeTraitsSIMD<T, Type>;
+        using T_simd = typename Traits::typeSIMD;
+        using T_data = typename Traits::typeData;
+        
     public:
-    static constexpr unsigned registerSize = Traits::RegisterSize();
-    
-    template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR>
-    constexpr inline static void load(const T_data* __restrict source, T_simd* __restrict destination, unsigned size) {
-        constexpr unsigned blockSize = Traits::template BlockSize<UnrollFactor>();
-        auto limit = size - (size % blockSize);
-        for (size_t i = 0; i < limit; i += blockSize)
-            Child::template _load(source + i, destination + i, std::make_index_sequence<UnrollFactor>{});
-        for (size_t i = limit; i < size; i++)
+
+        template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+        constexpr inline static void copy(size_t size, T_data* __restrict destination, const T_data* __restrict source ) {
+            constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
+            auto limit = size - (size % blockSize);
+            for (size_t i = 0; i < limit; i += blockSize)
+                Child::template _copy<Policy>(source + i, destination + i, std::make_index_sequence<Unroll>{});
+            for (size_t i = limit; i < size; i++)
                 destination[i] = source[i];
-    }
-    
-    template<SIMDStoreType Policy = SIMDStoreType::Streamed>
-    constexpr inline static void store(T_data* __restrict destination, const T_simd __restrict source) {
-        Child::template _store<Policy>(destination, source);
-    }
-    
-    template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    constexpr inline static void copy(const T_data* __restrict source, T_data* __restrict destination, unsigned size) {
-        constexpr unsigned blockSize = Traits::template BlockSize<UnrollFactor>();
-        auto limit = size - (size % blockSize);
-        for (size_t i = 0; i < limit; i += blockSize)
-            Child::template _copy<Policy>(source + i, destination + i, std::make_index_sequence<UnrollFactor>{});
-        for (size_t i = limit; i < size; i++)
-            destination[i] = source[i];
-    }
-    
-    template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    constexpr inline static void setValue(T_data* __restrict data, T_data value, unsigned size) {
-        constexpr unsigned blockSize = Traits::template BlockSize<UnrollFactor>();
-        auto limit = size - (size % blockSize);
-        T_simd scalarSIMD;
-        broadcast(&scalarSIMD, value);
-        for (size_t i = 0; i < limit; i += blockSize)
-            Child::template _setValue<Policy>(data + i, &scalarSIMD, std::make_index_sequence<UnrollFactor>{});
-        for (size_t i = limit; i < size; i++)
-            data[i] = value;
-    }
-    
-    template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    constexpr inline static void setZero(T_data* __restrict data, unsigned size) {
-        constexpr unsigned blockSize = Traits::template BlockSize<UnrollFactor>();
-        auto limit = size - (size % blockSize);
-        for (size_t i = 0; i < limit; i += blockSize)
-            Child::template _setZero<Policy>(data + i, std::make_index_sequence<UnrollFactor>{});
-        for (size_t i = limit; i < size; i++)
-            data[i] = 0;
-    }
+        }
+        
+        template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+        constexpr inline static void setValue(size_t size, T_data* __restrict data, T_data value) {
+            constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
+            auto limit = size - (size % blockSize);
+            T_simd scalarSIMD;
+            broadcast(&scalarSIMD, value);
+            for (size_t i = 0; i < limit; i += blockSize)
+                Child::template _setValue<Policy>(data + i, &scalarSIMD, std::make_index_sequence<Unroll>{});
+            for (size_t i = limit; i < size; i++)
+                data[i] = value;
+        }
+        
+        template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+        constexpr inline static void setZero(size_t size, T_data* __restrict data) {
+            constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
+            auto limit = size - (size % blockSize);
+            for (size_t i = 0; i < limit; i += blockSize)
+                Child::template _setZero<Policy>(data + i, std::make_index_sequence<Unroll>{});
+            for (size_t i = limit; i < size; i++)
+                data[i] = 0;
+        }
 
-    template<unsigned UnrollFactor = 1>
-    constexpr inline static void broadcast(T_simd* __restrict destination, T scalar) {
-        Child::_broadcast(destination, scalar, std::make_index_sequence<UnrollFactor>{});
-    }
+        template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+        constexpr inline static bool areEqual(size_t size, const T_data* a, const T_data *b){
+            constexpr unsigned blockSize = Traits::template BlockSize<DefaultUnroll()>();
+            auto limit = size - (size % blockSize);
+            bool result = true;
+            for (size_t i = 0; i < limit; i += blockSize)
+                result = result && Child::template_areEqual(a + i, b + i, std::make_index_sequence<DefaultUnroll()>{});
+            for (size_t i = limit; i < size; i++)
+                result = result && (a[i] == b[i]);
+            return result;
+        }
+        
+        template<unsigned Unroll = DefaultUnroll()>
+        constexpr inline static void load(size_t size, const T_data* __restrict source, T_simd* __restrict destination) {
+            constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
+            auto limit = size - (size % blockSize);
+            for (size_t i = 0; i < limit; i += blockSize)
+                Child::template _load(source + i, destination + i, std::make_index_sequence<Unroll>{});
+            for (size_t i = limit; i < size; i++)
+                    destination[i] = source[i];
+        }
+        
+        template<T_SIMDStore Policy = DefaultSIMDStore()>
+        constexpr inline static void store(T_data* __restrict destination, const T_simd __restrict source) {
+            Child::template _store<Policy>(destination, source);
+        }
+        
+        inline static void setZeroRegister(T_simd* __restrict destination) {
+            Child::_setZeroRegister(destination);
+        }
 
-    template<unsigned UnrollFactor = STALKER_UNROLL_FACTOR, SIMDStoreType Policy = SIMDStoreType::Streamed>
-    constexpr inline static bool areEqual(const T_data* a, const T_data *b, unsigned size){
-        constexpr unsigned blockSize = Traits::template BlockSize<STALKER_UNROLL_FACTOR>();
-        auto limit = size - (size % blockSize);
-        bool result = true;
-        for (size_t i = 0; i < limit; i += blockSize)
-            result = result && Child::template_areEqual(a + i, b + i, std::make_index_sequence<STALKER_UNROLL_FACTOR>{});
-        for (size_t i = limit; i < size; i++)
-            result = result && (a[i] == b[i]);
-        return result;
-    }
-    
-};
+        template<unsigned Unroll = 1>
+        constexpr inline static void broadcast(T_simd* __restrict destination, T scalar) {
+            Child::_broadcast(destination, scalar, std::make_index_sequence<Unroll>{});
+        }
 
-template<typename T, SIMDType Type> struct MemoryOperationsSIMD; 
+    protected:
 
-// Double Specialization
+        static constexpr unsigned registerSize = Traits::RegisterSize();
+        
+    };
 
-
-// Unsigned Specialization
+    template<typename T, T_SIMD Type> struct MemoryOperationsSIMD; 
 
 } // namespace Stalker::Memory

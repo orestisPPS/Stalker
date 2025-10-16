@@ -7,10 +7,10 @@ namespace Stalker::Memory::SIMD {
 
 // Double Specialization
 template<>
-struct MemoryOperationsSIMD<double, SIMDType::AVX512>
-    : public MemoryOperationsSIMDBase<double, SIMDType::AVX512, MemoryOperationsSIMD<double, SIMDType::AVX512>> {
+struct MemoryOperationsSIMD<double, T_SIMD::AVX512>
+    : public MemoryOperationsSIMDBase<double, T_SIMD::AVX512, MemoryOperationsSIMD<double, T_SIMD::AVX512>> {
 
-    using Base = MemoryOperationsSIMDBase<double, SIMDType::AVX512, MemoryOperationsSIMD<double, SIMDType::AVX512>>;
+    using Base = MemoryOperationsSIMDBase<double, T_SIMD::AVX512, MemoryOperationsSIMD<double, T_SIMD::AVX512>>;
     friend Base;
 
 private:
@@ -20,27 +20,31 @@ private:
         ((destination[Is] = _mm512_load_pd(source + Is * Base::registerSize)), ...);
     }
 
-    template <SIMDStoreType Policy>
+    template <T_SIMDStore Policy>
     static constexpr inline void _store(Base::T_data* __restrict destination, const Base::T_simd source) {
-        if constexpr (Policy == SIMDStoreType::Cached)
+        if constexpr (Policy == T_SIMDStore::Cached)
             _mm512_store_pd(destination, source);
         else
             _mm512_stream_pd(destination, source);
     }
 
-    template <SIMDStoreType Policy, size_t... Is>
+    template <T_SIMDStore Policy, size_t... Is>
     static constexpr inline void _copy(const Base::T_data* __restrict source, Base::T_data* __restrict destination, std::index_sequence<Is...>) {
         ((_store<Policy>(destination + Is * Base::registerSize, _mm512_load_pd(source + Is * Base::registerSize))), ...);
     }
 
-    template <SIMDStoreType Policy, size_t... Is>
+    template <T_SIMDStore Policy, size_t... Is>
     static constexpr inline void _setZero(Base::T_data* __restrict destination, std::index_sequence<Is...>) {
         ((_store<Policy>(destination + Is* Base::registerSize, _mm512_setzero_pd())), ...);
     }
 
-    template< SIMDStoreType Policy, size_t... Is >
+    static inline void _setZeroRegister(Base::T_simd* __restrict destination) {
+        *destination = _mm512_setzero_pd();
+    }
+
+    template< T_SIMDStore Policy, size_t... Is >
     static constexpr inline void _setValue( Base::T_data* __restrict dst, const Base::T_simd* __restrict scalarSIMD, std::index_sequence<Is...> ){
-        ( _store<Policy>( dst + Is * Base::registerSize, scalarSIMD[Is] ), ... );
+        ( _store<Policy>( dst + Is * Base::registerSize, *scalarSIMD ), ... );
     }
 
     template <size_t... Is>
@@ -61,10 +65,10 @@ private:
 
 // Float Specialization
 template<>
-struct MemoryOperationsSIMD<float, SIMDType::AVX512>
-    : public MemoryOperationsSIMDBase<float, SIMDType::AVX512, MemoryOperationsSIMD<float, SIMDType::AVX512>> {
+struct MemoryOperationsSIMD<float, T_SIMD::AVX512>
+    : public MemoryOperationsSIMDBase<float, T_SIMD::AVX512, MemoryOperationsSIMD<float, T_SIMD::AVX512>> {
 
-    using Base = MemoryOperationsSIMDBase<float, SIMDType::AVX512, MemoryOperationsSIMD<float, SIMDType::AVX512>>;
+    using Base = MemoryOperationsSIMDBase<float, T_SIMD::AVX512, MemoryOperationsSIMD<float, T_SIMD::AVX512>>;
     friend Base;
 
 private:
@@ -73,24 +77,27 @@ private:
     static constexpr inline void _load(const Base::T_data* src, Base::T_simd* dst, std::index_sequence<Is...>) {
         ((dst[Is] = _mm512_load_ps(src + Is * Base::registerSize)), ...);
     }
-    template <SIMDStoreType Policy>
+    template <T_SIMDStore Policy>
     static constexpr inline void _store(Base::T_data* __restrict destination, const Base::T_simd source) {
-        if constexpr (Policy == SIMDStoreType::Cached)
+        if constexpr (Policy == T_SIMDStore::Cached)
             _mm512_store_ps(destination, source);
         else
             _mm512_stream_ps(destination, source);
     }
-    template <SIMDStoreType Policy, size_t... Is>
+    template <T_SIMDStore Policy, size_t... Is>
     static constexpr inline void _copy(const Base::T_data* src, Base::T_data* dst, std::index_sequence<Is...>) {
         ((_store<Policy>(dst + Is * Base::registerSize, _mm512_load_ps(src + Is * Base::registerSize))), ...);
     }
-    template <SIMDStoreType Policy, size_t... Is>
+    template <T_SIMDStore Policy, size_t... Is>
     static constexpr inline void _setZero(Base::T_data* dst, std::index_sequence<Is...>) {
         ((_store<Policy>(dst + Is * Base::registerSize, _mm512_setzero_ps())), ...);
     }
-    template< SIMDStoreType Policy, size_t... Is >
+    static inline void _setZeroRegister(Base::T_simd* __restrict destination) {
+        *destination = _mm512_setzero_ps();
+    }
+    template< T_SIMDStore Policy, size_t... Is >
     static constexpr inline void _setValue( Base::T_data* __restrict dst, const Base::T_simd* __restrict scalarSIMD, std::index_sequence<Is...> ){
-        ( _store<Policy>( dst + Is * Base::registerSize, scalarSIMD[Is] ), ... );
+        ( _store<Policy>( dst + Is * Base::registerSize, *scalarSIMD ), ... );
     }
     template <size_t... Is>
     static  inline void _broadcast(Base::T_simd* __restrict destination, const Base::T_data& value, std::index_sequence<Is...>) {
@@ -109,10 +116,10 @@ private:
 
 // Int Specialization
 template<>
-struct MemoryOperationsSIMD<int, SIMDType::AVX512>
-    : public MemoryOperationsSIMDBase<int, SIMDType::AVX512, MemoryOperationsSIMD<int, SIMDType::AVX512>> {
+struct MemoryOperationsSIMD<int, T_SIMD::AVX512>
+    : public MemoryOperationsSIMDBase<int, T_SIMD::AVX512, MemoryOperationsSIMD<int, T_SIMD::AVX512>> {
 
-    using Base = MemoryOperationsSIMDBase<int, SIMDType::AVX512, MemoryOperationsSIMD<int, SIMDType::AVX512>>;
+    using Base = MemoryOperationsSIMDBase<int, T_SIMD::AVX512, MemoryOperationsSIMD<int, T_SIMD::AVX512>>;
     friend Base;
 
 private:
@@ -122,27 +129,31 @@ private:
         ((dst[Is] = _mm512_load_si512(reinterpret_cast<const __m512i*>(src + Is * Base::registerSize))), ...);
     }
 
-    template <SIMDStoreType Policy>
+    template <T_SIMDStore Policy>
     static constexpr inline void _store(Base::T_data* __restrict destination, const Base::T_simd source) {
-        if constexpr (Policy == SIMDStoreType::Cached)
+        if constexpr (Policy == T_SIMDStore::Cached)
             _mm512_store_si512(reinterpret_cast<__m512i*>(destination), source);
         else
             _mm512_stream_si512(reinterpret_cast<__m512i*>(destination), source);
     }
 
-    template <SIMDStoreType Policy, size_t... Is>
+    template <T_SIMDStore Policy, size_t... Is>
     static constexpr inline void _copy(const Base::T_data* __restrict src, Base::T_data* __restrict dst, std::index_sequence<Is...>) {
         ((_store<Policy>(dst + Is * Base::registerSize, _mm512_load_si512(reinterpret_cast<const __m512i*>(src + Is * Base::registerSize)))), ...);
     }
 
-    template <SIMDStoreType Policy, size_t... Is>
+    template <T_SIMDStore Policy, size_t... Is>
     static constexpr inline void _setZero(Base::T_data* __restrict dst, std::index_sequence<Is...>) {
         ((_store<Policy>(dst + Is * Base::registerSize, _mm512_setzero_si512())), ...);
     }
 
-    template< SIMDStoreType Policy, size_t... Is >
+    static inline void _setZeroRegister(Base::T_simd* __restrict destination) {
+        *destination = _mm512_setzero_si512();
+    }
+
+    template< T_SIMDStore Policy, size_t... Is >
     static constexpr inline void _setValue( Base::T_data* __restrict dst, const Base::T_simd* __restrict scalarSIMD, std::index_sequence<Is...> ){
-        ( _store<Policy>( dst + Is * Base::registerSize, scalarSIMD[Is] ), ... );
+        ( _store<Policy>( dst + Is * Base::registerSize, *scalarSIMD ), ... );
     }
     template <size_t... Is>
     static inline void _broadcast(Base::T_simd* __restrict destination, const Base::T_data& value, std::index_sequence<Is...>) {
@@ -163,9 +174,9 @@ private:
 
 // Unsigned Int Specialization
 template<>
-struct MemoryOperationsSIMD<unsigned, SIMDType::AVX512>
-    : public MemoryOperationsSIMDBase<unsigned, SIMDType::AVX512, MemoryOperationsSIMD<unsigned, SIMDType::AVX512>> {
-    using Base = MemoryOperationsSIMDBase<unsigned, SIMDType::AVX512, MemoryOperationsSIMD<unsigned, SIMDType::AVX512>>;
+struct MemoryOperationsSIMD<unsigned, T_SIMD::AVX512>
+    : public MemoryOperationsSIMDBase<unsigned, T_SIMD::AVX512, MemoryOperationsSIMD<unsigned, T_SIMD::AVX512>> {
+    using Base = MemoryOperationsSIMDBase<unsigned, T_SIMD::AVX512, MemoryOperationsSIMD<unsigned, T_SIMD::AVX512>>;
 private:
     friend Base;
 
@@ -174,27 +185,31 @@ private:
         ((dst[Is] = _mm512_load_si512(reinterpret_cast<const __m512i*>(src + Is * Base::registerSize))), ...);
     }
 
-    template <SIMDStoreType Policy>
+    template <T_SIMDStore Policy>
     static constexpr inline void _store(Base::T_data* __restrict destination, const Base::T_simd source) {
-        if constexpr (Policy == SIMDStoreType::Cached)
+        if constexpr (Policy == T_SIMDStore::Cached)
             _mm512_store_si512(reinterpret_cast<__m512i*>(destination), source);
         else
             _mm512_stream_si512(reinterpret_cast<__m512i*>(destination), source);
     }
 
-    template <SIMDStoreType Policy, size_t... Is>
+    template <T_SIMDStore Policy, size_t... Is>
     static constexpr inline void _copy(const Base::T_data* __restrict src, Base::T_data* __restrict dst, std::index_sequence<Is...>) {
         ((_store<Policy>(dst + Is * Base::registerSize, _mm512_load_si512(reinterpret_cast<const __m512i*>(src + Is * Base::registerSize)))), ...);
     }
 
-    template <SIMDStoreType Policy, size_t... Is>
+    template <T_SIMDStore Policy, size_t... Is>
     static constexpr inline void _setZero(Base::T_data* __restrict dst, std::index_sequence<Is...>) {
         ((_store<Policy>(dst + Is * Base::registerSize, _mm512_setzero_si512())), ...);
     }
 
-    template< SIMDStoreType Policy, size_t... Is >
+    static inline void _setZeroRegister(Base::T_simd* __restrict destination) {
+        *destination = _mm512_setzero_si512();
+    }
+
+    template< T_SIMDStore Policy, size_t... Is >
     static constexpr inline void _setValue( Base::T_data* __restrict dst, const Base::T_simd* __restrict scalarSIMD, std::index_sequence<Is...> ){
-        ( _store<Policy>( dst + Is * Base::registerSize, scalarSIMD[Is] ), ... );
+        ( _store<Policy>( dst + Is * Base::registerSize, *scalarSIMD ), ... );
     }
 
     template <size_t... Is>
@@ -217,10 +232,10 @@ private:
 
 // Short Specialization
 template<>
-struct MemoryOperationsSIMD<short, SIMDType::AVX512>
-    : public MemoryOperationsSIMDBase<short, SIMDType::AVX512, MemoryOperationsSIMD<short, SIMDType::AVX512>> {
+struct MemoryOperationsSIMD<short, T_SIMD::AVX512>
+    : public MemoryOperationsSIMDBase<short, T_SIMD::AVX512, MemoryOperationsSIMD<short, T_SIMD::AVX512>> {
 
-    using Base = MemoryOperationsSIMDBase<short, SIMDType::AVX512, MemoryOperationsSIMD<short, SIMDType::AVX512>>;
+    using Base = MemoryOperationsSIMDBase<short, T_SIMD::AVX512, MemoryOperationsSIMD<short, T_SIMD::AVX512>>;
 private:
 
     friend Base;
@@ -230,27 +245,31 @@ private:
         ((dst[Is] = _mm512_load_si512(reinterpret_cast<const __m512i*>(src + Is * Base::registerSize))), ...);
     }
 
-    template <SIMDStoreType Policy>
+    template <T_SIMDStore Policy>
     static constexpr inline void _store(Base::T_data* __restrict destination, const Base::T_simd source) {
-        if constexpr (Policy == SIMDStoreType::Cached)
+        if constexpr (Policy == T_SIMDStore::Cached)
             _mm512_store_si512(reinterpret_cast<__m512i*>(destination), source);
         else
             _mm512_stream_si512(reinterpret_cast<__m512i*>(destination), source);
     }
 
-    template <SIMDStoreType Policy, size_t... Is>
+    template <T_SIMDStore Policy, size_t... Is>
     static constexpr inline void _copy(const Base::T_data* __restrict src, Base::T_data* __restrict dst, std::index_sequence<Is...>) {
         ((_store<Policy>(dst + Is * Base::registerSize, _mm512_load_si512(reinterpret_cast<const __m512i*>(src + Is * Base::registerSize)))), ...);
     }
 
-    template <SIMDStoreType Policy, size_t... Is>
+    template <T_SIMDStore Policy, size_t... Is>
     static constexpr inline void _setZero(Base::T_data* __restrict dst, std::index_sequence<Is...>) {
         ((_store<Policy>(dst + Is * Base::registerSize, _mm512_setzero_si512())), ...);
     }
 
-    template< SIMDStoreType Policy, size_t... Is >
+    static inline void _setZeroRegister(Base::T_simd* __restrict destination) {
+        *destination = _mm512_setzero_si512();
+    }
+
+    template< T_SIMDStore Policy, size_t... Is >
     static constexpr inline void _setValue( Base::T_data* __restrict dst, const Base::T_simd* __restrict scalarSIMD, std::index_sequence<Is...> ){
-        ( _store<Policy>( dst + Is * Base::registerSize, scalarSIMD[Is] ), ... );
+        ( _store<Policy>( dst + Is * Base::registerSize, *scalarSIMD ), ... );
     }
     template <size_t... Is>
     static inline void _broadcast(Base::T_simd* __restrict destination, const Base::T_data& value, std::index_sequence<Is...>) {

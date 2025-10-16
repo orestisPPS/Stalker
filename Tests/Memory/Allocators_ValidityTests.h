@@ -45,16 +45,16 @@ public:
      *--------------------------------------------------------------*/
     void runTest() override
     {
-        printSubtitle("AlignedAllocator int 16",    ColourType::BARBIE_PINK);
+        printSubtitle("AlignedAllocator int 16",    T_Color::BARBIE_PINK);
         roundTripRaw<int,    16>(128);
-        printSubtitle("AlignedAllocator float 32",  ColourType::BARBIE_PINK);
+        printSubtitle("AlignedAllocator float 32",  T_Color::BARBIE_PINK);
         roundTripRaw<float,  32>(256);
-        printSubtitle("AlignedAllocator double 64", ColourType::BARBIE_PINK);
+        printSubtitle("AlignedAllocator double 64", T_Color::BARBIE_PINK);
         roundTripRaw<double, 64>(512);
-        printSubtitle("AlignedAllocator char 128",  ColourType::BARBIE_PINK);
+        printSubtitle("AlignedAllocator char 128",  T_Color::BARBIE_PINK);
         roundTripRaw<char,  128>(1024); 
         
-        printSubtitle("Edge Cases",  ColourType::BARBIE_PINK);
+        printSubtitle("Edge Cases",  T_Color::BARBIE_PINK);
         /* zero-size allocation */
         {
             int* p = AlignedAllocator<int, 16>::allocate(0);
@@ -73,16 +73,8 @@ public:
             }
         }
         
-        printSubtitle("Allocation Helpers", ColourType::BARBIE_PINK);
+        printSubtitle("Allocation Helpers", T_Color::BARBIE_PINK);
         
-        {
-            std::vector<float, AlignedAllocator<float, 32>> v(1000, 1.0f);
-            v.push_back(2.0f);
-            bool ok = TU::compareValues(v.back(), 2.0f, "Aligned std::vector with custom allocator");
-            (void)ok;
-        }
-
-
         /* raw */
         {
             auto* p = createAlignedRaw<double, 32>(12);
@@ -116,6 +108,35 @@ public:
             arr.reset();
             (void)(ok1 && ok2);
         }
+
+        /* std::vector with AlignedAllocator */
+        {
+            auto vec = createAlignedVector<double, 64>(128);
+            bool ok1 = TU::compareValues(isAligned(vec.data(), 64), true, "std::vector data alignment");
+            vec[127] = 3.14;
+            bool ok2 = TU::compareValues(vec[127], 3.14, "std::vector R/W smoke", true);
+            (void)(ok1 && ok2);
+        }
+        /* std::vector with AlignedAllocator, with reallocations */
+        {
+            std::vector<int, AlignedAllocator<int, 32>> vec;
+            vec.reserve(10);
+            bool ok1 = TU::compareValues(isAligned(vec.data(), 32), true, "std::vector alignment after reserve");
+
+            for (int i = 0; i < 100; ++i)
+            {
+            vec.push_back(i);
+            }
+            bool ok2 = TU::compareValues(isAligned(vec.data(), 32), true, "std::vector alignment after push_back reallocs");
+            bool ok3 = TU::compareValues(vec.size(), (size_t)100, "std::vector size check");
+            bool ok4 = TU::compareValues(vec[99], 99, "std::vector R/W check after reallocs", true);
+
+            vec.resize(200);
+            bool ok5 = TU::compareValues(isAligned(vec.data(), 32), true, "std::vector alignment after resize");
+            bool ok6 = TU::compareValues(vec.size(), (size_t)200, "std::vector size check after resize");
+            (void)(ok1 && ok2 && ok3 && ok4 && ok5 && ok6);
+        }
+        
     }
 };
 

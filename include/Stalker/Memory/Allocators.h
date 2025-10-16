@@ -1,6 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <memory>
+#include <vector>
 #include <Stalker/Core/Config/Alignment.h>
 
 namespace Stalker::Memory {
@@ -70,6 +71,15 @@ using UniqueAlignedArray = std::unique_ptr<T[], AlignedDeleter<T, Alignment>>;
 template<typename T, std::size_t Alignment = DefaultAlignment()>
 [[nodiscard]] inline UniqueAlignedArray<T, Alignment> createAlignedArray(std::size_t n) {
     return UniqueAlignedArray<T, Alignment>(AlignedAllocator<T, Alignment>::allocate(n));
+}
+
+template<typename T, std::size_t Alignment = DefaultAlignment()>
+using AlignedVector = std::vector<T, AlignedAllocator<T, Alignment>>;
+
+template<typename T, std::size_t Alignment = DefaultAlignment(), typename... Args>
+[[nodiscard]] inline AlignedVector<T, Alignment> createAlignedVector(Args&&... args)
+{
+    return AlignedVector<T, Alignment>(std::forward<Args>(args)...);
 }
 
 } // namespace Stalker::Memory

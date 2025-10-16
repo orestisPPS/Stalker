@@ -1,0 +1,401 @@
+#pragma once
+
+#include "../STLKR_TestBase.h"
+#include "../TestUtility.h"
+#include <Stalker/Memory/MemoryOperations.h>
+#include <Stalker/Memory/Allocators.h>
+#include <Stalker/Mathematics/Random.h>
+#include <Stalker/Utility/Logs.h>
+
+
+
+namespace STLKR_Tests {
+
+    using namespace Stalker::Memory;
+    using namespace Stalker::Memory::SIMD;
+    
+    class MemoryOperations_ValidityTests : public STLKR_TestBase {
+    public:
+        explicit MemoryOperations_ValidityTests(size_t size = 1024) : STLKR_TestBase("Memory Operations Validity Tests"), _size(size) { }
+
+        void runTest() override {
+            _copy<double>();
+            _copy<float>();
+            _copy<int>();
+            _copy<unsigned>();
+            _copy<short>();
+
+            _setValue<double>();
+            _setValue<float>();
+            _setValue<int>();
+            _setValue<unsigned>();
+            _setValue<short>();
+
+            _setZero<double>();
+            _setZero<float>();
+            _setZero<int>();
+            _setZero<unsigned>();
+            _setZero<short>();
+        }
+
+    private:
+        
+        size_t _size;
+        
+        template <typename T>
+        void _copy(){
+
+            printSubtitle("Copy " + TestUtility::getTypeString<T>(), T_Color::BARBIE_PINK);
+            auto data = createAlignedUnique<T>(_size);
+            Random::uniform<T>(_size, data.get(), 0, 10);
+            string name;
+
+            {
+                name = {"Classic (Loop)"};
+                auto result = createAlignedUnique<T>(_size);
+                constexpr bool IsSTD = false;
+                MemoryOperations::copy<T, ExecutionTraitClassic<IsSTD>>(_size, result.get(), data.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"Classic (memcpy)"};
+                auto result = createAlignedUnique<T>(_size);
+                constexpr bool IsSTD = true;
+                MemoryOperations::copy<T, ExecutionTraitClassic<IsSTD>>(_size, result.get(), data.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"Meta"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::copy<T, ExecutionTraitUnrolled<>>(_size, result.get(), data.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+            
+            {
+                name = {"SIMD_AVX2_Cached"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX2, DefaultUnroll(), T_SIMDStore::Cached>>(_size, result.get(), data.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"SIMD_AVX2_Streamed"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX2, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get(), data.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"SIMD_AVX512_Cached"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX512, DefaultUnroll(), T_SIMDStore::Cached>>(_size, result.get(), data.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"SIMD_AVX512_Streamed"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX512, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get(), data.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            ThreadTraitSTDThread threadTrait = ThreadTraitSTDThread();
+            auto nThreads = threadTrait.getNumThreads();
+            auto nThreadsStr = std::to_string(nThreads);
+
+            {
+                name = {"Parallel_Classic (Loop)"};
+                auto result = createAlignedUnique<T>(_size);
+                constexpr bool IsSTD = false;
+                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitClassic<IsSTD>>(threadTrait, _size, result.get(), data.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"Parallel_Classic (memcpy)"};
+                auto result = createAlignedUnique<T>(_size);
+                constexpr bool IsSTD = true;
+                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitClassic<IsSTD>>(threadTrait, _size, result.get(), data.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"Parallel_Meta"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitUnrolled<>>(threadTrait, _size, result.get(), data.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+            
+            {
+                name = {"Parallel_SIMD_AVX2_Cached"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, DefaultUnroll(), T_SIMDStore::Cached>>(threadTrait, _size, result.get(), data.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"Parallel_SIMD_AVX2_Streamed"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get(), data.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"Parallel_SIMD_AVX512_Cached"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, DefaultUnroll(), T_SIMDStore::Cached>>(threadTrait, _size, result.get(), data.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"Parallel_SIMD_AVX512_Streamed"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get(), data.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+        
+        }
+
+        template <typename T>
+        void _setValue(){
+
+            printSubtitle("SetValue " + TestUtility::getTypeString<T>(), T_Color::BARBIE_PINK);
+            auto data = createAlignedUnique<T>(_size);
+            T value = 3;
+            for (size_t i = 0; i < _size; ++i){
+                data.get()[i] = value;
+            }
+            string name;
+
+            {
+                name = {"Classic (Loop)"};
+                auto result = createAlignedUnique<T>(_size);
+                constexpr bool IsSTD = false;
+                MemoryOperations::setValue<T, ExecutionTraitClassic<IsSTD>>(_size, result.get(), value);
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"Classic (std::fill)"};
+                auto result = createAlignedUnique<T>(_size);
+                constexpr bool IsSTD = true;
+                MemoryOperations::setValue<T, ExecutionTraitClassic<IsSTD>>(_size, result.get(), value);
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"Meta"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setValue<T, ExecutionTraitUnrolled<>>(_size, result.get(), value);
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+            
+            {
+                name = {"SIMD_AVX2_Cached"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX2, DefaultUnroll(), T_SIMDStore::Cached>>(_size, result.get(), value);
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"SIMD_AVX2_Streamed"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX2, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get(), value);
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"SIMD_AVX512_Cached"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX512, DefaultUnroll(), T_SIMDStore::Cached>>(_size, result.get(), value);
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"SIMD_AVX512_Streamed"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX512, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get(), value);
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            ThreadTraitSTDThread threadTrait = ThreadTraitSTDThread();
+            auto nThreads = threadTrait.getNumThreads();
+            auto nThreadsStr = std::to_string(nThreads);
+
+            {
+                name = {"Parallel_Classic (Loop)"};
+                auto result = createAlignedUnique<T>(_size);
+                constexpr bool IsSTD = false;
+                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitClassic<IsSTD>>(threadTrait, _size, result.get(), value);
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"Parallel_Classic (std::fill)"};
+                auto result = createAlignedUnique<T>(_size);
+                constexpr bool IsSTD = true;
+                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitClassic<IsSTD>>(threadTrait, _size, result.get(), value);
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"Parallel_Meta"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitUnrolled<>>(threadTrait, _size, result.get(), value);
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+            
+            {
+                name = {"Parallel_SIMD_AVX2_Cached"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, DefaultUnroll(), T_SIMDStore::Cached>>(threadTrait, _size, result.get(), value);
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"Parallel_SIMD_AVX2_Streamed"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get(), value);
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"Parallel_SIMD_AVX512_Cached"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, DefaultUnroll(), T_SIMDStore::Cached>>(threadTrait, _size, result.get(), value);
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"Parallel_SIMD_AVX512_Streamed"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get(), value);
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+        
+        }
+
+        template <typename T>
+        void _setZero(){
+
+            printSubtitle("SetZero " + TestUtility::getTypeString<T>(), T_Color::BARBIE_PINK);
+            auto data = createAlignedUnique<T>(_size);
+            T value = 0;
+            for (size_t i = 0; i < _size; ++i){
+                data.get()[i] = value;
+            }
+            string name;
+
+            {
+                name = {"Classic (Loop)"};
+                auto result = createAlignedUnique<T>(_size);
+                constexpr bool IsSTD = false;
+                MemoryOperations::setZero<T, ExecutionTraitClassic<IsSTD>>(_size, result.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"Classic (memset)"};
+                auto result = createAlignedUnique<T>(_size);
+                constexpr bool IsSTD = true;
+                MemoryOperations::setZero<T, ExecutionTraitClassic<IsSTD>>(_size, result.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"Meta"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setZero<T, ExecutionTraitUnrolled<>>(_size, result.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+            
+            {
+                name = {"SIMD_AVX2_Cached"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX2, DefaultUnroll(), T_SIMDStore::Cached>>(_size, result.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"SIMD_AVX2_Streamed"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX2, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"SIMD_AVX512_Cached"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX512, DefaultUnroll(), T_SIMDStore::Cached>>(_size, result.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"SIMD_AVX512_Streamed"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX512, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            ThreadTraitSTDThread threadTrait = ThreadTraitSTDThread();
+            auto nThreads = threadTrait.getNumThreads();
+            auto nThreadsStr = std::to_string(nThreads);
+            
+            {
+                name = {"ParallelClassic (Loop)"};
+                auto result = createAlignedUnique<T>(_size);
+                constexpr bool IsSTD = false;
+                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitClassic<IsSTD>>(threadTrait, _size, result.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"ParallelClassic (memset)"};
+                auto result = createAlignedUnique<T>(_size);
+                constexpr bool IsSTD = true;
+                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitClassic<IsSTD>>(threadTrait, _size, result.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"ParallelMeta"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitUnrolled<>>(threadTrait, _size, result.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+            
+            {
+                name = {"ParallelSIMD_AVX2_Cached"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, DefaultUnroll(), T_SIMDStore::Cached>>(threadTrait, _size, result.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"ParallelSIMD_AVX2_Streamed"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"ParallelSIMD_AVX512_Cached"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, DefaultUnroll(), T_SIMDStore::Cached>>(threadTrait, _size, result.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
+                name = {"ParallelSIMD_AVX512_Streamed"};
+                auto result = createAlignedUnique<T>(_size);
+                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+        
+        }
+
+    };
+
+} // namespace STLKR_Tests

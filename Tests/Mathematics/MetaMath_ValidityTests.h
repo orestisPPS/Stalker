@@ -18,13 +18,13 @@ namespace STLKR_Tests {
             }
               
         void runTest() override {
-            printTitle("Basic Mathematics", "-", ColourType::WHITE);
+            printTitle("Basic Mathematics", "-", T_Color::WHITE);
             _testPower();
             _testFactorial();
             _testFallingFactorial();
             _testBinomialCoefficient();
             _testFibonacci();
-            printTitle("Unrolled MathOperationsMeta", "-", ColourType::WHITE);
+            printTitle("Unrolled MathOperationsMeta", "-", T_Color::WHITE);
             _testAdd();
             _testSubtract();
             _testMultiply();
@@ -130,7 +130,7 @@ namespace STLKR_Tests {
 
         void _testSum() {
             constexpr std::array<double, size()> data = {0, 1, 2, 3, 4};
-            constexpr auto result = MathOperationsMeta::sum<double, size()>(data.data());
+            constexpr auto result = MathOperationsMeta::sum<double, size()>(size(), data.data());
             constexpr auto expected = 10;
             TestUtility::compareValues<double>(result, expected, "Sum of an Array");
             static_assert(result == expected, "Sum of an Array Test Failed");
@@ -140,21 +140,21 @@ namespace STLKR_Tests {
             constexpr std::array<double, size()> data = {0, 1, 2, 3, 4};
 
             {
-                constexpr auto result = MathOperationsMeta::sum<double, size()>(data.data());
+                constexpr auto result = MathOperationsMeta::sum<double, size()>(size(), data.data());
                 constexpr auto expected = 10.0;
                 TestUtility::compareValues<double>(result, expected, "Partial Sum 0..4");
                 static_assert(result == expected, "Partial Sum 0..4 Test Failed");
             }
 
             {
-                constexpr auto result = MathOperationsMeta::sum<double, 3>(data.data() + 1);
+                constexpr auto result = MathOperationsMeta::sum<double, 3>(3, data.data() + 1);
                 constexpr auto expected = 6.0;
                 TestUtility::compareValues<double>(result, expected, "Partial Sum 1..3");
                 static_assert(result == expected, "Partial Sum 1..3 Test Failed");
             }
 
             {
-                constexpr auto result = MathOperationsMeta::sum<double, 1>(data.data() + 2);
+                constexpr auto result = MathOperationsMeta::sum<double, 1>(1, data.data() + 2);
                 constexpr auto expected = 2.0;
                 TestUtility::compareValues<double>(result, expected, "Partial Sum 2..2");
                 static_assert(result == expected, "Partial Sum 2..2 Test Failed");
@@ -162,10 +162,10 @@ namespace STLKR_Tests {
         }
 
         static void _testMetaPolynomial(){
-            printTitle("Constexpr Polynomial Tests", "-", ColourType::WHITE);
+            printTitle("Constexpr Polynomial Tests", "-", T_Color::WHITE);
 
             // Quadratic Polynomial P(x) = 3x² + 2x + 1
-            printSubtitle("Quadratic Polynomial P(x) = 3x² + 2x + 1 (x=2.0)", ColourType::PATSIOURA_RED);
+            printSubtitle("Quadratic Polynomial P(x) = 3x² + 2x + 1 (x=2.0)", T_Color::PATSIOURA_RED);
             constexpr std::array<double, 3> coefficients = {1, 2, 3};
             constexpr MetaPolynomial<double, 2> p1(coefficients);
 
@@ -200,7 +200,7 @@ namespace STLKR_Tests {
 
 
             //Higher Order Polynomial P(x) = 4x^4 - 3x^3 + 2x^2 - x + 5
-            printSubtitle("Polynomial of Order 4: P(x) = 4x⁴ - 3x³ + 2x² - x + 5 (x=2.0)", ColourType::PATSIOURA_RED);
+            printSubtitle("Polynomial of Order 4: P(x) = 4x⁴ - 3x³ + 2x² - x + 5 (x=2.0)", T_Color::PATSIOURA_RED);
             constexpr std::array<double, size()> coefficients_high = {5, -1, 2, -3, 4};  // Represents 4x^4 - 3x^3 + 2x^2 - x + 5
             constexpr MetaPolynomial<double, 4> p2(coefficients_high);
 
