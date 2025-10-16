@@ -7,15 +7,15 @@
 namespace Stalker::Mathematics::SIMD {
 
 template<>
-struct MathOperationsSIMD<double, AVX512>
-        : public MathOperationsSIMDBase<double, AVX512, MathOperationsSIMD<double, AVX512>> {
-    using Base = MathOperationsSIMDBase<double, AVX512, MathOperationsSIMD<double, AVX512>>;
+struct MathOperationsSIMD<double, T_SIMD::AVX512>
+        : public MathOperationsSIMDBase<double, T_SIMD::AVX512, MathOperationsSIMD<double, T_SIMD::AVX512>> {
+    using Base = MathOperationsSIMDBase<double, T_SIMD::AVX512, MathOperationsSIMD<double, T_SIMD::AVX512>>;
 
 private:
     
     friend Base;
 
-    template <SIMDStoreType Policy, bool IsScaled, size_t... Is>
+    template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
     static inline void _add(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
                             const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr) {
 
@@ -27,7 +27,7 @@ private:
                                                                                             _mm512_load_pd(b + Is * Base::registerSize))), ...);
     }
 
-    template <SIMDStoreType Policy, bool IsScaled, size_t... Is>
+    template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
     static inline void _subtract(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
                                 const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr){
         if constexpr (IsScaled)
@@ -40,7 +40,7 @@ private:
     }
 
     // (multiply implementation stays as-is; no fma needed)
-    template<SIMDStoreType Policy, bool IsScaled, size_t... Is>
+    template<T_SIMDStore Policy, bool IsScaled, size_t... Is>
     static inline void _multiply(const Base::T_data* a, const Base::T_data* b, Base::T_data* result,
                                  std::index_sequence<Is...>,
                                  const Base::T_simd* scalarA = nullptr, const Base::T_simd* scalarB = nullptr) {
@@ -54,15 +54,15 @@ private:
 };
 
 template<>
-struct MathOperationsSIMD<float, AVX512>
-        : public MathOperationsSIMDBase<float, AVX512, MathOperationsSIMD<float, AVX512>> {
-    using Base = MathOperationsSIMDBase<float, AVX512, MathOperationsSIMD<float, AVX512>>;
+struct MathOperationsSIMD<float, T_SIMD::AVX512>
+        : public MathOperationsSIMDBase<float, T_SIMD::AVX512, MathOperationsSIMD<float, T_SIMD::AVX512>> {
+    using Base = MathOperationsSIMDBase<float, T_SIMD::AVX512, MathOperationsSIMD<float, T_SIMD::AVX512>>;
     
 private:
     
     friend Base;
 
-template <SIMDStoreType Policy, bool IsScaled, size_t... Is>
+template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
         static inline void _add(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
                                 const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr)
         {
@@ -74,7 +74,7 @@ template <SIMDStoreType Policy, bool IsScaled, size_t... Is>
                                                                                                 _mm512_load_ps(b + Is * Base::registerSize))), ...);
         }
 
-        template <SIMDStoreType Policy, bool IsScaled, size_t... Is>
+        template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
         static inline void _subtract(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
                                      const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr)
         {
@@ -86,7 +86,7 @@ template <SIMDStoreType Policy, bool IsScaled, size_t... Is>
                                                                                                 _mm512_load_ps(b + Is * Base::registerSize))),...);
         }
 
-        template <SIMDStoreType Policy, bool IsScaled, size_t... Is>
+        template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
         static inline void _multiply(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
                                      const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr)
         {
@@ -100,15 +100,15 @@ template <SIMDStoreType Policy, bool IsScaled, size_t... Is>
 };
 
 template<>
-struct MathOperationsSIMD<int, AVX512>
-        : public MathOperationsSIMDBase<int, AVX512, MathOperationsSIMD<int, AVX512>> {
-    using Base = MathOperationsSIMDBase<int, AVX512, MathOperationsSIMD<int, AVX512>>;
+struct MathOperationsSIMD<int, T_SIMD::AVX512>
+        : public MathOperationsSIMDBase<int, T_SIMD::AVX512, MathOperationsSIMD<int, T_SIMD::AVX512>> {
+    using Base = MathOperationsSIMDBase<int, T_SIMD::AVX512, MathOperationsSIMD<int, T_SIMD::AVX512>>;
     
 private:
     
     friend Base;
 
-    template<SIMDStoreType Policy, bool IsScaled, size_t... Is>
+    template<T_SIMDStore Policy, bool IsScaled, size_t... Is>
     static inline void _add(const Base::T_data* a, const Base::T_data* b, Base::T_data* result, std::index_sequence<Is...>, const Base::T_simd* scalarA = nullptr, const Base::T_simd* scalarB = nullptr) {
         if constexpr (IsScaled) {
             (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_add_epi32(_mm512_mullo_epi32(_mm512_load_si512(reinterpret_cast<const void*>(a + Is * Base::registerSize)), *scalarA),
@@ -120,7 +120,7 @@ private:
         }
     }
 
-    template<SIMDStoreType Policy, bool IsScaled, size_t... Is>
+    template<T_SIMDStore Policy, bool IsScaled, size_t... Is>
     static inline void _subtract(const Base::T_data* a, const Base::T_data* b, Base::T_data* result, std::index_sequence<Is...>, const Base::T_simd* scalarA = nullptr, const Base::T_simd* scalarB = nullptr) {
         if constexpr (IsScaled)
             (Base::MemoryOps::store<Policy>(
@@ -131,7 +131,7 @@ private:
                                                                                                _mm512_load_si512(reinterpret_cast<const void*>(b + Is * Base::registerSize)))), ...);
     }
 
-    template<SIMDStoreType Policy, bool IsScaled, size_t... Is>
+    template<T_SIMDStore Policy, bool IsScaled, size_t... Is>
     static inline void _multiply(const Base::T_data* a, const Base::T_data* b, Base::T_data* result, std::index_sequence<Is...>, const Base::T_simd* scalarA = nullptr, const Base::T_simd* scalarB = nullptr) {
         if constexpr (IsScaled)
             (Base::MemoryOps::store<Policy>(
@@ -144,15 +144,15 @@ private:
 };
 
 template<>
-struct MathOperationsSIMD<unsigned int, AVX512>
-        : public MathOperationsSIMDBase<unsigned int, AVX512, MathOperationsSIMD<unsigned int, AVX512>> {
-    using Base = MathOperationsSIMDBase<unsigned int, AVX512, MathOperationsSIMD<unsigned int, AVX512>>;
+struct MathOperationsSIMD<unsigned int, T_SIMD::AVX512>
+        : public MathOperationsSIMDBase<unsigned int, T_SIMD::AVX512, MathOperationsSIMD<unsigned int, T_SIMD::AVX512>> {
+    using Base = MathOperationsSIMDBase<unsigned int, T_SIMD::AVX512, MathOperationsSIMD<unsigned int, T_SIMD::AVX512>>;
     
 private:
 
 friend Base;
 
-        template <SIMDStoreType Policy, bool IsScaled, size_t... Is>
+        template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
         static inline void _add(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
                                 const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr){
             if constexpr (IsScaled)
@@ -163,7 +163,7 @@ friend Base;
                                                                                                    _mm512_load_si512(reinterpret_cast<const __m512i *>(b + Is * Base::registerSize)))), ...);
         }
 
-        template <SIMDStoreType Policy, bool IsScaled, size_t... Is>
+        template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
         static inline void _subtract(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
                          const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr){
             if constexpr (IsScaled)
@@ -174,7 +174,7 @@ friend Base;
                                                                                                    _mm512_load_si512(reinterpret_cast<const __m512i *>(b + Is * Base::registerSize)))), ...);
         }
 
-        template <SIMDStoreType Policy, bool IsScaled, size_t... Is>
+        template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
         static inline void _multiply(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
                                      const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr)
         {
@@ -188,15 +188,15 @@ friend Base;
     };
 
 template<>
-struct MathOperationsSIMD<short, AVX512>
-        : public MathOperationsSIMDBase<short, AVX512, MathOperationsSIMD<short, AVX512>> {
-    using Base = MathOperationsSIMDBase<short, AVX512, MathOperationsSIMD<short, AVX512>>;
+struct MathOperationsSIMD<short, T_SIMD::AVX512>
+        : public MathOperationsSIMDBase<short, T_SIMD::AVX512, MathOperationsSIMD<short, T_SIMD::AVX512>> {
+    using Base = MathOperationsSIMDBase<short, T_SIMD::AVX512, MathOperationsSIMD<short, T_SIMD::AVX512>>;
     
 private:
     
     friend Base;
 
-    template<SIMDStoreType Policy, bool IsScaled, size_t... Is>
+    template<T_SIMDStore Policy, bool IsScaled, size_t... Is>
     static inline void _add(const Base::T_data* a, const Base::T_data* b, Base::T_data* result, std::index_sequence<Is...>, const Base::T_simd* scalarA = nullptr, const Base::T_simd* scalarB = nullptr) {
         if constexpr (IsScaled)
             (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize,_mm512_add_epi16(_mm512_mullo_epi16(_mm512_load_si512(reinterpret_cast<const void*>(a + Is * Base::registerSize)), *scalarA),
@@ -206,7 +206,7 @@ private:
                                                                                                _mm512_load_si512(reinterpret_cast<const void*>(b + Is * Base::registerSize)))), ...);
     }   
 
-    template<SIMDStoreType Policy, bool IsScaled, size_t... Is>
+    template<T_SIMDStore Policy, bool IsScaled, size_t... Is>
     static inline void _subtract(const Base::T_data* a, const Base::T_data* b, Base::T_data* result, std::index_sequence<Is...>, const Base::T_simd* scalarA = nullptr, const Base::T_simd* scalarB = nullptr) {
         if constexpr (IsScaled)
             (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_sub_epi16(_mm512_mullo_epi16(_mm512_load_si512(reinterpret_cast<const void*>(a + Is * Base::registerSize)), *scalarA),
@@ -216,7 +216,7 @@ private:
                                                                                                _mm512_load_si512(reinterpret_cast<const void*>(b + Is * Base::registerSize)))), ...);
     }
 
-    template<SIMDStoreType Policy, bool IsScaled, size_t... Is>
+    template<T_SIMDStore Policy, bool IsScaled, size_t... Is>
     static inline void _multiply(const Base::T_data* a, const Base::T_data* b, Base::T_data* result, std::index_sequence<Is...>, const Base::T_simd* scalarA = nullptr, const Base::T_simd* scalarB = nullptr) {
         if constexpr (IsScaled)
             (Base::MemoryOps::store<Policy>(

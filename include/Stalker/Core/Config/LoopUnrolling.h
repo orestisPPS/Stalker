@@ -15,8 +15,6 @@
  *
  * @section config Preprocessor Configuration
  * The following macros must be defined by the build system (typically via CMake):
- * - @b STALKER_UNROLL_ENABLE (0/1):
- *   - Enables or disables threading globally.
  * - @b STALKER_UNROLL_FACTOR
  *   - Compile-time integer constant specifying the unroll count.
  *   - Must be a positive integer, typically a power of two (e.g. 4 or 8).
@@ -51,24 +49,22 @@
  * For compilers/platforms where pragma-based unrolling is unavailable, or for
  * maximum control, loops can be unrolled manually as follows:
  * @code
- * constexpr int UnrollFactor = 4;
- * size_t limit = size - (size % UnrollFactor);
- * for (size_t i = 0; i < limit; i += UnrollFactor) {
+ * constexpr int Unroll = 4;
+ * size_t limit = size - (size % Unroll);
+ * for (size_t i = 0; i < limit; i += Unroll) {
  *     result[i    ] = a[i    ] + b[i    ];
  *     result[i + 1] = a[i + 1] + b[i + 1];
  *     result[i + 2] = a[i + 2] + b[i + 2];
  *     result[i + 3] = a[i + 3] + b[i + 3];
  * }
- * // Handle the tail if size is not a multiple of UnrollFactor
+ * // Handle the tail if size is not a multiple of Unroll
  * for (size_t i = limit; i < size; ++i)
  *     result[i] = a[i] + b[i];
  * @endcode
  *
  * @section utilities Utilities
  * The namespace @c Stalker::Core::Config provides:
- * - @c constexpr bool IsUnrollEnabled()
- *   - Returns true if loop unrolling is enabled and the factor is greater than 1.
- * - @c constexpr int DefaultUnrollFactor()
+ * - @c constexpr int DefaultUnroll()
  *   - Returns the default compile-time unroll factor.
  *
  * @section references References
@@ -80,26 +76,17 @@
     #error "STALKER_UNROLL_FACTOR must be set by CMake!"
 #endif
 
-#ifndef STALKER_UNROLL_ENABLE
-    #error "STALKER_UNROLL_ENABLE must be set by CMake!"
-#endif
 
 #define STRINGIFY(x) _STRINGIFY(x)
 #define _STRINGIFY(x) #x
 
-#if STALKER_UNROLL_ENABLE // 1 or 0
-
-    #if defined(__clang__)
-        #define STALKER_UNROLL(N) _Pragma(STRINGIFY(clang loop unroll_count(N)))
-        #define STALKER_UNROLL_DEFAULT _Pragma(STRINGIFY(clang loop unroll_count(STALKER_UNROLL_FACTOR)))
-    #elif defined(__GNUC__) && (__GNUC__ >= 8)
-        #define STALKER_UNROLL(N) _Pragma(STRINGIFY(GCC unroll N))
-        #define STALKER_UNROLL_DEFAULT _Pragma(STRINGIFY(GCC unroll STALKER_UNROLL_FACTOR))
-    #else
-        #define STALKER_UNROLL(N)
-        #define STALKER_UNROLL_DEFAULT
-    #endif
-
+#if defined(__clang__)
+    #define STALKER_UNROLL(N) _Pragma(STRINGIFY(clang loop unroll_count(N)))
+    #define STALKER_UNROLL_DEFAULT STALKER_UNROLL(STALKER_UNROLL_FACTOR)
+#elif defined(__GNUC__) && (__GNUC__ >= 8)
+    // Fixed: removed parentheses around N
+    #define STALKER_UNROLL(N) _Pragma(STRINGIFY(GCC unroll N))
+    #define STALKER_UNROLL_DEFAULT STALKER_UNROLL(STALKER_UNROLL_FACTOR)
 #else
     #define STALKER_UNROLL(N)
     #define STALKER_UNROLL_DEFAULT
@@ -108,20 +95,12 @@
 namespace Stalker::Core::Config {
 
     /**
-     * @brief Returns true if loop unrolling is enabled and the factor > 1.
-     * @return true if loop unrolling is enabled and factor > 1; false otherwise.
-     *
-     * If this returns false, unroll macros expand to nothing and there is no unrolling.
-     */
-    constexpr bool IsUnrollEnabled() { return (STALKER_UNROLL_ENABLE != 0) && (STALKER_UNROLL_FACTOR > 1); }
-
-    /**
      * @brief Returns the default compile-time unroll factor.
      * @return size_t unroll factor, set by CMake.
      * 
      * @note Defaults to 1 if loop unrolling is disabled.
      */
-    constexpr size_t DefaultUnrollFactor() { return STALKER_UNROLL_FACTOR; }
+    constexpr size_t DefaultUnroll() { return STALKER_UNROLL_FACTOR; }
 
     static_assert(STALKER_UNROLL_FACTOR >= 1, "STALKER_UNROLL_FACTOR must be >= 1");
 

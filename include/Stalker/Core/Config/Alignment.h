@@ -84,7 +84,7 @@ namespace Stalker::Core::Config {
      * @brief Returns the compile-time default alignment in bytes.
      * @return Alignment value (power of 2), e.g., 64.
      */
-    inline constexpr int DefaultAlignment() {
+    inline constexpr size_t DefaultAlignment() {
         return STALKER_ALIGNMENT;
     }
 

@@ -9,7 +9,7 @@ namespace Stalker::Core {
 
 using namespace Core::Config;
 
-template<typename T, SIMDType Type, typename Child>
+template<typename T, T_SIMD Type, typename Child>
 struct TypeTraitsSIMDBase {
     static constexpr unsigned inline RegisterSize() {
         return Child::_RegisterSize;
@@ -18,17 +18,17 @@ struct TypeTraitsSIMDBase {
         return CacheLineSize() / sizeof(typename Child::typeData);
     }
 
-    template<size_t UnrollFactor = DefaultUnrollFactor()>
+    template<size_t Unroll = DefaultUnroll()>
     static constexpr unsigned inline CacheLinesProcessed() { 
-        return (UnrollFactor * Child::_RegisterSize) / ElementsPerCacheLine(); 
+        return (Unroll * Child::_RegisterSize) / ElementsPerCacheLine(); 
     }
 
-    template<size_t UnrollFactor = DefaultUnrollFactor()>
+    template<size_t Unroll = DefaultUnroll()>
     static constexpr unsigned inline BlockSize() {
-        return Child::_RegisterSize * UnrollFactor;
+        return Child::_RegisterSize * Unroll;
     }
 };
 
-    template<typename T, SIMDType simdType> struct TypeTraitsSIMD;
+    template<typename T, T_SIMD simdType> struct TypeTraitsSIMD;
 
 } // namespace Stalker::Core

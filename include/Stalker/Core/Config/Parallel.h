@@ -120,11 +120,14 @@
 
 #endif
 
+
 #if STALKER_THREADING_ENABLE
     #if STALKER_THREADING_ENABLE_PTHREAD
         #include <pthread.h>
+        using PlatformThread = pthread_t;
     #elif STALKER_THREADING_ENABLE_STDTHREAD
         #include <thread>
+        using PlatformThread = std::thread;
     #else
         #error "Threading enabled but no valid backend detected."
     #endif
@@ -191,11 +194,7 @@ namespace Stalker::Core::Config {
      * - If pthread is enabled, this is an alias for `pthread_t`.
      * - If std::thread is enabled, this is an alias for `std::thread`.
      */
-    #if STALKER_THREADING_ENABLE_PTHREAD
-        using PlatformThread = pthread_t;
-    #elif STALKER_THREADING_ENABLE_STDTHREAD
-        using PlatformThread = std::thread;
-    #endif
+
 
 
     /**

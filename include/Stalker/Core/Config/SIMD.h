@@ -16,9 +16,10 @@
  *     - @b STALKER_SIMD_INSTRUCTION_SET_AVX2 Defined as 1 if AVX2 support is enabled, else undefined.
  *     - @b STALKER_SIMD_INSTRUCTION_SET_ESP_DSP Defined as 1 if ESP-DSP support is enabled, else undefined.
  *     - @b STALKER_SIMD_INSTRUCTION_SET_NONE Defined as 1 if no SIMD support is enabled, else undefined.
- *
+ *      -@b STALKER_SIMD_SUPPORT_AVX2: Set to @c ON to enable AVX-512 support, @c OFF to disable.
+ *      -@b STALKER_SIMD_SUPPORT_AVX2: Set to @c ON to enable AVX2 support, @c OFF to disable.
  * @section enumerations Enumerations
- * @enum SIMDType
+ * @enum T_SIMD
  * Enumerates supported SIMD instruction sets:
  *   - @c None    : No SIMD (scalar fallback).
  *   - @c AVX2    : 256-bit registers (4×64-bit doubles, 8×32-bit floats/ints, 16×16-bit shorts).
@@ -34,8 +35,8 @@
  *     Returns true if AVX-512 support is enabled.
  * - @c inline constexpr bool IsESPDSPEnabled()
  *     Returns true if ESP-DSP support is enabled.
- * - @c inline constexpr SIMDType DefaultSIMDType()
- *     Returns the active SIMDType (or @c None if disabled).
+ * - @c inline constexpr T_SIMD DefaultSIMDType()
+ *     Returns the active T_SIMD (or @c None if disabled).
  * - @c inline constexpr const char* DefaultSIMDName()
  *     Returns the canonical name: `"avx512"`, `"avx2"`, `"esp-dsp"`, or `"none"`.
  * - @c inline constexpr size_t DefaultSIMDRegisterSize()
@@ -62,7 +63,6 @@
 #endif
 
 #if defined(STALKER_SIMD_ENABLE) && STALKER_SIMD_ENABLE == 1
-
     #if !defined(STALKER_SIMD_INSTRUCTION_SET_AVX512)  && \
         !defined(STALKER_SIMD_INSTRUCTION_SET_AVX2)    && \
         !defined(STALKER_SIMD_INSTRUCTION_SET_ESP_DSP)
@@ -78,7 +78,7 @@
 namespace Stalker::Core::Config {
 
     /**
-     * @enum SIMDType
+     * @enum T_SIMD
      * @brief Supported SIMD instruction sets for Stalker Core.
      *
      * Enumerates the hardware SIMD (Single Instruction, Multiple Data) instruction sets
@@ -86,12 +86,12 @@ namespace Stalker::Core::Config {
      * width in bits for the relevant architecture.
      *
      * Supported instruction sets:
-     *  - SIMDType::None
-     *  - SIMDType::AVX2
-     *  - SIMDType::AVX512
-     *  - SIMDType::ESP_DSP
+     *  - T_SIMD::None
+     *  - T_SIMD::AVX2
+     *  - T_SIMD::AVX512
+     *  - T_SIMD::ESP_DSP
      */
-    enum class SIMDType {
+    enum class T_SIMD {
         /**
          * @brief No SIMD support.
          *
@@ -139,7 +139,7 @@ namespace Stalker::Core::Config {
 
 
     /**
-     * @enum SIMDStoreType
+     * @enum T_SIMDStore
      * @brief Specifies the preferred memory store policy for SIMD output.
      *
      * SIMD store type determines how vectorized values are written to memory.
@@ -147,14 +147,14 @@ namespace Stalker::Core::Config {
      * may benefit from temporal reuse and caching) and *streamed* (non-temporal)
      * stores (which minimize cache pollution for large bulk data writes).
      *
-     * - SIMDStoreType::Cached   : Use normal (temporal) cacheable stores, i.e., _mm256_storeu*, _mm512_storeu*, etc.
-     * - SIMDStoreType::Streamed : Use non-temporal (streaming) stores, i.e., _mm256_stream*, _mm512_stream*, etc.
+     * - T_SIMDStore::Cached   : Use normal (temporal) cacheable stores, i.e., _mm256_storeu*, _mm512_storeu*, etc.
+     * - T_SIMDStore::Streamed : Use non-temporal (streaming) stores, i.e., _mm256_stream*, _mm512_stream*, etc.
      *
      * Streamed stores can improve performance for very large arrays that are not
      * reused soon (avoids polluting the cache). Cached stores are better for typical
      * workloads where data is read/written multiple times.
      */
-    enum class SIMDStoreType {
+    enum class T_SIMDStore {
         /**
          * @brief Normal cached stores (temporal).
          *
@@ -201,11 +201,35 @@ namespace Stalker::Core::Config {
     }
 
     /**
+     * @brief Returns true if AVX-2 is supported by the build machine.
+     * @return true if AVX-512 is active.
+     */
+    inline constexpr bool IsAVX2Supported() {
+        #if defined STALKER_SIMD_SUPPORT_AVX2 && STALKER_SIMD_SUPPORT_AVX2 != 0
+            return true;
+        #else
+            return false;
+        #endif
+    }
+
+    /**
      * @brief Returns true if AVX-512 support is enabled at compile time.
      * @return true if AVX-512 is active.
      */
     inline constexpr bool IsAVX512Enabled() {
         #if STALKER_SIMD_ENABLE != 0 && defined(STALKER_SIMD_INSTRUCTION_SET_AVX512)
+            return true;
+        #else
+            return false;
+        #endif
+    }
+
+    /**
+     * @brief Returns true if AVX-512 is supported by the build machine.
+     * @return true if AVX-512 is active.
+     */
+    inline constexpr bool IsAVX512Supported() {
+        #if defined STALKER_SIMD_SUPPORT_AVX512 && STALKER_SIMD_SUPPORT_AVX512 != 0
             return true;
         #else
             return false;
@@ -225,26 +249,26 @@ namespace Stalker::Core::Config {
 
     /**
      * @brief Returns the enumerator for the active SIMD type.
-     * @return SIMDType corresponding to the active SIMD instruction set.
+     * @return T_SIMD corresponding to the active SIMD instruction set.
      *
-     * @note Returns SIMDType::None if SIMD is disabled or unsupported.
+     * @note Returns T_SIMD::None if SIMD is disabled or unsupported.
      * @note Throws a compile-time error if no SIMD instruction set is defined.
      */
-    inline constexpr SIMDType DefaultSIMDType() {
+    inline constexpr T_SIMD DefaultSIMDType() {
         #if defined(STALKER_SIMD_ENABLE) && STALKER_SIMD_ENABLE != 0
             #if defined(STALKER_SIMD_INSTRUCTION_SET_AVX512)
-                return SIMDType::AVX512;
+                return T_SIMD::AVX512;
             #elif defined(STALKER_SIMD_INSTRUCTION_SET_AVX2)
-                return SIMDType::AVX2;
+                return T_SIMD::AVX2;
             #elif defined(STALKER_SIMD_INSTRUCTION_SET_ESP_DSP)
-                return SIMDType::ESP_DSP;
+                return T_SIMD::ESP_DSP;
             #elif defined(STALKER_SIMD_INSTRUCTION_SET_NONE)
-                return SIMDType::None;
+                return T_SIMD::None;
             #else
                 #error "STALKER::Core::Config::DefaultSIMDType: Unknown SIMD instruction set!"
             #endif
         #else
-            return SIMDType::None;
+            return T_SIMD::None;
         #endif
     }
 
@@ -254,9 +278,9 @@ namespace Stalker::Core::Config {
      */
     inline constexpr const char* DefaultSIMDName() {
         switch (DefaultSIMDType()) {
-            case SIMDType::AVX512:  return "avx512";
-            case SIMDType::AVX2:    return "avx2";
-            case SIMDType::ESP_DSP: return "esp-dsp";
+            case T_SIMD::AVX512:  return "avx512";
+            case T_SIMD::AVX2:    return "avx2";
+            case T_SIMD::ESP_DSP: return "esp-dsp";
             default:                return "none";
         }
     }
@@ -267,16 +291,16 @@ namespace Stalker::Core::Config {
      */
     inline constexpr size_t DefaultSIMDRegisterSize() {
         switch (DefaultSIMDType()) {
-            case SIMDType::AVX512:  return 512;
-            case SIMDType::AVX2:    return 256;
-            case SIMDType::ESP_DSP: return 128;
+            case T_SIMD::AVX512:  return 512;
+            case T_SIMD::AVX2:    return 256;
+            case T_SIMD::ESP_DSP: return 128;
             default:                return 0;
         }
     }
 
     /**
      * @brief Returns the preferred store type for SIMD memory operations.
-     * @return SIMDStoreType::Cached (normal) or SIMDStoreType::Streamed (non-temporal)
+     * @return T_SIMDStore::Cached (normal) or T_SIMDStore::Streamed (non-temporal)
      *
      * @details
      * The preferred store policy is selected at compile time using CMake macros:
@@ -288,20 +312,20 @@ namespace Stalker::Core::Config {
      *
      * @section storetype_examples Example
      * @code{.cpp}
-     * if constexpr (DefaultSIMDStoreType() == SIMDStoreType::Streamed) {
+     * if constexpr (DefaultSIMDStore() == T_SIMDStore::Streamed) {
      *     _mm256_stream_ps(dst, values); // Use streaming (non-temporal) store
     * } else {
      *     _mm256_storeu_ps(dst, values); // Use normal cacheable store
      * }
      * @endcode
      */
-    inline constexpr SIMDStoreType DefaultSIMDStoreType() {
+    inline constexpr T_SIMDStore DefaultSIMDStore() {
         #if defined(STALKER_SIMD_STORE_TYPE_CACHE)
-            return SIMDStoreType::Cached;
+            return T_SIMDStore::Cached;
         #elif defined(STALKER_SIMD_STORE_TYPE_STREAM)
-            return SIMDStoreType::Streamed;
+            return T_SIMDStore::Streamed;
         #else
-            return SIMDStoreType::Streamed;
+            return T_SIMDStore::Streamed;
         #endif
     }
 } // namespace Stalker::Core::Config

@@ -1,5 +1,4 @@
 #pragma once
-#include <cstddef>
 #include <Stalker/Core/Config/LoopUnrolling.h>
 #include <Stalker/Core/Config/SIMD.h>
 
@@ -7,43 +6,44 @@ namespace Stalker::Core {
 
     using namespace Stalker::Core::Config;
 
-    enum class ExecutionTraitType {
+    enum class T_ExecTrait {
         Classic,
-        UnrolledMeta,
+        Unrolled,
         SIMD,
         None,
     };
 
+
     template <typename Child>
-    struct ExecutionTraitBase {
+    struct ExecutionTrait {
+        static constexpr T_ExecTrait Type = Child::Type;
 
     protected:
         inline Child& child() { return *static_cast<Child*>(this); }
         inline const Child& child() const { return *static_cast<const Child*>(this); }
     };
 
-
-    template <typename Child>
-    struct ExecutionTrait : public ExecutionTraitBase<Child> {
-        static constexpr ExecutionTraitType Type = Child::Type;
+    template <bool EnableSTD = true>
+    struct ExecutionTraitClassic : public ExecutionTrait<ExecutionTraitClassic<EnableSTD>> {
+        static constexpr T_ExecTrait Type   = T_ExecTrait::Classic;
+        /// Use std algorithm if applicable
+        static constexpr bool               IsSTD = EnableSTD;
     };
 
-    struct ExecutionTraitClassic : public ExecutionTrait<ExecutionTraitClassic> {
-        static constexpr ExecutionTraitType  Type = ExecutionTraitType::Classic;
-    };
-
-    template <size_t UnrollFactor = DefaultUnrollFactor()>
-    struct ExecutionTraitUnrolledMeta : public ExecutionTrait<ExecutionTraitUnrolledMeta<UnrollFactor>>{
+    template <size_t UnrollFactor = DefaultUnroll()>
+    struct ExecutionTraitUnrolled : public ExecutionTrait<ExecutionTraitUnrolled<UnrollFactor>>{
         static constexpr size_t              Unroll = UnrollFactor;
-        static constexpr ExecutionTraitType  Type = ExecutionTraitType::UnrolledMeta;
+        static constexpr T_ExecTrait  Type   = T_ExecTrait::Unrolled;
     };
 
-    template< SIMDType SIMDT = DefaultSIMDType(), std::size_t UnrollFactor = DefaultUnrollFactor(), SIMDStoreType  SIMDStoreT   = DefaultSIMDStoreType() >
-    struct ExecutionTraitSIMD : public ExecutionTrait<ExecutionTraitSIMD<SIMDT, UnrollFactor,SIMDStoreT>> {
-        static constexpr size_t             Unroll = UnrollFactor;
-        static constexpr ExecutionTraitType Type   = ExecutionTraitType::SIMD;
-        static constexpr SIMDType           SIMDArch        = SIMDT;  
-        static constexpr SIMDStoreType      StorePolicy     = SIMDStoreT;
+    template< T_SIMD SIMDT = DefaultSIMDType(),
+              std::size_t UnrollFactor  = DefaultUnroll(),
+              T_SIMDStore  SIMDStoreT = DefaultSIMDStore() >
+    struct ExecutionTraitSIMD : public ExecutionTrait<ExecutionTraitSIMD<SIMDT, UnrollFactor, SIMDStoreT>> {
+        static constexpr size_t             Unroll      = UnrollFactor;
+        static constexpr T_ExecTrait Type        = T_ExecTrait::SIMD;
+        static constexpr T_SIMD           SIMDArch    = SIMDT;  
+        static constexpr T_SIMDStore    StorePolicy = SIMDStoreT;
     };
 
 
@@ -51,27 +51,29 @@ namespace Stalker::Core {
     struct DefaultExecutionTrait {
     
         /*---------------- compile-time constants available to API -----*/
-        inline static constexpr ExecutionTraitType Type   = IsSIMDEnabled()   ? ExecutionTraitType::SIMD :
-                                                            IsUnrollEnabled() ? ExecutionTraitType::UnrolledMeta :
-                                                                                ExecutionTraitType::Classic;
+        inline static constexpr T_ExecTrait Type   = IsSIMDEnabled()     ? T_ExecTrait::SIMD :
+                                                            DefaultUnroll() > 1 ? T_ExecTrait::Unrolled :
+                                                            T_ExecTrait::Classic;
     
         static constexpr std::size_t Unroll =
-            (Type == ExecutionTraitType::SIMD || Type == ExecutionTraitType::UnrolledMeta)
-                ? Config::DefaultUnrollFactor()
+            (Type == T_ExecTrait::SIMD || Type == T_ExecTrait::Unrolled)
+                ? Config::DefaultUnroll()
                 : 1;        // Classic path → no unrolling
     
-        static constexpr SIMDType SIMDArch =
-            (Type == ExecutionTraitType::SIMD)
+        static constexpr T_SIMD SIMDArch =
+            (Type == T_ExecTrait::SIMD)
                 ? Config::DefaultSIMDType()
-                : SIMDType::None;
+                : T_SIMD::None;
     
-        static constexpr SIMDStoreType StorePolicy =
-            (Type == ExecutionTraitType::SIMD)
-                ? Config::DefaultSIMDStoreType()
-                : SIMDStoreType::Streamed;
+        static constexpr T_SIMDStore StorePolicy =
+            (Type == T_ExecTrait::SIMD)
+                ? Config::DefaultSIMDStore()
+                : T_SIMDStore::Streamed;
+
+        static constexpr bool UseSTD = true;
     
         /*--- safeguard: catch mis-builds where SIMD is claimed but none set ---*/
-        static_assert(!(Type == ExecutionTraitType::SIMD && SIMDArch == SIMDType::None),
+        static_assert(!(Type == T_ExecTrait::SIMD && SIMDArch == T_SIMD::None),
                     "STALKER_SIMD_ENABLE is ON but no SIMD instruction set is active!");
     };
 

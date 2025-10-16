@@ -1,7 +1,7 @@
 //
 // Created by hal9000 on 4/28/24.
 //
-
+#pragma once
 namespace Stalker::Core {
     enum class TimeUnit {
         nanoseconds,

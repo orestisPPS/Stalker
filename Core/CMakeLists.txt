@@ -87,6 +87,18 @@ else()
     # Choose instruction set (user-overridable, default auto)
     set(STALKER_SIMD_INSTRUCTION_SET "auto" CACHE STRING "SIMD instruction set: avx2, avx512, auto, esp-dsp, none")
 
+    # if(HAS_AVX512F)
+    #     option(STALKER_SIMD_SUPPORT_AVX512 "Support AVX512" ON)
+    # else()
+    #     option(STALKER_SIMD_SUPPORT_AVX512 "Support AVX512" OFF)
+    # endif()
+
+    # if(HAS_AVX2)
+    #     option(STALKER_SIMD_SUPPORT_AVX2 "Support AVX2" ON)
+    # else()
+    #     option(STALKER_SIMD_SUPPORT_AVX2 "Support AVX2" OFF)
+    # endif()
+
     set(_simd_ok 0)
     if(STALKER_SIMD_INSTRUCTION_SET STREQUAL "avx512")
         if(HAS_AVX512F)
@@ -174,6 +186,32 @@ endif()
 ################################################################################
 # THREADING CONFIGURATION
 ################################################################################
+
+# Check for available threading backends
+find_package(Threads QUIET)
+if(Threads_FOUND)
+    option(STALKER_THREADING_SUPPORT_PTHREAD "Support pthreads for multithreading" ON)
+else()
+    option(STALKER_THREADING_SUPPORT_PTHREAD "Support pthreads for multithreading" OFF)
+    message(WARNING "Pthreads not found. Disabling STALKER_THREADING_SUPPORT_PTHREAD.")
+endif()
+
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles("
+#include <thread>
+void func() {}
+int main() {
+    std::thread t(func);
+    t.join();
+    return 0;
+}
+" _stalker_has_stdthread)
+
+if(_stalker_has_stdthread)
+    option(STALKER_THREADING_SUPPORT_STDTHREAD "Support std::thread for multithreading" ON)
+else()
+    option(STALKER_THREADING_SUPPORT_STDTHREAD "Support std::thread for multithreading" OFF)
+endif()
 
 option(STALKER_THREADING_ENABLE "Enable multithreading support" ON)
 option(STALKER_THREADING_ENABLE_MAX_THREADS "Enable maximum machine threads" OFF)
@@ -317,7 +355,6 @@ target_compile_definitions(StalkerCore INTERFACE
     STALKER_SIMD_ENABLE=$<BOOL:${STALKER_SIMD_ENABLE}>
     STALKER_UNROLL_ENABLE=$<BOOL:${STALKER_UNROLL_ENABLE}>
     STALKER_UNROLL_FACTOR=${STALKER_UNROLL_FACTOR}
-    IS_POSIX=$<BOOL:${IS_POSIX}>
     STALKER_THREADING_ENABLE=$<BOOL:${STALKER_THREADING_ENABLE}>
     STALKER_THREADING_NUM_THREADS=${STALKER_THREADING_NUM_THREADS}
     STALKER_THREADING_ENABLE_PTHREAD=$<BOOL:${STALKER_THREADING_ENABLE_PTHREAD}>
@@ -337,7 +374,7 @@ if(STALKER_SIMD_ENABLE)
     elseif(STALKER_SIMD_INSTRUCTION_SET STREQUAL "avx512")
         target_compile_definitions(StalkerCore INTERFACE STALKER_SIMD_INSTRUCTION_SET_AVX512)
         target_compile_options(StalkerCore INTERFACE
-            $<$<CXX_COMPILER_ID:GNU,Clang>:-mavx512f -mavx512bw -mfma>
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-mavx512f -mavx512dq -mavx512bw -mfma>
             $<$<CXX_COMPILER_ID:MSVC>:/arch:AVX512>
         )
     elseif(STALKER_SIMD_INSTRUCTION_SET STREQUAL "esp-dsp")
@@ -419,7 +456,6 @@ message(STATUS "STALKER_SIMD_ENABLE: ${STALKER_SIMD_ENABLE}")
 message(STATUS "STALKER_SIMD_INSTRUCTION_SET: ${STALKER_SIMD_INSTRUCTION_SET}")
 message(STATUS "STALKER_UNROLL_ENABLE: ${STALKER_UNROLL_ENABLE}")
 message(STATUS "STALKER_UNROLL_FACTOR: ${STALKER_UNROLL_FACTOR}")
-message(STATUS "IS_POSIX: ${IS_POSIX}")
 message(STATUS "STALKER_THREADING_ENABLE: ${STALKER_THREADING_ENABLE}")
 message(STATUS "STALKER_THREADING_NUM_THREADS: ${STALKER_THREADING_NUM_THREADS}")
 message(STATUS "STALKER_THREADING_ENABLE_PTHREAD: ${STALKER_THREADING_ENABLE_PTHREAD}")
