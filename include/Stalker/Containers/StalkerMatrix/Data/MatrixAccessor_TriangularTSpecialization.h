@@ -5,14 +5,14 @@
 #include "../Buffers/MatrixPtrBuffer.h"
 
 template <typename T>
-class MatrixAccessor<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor>
-    : public MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor>, T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor> {
+class MatrixAccessor<T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::RowMajor>
+    : public MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::RowMajor>, T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::RowMajor> {
 
-    using Base = MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor>, T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor>;
-    using RowBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Row>;
-    using ConstRowBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Row>;
-    using ColumnBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Column>;
-    using ConstColumnBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Column>;
+    using Base = MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::RowMajor>, T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::RowMajor>;
+    using RowBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::RowMajor, RegionType::Row>;
+    using ConstRowBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::RowMajor, RegionType::Row>;
+    using ColumnBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::RowMajor, RegionType::Column>;
+    using ConstColumnBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::RowMajor, RegionType::Column>;
 
 public:
 
@@ -55,14 +55,14 @@ protected:
 };
 
 template <typename T>
-class MatrixAccessor<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor>
-    : public MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor>, T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor> {
+class MatrixAccessor<T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::ColumnMajor>
+    : public MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::ColumnMajor>, T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::ColumnMajor> {
 
-    using Base = MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor>, T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor>;
-    using RowBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>;
-    using ConstRowBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>;
-    using ColumnBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Column>;
-    using ConstColumnBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Column>;
+    using Base = MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::ColumnMajor>, T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::ColumnMajor>;
+    using RowBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>;
+    using ConstRowBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>;
+    using ColumnBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::ColumnMajor, RegionType::Column>;
+    using ConstColumnBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::ColumnMajor, RegionType::Column>;
 
 public:
 
@@ -104,14 +104,14 @@ protected:
 };
 
 template <typename T>
-class MatrixAccessor<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor>
-    : public MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor>, T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor> {
+class MatrixAccessor<T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::RowMajor>
+    : public MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::RowMajor>, T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::RowMajor> {
 
-    using Base = MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor>, T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor>;
-    using RowBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Row>;
-    using ConstRowBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Row>;
-    using ColumnBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Column>;
-    using ConstColumnBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Column>;
+    using Base = MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::RowMajor>, T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::RowMajor>;
+    using RowBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::RowMajor, RegionType::Row>;
+    using ConstRowBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::RowMajor, RegionType::Row>;
+    using ColumnBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::RowMajor, RegionType::Column>;
+    using ConstColumnBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::RowMajor, RegionType::Column>;
 
 public:
 
@@ -154,14 +154,14 @@ protected:
 };
 
 template <typename T>
-class MatrixAccessor<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor>
-    : public MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor>, T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor> {
+class MatrixAccessor<T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::ColumnMajor>
+    : public MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::ColumnMajor>, T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::ColumnMajor> {
 
-    using Base = MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor>, T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor>;
-    using RowBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>;
-    using ConstRowBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>;
-    using ColumnBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Column>;
-    using ConstColumnBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Column>;
+    using Base = MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::ColumnMajor>, T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::ColumnMajor>;
+    using RowBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>;
+    using ConstRowBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>;
+    using ColumnBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::ColumnMajor, RegionType::Column>;
+    using ConstColumnBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::ColumnMajor, RegionType::Column>;
 
 public:
 

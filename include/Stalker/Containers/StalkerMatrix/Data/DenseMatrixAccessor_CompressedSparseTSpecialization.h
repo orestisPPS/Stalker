@@ -3,15 +3,15 @@
 
 #include "MatrixAccessor_FullTSpecialization.h"
 
-template <typename T, FormType FormT>
+template <typename T, T_Form FormT>
 class MatrixAccessor<T, StorageLayout::CompressedSparse, FormT, OrderType::RowMajor>
     : public MatrixAccessorBase<MatrixAccessor<T, StorageLayout::CompressedSparse, FormT, OrderType::RowMajor>, T, StorageLayout::CompressedSparse, FormT, OrderType::RowMajor> {
 
     using Base = MatrixAccessorBase<MatrixAccessor<T, StorageLayout::CompressedSparse, FormT, OrderType::RowMajor>, T, StorageLayout::CompressedSparse, FormT, OrderType::RowMajor>;
-    using RowBuffer = MatrixPtrBuffer<T, StorageLayout::CompressedSparse, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Row>;
-    using ConstRowBuffer = MatrixPtrBuffer<const T, StorageLayout::CompressedSparse, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Row>;
-    using ColumnBuffer = MatrixPtrBuffer<T, StorageLayout::CompressedSparse, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Column>;
-    using ConstColumnBuffer = MatrixPtrBuffer<const T, StorageLayout::CompressedSparse, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Column>;
+    using RowBuffer = MatrixPtrBuffer<T, StorageLayout::CompressedSparse, T_Form::UpperTriangular, OrderType::RowMajor, RegionType::Row>;
+    using ConstRowBuffer = MatrixPtrBuffer<const T, StorageLayout::CompressedSparse, T_Form::UpperTriangular, OrderType::RowMajor, RegionType::Row>;
+    using ColumnBuffer = MatrixPtrBuffer<T, StorageLayout::CompressedSparse, T_Form::UpperTriangular, OrderType::RowMajor, RegionType::Column>;
+    using ConstColumnBuffer = MatrixPtrBuffer<const T, StorageLayout::CompressedSparse, T_Form::UpperTriangular, OrderType::RowMajor, RegionType::Column>;
 
 public:
 

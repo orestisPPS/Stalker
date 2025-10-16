@@ -1,8 +1,9 @@
-#ifndef LINEAR_STRIDE_ITERATOR_H
-#define LINEAR_STRIDE_ITERATOR_H
+#pragma once
 
-#include "DynamicStrideIteratorBase.h"
+#include <Stalker/Containers/Iterators/DynamicStrideIteratorBase.h>
 
+
+namespace Stalker::Containers::Iterators {
 template <typename T, bool Ascending>
 class LinearStrideIterator : public DynamicStrideIteratorBase<LinearStrideIterator<T, Ascending>, T> {
     using Base = DynamicStrideIteratorBase<LinearStrideIterator<T, Ascending>, T>;
@@ -24,4 +25,4 @@ protected:
     }
 };
 
-#endif // LINEAR_STRIDE_ITERATOR_H
+} // namespace Stalker::Containers::Iterators

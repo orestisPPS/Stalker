@@ -1,8 +1,9 @@
-#ifndef STRIDE_ITERATOR_BASE_H
-#define STRIDE_ITERATOR_BASE_H
+#pragma once
 
 #include <iterator>
 #include <cstddef> // For std::ptrdiff_t
+
+namespace Stalker::Containers::Iterators {
 
 /**
  * @brief Base class for CRTP-based memory iterators.
@@ -173,4 +174,4 @@ public:
 
 
 
-#endif  // STRIDE_ITERATOR_BASE_H
+} // namespace Stalker::Containers::Iterators

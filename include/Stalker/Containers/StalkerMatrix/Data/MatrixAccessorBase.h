@@ -8,12 +8,12 @@
 // =============================
 // Base MatrixDataBase Class
 // =============================
-template <typename Derived, typename T, StorageLayout Layout, FormType Form, OrderType Order>
+template <typename Derived, typename T, StorageLayout Layout, T_Form Form, OrderType Order>
 class MatrixAccessorBase {
 public:
     MatrixAccessorBase(size_t rows, size_t cols) : _rows(rows), _cols(cols) {}
 
-    static constexpr FormType FormT = Form;   
+    static constexpr T_Form FormT = Form;   
     static constexpr OrderType OrderT = Order;
     inline size_t getNumRows() const { return _rows; }
     inline size_t getNumCols() const { return _cols; }

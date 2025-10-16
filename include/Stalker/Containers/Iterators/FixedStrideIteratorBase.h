@@ -1,7 +1,6 @@
-#ifndef FIXED_STRIDE_ITERATOR_BASE_H
-#define FIXED_STRIDE_ITERATOR_BASE_H
+#pragma once
 
-#include "StrideIteratorBase.h"
+#include <Stalker/Containers/Iterators/StrideIteratorBase.h>
 
 template <typename Derived, typename T>
 class FixedStrideIteratorBase : public StrideIteratorBase<Derived, T> {
@@ -26,18 +25,3 @@ private:
     inline Derived& child() { return *static_cast<Derived*>(this); }
     inline const Derived& child() const { return *static_cast<const Derived*>(this); }
 };
-
-
-template <typename T>
-class FixedStrideIterator : public FixedStrideIteratorBase<FixedStrideIterator<T>, T> {
-    using Base = FixedStrideIteratorBase<FixedStrideIterator<T>, T>;
-
-public:
-    FixedStrideIterator(T* startPtr, std::ptrdiff_t stride) : Base(startPtr, stride) {}
-    
-protected:
-    friend Base;
-    inline constexpr std::ptrdiff_t _stride() const { return Base::_stride; }
-};
-
-#endif // FIXED_STRIDE_ITERATOR_BASE_H

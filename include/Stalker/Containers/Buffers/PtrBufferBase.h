@@ -1,12 +1,9 @@
-#ifndef PTR_BUFFER_BASE_H
-#define PTR_BUFFER_BASE_H
+#pragma once
 
 #include <cstddef>
 #include <vector>
 #include <cstring>
-#include "../../Utility/Checkers.h"
-#include "../../GlobalDefinitions.h"
-
+#include <Stalker/Utility/Checkers.h>
 /**
  * @class PtrBufferBase
  * @brief Pure virtual base class for managing buffers with customizable stride.
@@ -21,6 +18,8 @@
  * @note This class is intended to be used as a base for buffer types that require custom
  * iteration and access patterns for contiguous and non-contiguous memory blocks.
  */
+namespace Stalker::Containers::Buffers {
+
 template <typename T, typename ChildPtrBuffer>
 class PtrBufferBase {
 public:
@@ -145,4 +144,4 @@ protected:
     inline const ChildPtrBuffer& child() const { return static_cast<const ChildPtrBuffer&>(*this); }
 };
 
-#endif // PTR_BUFFER_BASE_H
+} // namespace Stalker::Containers::Buffers

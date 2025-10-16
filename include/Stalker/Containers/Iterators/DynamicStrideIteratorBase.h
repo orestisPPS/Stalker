@@ -1,7 +1,7 @@
 #ifndef DYNAMIC_STRIDE_ITERATOR_BASE_H
 #define DYNAMIC_STRIDE_ITERATOR_BASE_H
 
-#include "StrideIteratorBase.h"
+#include <Stalker/Containers/Iterators/StrideIteratorBase.h>
 /**
  * @brief Iterator for traversing blocks with dynamic stride.
  *

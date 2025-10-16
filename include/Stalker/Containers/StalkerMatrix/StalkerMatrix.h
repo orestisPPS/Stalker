@@ -7,7 +7,7 @@
 #include "Data/MatrixAccessor_TriangularTSpecialization.h"
 // #include "Data/MatrixAccessor_COOTSpecialization.h"
     
-template<typename T, StorageLayout Layout = StorageLayout::Dense, FormType FormT = FormType::Full, OrderType OrderT = OrderType::RowMajor>       
+template<typename T, StorageLayout Layout = StorageLayout::Dense, T_Form FormT = T_Form::Full, OrderType OrderT = OrderType::RowMajor>       
 class StalkerMatrix {
    
 public:

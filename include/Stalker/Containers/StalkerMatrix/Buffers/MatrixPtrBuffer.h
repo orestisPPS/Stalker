@@ -7,7 +7,7 @@
 #include "../../Iterators/IndexDependentStrideIterator.h"
 #include "../MatrixTypes.h"
 
-template <typename T, StorageLayout Layout, FormType FormT, OrderType OrderT, RegionType RegionT>
+template <typename T, StorageLayout Layout, T_Form FormT, OrderType OrderT, RegionType RegionT>
 class MatrixPtrBuffer : public PtrBufferBase<T, MatrixPtrBuffer<T, Layout, FormT, OrderT, RegionT>> {
     using Base = PtrBufferBase<T, MatrixPtrBuffer<T, Layout, FormT, OrderT, RegionT>>;
     using Iterator = FixedStrideIterator<T>;
@@ -45,9 +45,9 @@ protected:
 };
 
 template <typename T>
-class MatrixPtrBuffer<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Column>
-    : public PtrBufferBase<T, MatrixPtrBuffer<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Column>> {
-    using Base = PtrBufferBase<T, MatrixPtrBuffer<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor, RegionType::Column>>;
+class MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::RowMajor, RegionType::Column>
+    : public PtrBufferBase<T, MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::RowMajor, RegionType::Column>> {
+    using Base = PtrBufferBase<T, MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::RowMajor, RegionType::Column>>;
     using Iterator = LinearStrideIterator<T, false>;
     using ConstIterator = LinearStrideIterator<const T, false>;
 
@@ -86,9 +86,9 @@ protected:
 };
 
 template <typename T>
-class MatrixPtrBuffer<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>
-    : public PtrBufferBase<T, MatrixPtrBuffer<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>> {
-    using Base = PtrBufferBase<T, MatrixPtrBuffer<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>>;
+class MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>
+    : public PtrBufferBase<T, MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>> {
+    using Base = PtrBufferBase<T, MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::ColumnMajor, RegionType::Row>>;
     using Iterator = LinearStrideIterator<T, true>;
     using ConstIterator = LinearStrideIterator<const T, true>;
 
@@ -130,10 +130,10 @@ protected:
 };
 
 template <typename T>
-class MatrixPtrBuffer<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Column>
-  : public PtrBufferBase<T, MatrixPtrBuffer<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Column>>
+class MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::RowMajor, RegionType::Column>
+  : public PtrBufferBase<T, MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::RowMajor, RegionType::Column>>
 {
-    using Base = PtrBufferBase<T, MatrixPtrBuffer<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor, RegionType::Column>>;
+    using Base = PtrBufferBase<T, MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::RowMajor, RegionType::Column>>;
     using Iterator = IndexDependentStrideIterator<T, true>;
     using ConstIterator = IndexDependentStrideIterator<const T, true>;
 
@@ -181,10 +181,10 @@ protected:
 
 
 template <typename T>
-class MatrixPtrBuffer<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>
-    : public PtrBufferBase<T, MatrixPtrBuffer<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>>
+class MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>
+    : public PtrBufferBase<T, MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>>
 {
-    using Base = PtrBufferBase<T, MatrixPtrBuffer<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>>;
+    using Base = PtrBufferBase<T, MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::ColumnMajor, RegionType::Row>>;
     using Iterator = LinearStrideIterator<T, false>;
     using ConstIterator = LinearStrideIterator<const T, false>;
 

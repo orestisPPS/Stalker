@@ -3,7 +3,7 @@
 #include "DenseMatrixAccessor_FullTSpecialization.h"
 #include <unordered_map>
 
-template <typename T, FormType FormT, OrderType OrderT>
+template <typename T, T_Form FormT, OrderType OrderT>
 class MatrixAccessor<T, StorageLayout::COO, FormT, OrderT> : public MatrixAccessorBase<MatrixAccessor<T, StorageLayout::COO, FormT, OrderT>, T, StorageLayout::COO, FormT, OrderT> {
     
     using Base = MatrixAccessorBase<MatrixAccessor<T, StorageLayout::COO, FormT, OrderT>, T, StorageLayout::COO, FormT, OrderT>;

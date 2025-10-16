@@ -1,5 +1,8 @@
-#ifndef INDEX_DEPENDENT_STRIDE_ITERATOR_H
-#define INDEX_DEPENDENT_STRIDE_ITERATOR_H
+#pragma once
+
+#include <Stalker/Containers/Iterators/DynamicStrideIteratorBase.h>
+
+namespace Stalker::Containers::Iterators {
 
 template <typename T, bool Ascending = true>
 class IndexDependentStrideIterator
@@ -31,4 +34,4 @@ protected:
     }
 };
 
-#endif // INDEX_DEPENDENT_STRIDE_ITERATOR_H
+} // namespace Stalker::Containers::Iterators

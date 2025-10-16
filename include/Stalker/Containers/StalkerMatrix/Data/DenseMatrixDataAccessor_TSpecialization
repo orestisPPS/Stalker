@@ -3,20 +3,20 @@
 #include "MatrixData.h"
 
 
-template <typename T, FormType FormT, OrderType OrderT>
+template <typename T, T_Form FormT, OrderType OrderT>
 class MatrixAccessor
     : public MatrixAccessorBase<MatrixAccessor<T, FormT, OrderT>, T, FormT, OrderT> {
 public:
     MatrixAccessor(size_t rows, size_t cols)
-        : MatrixAccessorBase<MatrixAccessor, T, FormType::Symmetric, OrderT>(rows, cols),
+        : MatrixAccessorBase<MatrixAccessor, T, T_Form::Symmetric, OrderT>(rows, cols),
           values(rows * (rows + 1) / 2) {}
 
     MatrixAccessor(size_t rows, size_t cols, const T& value)
-        : MatrixAccessorBase<MatrixAccessor, T, FormType::Symmetric, OrderT>(rows, cols),
+        : MatrixAccessorBase<MatrixAccessor, T, T_Form::Symmetric, OrderT>(rows, cols),
           values(rows * (rows + 1) / 2, value) {}
 
     MatrixAccessor(size_t rows, size_t cols, const T* values, size_t numValues)
-        : MatrixAccessorBase<MatrixAccessor, T, FormType::Symmetric, OrderT>(rows, cols) {
+        : MatrixAccessorBase<MatrixAccessor, T, T_Form::Symmetric, OrderT>(rows, cols) {
             if (numValues != rows * (rows + 1) / 2)
                 throw std::invalid_argument("Invalid number of values for symmetric matrix.");
             this->values = std::vector<T>(values, values + numValues);
@@ -25,7 +25,7 @@ public:
     std::vector<T> values; ///< Flat array for symmetric matrix data
 
 protected:
-    friend class MatrixAccessorBase<MatrixAccessor<T, FormType::Symmetric, OrderT>, T, FormType::Symmetric, OrderT>;
+    friend class MatrixAccessorBase<MatrixAccessor<T, T_Form::Symmetric, OrderT>, T, T_Form::Symmetric, OrderT>;
     inline T& _element(size_t i, size_t j) {
         if (i > j) std::swap(i, j);
         if constexpr (OrderT == OrderType::RowMajor)

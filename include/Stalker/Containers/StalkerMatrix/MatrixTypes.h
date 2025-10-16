@@ -28,7 +28,7 @@ enum class StorageLayout {
 };
 
 /**
- * @enum FormType
+ * @enum T_Form
  * @brief Specifies the form or structure of a matrix.
  * 
  * This enumeration defines the structural form of a matrix.
@@ -39,7 +39,7 @@ enum class StorageLayout {
  * - Diagonal: Diagonal matrix with non-zero elements only on the diagonal.
  * - None: No specific form.
  */
-enum class FormType {
+enum class T_Form {
     Full,
     Symmetric,          ///< Symmetric matrix.
     UpperTriangular,    ///< Upper triangular matrix.

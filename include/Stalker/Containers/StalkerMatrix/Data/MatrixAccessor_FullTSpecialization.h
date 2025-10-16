@@ -5,7 +5,7 @@
 //=================================================================================================
 // ======================== Full Dense Row Major Matrix Template Specialization ===================
 //=================================================================================================
-template <typename T, StorageLayout Layout, FormType FormT, OrderType OrderT>
+template <typename T, StorageLayout Layout, T_Form FormT, OrderType OrderT>
 class MatrixAccessor : public MatrixAccessorBase<MatrixAccessor<T, Layout, FormT, OrderT>, T, Layout, FormT, OrderT> {
 
 using Base = MatrixAccessorBase<MatrixAccessor<T, Layout, FormT, OrderT>, T, Layout, FormT, OrderT>;
@@ -54,14 +54,14 @@ protected:
 // ======================== Full Dense Col Major Matrix Template Specialization ===================
 //=================================================================================================
 template <typename T>
-class MatrixAccessor<T, StorageLayout::Dense, FormType::Full, OrderType::ColumnMajor>
-    : public MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, FormType::Full, OrderType::ColumnMajor>, T, StorageLayout::Dense, FormType::Full, OrderType::ColumnMajor> {
+class MatrixAccessor<T, StorageLayout::Dense, T_Form::Full, OrderType::ColumnMajor>
+    : public MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, T_Form::Full, OrderType::ColumnMajor>, T, StorageLayout::Dense, T_Form::Full, OrderType::ColumnMajor> {
     
-    using Base = MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, FormType::Full, OrderType::ColumnMajor>, T, StorageLayout::Dense, FormType::Full, OrderType::ColumnMajor>;
-    using RowBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, FormType::Full, OrderType::ColumnMajor, RegionType::Row>;
-    using ConstRowBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, FormType::Full, OrderType::ColumnMajor, RegionType::Row>;
-    using ColumnBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, FormType::Full, OrderType::ColumnMajor, RegionType::Column>;
-    using ConstColumnBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, FormType::Full, OrderType::ColumnMajor, RegionType::Column>;
+    using Base = MatrixAccessorBase<MatrixAccessor<T, StorageLayout::Dense, T_Form::Full, OrderType::ColumnMajor>, T, StorageLayout::Dense, T_Form::Full, OrderType::ColumnMajor>;
+    using RowBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::Full, OrderType::ColumnMajor, RegionType::Row>;
+    using ConstRowBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, T_Form::Full, OrderType::ColumnMajor, RegionType::Row>;
+    using ColumnBuffer = MatrixPtrBuffer<T, StorageLayout::Dense, T_Form::Full, OrderType::ColumnMajor, RegionType::Column>;
+    using ConstColumnBuffer = MatrixPtrBuffer<const T, StorageLayout::Dense, T_Form::Full, OrderType::ColumnMajor, RegionType::Column>;
 
 public:
 
