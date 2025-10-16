@@ -1,7 +1,7 @@
 #ifndef NUMERICALINTEGRATIONMETHODS_H
 #define NUMERICALINTEGRATIONMETHODS_H
 
-#include "../MetaMath.h"
+#include <Stalker/Mathematics/Operations/MathOperationsMeta.h>
 #include <numeric>
 
 namespace Stalker::Mathematics {
@@ -109,7 +109,7 @@ struct IntegrationMethod<IntegrationType::Simpson2, T> {
         else if constexpr (Size == 3)
             return 3.0 / 8.0 * h * (f_x[0] + 3 * f_x[1] + f_x[2]);
         else
-            return 3.0 / 8.0 * h * (f_x[0] + 3 * sum<1, Size - 2>(f_x) + f_x[Size - 1]) ;
+            return 3.0 / 8.0 * h * (f_x[0] + 3 * MathOperationsMeta::sum<T, Size - 2>(Size - 2, f_x) + f_x[Size - 1]) ;
     }
 };
 

@@ -5,7 +5,7 @@ namespace Stalker::Mathematics::Differentiation {
 
 using DerivativeOrder = unsigned int;
 
-template <DerivativeOrder Order, SchemeType Scheme, ErrorOrder Error>
+template <DerivativeOrder Order, T_Scheme Scheme, ErrorOrder Error>
 class Derivative {
 
 public:
