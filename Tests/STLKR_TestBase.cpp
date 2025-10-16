@@ -10,7 +10,7 @@ namespace STLKR_Tests {
         auto fullPath = std::filesystem::absolute(std::filesystem::path(__FILE__));
         auto basePath = fullPath.parent_path().parent_path() / "Tests";
         setPath("Tests", basePath.string());
-        TestUtility::printTestTitle(_testName, "=", ColourType::BRIGHT_WHITE);
+        TestUtility::printTestTitle(_testName, "=", T_Color::BRIGHT_WHITE);
     }
 
     void STLKR_TestBase::runTest(unsigned int iterations) {

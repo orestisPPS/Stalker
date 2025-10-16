@@ -51,14 +51,14 @@ namespace STLKR_Tests {
         std::vector<T> _lowerTriangularRowMajorValues;
         std::vector<T> _lowerTriangularColumnMajorValues;
 
-        StalkerMatrix<T, StorageLayout::Dense, FormType::Full,            OrderType::RowMajor   > _nonSymmetricRowMajor;
-        StalkerMatrix<T, StorageLayout::Dense, FormType::Full,            OrderType::ColumnMajor> _nonSymmetricColumnMajor;
-        StalkerMatrix<T, StorageLayout::Dense, FormType::Symmetric,       OrderType::RowMajor   > _symmetricRowMajor;
-        StalkerMatrix<T, StorageLayout::Dense, FormType::Symmetric,       OrderType::ColumnMajor> _symmetricColumnMajor;
-        StalkerMatrix<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::RowMajor   > _upperTriangularRowMajor;
-        StalkerMatrix<T, StorageLayout::Dense, FormType::UpperTriangular, OrderType::ColumnMajor> _upperTriangularColumnMajor;
-        StalkerMatrix<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::RowMajor   > _lowerTriangularRowMajor;
-        StalkerMatrix<T, StorageLayout::Dense, FormType::LowerTriangular, OrderType::ColumnMajor> _lowerTriangularColumnMajor;
+        StalkerMatrix<T, StorageLayout::Dense, T_Form::Full,            OrderType::RowMajor   > _nonSymmetricRowMajor;
+        StalkerMatrix<T, StorageLayout::Dense, T_Form::Full,            OrderType::ColumnMajor> _nonSymmetricColumnMajor;
+        StalkerMatrix<T, StorageLayout::Dense, T_Form::Symmetric,       OrderType::RowMajor   > _symmetricRowMajor;
+        StalkerMatrix<T, StorageLayout::Dense, T_Form::Symmetric,       OrderType::ColumnMajor> _symmetricColumnMajor;
+        StalkerMatrix<T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::RowMajor   > _upperTriangularRowMajor;
+        StalkerMatrix<T, StorageLayout::Dense, T_Form::UpperTriangular, OrderType::ColumnMajor> _upperTriangularColumnMajor;
+        StalkerMatrix<T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::RowMajor   > _lowerTriangularRowMajor;
+        StalkerMatrix<T, StorageLayout::Dense, T_Form::LowerTriangular, OrderType::ColumnMajor> _lowerTriangularColumnMajor;
 
         std::vector<std::vector<T>> _nonSymmetricExpectedRows = {
             {0, 1, 2, 3},
@@ -103,13 +103,13 @@ namespace STLKR_Tests {
         };
 
 
-        template <FormType form, OrderType order>
+        template <T_Form form, OrderType order>
         void _testAccessor(std::string name, StalkerMatrix<T, StorageLayout::Dense, form, order>& matrix, const std::vector<T>& values,
                            const std::vector<std::vector<T>>& expectedRows, const std::vector<std::vector<T>>& expectedColumns) {
 
-            Printers::printTitle(name, "-", ColourType::WHITE);
+            Printers::printTitle(name, "-", T_Color::WHITE);
 
-            Printers::printSubtitle("Size", ColourType::PATSIOURA_RED);
+            Printers::printSubtitle("Size", T_Color::PATSIOURA_RED);
             {
                 // Rows size
                 std::vector<size_t> computedRowSizes(matrix.getNumRows());
@@ -130,7 +130,7 @@ namespace STLKR_Tests {
                 TestUtility::printComparisonTable(computedColSizes, expectedColSizes, "Columns", false);
             }
 
-            Printers::printSubtitle("Iterator Based Values", ColourType::PATSIOURA_RED);
+            Printers::printSubtitle("Iterator Based Values", T_Color::PATSIOURA_RED);
             {
                 // Rows (iterator)
                 for (size_t i = 0; i < matrix.getNumRows(); ++i) {
@@ -144,7 +144,7 @@ namespace STLKR_Tests {
                 }
             }
 
-            Printers::printSubtitle("Const Iterator Based Values", ColourType::PATSIOURA_RED);
+            Printers::printSubtitle("Const Iterator Based Values", T_Color::PATSIOURA_RED);
             {
                 // Rows (const iterator)
                 for (size_t i = 0; i < matrix.getNumRows(); ++i) {
@@ -158,7 +158,7 @@ namespace STLKR_Tests {
                 }
             }
 
-            Printers::printSubtitle("Index Based Values", ColourType::PATSIOURA_RED);
+            Printers::printSubtitle("Index Based Values", T_Color::PATSIOURA_RED);
             {
                 // Rows (index-based)
                 for (size_t i = 0; i < matrix.getNumRows(); ++i) {

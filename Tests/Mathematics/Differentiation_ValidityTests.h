@@ -18,50 +18,50 @@ namespace STLKR_Tests {
               
         void runTest() override {
             //Central
-            printTitle("1st Derivative", "-", ColourType::WHITE);
+            printTitle("1st Derivative", "-", T_Color::WHITE);
 
-            printSubtitle("Central Finite Difference Scheme", ColourType::PATSIOURA_RED);
-            _testPolynomials<1, SchemeType::Central, ErrorOrder::O_2>();
-            _testPolynomials<1, SchemeType::Central, ErrorOrder::O_4>();
-            _testPolynomials<1, SchemeType::Central, ErrorOrder::O_6>();
+            printSubtitle("Central Finite Difference Scheme", T_Color::PATSIOURA_RED);
+            _testPolynomials<1, T_Scheme::Central, ErrorOrder::O_2>();
+            _testPolynomials<1, T_Scheme::Central, ErrorOrder::O_4>();
+            _testPolynomials<1, T_Scheme::Central, ErrorOrder::O_6>();
             //Forward-
-            printSubtitle("Forward Finite Difference Scheme", ColourType::PATSIOURA_RED);
-            _testPolynomials<1, SchemeType::Forward, ErrorOrder::O_1>();
-            _testPolynomials<1, SchemeType::Forward, ErrorOrder::O_2>();
-            _testPolynomials<1, SchemeType::Forward, ErrorOrder::O_3>();
-            _testPolynomials<1, SchemeType::Forward, ErrorOrder::O_4>();
-            _testPolynomials<1, SchemeType::Forward, ErrorOrder::O_5>();
+            printSubtitle("Forward Finite Difference Scheme", T_Color::PATSIOURA_RED);
+            _testPolynomials<1, T_Scheme::Forward, ErrorOrder::O_1>();
+            _testPolynomials<1, T_Scheme::Forward, ErrorOrder::O_2>();
+            _testPolynomials<1, T_Scheme::Forward, ErrorOrder::O_3>();
+            _testPolynomials<1, T_Scheme::Forward, ErrorOrder::O_4>();
+            _testPolynomials<1, T_Scheme::Forward, ErrorOrder::O_5>();
             //Backward
-            printSubtitle("Backward Finite Difference Scheme", ColourType::PATSIOURA_RED);
-            _testPolynomials<1, SchemeType::Backward, ErrorOrder::O_1>();
-            _testPolynomials<1, SchemeType::Backward, ErrorOrder::O_2>();
-            _testPolynomials<1, SchemeType::Backward, ErrorOrder::O_3>();
-            _testPolynomials<1, SchemeType::Backward, ErrorOrder::O_4>();
-            _testPolynomials<1, SchemeType::Backward, ErrorOrder::O_5>();
+            printSubtitle("Backward Finite Difference Scheme", T_Color::PATSIOURA_RED);
+            _testPolynomials<1, T_Scheme::Backward, ErrorOrder::O_1>();
+            _testPolynomials<1, T_Scheme::Backward, ErrorOrder::O_2>();
+            _testPolynomials<1, T_Scheme::Backward, ErrorOrder::O_3>();
+            _testPolynomials<1, T_Scheme::Backward, ErrorOrder::O_4>();
+            _testPolynomials<1, T_Scheme::Backward, ErrorOrder::O_5>();
 
-            printTitle("2nd Derivative", "-", ColourType::WHITE);
+            printTitle("2nd Derivative", "-", T_Color::WHITE);
             
-            printSubtitle("Central Finite Difference Scheme", ColourType::PATSIOURA_RED);
-            _testPolynomials<2, SchemeType::Central, ErrorOrder::O_2>();
-            _testPolynomials<2, SchemeType::Central, ErrorOrder::O_4>();
-            _testPolynomials<2, SchemeType::Central, ErrorOrder::O_6>();
+            printSubtitle("Central Finite Difference Scheme", T_Color::PATSIOURA_RED);
+            _testPolynomials<2, T_Scheme::Central, ErrorOrder::O_2>();
+            _testPolynomials<2, T_Scheme::Central, ErrorOrder::O_4>();
+            _testPolynomials<2, T_Scheme::Central, ErrorOrder::O_6>();
             //Forward-
-            printSubtitle("Forward Finite Difference Scheme", ColourType::PATSIOURA_RED);
-            _testPolynomials<2, SchemeType::Forward, ErrorOrder::O_2>();
-            _testPolynomials<2, SchemeType::Forward, ErrorOrder::O_3>();
-            _testPolynomials<2, SchemeType::Forward, ErrorOrder::O_4>();
-            _testPolynomials<2, SchemeType::Forward, ErrorOrder::O_5>();
+            printSubtitle("Forward Finite Difference Scheme", T_Color::PATSIOURA_RED);
+            _testPolynomials<2, T_Scheme::Forward, ErrorOrder::O_2>();
+            _testPolynomials<2, T_Scheme::Forward, ErrorOrder::O_3>();
+            _testPolynomials<2, T_Scheme::Forward, ErrorOrder::O_4>();
+            _testPolynomials<2, T_Scheme::Forward, ErrorOrder::O_5>();
             //Backward
-            printSubtitle("Backward Finite Difference Scheme", ColourType::PATSIOURA_RED);
-            _testPolynomials<2, SchemeType::Backward, ErrorOrder::O_2>();
-            _testPolynomials<2, SchemeType::Backward, ErrorOrder::O_3>();
-            _testPolynomials<2, SchemeType::Backward, ErrorOrder::O_4>();
-            _testPolynomials<2, SchemeType::Backward, ErrorOrder::O_5>();
+            printSubtitle("Backward Finite Difference Scheme", T_Color::PATSIOURA_RED);
+            _testPolynomials<2, T_Scheme::Backward, ErrorOrder::O_2>();
+            _testPolynomials<2, T_Scheme::Backward, ErrorOrder::O_3>();
+            _testPolynomials<2, T_Scheme::Backward, ErrorOrder::O_4>();
+            _testPolynomials<2, T_Scheme::Backward, ErrorOrder::O_5>();
         }
 
     private:
 
-        template<size_t DerivativeOrder, SchemeType Scheme, ErrorOrder Error, bool StaticAssert = false>
+        template<size_t DerivativeOrder, T_Scheme Scheme, ErrorOrder Error, bool StaticAssert = false>
         void _testPolynomials(){
             constexpr auto x = 2.0;
             constexpr auto stepSize = 5E-1;

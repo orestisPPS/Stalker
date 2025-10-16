@@ -26,7 +26,7 @@ namespace STLKR_Tests {
         //Simpson1:     0.4508
         //Simpson2: Not Applicable
         void _testExponential() {
-            printSubtitle("Exponential Function: exp(-x)", ColourType::PATSIOURA_RED);
+            printSubtitle("Exponential Function: exp(-x)", T_Color::PATSIOURA_RED);
             constexpr size_t nPoints = 101;
             constexpr double a = 0.2;
             constexpr double b = 1.0;
@@ -59,7 +59,7 @@ namespace STLKR_Tests {
         }
 
         void _testPolynomial() {
-            printSubtitle("Polynomial Function: P(x) = 100 + 3x + 0.5x² - 3x³ + (1/12)x⁴ + 20x⁵", ColourType::PATSIOURA_RED);
+            printSubtitle("Polynomial Function: P(x) = 100 + 3x + 0.5x² - 3x³ + (1/12)x⁴ + 20x⁵", T_Color::PATSIOURA_RED);
             constexpr auto coefficients = std::array<double, 6>{100, 3, 0.5, -3, 1.0/12.0, 20};
             constexpr MetaPolynomial<double, 5> p(coefficients);
             constexpr auto expectedIntegral = p.integral(0.0, 1.0);

@@ -1,11 +1,7 @@
-#ifndef TESTUTILITY_H
-#define TESTUTILITY_H
-#include <iostream>
+#pragma once
+
 #include <vector>
 #include <filesystem>
-#include <string>
-#include <stdexcept>
-#include <cmath>
 #include <Stalker/Utility/Printers.h>
 #include <Stalker/Core/Error.h>
 
@@ -29,7 +25,7 @@ static bool compareValues(T computed, T expected, const std::string& message, bo
     bool success = (computed == expected);
     std::string printMessage;
     printSuccess ? printMessage = message + ": Computed: " + std::to_string(computed) + " Expected: " + std::to_string(expected) : printMessage = message;
-    printConditionalSuccess(success, printMessage, ColourType::WHITE);
+    printConditionalSuccess(success, printMessage, T_Color::WHITE);
     return success;
 }
 
@@ -38,7 +34,7 @@ static bool compareValues(T computed, T expected, const std::string& message, do
     bool success = (std::fabs(computed - expected) < tolerance);
 
     auto printMessage = printSuccess ? message + ": Computed: " + std::to_string(computed) + " Expected: " + std::to_string(expected) : message;
-    printConditionalSuccess(success, printMessage, ColourType::WHITE);
+    printConditionalSuccess(success, printMessage, T_Color::WHITE);
     return success;
 }
 
@@ -70,7 +66,7 @@ static bool compareDoubles(double computed, double expected, const std::string& 
                  << " Expected: " << std::setw(20) << expectedStream.str() 
                  << " AbsErr%:  " << absErrorStream.str();
     
-    printConditionalSuccess(success, printMessage.str(), ColourType::WHITE);
+    printConditionalSuccess(success, printMessage.str(), T_Color::WHITE);
 
     return success;
 }
@@ -82,7 +78,8 @@ static bool compareVectors(const T* computed, const T* expected, size_t size, co
     for (int i = 0; i < size; ++i) {
         bool success;
         if constexpr (std::is_floating_point<T>::value) {
-            success = std::fabs(computed[i] - expected[i]) < tolerance;
+            auto absDiff = std::fabs(computed[i] - expected[i]);
+            success = absDiff < tolerance;
         } else {
             success = computed[i] == expected[i];
         }
@@ -90,21 +87,21 @@ static bool compareVectors(const T* computed, const T* expected, size_t size, co
             failedIndeces.push_back(i);
         }
     }
-    printComparisonTablePtr(computed, expected, size, message);
+    printComparisonTablePtr(computed, expected, size, message, tolerance);
 
     return failedIndeces.empty();
 }
 
 template <typename T>
 static bool compareVectors(const std::vector<T>& computed, const std::vector<T>& expected, const std::string& message, double tolerance = 1e-9) {
-    return compareVectors(computed.data(), expected.data(), computed.size(), message, tolerance);
+    return compareVectors<T>(computed.data(), expected.data(), computed.size(), message, tolerance);
 }
 
 
 
 template <typename T>
 static void printComparisonTable(const std::vector<T>& computed, const std::vector<T>& expected,
-                                 const std::string& message, bool printSuccess, ColourType colour = ColourType::WHITE, int columnWidth = 10) {
+                                 const std::string& message, bool printSuccess, T_Color colour = T_Color::WHITE, int columnWidth = 10) {
     
     bool testSuccess = computed == expected;
     TestUtility::printConditionalSuccess(testSuccess, message, colour);
@@ -130,13 +127,13 @@ static void printComparisonTable(const std::vector<T>& computed, const std::vect
 
 template <typename T>
     static void printComparisonTablePtr(const T* computed, const T* expected, size_t size,  // Changed to const T*
-                                        const std::string& message, bool printSuccess = false, 
-                                        ColourType colour = ColourType::WHITE, int columnWidth = 10) {
+                                        const std::string& message, double tolerance = 10E-6, bool printSuccess = false, 
+                                        T_Color colour = T_Color::WHITE, int columnWidth = 10) {
         
         bool testSuccess = true;
         for (size_t i = 0; i < size; ++i) {
             if constexpr (std::is_floating_point<T>::value) {
-                testSuccess &= (std::fabs(computed[i] - expected[i]) < 1e-9);
+                testSuccess &= (std::fabs(computed[i] - expected[i]) < tolerance);
             } else {
                 testSuccess &= (computed[i] == expected[i]);
             }
@@ -144,23 +141,33 @@ template <typename T>
 
         TestUtility::printConditionalSuccess(testSuccess, message, colour);
 
-        if (!testSuccess || printSuccess) {
-            std::cout << std::setw(columnWidth) << "Indices: ";
-            for (std::size_t i = 0; i < size; ++i)
-                std::cout << std::setw(columnWidth) << i;
-            std::cout << std::endl;
+        // if (!testSuccess || printSuccess) {
+        //     auto original_precision = std::cout.precision();
+        //     auto original_flags = std::cout.flags();
 
-            std::cout << std::setw(columnWidth) << "Computed: ";
-            for (std::size_t i = 0; i < size; ++i)
-                std::cout << std::setw(columnWidth) << computed[i];
-            std::cout << std::endl;
+        //     if constexpr (std::is_floating_point<T>::value) {
+        //     std::cout << std::fixed << std::setprecision(6);
+        //     }
 
-            std::cout << std::setw(columnWidth) << "Expected: ";
-            for (std::size_t i = 0; i < size; ++i)  // Fixed to use size parameter
-                std::cout << std::setw(columnWidth) << expected[i];
-            std::cout << std::endl;
-            std::cout << std::string(columnWidth * (size + 1), '-') << std::endl;
-        }
+        //     std::cout << std::setw(columnWidth) << "Indices: ";
+        //     for (std::size_t i = 0; i < size; ++i)
+        //     std::cout << std::setw(columnWidth) << i;
+        //     std::cout << std::endl;
+
+        //     std::cout << std::setw(columnWidth) << "Computed: ";
+        //     for (std::size_t i = 0; i < size; ++i)
+        //     std::cout << std::setw(columnWidth) << computed[i];
+        //     std::cout << std::endl;
+
+        //     std::cout << std::setw(columnWidth) << "Expected: ";
+        //     for (std::size_t i = 0; i < size; ++i)  // Fixed to use size parameter
+        //     std::cout << std::setw(columnWidth) << expected[i];
+        //     std::cout << std::endl;
+        //     std::cout << std::string(columnWidth * (size + 1), '-') << std::endl;
+
+        //     std::cout.precision(original_precision);
+        //     std::cout.flags(original_flags);
+        // }
     }
 
 template <typename T>
@@ -173,19 +180,19 @@ static void printComparisonValues(T computed, T expected, const std::string& mes
     std::cout << std::string(columnWidth * 2, '-') << std::endl;
 }
 
-static void printPassed(const std::string& message, ColourType colour = ColourType::WHITE) {
-    printWithTitle("[PASS]", message, ColourType::GREEN, colour);
+static void printPassed(const std::string& message, T_Color colour = T_Color::WHITE) {
+    printWithTitle("[PASS]", message, T_Color::GREEN, colour);
 }
 
-static void printFail(const std::string& message, ColourType colour = ColourType::WHITE) {
-    printWithTitle("[FAIL]", message, ColourType::PATSIOURA_RED, colour);
+static void printFail(const std::string& message, T_Color colour = T_Color::WHITE) {
+    printWithTitle("[FAIL]", message, T_Color::PATSIOURA_RED, colour);
 }
 
-static void printConditionalSuccess(bool condition, const std::string& message, ColourType colour = ColourType::WHITE) {
+static void printConditionalSuccess(bool condition, const std::string& message, T_Color colour = T_Color::WHITE) {
     condition ? printPassed(message, colour) : printFail(message, colour);
 }
 
-static void printTestTitle(const std::string& title, const std::string& symbol = "=", ColourType colour = ColourType::WHITE) {
+static void printTestTitle(const std::string& title, const std::string& symbol = "=", T_Color colour = T_Color::WHITE) {
     std::cout << std::endl;
     printTitle(title, symbol, colour);
     std::cout << std::endl;
@@ -237,5 +244,3 @@ static bool mkdir(const std::string& directoryPath) {
 }; // class TestUtility
 
 } // namespace STLKR_Tests
-
-#endif // TESTUTILITY_H

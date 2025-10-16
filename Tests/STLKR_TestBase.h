@@ -8,7 +8,6 @@
 #include <array>
 #include <chrono>
 #include <cmath>
-#include <thread>
 #include <algorithm>
 #include <unordered_map>
 #include <filesystem>
@@ -34,9 +33,9 @@ namespace STLKR_Tests {
             : _testName(testName), _manager(CPU_Manager()), _logs(Logs(testName)) 
         {
             auto fullPath = std::filesystem::absolute(std::filesystem::path(__FILE__));
-            auto basePath = fullPath.parent_path().parent_path() / "Tests";
-            setPath("Tests", basePath.string());
-            TestUtility::printTestTitle(_testName, "=", ColourType::BRIGHT_WHITE);
+            auto basePath = fullPath.parent_path().parent_path();
+            setPath(testName, basePath.string());
+            TestUtility::printTestTitle(_testName, "=", T_Color::BRIGHT_WHITE);
         }
 
 

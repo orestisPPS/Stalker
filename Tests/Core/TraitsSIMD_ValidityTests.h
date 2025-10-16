@@ -20,13 +20,13 @@ namespace STLKR_Tests {
     private:
 
         static void _testAllTypeTraits(){
-            printTitle("AVX2", "-", ColourType::WHITE);
+            printTitle("AVX2", "-", T_Color::WHITE);
             _testTypeTraitAVX2<double>();
             _testTypeTraitAVX2<float>();
             _testTypeTraitAVX2<int>();
             _testTypeTraitAVX2<short>();
             _testTypeTraitAVX2<unsigned>();
-            printTitle("AVX512", "-", ColourType::WHITE);
+            printTitle("AVX512", "-", T_Color::WHITE);
             _testTypeTraitAVX512<double>();
             _testTypeTraitAVX512<float>();
             _testTypeTraitAVX512<int>();
@@ -36,18 +36,18 @@ namespace STLKR_Tests {
 
 
 
-        template<typename T, SIMDType, SIMDType SimdT>
+        template<typename T, T_SIMD, T_SIMD SimdT>
         static void _testTypeTrait(){
-            if constexpr (SimdT == SIMDType::AVX2) {
+            if constexpr (SimdT == T_SIMD::AVX2) {
             _testTypeTraitAVX2<T>();
-            } else if constexpr (SimdT == SIMDType::AVX512) {
+            } else if constexpr (SimdT == T_SIMD::AVX512) {
             _testTypeTraitAVX512<T>();
             }
         }
 
         template<typename U>
         static void _testTypeTraitAVX2() {
-            printSubtitle(TestUtility::getTypeString<U>(), ColourType::PATSIOURA_RED);
+            printSubtitle(TestUtility::getTypeString<U>(), T_Color::PATSIOURA_RED);
 
             constexpr unsigned expectedRegisterSize =
             std::is_same_v<U, double>   ? 4  :
@@ -60,20 +60,20 @@ namespace STLKR_Tests {
             constexpr unsigned expectedCacheLinesProcessed = (STALKER_UNROLL_FACTOR * expectedRegisterSize) / expectedElementsPerCacheLine;
             constexpr unsigned expectedBlockSize = expectedRegisterSize * STALKER_UNROLL_FACTOR;
 
-            TestUtility::compareValues<unsigned>(TypeTraitsSIMD<U, SIMDType::AVX2>::RegisterSize(), expectedRegisterSize, "Register Size");
-            static_assert(TypeTraitsSIMD<U, SIMDType::AVX2>::RegisterSize() == expectedRegisterSize, "Register Size is not correct");
-            TestUtility::compareValues<unsigned>(TypeTraitsSIMD<U, SIMDType::AVX2>::ElementsPerCacheLine(), expectedElementsPerCacheLine, "Elements Per Cache Line");
-            TestUtility::compareValues<unsigned>(TypeTraitsSIMD<U, SIMDType::AVX2>::CacheLinesProcessed(), expectedCacheLinesProcessed, "Cache Lines Processed");
-            TestUtility::compareValues<unsigned>(TypeTraitsSIMD<U, SIMDType::AVX2>::BlockSize(), expectedBlockSize, "Block Size");
+            TestUtility::compareValues<unsigned>(TypeTraitsSIMD<U, T_SIMD::AVX2>::RegisterSize(), expectedRegisterSize, "Register Size");
+            static_assert(TypeTraitsSIMD<U, T_SIMD::AVX2>::RegisterSize() == expectedRegisterSize, "Register Size is not correct");
+            TestUtility::compareValues<unsigned>(TypeTraitsSIMD<U, T_SIMD::AVX2>::ElementsPerCacheLine(), expectedElementsPerCacheLine, "Elements Per Cache Line");
+            TestUtility::compareValues<unsigned>(TypeTraitsSIMD<U, T_SIMD::AVX2>::CacheLinesProcessed(), expectedCacheLinesProcessed, "Cache Lines Processed");
+            TestUtility::compareValues<unsigned>(TypeTraitsSIMD<U, T_SIMD::AVX2>::BlockSize(), expectedBlockSize, "Block Size");
 
-            static_assert(TypeTraitsSIMD<U, SIMDType::AVX2>::ElementsPerCacheLine() == expectedElementsPerCacheLine, "Elements Per Cache Line is not correct");
-            static_assert(TypeTraitsSIMD<U, SIMDType::AVX2>::CacheLinesProcessed() == expectedCacheLinesProcessed, "Cache Lines Processed is not correct");
-            static_assert(TypeTraitsSIMD<U, SIMDType::AVX2>::BlockSize() == expectedBlockSize, "Block Size is not correct");
+            static_assert(TypeTraitsSIMD<U, T_SIMD::AVX2>::ElementsPerCacheLine() == expectedElementsPerCacheLine, "Elements Per Cache Line is not correct");
+            static_assert(TypeTraitsSIMD<U, T_SIMD::AVX2>::CacheLinesProcessed() == expectedCacheLinesProcessed, "Cache Lines Processed is not correct");
+            static_assert(TypeTraitsSIMD<U, T_SIMD::AVX2>::BlockSize() == expectedBlockSize, "Block Size is not correct");
         }
 
         template<typename U>
         static void _testTypeTraitAVX512() {
-            printSubtitle(TestUtility::getTypeString<U>(), ColourType::PATSIOURA_RED);
+            printSubtitle(TestUtility::getTypeString<U>(), T_Color::PATSIOURA_RED);
 
             constexpr unsigned expectedRegisterSize =
             std::is_same_v<U, double>   ? 8  :
@@ -86,15 +86,15 @@ namespace STLKR_Tests {
             constexpr unsigned expectedCacheLinesProcessed = (STALKER_UNROLL_FACTOR * expectedRegisterSize) / expectedElementsPerCacheLine;
             constexpr unsigned expectedBlockSize = expectedRegisterSize * STALKER_UNROLL_FACTOR;
 
-            TestUtility::compareValues<unsigned>(TypeTraitsSIMD<U, SIMDType::AVX512>::RegisterSize(), expectedRegisterSize, "Register Size");
-            static_assert(TypeTraitsSIMD<U, SIMDType::AVX512>::RegisterSize() == expectedRegisterSize, "Register Size is not correct");
-            TestUtility::compareValues<unsigned>(TypeTraitsSIMD<U, SIMDType::AVX512>::ElementsPerCacheLine(), expectedElementsPerCacheLine, "Elements Per Cache Line");
-            TestUtility::compareValues<unsigned>(TypeTraitsSIMD<U, SIMDType::AVX512>::CacheLinesProcessed(), expectedCacheLinesProcessed, "Cache Lines Processed");
-            TestUtility::compareValues<unsigned>(TypeTraitsSIMD<U, SIMDType::AVX512>::BlockSize(), expectedBlockSize, "Block Size");
+            TestUtility::compareValues<unsigned>(TypeTraitsSIMD<U, T_SIMD::AVX512>::RegisterSize(), expectedRegisterSize, "Register Size");
+            static_assert(TypeTraitsSIMD<U, T_SIMD::AVX512>::RegisterSize() == expectedRegisterSize, "Register Size is not correct");
+            TestUtility::compareValues<unsigned>(TypeTraitsSIMD<U, T_SIMD::AVX512>::ElementsPerCacheLine(), expectedElementsPerCacheLine, "Elements Per Cache Line");
+            TestUtility::compareValues<unsigned>(TypeTraitsSIMD<U, T_SIMD::AVX512>::CacheLinesProcessed(), expectedCacheLinesProcessed, "Cache Lines Processed");
+            TestUtility::compareValues<unsigned>(TypeTraitsSIMD<U, T_SIMD::AVX512>::BlockSize(), expectedBlockSize, "Block Size");
 
-            static_assert(TypeTraitsSIMD<U, SIMDType::AVX512>::ElementsPerCacheLine() == expectedElementsPerCacheLine, "Elements Per Cache Line is not correct");
-            static_assert(TypeTraitsSIMD<U, SIMDType::AVX512>::CacheLinesProcessed() == expectedCacheLinesProcessed, "Cache Lines Processed is not correct");
-            static_assert(TypeTraitsSIMD<U, SIMDType::AVX512>::BlockSize() == expectedBlockSize, "Block Size is not correct");
+            static_assert(TypeTraitsSIMD<U, T_SIMD::AVX512>::ElementsPerCacheLine() == expectedElementsPerCacheLine, "Elements Per Cache Line is not correct");
+            static_assert(TypeTraitsSIMD<U, T_SIMD::AVX512>::CacheLinesProcessed() == expectedCacheLinesProcessed, "Cache Lines Processed is not correct");
+            static_assert(TypeTraitsSIMD<U, T_SIMD::AVX512>::BlockSize() == expectedBlockSize, "Block Size is not correct");
         }
 
     };

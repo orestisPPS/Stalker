@@ -14,12 +14,12 @@ namespace STLKR_Tests {
             : STLKR_TestBase("Matrix Block Iterator Test") {}
 
         void runTest() override {
-            Printers::printSubtitle("Contiguous Iterator", ColourType::PATSIOURA_RED);
+            Printers::printSubtitle("Contiguous Iterator", T_Color::PATSIOURA_RED);
             _testContiguousIteratorBasic();
             _testContiguousIteratorArithmetic();
             _testContiguousIteratorComparison();
             _testContiguousIteratorRandomAccess();
-            Printers::printSubtitle("Non-Contiguous Iterator (Column in Upper Triangular Row Major Matrix)", ColourType::PATSIOURA_RED);
+            Printers::printSubtitle("Non-Contiguous Iterator (Column in Upper Triangular Row Major Matrix)", T_Color::PATSIOURA_RED);
             _testNonContiguousIterator();
         }
 
