@@ -11,6 +11,8 @@
 #include <bitset>
 #include "Thread.h"
 
+namespace Stalker::Threading {
+
 class Core{
 public:
     Core(unsigned id, std::vector<Thread*> threads) :
@@ -89,7 +91,6 @@ public:
         for (const auto &thread : availableThreads)
             thread->join();
     }
-    
 private:
     unsigned _id;
     std::vector<Thread*> _threads;
@@ -97,5 +98,7 @@ private:
     bool _isThreadAffinitySet = false;
     bool _isHyperThreaded = false;
 };
+
+} // namespace Stalker::Threading
 #endif //STALKER_CORE_H
 

@@ -18,9 +18,11 @@
 #include <unordered_map>
 #include <mutex>
 #include <algorithm>
-#include "Core.h"
-#include "Cache.h"
-#include "Readers.h"
+#include <Stalker/Threading/CPUTopology/Core.h>
+#include <Stalker/Threading/CPUTopology/Cache.h>
+#include <Stalker/Utility/Readers.h>
+
+namespace Stalker::Threading {
 
 class CPU {
 
@@ -123,7 +125,7 @@ private:
         std::string type, shared_cpus_str;
 
         // Find the online Threads
-        auto onlineThreads = Readers::parseCPUList(Readers::readStringFromFile("/sys/devices/system/cpu/online"));
+        auto onlineThreads = Utility::parseCPUList(Utility::readStringFromFile("/sys/devices/system/cpu/online"));
 
         _threads = std::vector<Thread*>(onlineThreads.size());
         _cacheLevels = std::vector<CacheLevel*>();
@@ -136,17 +138,17 @@ private:
         auto threadToCacheLevels = std::unordered_map<unsigned, CacheLevel*[4]>();
         for (unsigned iThread : onlineThreads) {
             //Read the core id of the thread
-            coreTopologyId = Readers::readIntegerFromFile(
+            coreTopologyId = Utility::readIntegerFromFile(
                     _getThreadPath(iThread) + "/topology/core_id");
-            auto threadSiblings = Readers::parseCPUList(Readers::readStringFromFile(_getThreadPath(iThread) + "/topology/thread_siblings_list"));
+            auto threadSiblings = Utility::parseCPUList(Utility::readStringFromFile(_getThreadPath(iThread) + "/topology/thread_siblings_list"));
             if (physicalCoreToThreads.find(coreTopologyId) == physicalCoreToThreads.end())
                 physicalCoreToThreads[coreTopologyId] = std::move(threadSiblings);
 
             //Read the cache levels of the thread
             for (unsigned cache_index = 0; cache_index <= 3; ++cache_index) { // Iterate over 1, 2, and 3
-                size_kb = Readers::readIntegerFromFile(_getCacheLevelPath(iThread, cache_index) + "/size");
-                shared_cpus_str = Readers::readStringFromFile(_getCacheLevelPath(iThread, cache_index) + "/shared_cpu_list");
-                auto sharedCPUs = Readers::parseCPUList(shared_cpus_str);
+                size_kb = Utility::readIntegerFromFile(_getCacheLevelPath(iThread, cache_index) + "/size");
+                shared_cpus_str = Utility::readStringFromFile(_getCacheLevelPath(iThread, cache_index) + "/shared_cpu_list");
+                auto sharedCPUs = Utility::parseCPUList(shared_cpus_str);
                 if (cacheMap.find(cache_index) == cacheMap.end())
                     cacheMap[cache_index] = std::map<std::vector<unsigned>, CacheLevel*>();
                 if (cacheMap[cache_index].find(sharedCPUs) == cacheMap[cache_index].end()){
@@ -158,8 +160,8 @@ private:
             _sharedCaches.push_back(new SharedCache(threadToCacheLevels[iThread][0], threadToCacheLevels[iThread][1],
                                                     threadToCacheLevels[iThread][2], threadToCacheLevels[iThread][3]));
             _threads[iThread] = new Thread(iThread, coreTopologyId,
-                                           Readers::readIntegerFromFile(_getThreadPath(iThread) + "/cpufreq/cpuinfo_min_freq"),
-                                           Readers::readIntegerFromFile(_getThreadPath(iThread) + "/cpufreq/cpuinfo_max_freq"),
+                                           Utility::readIntegerFromFile(_getThreadPath(iThread) + "/cpufreq/cpuinfo_min_freq"),
+                                           Utility::readIntegerFromFile(_getThreadPath(iThread) + "/cpufreq/cpuinfo_max_freq"),
                                            _sharedCaches.back());
         }
         _physicalCores = std::vector<Core*>();
@@ -180,8 +182,8 @@ private:
             return a->getId() < b->getId();
         });
         auto end = std::chrono::high_resolution_clock::now();
-        std::cout << "Time to read the machine cores: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " μs" << std::endl;
-        std::cout << "Cache info read successfully!" << std::endl;
+        // std::cout << "Time to read the machine cores: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " μs" << std::endl;
+        // std::cout << "Cache info read successfully!" << std::endl;
     }
     
 
@@ -204,5 +206,7 @@ private:
         }
     }
 };
+
+} // namespace Stalker::Threading
 
 #endif //STALKER_CPUTOPOLOGYLINUX_H

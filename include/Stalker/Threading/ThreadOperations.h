@@ -2,64 +2,128 @@
 // Created by hal9000 on 6/19/24.
 //
 
-#ifndef STALKER_THREAD_OPERATIONS_H
-#define STALKER_THREAD_OPERATIONS_H
+#pragma once
 
-#include <list>
-#include <numeric>
-#include "../Threading/ThreadJob.h"
-#include "CPUTopology/CPU_Manager.h"
+#include <cmath>
+#include <vector>
+#include <Stalker/Core/Config/Parallel.h>
+#include <Stalker/Threading/ThreadingTraits.h>
+
+namespace Stalker::Threading {
+
+    enum class T_ThreadOperation {
+        Unary,
+        UnaryReduced,
+        Binary,
+        BinaryReduced,
+    };
+
+    template <typename T, typename ThreadTrait, T_ThreadOperation OpT, typename Child>
+    struct LauncherBase {
+
+        template<typename JobT, typename... Args>
+        inline static auto call(const ThreadTrait& trait, JobT&& job, size_t size, Args&&... args) {
+            const size_t numThreads = trait.getNumThreads();
+            const size_t blockSize  = (size + numThreads - 1) / numThreads;
+            PlatformThread threads[numThreads];
+            T reducedResult[_isReduced() ? numThreads : 1];
 
 
-
-class ThreadOperations {
-public:
-
-    template <typename threadJob>
-    static inline void executeJob(threadJob job, unsigned size, unsigned blockSize, CPU_Manager &manager) {
-        auto threadPool = manager.getThreadPool();
-        auto threadLimits = _getThreadsRange(size, threadPool.size(), blockSize);
-        unsigned iThread = 0;
-        for (const auto &thread : threadPool) {
-            thread->executeJob(job, threadLimits[iThread].first, threadLimits[iThread].second ,
-                               thread->getSharedCache()->getLevel(L1_Data)->size());
-            iThread++;
+            for (size_t iThread = 0; iThread < numThreads; ++iThread) {
+                threads[iThread] = PlatformThread([&, iThread]() {
+                    size_t start = iThread * blockSize;
+                    size_t end = std::min(start + blockSize, size);
+                    if (start < end) {
+                        if constexpr (!_isReduced())
+                            Child::_call(job, end - start, start, std::forward<Args>(args)...);
+                        else
+                            reducedResult[iThread] = Child::_call(job, end - start, start, std::forward<Args>(args)...);
+                    }
+                });
+            }
+            for (auto& thread : threads)
+                if (thread.joinable()) thread.join();
         }
-        manager.releaseResources(threadPool);
-    }
 
-    template <typename T, typename threadJob>
-    static inline T executeJobWithReduction(threadJob job, unsigned size, unsigned blockSize, CPU_Manager &manager) {
-        auto threadPool = manager.getThreadPool();
-        auto threadLimits = _getThreadsRange(size, threadPool.size(), blockSize);
-        unsigned iThread = 0;
-        auto reducedResult = std::vector<T>(threadPool.size(), 0);
-        for (const auto &thread : threadPool){
-            thread->executeJobWithReduction<threadJob, T>(job, threadLimits[iThread].first, threadLimits[iThread].second, &reducedResult[iThread],
-                                                          thread->getSharedCache()->getLevel(L1_Data)->size());
-            iThread++;
+    private:
+        
+        constexpr static bool _isReduced() {
+            return OpT == T_ThreadOperation::UnaryReduced || OpT == T_ThreadOperation::BinaryReduced;
         }
-        manager.releaseResources(threadPool);
-        delete[] threadLimits;
-        return std::accumulate(reducedResult.begin(), reducedResult.end(), 0);
-    }
+    };
+
+    template<typename T, typename ThreadTrait, T_ThreadOperation OpT> struct Launcher;
+
+    template<typename T, typename ThreadTrait>
+    struct Launcher<T, ThreadTrait, T_ThreadOperation::Binary>
+        : public LauncherBase<T, ThreadTrait, T_ThreadOperation::Binary, Launcher<T, ThreadTrait, T_ThreadOperation::Binary>> {
+        
+        using Base = LauncherBase<T, ThreadTrait, T_ThreadOperation::Binary, Launcher<T, ThreadTrait, T_ThreadOperation::Binary>>;
+
+    protected:
+
+        friend Base;
+
+        template<typename JobT, typename... Args>
+        inline static void _call(JobT&& job, size_t size, size_t start, const T* a, const T* b, T* result, Args&&... args) {
+            job.call(size, a + start, b + start, result + start, std::forward<Args>(args)...);
+        }
+
+        template<typename JobT, typename... Args>
+        inline static void _call(JobT&& job, size_t size, size_t start, T* a, const T* b, Args&&... args) {
+            job.call(size, a + start, b + start, std::forward<Args>(args)...);
+        }
+    };
+
+    template<typename T, typename ThreadTrait>
+    struct Launcher<T, ThreadTrait, T_ThreadOperation::Unary>
+        : public LauncherBase<T, ThreadTrait, T_ThreadOperation::Unary, Launcher<T, ThreadTrait, T_ThreadOperation::Unary>> {
+
+        using Base = LauncherBase<T, ThreadTrait, T_ThreadOperation::Unary, Launcher<T, ThreadTrait, T_ThreadOperation::Unary>>;
+
+    protected:
+
+        friend Base;
+
+        template<typename JobT, typename... Args>
+        inline static void _call(JobT&& job, size_t size, size_t start, const T* a, T* result, Args&&... args) {
+            job.call(size, a + start, result + start, std::forward<Args>(args)...);
+        }
+
+        template<typename JobT, typename... Args>
+        inline static void _call(JobT&& job, size_t size, size_t start, T* a, Args&&... args) {
+            job.call(size, a + start, std::forward<Args>(args)...);
+        }
+    };
+
+    template<typename T, typename ThreadTrait>
+    struct Launcher<T, ThreadTrait, T_ThreadOperation::BinaryReduced>
+        : public LauncherBase<T, ThreadTrait, T_ThreadOperation::BinaryReduced, Launcher<T, ThreadTrait, T_ThreadOperation::BinaryReduced>> {
+
+        using Base = LauncherBase<T, ThreadTrait, T_ThreadOperation::BinaryReduced, Launcher<T, ThreadTrait, T_ThreadOperation::BinaryReduced>>;
+
+    protected:
+
+        friend Base;
+
+        template<typename JobT, typename... Args>
+        inline static T _call(JobT&& job, size_t size, size_t start, const T* a, const T* b, Args&&... args) {
+            return job.call(size, a + start, b + start, std::forward<Args>(args)...);
+        }
+    };
+
+    template<typename T, typename ThreadTrait>
+    struct Launcher<T, ThreadTrait, T_ThreadOperation::UnaryReduced>
+        : public LauncherBase<T, ThreadTrait, T_ThreadOperation::UnaryReduced, Launcher<T, ThreadTrait, T_ThreadOperation::UnaryReduced>> {
+        using Base = LauncherBase<T, ThreadTrait, T_ThreadOperation::UnaryReduced, Launcher<T, ThreadTrait, T_ThreadOperation::UnaryReduced>>;
+
+    protected:
     
-private:
+        friend Base;
 
-    static inline std::pair<unsigned, unsigned>* _getThreadsRange(unsigned size, unsigned numCores, unsigned blockSize){
-        auto threadLimits = new std::pair<unsigned, unsigned>[numCores];
-        unsigned totalBlocks = (size + blockSize - 1) / blockSize;
-        unsigned threadBlockSize = (totalBlocks + numCores - 1) / numCores;
-        unsigned startBlock = 0, endBlock = 0;
-        for (unsigned i = 0; i < numCores; i++) {
-            startBlock = i * threadBlockSize;
-            endBlock = std::min(startBlock + threadBlockSize, totalBlocks);
-            threadLimits[i].first = startBlock * blockSize;
-            threadLimits[i].second = std::min(endBlock * blockSize, size);
+        template<typename JobT, typename... Args>
+        inline static T _call(JobT&& job, size_t size, size_t start, const T* a, Args&&... args) {
+            return job.call(size, a + start, std::forward<Args>(args)...);
         }
-        return threadLimits;
-    }
-    
-};
-
-#endif //STALKER_STLKR_THREAD_OPERATIONSLINUX_HB
+    };
+} // namespace Stalker::Threading

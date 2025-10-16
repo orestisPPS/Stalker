@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <mutex>
 
+namespace Stalker::Threading {
+
 enum CoreAffinityConfig{
     HT_CoreSet,                // Hyperthreading is enabled and all core threads are bound to a single cpu_set_t.
     HT_PoolSet,                // Hyperthreading is enabled and all core threads are bound to a single cpu_set_t.
@@ -182,5 +184,6 @@ private:
     }
 };
 
+} // namespace Stalker::Threading
 
 #endif //STALKER_CPU_MANAGER_H

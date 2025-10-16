@@ -9,6 +9,8 @@
 #include <vector>
 #include <unordered_map>
 
+namespace Stalker::Threading {
+
 enum CacheLevelType {
     L1_Data = 0,
     L1_Instructions = 1,
@@ -53,6 +55,9 @@ public:
 private:
     std::unordered_map<CacheLevelType, CacheLevel*> _cacheLevels;
 };
+
+} // namespace Stalker::Threading
+
 
 
 #endif //STALKER_CACHELEVEL_H

@@ -10,6 +10,7 @@
 #include <pthread.h>
 #include <cassert>
 
+namespace Stalker::Threading {
 
 class Thread{
 public:
@@ -67,5 +68,6 @@ private:
     cpu_set_t *_cpuSet;
 };
 
+} // namespace Stalker::Threading
 
 #endif //STALKER_THREAD_H
