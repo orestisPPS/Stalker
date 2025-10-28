@@ -1,0 +1,10 @@
+#pragma once
+#include <array>
+#include <cstddef>
+
+namespace Benchmarks {
+inline constexpr std::array<std::size_t, @_bench_sizes_len@> Sizes = {@_bench_sizes_csv@};
+inline constexpr std::size_t Count = Sizes.size();
+
+#define BENCH_FOR_EACH_TYPE(X) @_bench_types_macro@
+} // namespace Benchmarks

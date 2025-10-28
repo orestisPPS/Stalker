@@ -3,379 +3,495 @@
 //
 #pragma once
 
-#include <iostream>
-#include <memory>
 #include <fstream>
-#include <iomanip>
-#include <sstream>
 #include <string>
+#include <algorithm>
+#include <vector>
 #include <list>
 #include <unordered_map>
 #include <filesystem>
-#include <vector>
-#include <algorithm>
-#include <thread>
 #include <random>
-#include <Stalker/Utility/Timer.h>
+#include <sstream>
+#include <iomanip>
+#include <Stalker/Core/Units.h>
+#include <Stalker/Utility/Stopwatch.h>
+#include <Stalker/Utility/Printers.h>
+
 using namespace std;
 
 namespace Stalker::Utility{
+
+struct PlotConfig{
+    string title;
+    string xLabel;
+    string yLabel;
+    string outputFileName;
+    bool legend = true;
+    bool grid = true;
+    bool box = true;
+    int width = 800;
+    int height = 600;
+    int pointSize = 1;
+    int lineWidth = 1;
+    int bins = 10;
+};
+
 class Logs {
+
+    using Timer = Stalker::Utility::Timer;
+    using TimeUnit = Stalker::Core::TimeUnit;
+    using Clock = std::chrono::system_clock;
+
     
     public:
-    Logs(std::string logName) :   _logName(std::move(logName)),
-                                  _currentTimers(make_unique<unordered_map<string, Timer>>()),
-                                  _singleObservationData(make_unique<unordered_map<string, list<double>>>()),
-                                  _multipleObservationData(make_unique<unordered_map<string, list<list<double>>>>()),
-                                  _singleObservationTimers(make_unique<unordered_map<string, list<chrono::duration<double>>>>()),
-                                  _multipleObservationTimers(make_unique<unordered_map<string, list<list<chrono::duration<double>>>>>()),
-                                  _parameters(make_unique<unordered_map<string, string>>()),
-                                  _comments(make_unique<list<string>>()),
-                                  _singleObservationTimerIndex(unordered_map<string, short>()),
-                                  _multipleObservationTimerIndex(unordered_map<string, short>()),
-                                  _singleObservationDataIndex(unordered_map<string, short>()),
-                                  _multipleObservationDataIndex(unordered_map<string, short>()),
-                                  _parametersIndex(unordered_map<string, short>()){}
+    Logs(const string &name = "") : _name(name) {}
 
-    void addComment(string comment) {
-        _comments->push_back(std::move(comment));
+    PlotConfig plot;
+
+    struct Measurement {
+        string name;
+        double value;
+    };
+
+    struct MeasurementSet {
+        struct Entry {
+            string name;
+            std::vector<double> values;
+            std::vector<std::string> compareOver;
+        };
+        string name;
+        bool plot = true;
+        std::vector<Entry> entries;
+    };
+
+    void addComment(const string &comment) {
+        _comments.push_back(comment);
     }
 
+    template<typename T>
+    void addParameter(const string &parameterName, T value) {
 
-    void addParameter(const string &parameterName, double value) {
-        _parameters->insert(make_pair(parameterName, to_string(value)));
-        _parametersIndex.emplace(parameterName, _parameters->size());
-    }
+        static_assert(std::is_arithmetic_v<T> || std::is_convertible_v<T, std::string>, "addParameter only supports arithmetic types or types convertible to std::string.");
 
-    void addParameter(const string &parameterName, const string &value) {
-        _parameters->insert(make_pair(parameterName, value));
-        _parametersIndex.emplace(parameterName, _parameters->size());
-    }
-
-    inline void startSingleObservationTimer(const string &logName, STLKR_TimeUnit unit) {
-
-        if (_currentTimers->find(logName) == _currentTimers->end())
-            _currentTimers->insert(make_pair(logName, Timer(unit)));
-        _currentTimers->at(logName) = Timer(unit);
-        _currentTimers->at(logName).start();
-    }
-
-    inline void stopSingleObservationTimer(const string &logName, STLKR_TimeUnit unit) {
-        if (_currentTimers->find(logName) == _currentTimers->end())
-            throw std::runtime_error("stopSingleObservationTimer: Timer " + logName + " does not exist.");
-
-        _currentTimers->at(logName).stop();
-        if (_singleObservationTimers->find(logName) == _singleObservationTimers->end())
-            _singleObservationTimers->emplace(logName, list<chrono::duration<double>>());
-
-        _singleObservationTimers->at(logName).push_back(_currentTimers->at(logName).duration());
-        _singleObservationTimerIndex.emplace(logName, _singleObservationTimers->size());
-    }
-
-    inline void startMultipleObservationsTimer(const std::string &logName, STLKR_TimeUnit unit) {
-        auto timer = Timer(unit);
-        if (_currentTimers->find(logName) == _currentTimers->end())
-            _currentTimers->insert(make_pair(logName, timer));
-        _currentTimers->at(logName).start();
-    }
-
-    inline void stopMultipleObservationsTimer(const std::string &logName) {
-        if (_currentTimers->find(logName) == _currentTimers->end())
-            throw std::runtime_error("stopMultipleObservationsTimer: Timer " + logName + " does not exist.");
-
-        _currentTimers->at(logName).stop();
-
-        if (_multipleObservationTimers->find(logName) == _multipleObservationTimers->end())
-            _multipleObservationTimers->emplace(logName, list<list<chrono::duration<double>>>());
-
-        if (_multipleObservationTimers->at(logName).empty()) {
-            _multipleObservationTimers->at(logName).emplace_back();
+        std::string valueStr;
+        if constexpr (std::is_arithmetic_v<T>) {
+            valueStr = std::to_string(value);
+        } else if constexpr (std::is_convertible_v<T, std::string>) {
+            valueStr = static_cast<std::string>(value);
+        } else {
+            std::stringstream ss;
+            ss << value;
+            valueStr = ss.str();
         }
-        _multipleObservationTimers->at(logName).back().push_back(_currentTimers->at(logName).duration());
-        _multipleObservationTimerIndex.emplace(logName, _multipleObservationTimers->size());
-    }
 
+        auto it = std::find_if(_parameters.begin(), _parameters.end(),
+            [&](const std::pair<std::string, std::string>& p) { return p.first == parameterName; });
 
-    inline void storeAndResetCurrentLogs() {
-        for (auto &timerPair : *_multipleObservationTimers) {
-            timerPair.second.emplace_back();
-        }
-        _currentTimers->clear();
-
-        for (auto &data: *_multipleObservationData) {
-            data.second.emplace_back();
+        if (it != _parameters.end()) {
+            printWarning("Parameter '" + parameterName + "' already exists. Overwriting its value.");
+            it->second = valueStr;
+        } else {
+            _parameters.push_back(std::make_pair(parameterName, valueStr));
         }
     }
 
-    inline void setSingleObservationLogData(const std::string &logName, double value) {
-        if (_singleObservationData->find(logName) == _singleObservationData->end())
-            _singleObservationData->emplace(logName, list<double>());
-        _singleObservationData->at(logName).push_back(value);
+    void addTimer(const string &timerName, const Timer &timer) {
+        auto it = std::find_if(_timers.begin(), _timers.end(),
+            [&](const std::pair<std::string, Timer>& p) { return p.first == timerName; });
 
-        _singleObservationDataIndex.emplace(logName, _singleObservationData->size());
-    }
-
-    inline void setMultipleObservationsLogData(const std::string &logName, double value) {
-        // Check if logName exists in the map
-        if (_multipleObservationData->find(logName) == _multipleObservationData->end()) {
-            _multipleObservationData->emplace(logName, list<list<double>>{list<double>()});
+        if (it != _timers.end()) {
+            printWarning("Warning: Timer '" + timerName + "' already exists. Overwriting its value.");
+            it->second = timer;
+        } else {
+            _timers.push_back(std::make_pair(timerName, timer));
         }
-        _multipleObservationData->at(logName).back().push_back(value);
-
-        _singleObservationDataIndex.emplace(logName, _multipleObservationData->size());
     }
 
-    inline void setMultipleObservationsLogData(const std::string &logName, const list<double> &values) {
-        if (_multipleObservationData->find(logName) == _multipleObservationData->end()) {
-            _multipleObservationData->emplace(logName, list<list<double>>());
+    template<typename T>
+    void addMeasurement(const string &dataName, const T &data) {
+        static_assert(std::is_arithmetic_v<T>, "addMeasurement only supports arithmetic types.");
+        auto it = std::find_if(_measurements.begin(), _measurements.end(),
+            [&](const Measurement& m) { return m.name == dataName; });
+
+        if (it != _measurements.end()) {
+            printWarning("Measurement '" + dataName + "' already exists. Overwriting its value.");
+            it->value = static_cast<double>(data);
+        } else {
+            _measurements.push_back(Measurement{dataName, static_cast<double>(data)});
         }
-        // Add the new vector of values to the list
-        _multipleObservationData->at(logName).push_back(values);
+    }
 
-        _multipleObservationDataIndex.emplace(logName, _multipleObservationData->size());
+    double getMeasurementValue(const string &dataName) const {
+        auto it = std::find_if(_measurements.begin(), _measurements.end(),
+            [&](const Measurement& m) { return m.name == dataName; });
+
+        if (it != _measurements.end()) {
+            return it->value;
+        } else {
+            throw std::runtime_error("Measurement '" + dataName + "' not found.");
+        }
+    }
+
+    void addMeasurementSet(const std::string &setName, bool plot = true) {
+        auto it = std::find_if(_measurementSets.begin(), _measurementSets.end(),
+            [&](const MeasurementSet& m) { return m.name == setName; });
+
+        MeasurementSet newSet;
+        newSet.name = setName;
+        newSet.plot = plot;
+
+        if (it != _measurementSets.end()) {
+            printWarning("Measurement set '" + setName + "' already exists. Overwriting its value.");
+            *it = std::move(newSet);
+        } else {
+            _measurementSets.push_back(std::move(newSet));
+        }
+    }
+
+    template<typename T>
+    void addMeasurementToSet(const string &setName,
+                             const string &dataName,
+                             const T &data,
+                             const std::vector<std::string>& compareOver = {}) {
+
+        static_assert(std::is_arithmetic_v<T>, "addMeasurementToSet only supports arithmetic types.");
+        auto it = std::find_if(_measurementSets.begin(), _measurementSets.end(),
+            [&](const MeasurementSet& m) { return m.name == setName; });
+        if (it == _measurementSets.end()) {
+            MeasurementSet newSet;
+            newSet.name = setName;
+            MeasurementSet::Entry e;
+            e.name = dataName;
+            e.values.emplace_back(static_cast<double>(data));
+            e.compareOver = compareOver;
+            newSet.entries.emplace_back(std::move(e));
+            _measurementSets.push_back(std::move(newSet));
+            return;
+        }
+
+        // Find existing measurement entry inside the set
+        auto &entries = it->entries;
+        auto mit = std::find_if(entries.begin(), entries.end(), [&](const MeasurementSet::Entry& e){
+            return e.name == dataName;
+        });
+        if (mit != entries.end()) {
+            mit->values.push_back(static_cast<double>(data));
+        } else {
+            MeasurementSet::Entry e;
+            e.name = dataName;
+            e.values.emplace_back(static_cast<double>(data));
+            e.compareOver = compareOver;
+            entries.emplace_back(std::move(e));
+        }
+    }
+
+    void addMeasurementToSet(const string &setName, const string &dataName, const std::vector<std::string>& compareOver = {}) {
+        auto it = std::find_if(_measurementSets.begin(), _measurementSets.end(),
+            [&](const MeasurementSet& m) { return m.name == setName; });
+        if (it == _measurementSets.end()) {
+            MeasurementSet newSet;
+            newSet.name = setName;
+            MeasurementSet::Entry e;
+            e.name = dataName;
+            e.compareOver = compareOver;
+            newSet.entries.emplace_back(std::move(e));
+            _measurementSets.push_back(std::move(newSet));
+            return;
+        }
+
+        // Find existing measurement entry inside the set
+        auto &entries = it->entries;
+        auto mit = std::find_if(entries.begin(), entries.end(), [&](const MeasurementSet::Entry& e){
+            return e.name == dataName;
+        });
+        if (mit == entries.end()) {
+            MeasurementSet::Entry e;
+            e.name = dataName;
+            entries.emplace_back(std::move(e));
+        }
+    }
+
+    MeasurementSet getMeasurementSet(const string &setName) const {
+        auto it = std::find_if(_measurementSets.begin(), _measurementSets.end(),
+            [&](const MeasurementSet& m) { return m.name == setName; });
+        if (it != _measurementSets.end()) {
+            return *it;
+        } else {
+            throw std::runtime_error("Measurement set '" + setName + "' not found.");
+        }
+    }
+
+    std::vector<double> getMeasurementValues(const string &setName, const string &measurementName) {
+        auto it = std::find_if(_measurementSets.begin(), _measurementSets.end(),
+            [&](const MeasurementSet& m) { return m.name == setName; });
+        if (it == _measurementSets.end()) {
+            throw std::runtime_error("Measurement set '" + setName + "' not found.");
+        }
+        auto &entries = it->entries;
+        auto mit = std::find_if(entries.begin(), entries.end(), [&](const MeasurementSet::Entry& e){
+            return e.name == measurementName;
+        });
+        if (mit == entries.end()) {
+            throw std::runtime_error("Measurement '" + measurementName + "' not found in set '" + setName + "'.");
+        }
+        return mit->values;
     }
 
 
-    void exportToCSV(const string &filePath, const string &fileName) {
-        if (!std::filesystem::exists(filePath)) {
-            if (!std::filesystem::create_directories(filePath)) {
-                throw std::runtime_error("Unable to create directory: " + filePath);
+    void addStopwatch(const Stopwatch &stopwatch) {
+        auto it = std::find_if(_stopwatches.begin(), _stopwatches.end(),
+            [&](const Stopwatch& sw) { return sw.getName() == stopwatch.getName(); });
+        if (it != _stopwatches.end()) {
+            printWarning("Warning: Stopwatch '" + stopwatch.getName() + "' already exists. Overwriting its value.");
+            *it = stopwatch;
+        } else {
+            _stopwatches.push_back(stopwatch);
+        }
+    }
+
+    Stopwatch& getStopwatch(const string &name) {
+        auto it = std::find_if(_stopwatches.begin(), _stopwatches.end(),
+            [&](const Stopwatch& sw) { return sw.getName() == name; });
+        if (it != _stopwatches.end()) {
+            return *it;
+        } else {
+            throw std::runtime_error("Stopwatch '" + name + "' not found.");
+        }
+    }
+
+    Stopwatch& getOrCreateStopwatch(const string &name) {
+        auto it = std::find_if(_stopwatches.begin(), _stopwatches.end(),
+            [&](const Stopwatch& sw) { return sw.getName() == name; });
+        if (it != _stopwatches.end()) {
+            return *it;
+        } else {
+            _stopwatches.emplace_back(name);
+            return _stopwatches.back();
+        }
+    }
+
+    // Export current logs to JSON next to CSV functionality.
+    // Follows identical initialization, naming conventions and filename scheme as exportToCSV.
+    // New API: directory path + base filename (without extension)
+    // precision: numeric precision for floating-point in JSON (default 4)
+    // unit: time unit for timers/stopwatches values (default seconds)
+    void exportToJSON(const std::string& directoryPath,
+                      const std::string& baseFileName,
+                      int precision = 8,
+                      TimeUnit unit = TimeUnit::seconds) {
+        std::filesystem::path dir(directoryPath);
+        if (!dir.empty() && !std::filesystem::exists(dir)) {
+            if (!std::filesystem::create_directories(dir)) {
+                throw std::runtime_error("Unable to create directory: " + dir.string());
             }
         }
-        // Get current time
-        auto now = std::chrono::system_clock::now();
-        auto now_as_time_t = std::chrono::system_clock::to_time_t(now);
-        auto now_ms = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()) % 1000;
+
+        // Generate timestamp and UUID like CSV
+        auto now_as_time_t = std::chrono::system_clock::to_time_t(Clock::now());
+        auto now_ms = std::chrono::duration_cast<std::chrono::microseconds>(Clock::now().time_since_epoch()) % 1000;
         std::tm now_tm = *std::localtime(&now_as_time_t);
-        // Create a timestamp string with milliseconds
         std::ostringstream timestamp;
         timestamp << std::put_time(&now_tm, "%d%m%Y_%H%M%S_") << std::setfill('0') << std::setw(3) << now_ms.count();
-        // Generate a UUID
-        std::string uuid = _generateUUID();
-        // Create a unique filename with timestamp and UUID
-        std::string filename = filePath + "/" + fileName + "_" + timestamp.str() + "_" + uuid + ".csv";
-        // Open file
-        std::ofstream file(filename);
+        std::string stem = baseFileName;
+        if (stem.empty()) stem = _name.empty() ? std::string("logs") : _name;
+        std::filesystem::path outPath = dir / (stem + "_" + timestamp.str() + "_" + _generateUUID() + ".json");
 
-        // Check if file is opened successfully
+        std::ofstream file(outPath.string());
         if (!file.is_open()) {
-            throw std::runtime_error("Unable to open file: " + filename);
-        }
-        file << std::scientific << std::setprecision(15);
-
-        // Adding comments
-        if (!_comments->empty()) {
-            file << "#Region: Comments" << std::endl;
-            for (const auto &comment : *_comments) {
-                file << "# " << comment << std::endl;
-            }
-            file << std::endl;
-            file.flush();
+            throw std::runtime_error("Unable to open file: " + outPath.string());
         }
 
-        // Adding parameters
-        if (!_parameters->empty()) {
-            file << "#Region: Parameters" << std::endl;
-            auto listOfData = list<tuple<string, string, unsigned>>();
-            for (const auto &pair : *_parameters) {
-                listOfData.emplace_back(pair.first, pair.second, _parametersIndex.at(pair.first));
+    if (precision < 0) precision = 0;
+    if (precision > 15) precision = 15; // clamp to reasonable JSON precision
+    file << std::scientific << std::setprecision(precision);
+
+        // JSON header
+        file << "{\n";
+
+        // _parameters as an object map
+        file << "  \"_parameters\": {\n";
+            for (size_t i = 0; i < _parameters.size(); ++i) {
+                const auto &p = _parameters[i];
+                file << "    \"" << _jsonEscape(p.first) << "\": \"" << _jsonEscape(p.second) << "\"";
+                if (i + 1 < _parameters.size()) file << ",";
+                file << "\n";
             }
-            listOfData.sort([](const tuple<string, string, unsigned> &a, const tuple<string, string, unsigned> &b) {
-                return std::get<2>(a) < std::get<2>(b);
-            });
-            for (const auto &data : listOfData) {
-                file << "Parameter:" << std::get<0>(data) << std::endl;
-                file << std::get<1>(data) << std::endl;
-                file << std::endl;
-                file.flush();
+            file << "  },\n";
+
+        // _comments as array of strings
+        file << "  \"_comments\": [\n";
+            for (size_t i = 0; i < _comments.size(); ++i) {
+                file << "    \"" << _jsonEscape(_comments[i]) << "\"";
+                if (i + 1 < _comments.size()) file << ",";
+                file << "\n";
             }
-            file << std::endl;
-            file.flush();
+            file << "  ],\n";
+
+        // _measurements as an object map
+        file << "  \"_measurements\": {\n";
+            for (size_t i = 0; i < _measurements.size(); ++i) {
+                const auto &m = _measurements[i];
+                file << "    \"" << _jsonEscape(m.name) << "\": " << m.value;
+                if (i + 1 < _measurements.size()) file << ",";
+                file << "\n";
+            }
+            file << "  },\n";
+
+        // _measurementSets as an object map: setName -> { measurementName: { "values": [...], "compareOver": [..] }, ..., "_plot": bool }
+        file << "  \"_measurementSets\": {\n";
+        for (size_t i = 0; i < _measurementSets.size(); ++i) {
+            const auto &ms = _measurementSets[i];
+            file << "    \"" << _jsonEscape(ms.name) << "\": {\n";
+            if (!ms.entries.empty()) {
+            for (size_t j = 0; j < ms.entries.size(); ++j) {
+                const auto &entry = ms.entries[j];
+                file << "      \"" << _jsonEscape(entry.name) << "\": {\n";
+                // values
+                file << "        \"values\": [";
+                for (size_t k = 0; k < entry.values.size(); ++k) {
+                    file << entry.values[k];
+                    if (k + 1 < entry.values.size()) file << ", ";
+                }
+                file << "],\n";
+                // compareOver (string array)
+                file << "        \"compareOver\": [";
+                for (size_t k = 0; k < entry.compareOver.size(); ++k) {
+                    file << "\"" << _jsonEscape(entry.compareOver[k]) << "\"";
+                    if (k + 1 < entry.compareOver.size()) file << ", ";
+                }
+                file << "]\n";
+                file << "      }";
+                file << ",\n";
+            }
+            }
+            // include plot flag for the set (so consumers can choose to plot or not)
+            file << "      \"_plot\": " << (ms.plot ? "true" : "false") << "\n";
+            file << "    }";
+            if (i + 1 < _measurementSets.size()) file << ",";
+            file << "\n";
         }
+        file << "  },\n";
 
-        // Adding single observation Data
-        if (!_singleObservationData->empty()) {
-            list<tuple<string, list<double>, unsigned>> listOfData = {};
-            for (const auto &pair : *_singleObservationData) {
-                listOfData.emplace_back(pair.first, pair.second, _singleObservationDataIndex.at(pair.first));
-            }
-            listOfData.sort([](const tuple<string, list<double>, unsigned> &a, const tuple<string, list<double>, unsigned> &b) {
-                return std::get<2>(a) < std::get<2>(b);
-            });
-
-
-            file << "#Region: Single Observation Data" << std::endl;
-            for (const auto &data : listOfData) {
-                file << "LogEntry:" << std::get<0>(data) << std::endl;
-                for (const auto &value : std::get<1>(data)) {
-                    file << value << std::endl;
-                }
-                file << std::endl;
-                file.flush();
-            }
+        // _timers as an object map
+        file << "  \"_timers\": {\n";
+        for (size_t i = 0; i < _timers.size(); ++i) {
+            const auto &t = _timers[i];
+            file << "    \"" << _jsonEscape(t.first) << "\": " << t.second.durationValue(unit);
+            if (i + 1 < _timers.size()) file << ",";
+            file << "\n";
         }
+        file << "  },\n";
 
-        unsigned index = 0;
-        unsigned logIndex = 0;
-        size_t maxLogSize;
-
-        // Adding multiple observation Data
-        if (!_multipleObservationData->empty()) {
-            list<tuple<string, list<list<double>>, unsigned>> listOfData = {};
-            for (const auto &pair : *_multipleObservationData) {
-                listOfData.emplace_back(pair.first, pair.second, _multipleObservationDataIndex.at(pair.first));
+        // _stopwatches as an object map of objects: name -> { "values": [...], "compareOver": [..] }
+        file << "  \"_stopwatches\": {\n";
+        for (size_t i = 0; i < _stopwatches.size(); ++i) {
+            const auto &sw = _stopwatches[i];
+            file << "    \"" << _jsonEscape(sw.getName()) << "\": {\n";
+            // values
+            file << "      \"values\": [";
+            auto measurements = sw.getAllMeasurementsValues(unit);
+            for (size_t j = 0; j < measurements.size(); ++j) {
+                file << measurements[j];
+                if (j + 1 < measurements.size()) file << ", ";
             }
-            listOfData.sort([](const tuple<string, list<list<double>>, unsigned> &a, const tuple<string, list<list<double>>, unsigned> &b) {
-                return std::get<2>(a) < std::get<2>(b);
-            });
-
-            file << "#Region: Multiple Observation Data" << std::endl;
-
-            for (const auto& pair : listOfData) {
-                list<list<double>> listOfLists = std::get<1>(pair);
-                logIndex = 0;
-                maxLogSize = 0;
-                for (const auto &listInList: listOfLists) {
-                    maxLogSize = std::max(maxLogSize, listInList.size());
-                }
-                auto dataMatrix = new double[maxLogSize * listOfLists.size()];
-                for (const auto &listInList: listOfLists) {
-                    for (const auto &value: listInList) {
-                        dataMatrix[index * listOfLists.size() + logIndex] = value;
-                        ++index;
-                    }
-                    ++logIndex;
-                    index = 0;
-                }
-                file << "LogEntry:" << std::get<0>(pair) << std::endl;
-                for (size_t i = 0; i < maxLogSize; ++i) {
-                    for (size_t j = 0; j < listOfLists.size(); ++j) {
-                        file << dataMatrix[i * listOfLists.size() + j];
-                        if (j != listOfLists.size() - 1) {
-                            file << ",";
-                        }
-                    }
-                    file << std::endl;
-                }
-                file << std::endl;
-                file.flush();
-                delete[] dataMatrix;
-                dataMatrix = nullptr;
+            file << "],\n";
+            // compareOver from stopwatch tags (if any)
+            file << "      \"compareOver\": [";
+            const auto &tags = sw.getTags();
+            for (size_t t = 0; t < tags.size(); ++t) {
+                file << "\"" << _jsonEscape(tags[t]) << "\"";
+                if (t + 1 < tags.size()) file << ", ";
             }
+            file << "]\n";
+            file << "    }";
+            if (i + 1 < _stopwatches.size()) file << ",";
+            file << "\n";
         }
+        file << "  }\n";
 
-        // Adding single observation timers
-        if (!_singleObservationTimers->empty()) {
-            file << "#Region: Single Observation Timers" << std::endl;
-            list<tuple<string, list<chrono::duration<double>>, unsigned>> listOfData = {};
-            for (const auto &pair : *_singleObservationTimers) {
-                listOfData.emplace_back(pair.first, pair.second, _singleObservationTimerIndex.at(pair.first));
-            }
-            listOfData.sort([](const tuple<string, list<chrono::duration<double>>, unsigned> &a, const tuple<string, list<chrono::duration<double>>, unsigned> &b) {
-                return std::get<2>(a) < std::get<2>(b);
-            });
-
-
-            for (const auto &timerPair : listOfData) {
-                file << "Timer:" << std::get<0>(timerPair) << std::endl;
-                for (const auto &duration : std::get<1>(timerPair)) {
-                    file << duration.count() << std::endl;
-                }
-                file << std::endl;
-                file.flush();
-            }
-        }
-        // Adding multiple observation timers
-        if (!_multipleObservationTimers->empty()) {
-            file << "#Region: Multiple Observation Timers" << std::endl;
-            list<tuple<string, list<list<chrono::duration<double>>>, unsigned>> listOfData = {};
-            for (const auto &pair : *_multipleObservationTimers) {
-                listOfData.emplace_back(pair.first, pair.second, _multipleObservationTimerIndex.at(pair.first));
-            }
-            listOfData.sort([](const tuple<string, list<list<chrono::duration<double>>>, unsigned> &a, const tuple<string, list<list<chrono::duration<double>>>, unsigned> &b) {
-                return std::get<2>(a) < std::get<2>(b);
-            });
-
-            for (const auto &pair: listOfData) {
-                list<list<chrono::duration<double>>> listOfLists = std::get<1>(pair);
-                logIndex = 0;
-                maxLogSize = 0;
-                for (const auto &listInList: listOfLists) {
-                    maxLogSize = std::max(maxLogSize, listInList.size());
-                }
-                auto dataMatrix = new double[maxLogSize * listOfLists.size()];
-                for (const auto &listInList: listOfLists) {
-                    for (const auto &value: listInList) {
-                        dataMatrix[index * listOfLists.size() + logIndex] = value.count();
-                        ++index;
-                    }
-                    ++logIndex;
-                    index = 0;
-                }
-                file << "Timer:" << std::get<0>(pair) << std::endl;
-                for (size_t i = 0; i < maxLogSize; ++i) {
-                    for (size_t j = 0; j < listOfLists.size(); ++j) {
-                        file << dataMatrix[i * listOfLists.size() + j];
-                        if (j != listOfLists.size() - 1) {
-                            file << ",";
-                        }
-                    }
-                    file << std::endl;
-                }
-                file << std::endl;
-                file.flush();
-                delete[] dataMatrix;
-                dataMatrix = nullptr;
-            }
-        }
+        file << "}\n";
         file.flush();
         file.close();
+
+        printSuccess("Logs exported to JSON: " + outPath.string() + ".");
     }
 
-    void clearAllLogs() {
-        _currentTimers->clear();
-        _singleObservationData->clear();
-        _multipleObservationData->clear();
-        _singleObservationTimers->clear();
-        _multipleObservationTimers->clear();
-        _parameters->clear();
-        _comments->clear();
+    // Backward-compatible wrapper: accept a full prefix path (directory + base prefix, no extension)
+    // Allows optional precision and time unit overrides.
+    void exportToJSON(const std::string& fullFilePathStr,
+                      int precision = 4,
+                      TimeUnit unit = TimeUnit::seconds) {
+        std::filesystem::path p(fullFilePathStr);
+        if (p.has_filename()) {
+            exportToJSON(p.parent_path().string(), p.filename().string(), precision, unit);
+        } else {
+            exportToJSON(p.string(), std::string{}, precision, unit);
+        }
+    }
+
+    void clear() {
+        _parameters.clear();
+        _comments.clear();
+        _measurements.clear();
+        _measurementSets.clear();
+        _stopwatches.clear();
+        _timers.clear();
     }
         
         
     private:
 
-        unique_ptr<unordered_map<string, Timer>> _currentTimers;
-        unique_ptr<unordered_map<string, list<chrono::duration<double>>>> _singleObservationTimers;
-        unique_ptr<unordered_map<string, list<list<chrono::duration<double>>>>> _multipleObservationTimers;
-        unique_ptr<unordered_map<string, list<double>>> _singleObservationData;
-        unique_ptr<unordered_map<string, list<list<double>>>> _multipleObservationData;
-        
-        unordered_map<string, short> _singleObservationTimerIndex;
-        unordered_map<string, short> _multipleObservationTimerIndex;
-        unordered_map<string, short> _singleObservationDataIndex;
-        unordered_map<string, short> _multipleObservationDataIndex;
-        unordered_map<string, short> _parametersIndex;
-        
-        unique_ptr<unordered_map<string, string>> _parameters;
-        unique_ptr<list<string>> _comments;
-            
-        string _logName;
+    std::vector<std::pair<std::string, std::string>> _parameters;
+    std::vector<string> _comments;
 
-        string _generateUUID() {
-            static std::random_device rd;
-            static std::mt19937 gen(rd());
-            static std::uniform_int_distribution<uint64_t> dis;
+    std::vector<Measurement> _measurements;
+    std::vector<MeasurementSet> _measurementSets;
+
+    std::vector<std::pair<std::string, Timer>> _timers;
+    std::vector<Stopwatch> _stopwatches;
     
-            std::ostringstream oss;
-            oss << std::hex << std::setfill('0')
-                << std::setw(8) << dis(gen) << "-"
-                << std::setw(4) << (dis(gen) & 0xFFFF) << "-"
-                << std::setw(4) << (dis(gen) & 0x0FFF) << "-"
-                << std::setw(4) << (dis(gen) & 0x3FFF | 0x8000) << "-"
-                << std::setw(12) << dis(gen);
-            return oss.str();
+    string _name;
+
+    string _generateUUID() {
+        static std::random_device rd;
+        static std::mt19937 gen(rd());
+        static std::uniform_int_distribution<uint64_t> dis;
+
+        std::ostringstream oss;
+        oss << std::hex << std::setfill('0')
+            << std::setw(8) << dis(gen) << "-"
+            << std::setw(4) << (dis(gen) & 0xFFFF) << "-"
+            << std::setw(4) << (dis(gen) & 0x0FFF) << "-"
+            << std::setw(4) << (dis(gen) & 0x3FFF | 0x8000) << "-"
+            << std::setw(12) << dis(gen);
+        return oss.str();
+    }
+
+    // Minimal JSON string escaper (quotes, backslashes, control chars)
+    static std::string _jsonEscape(const std::string& s) {
+        std::string out;
+        out.reserve(s.size() + 8);
+        for (unsigned char c : s) {
+            switch (c) {
+                case '"': out += "\\\""; break;
+                case '\\': out += "\\\\"; break;
+                case '\b': out += "\\b"; break;
+                case '\f': out += "\\f"; break;
+                case '\n': out += "\\n"; break;
+                case '\r': out += "\\r"; break;
+                case '\t': out += "\\t"; break;
+                default:
+                    if (c < 0x20) {
+                        std::ostringstream oss;
+                        oss << "\\u" << std::hex << std::setw(4) << std::setfill('0') << int(c);
+                        out += oss.str();
+                    } else {
+                        out += static_cast<char>(c);
+                    }
+            }
         }
+        return out;
+    }
 
     };
 } // namespace Stalker::Utility
