@@ -53,7 +53,7 @@ namespace Stalker::Mathematics::SIMD
                                                                                                 _mm256_load_pd(b + Is * Base::registerSize))), ...);
         }
 
-        template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
+        template <T_SIMDStore Policy, size_t... Is>
         static inline void _scale(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
             (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mul_pd(_mm256_load_pd(data + Is * Base::registerSize), *scalar)), ...);
         }
@@ -129,7 +129,7 @@ namespace Stalker::Mathematics::SIMD
                                                                                                 _mm256_load_ps(b + Is * Base::registerSize))),...);
         }
 
-        template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
+        template <T_SIMDStore Policy,size_t... Is>
         static inline void _scale(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
             (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mul_ps(_mm256_load_ps(data + Is * Base::registerSize), *scalar)), ...);
         }
@@ -216,7 +216,7 @@ static inline float _horizontalRegisterSum(const __m256* __restrict data) {
                                                   _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))), ...);
         }
 
-        template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
+        template <T_SIMDStore Policy, size_t... Is>
         static inline void _scale(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
             (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)), *scalar)), ...);
         }
@@ -308,7 +308,7 @@ static inline float _horizontalRegisterSum(const __m256* __restrict data) {
                                                   _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))), ...);
         }
 
-        template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
+        template <T_SIMDStore Policy, size_t... Is>
         static inline void _scale(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
             (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)), *scalar)), ...);
         }

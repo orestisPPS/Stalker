@@ -46,99 +46,18 @@ namespace STLKR_Tests {
         _testMultiply<unsigned>();
         _testMultiply<short>();
 
-        _testDivide<double>();
-        _testDivide<float>();
-        _testDivide<int>();
-        _testDivide<unsigned>();
-        _testDivide<short>();
-
-        
-        // _testScaledAdd();
-        // _testSubtract();
-        // _testScaledSubtract();
-        // _testMultiply();
-        // _testScaledMultiply();
-        // _testDivide();
-        // _testScaledDivide();
-        // _testScale();
-
         _testSum<double>();
         _testSum<float>();
         _testSum<int>();
         _testSum<unsigned>();
         _testSum<short>();
 
-    }
+        _testScale<double>();
+        _testScale<float>();
+        _testScale<int>();
+        _testScale<unsigned>();
+        _testScale<short>();  
 
-    template<typename T>
-        void _testSum() {
-        printSubtitle("Sum " + typeToString<T>(), T_Color::BARBIE_PINK);
-        setPath("sum_" + typeToString<T>(), getPath(_testName + "Logs") + "/Sum");
-        _logs.addParameter("type", typeToString<T>());
-        _logs.addParameter("size", std::to_string(_size));
-        _logs.addParameter("unrollFactor", STALKER_UNROLL_FACTOR);
-        _logs.addParameter("alignment", DefaultAlignment());
-        _logs.addParameter("compiler flag", "o0");
-        auto typeName = typeToString<T>();
-        auto unit = Stalker::Core::TimeUnit::nanoseconds;
-
-        auto a = createAlignedVector<T>(_size);
-        Random::uniform<T>(_size, a.data(), 0, 1);
-
-        T expected = 0;
-
-        for (size_t i = 0; i < _size; i++) {
-            expected += a[i];
-        }
-
-        {
-            T resClassic = MathOperations::sum<T, ExecutionTraitClassic<>>(_size, a.data());
-            TestUtility::compareValues(resClassic, expected, "Classic Sum", _tolerance, true);
-        }
-
-        {
-            T resMeta = MathOperations::sum<T, ExecutionTraitUnrolled<16>>(_size, a.data());
-            TestUtility::compareValues(resMeta, expected, "Meta Sum", _tolerance, true);
-        }
-
-        {
-            T resSIMD1 = MathOperations::sum<T, ExecutionTraitSIMD<T_SIMD::AVX2>>(_size, a.data());
-            TestUtility::compareValues(resSIMD1, expected, "SIMD AVX2 Sum", _tolerance, true);
-        }
-
-        {
-            // T resSIMD2 = MathOperations::sum<T, ExecutionTraitSIMD<T_SIMD::AVX512>>(_size, a.data());
-            // TestUtility::compareValues(resSIMD2, expected, "SIMD AVX512 Sum", _tolerance);
-        }
-
-        ThreadTraitSTDThread ThreadTrait = ThreadTraitSTDThread();
-        auto nThreads = ThreadTrait.getNumThreads();
-        auto nThreadsStr = std::to_string(nThreads);
-        _logs.addParameter("numThreads", nThreadsStr);
-
-        {
-            // T resClassicThreaded = MathOperations::sum<T, ThreadTraitSTDThread, ExecutionTraitClassic<>>(ThreadTrait, _size, a.data());
-            // TestUtility::compareValues(resClassicThreaded, expected, "Classic Threaded Sum", _tolerance);
-        }
-
-        {
-            // T resMetaThreaded = MathOperations::sum<T, ThreadTraitSTDThread, ExecutionTraitUnrolled<16>>(ThreadTrait, _size, a.data());
-            // TestUtility::compareValues(resMetaThreaded, expected, "Meta Threaded Sum", _tolerance);
-        }
-
-        {
-            // T resSIMD1Threaded = MathOperations::sum<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2>>(ThreadTrait, _size, a.data());
-            // TestUtility::compareValues(resSIMD1Threaded, expected, "SIMD AVX2 Threaded Sum", _tolerance);
-        }
-
-        {
-            // T resSIMD2Threaded = MathOperations::sum<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512>>(ThreadTrait, _size, a.data());
-            // TestUtility::compareValues(resSIMD2Threaded, expected, "SIMD AVX512 Threaded Sum", _tolerance);
-        }
-
-        _logs.exportToCSV(getPath("sum_" + typeToString<T>()));
-        _logs.clear();
-        
     }
     private:
 
@@ -150,12 +69,6 @@ namespace STLKR_Tests {
     void _testAdd() {
 
         printSubtitle("Addition " + typeToString<T>(), T_Color::BARBIE_PINK);
-        setPath("add_" + typeToString<T>(), getPath(_testName + "Logs") + "/Add");
-        _logs.addParameter("type", typeToString<T>());
-        _logs.addParameter("size", std::to_string(_size));
-        _logs.addParameter("unrollFactor", STALKER_UNROLL_FACTOR);
-        _logs.addParameter("alignment", DefaultAlignment());
-        _logs.addParameter("compiler flag", "o0");
         auto typeName = typeToString<T>();
         auto unit = Stalker::Core::TimeUnit::nanoseconds;
 
@@ -283,12 +196,8 @@ namespace STLKR_Tests {
             TestUtility::compareVectors<T>(resScaledSIMD2Threaded.data(), expectedScaled.data(), _size, "SIMD AVX512 Scaled Threaded", _tolerance);
         }
 
-        _logs.exportToCSV(getPath("add_" + typeToString<T>()));
-        _logs.clear();
     }
 
-    
-    
     template<typename T>
     void _testSubtract() {
         printSubtitle("Subtraction " + typeToString<T>(), T_Color::BARBIE_PINK);
@@ -367,7 +276,7 @@ namespace STLKR_Tests {
 
     }
 
-        template<typename T>
+    template<typename T>
     void _testMultiply() {
         printSubtitle("Multiplication " + typeToString<T>(), T_Color::BARBIE_PINK);
         auto a = createAlignedVector<T>(_size);
@@ -443,25 +352,132 @@ namespace STLKR_Tests {
         TestUtility::compareVectors<T>(resScaledSIMD2Threaded.data(), expectedScaled.data(), _size, "SIMD AVX512 Scaled Threaded", _tolerance);
     }
 
-    template<typename T>
-    void _testScaledMultiply() {
-        // Implementation of scaled multiplication tests
-    }
+        template<typename T>
+    void _testSum() {
+        printSubtitle("Sum " + typeToString<T>(), T_Color::BARBIE_PINK);
+        auto typeName = typeToString<T>();
+        auto unit = Stalker::Core::TimeUnit::nanoseconds;
 
-    template<typename T>
-    void _testDivide() {
-        // Implementation of division tests
-    }
+        auto a = createAlignedVector<T>(_size);
+        Random::uniform<T>(_size, a.data(), 0, 1);
 
-    template<typename T>
-    void _testScaledDivide() {
-        // Implementation of scaled division tests
-    }
+        T expected = 0;
 
+        for (size_t i = 0; i < _size; i++) {
+            expected += a[i];
+        }
 
+        {
+            T resClassic = MathOperations::sum<T, ExecutionTraitClassic<>>(_size, a.data());
+            TestUtility::compareValues(resClassic, expected, "Classic Sum", _tolerance, true);
+        }
+
+        {
+            T resMeta = MathOperations::sum<T, ExecutionTraitUnrolled<16>>(_size, a.data());
+            TestUtility::compareValues(resMeta, expected, "Meta Sum", _tolerance, true);
+        }
+
+        {
+            T resSIMD1 = MathOperations::sum<T, ExecutionTraitSIMD<T_SIMD::AVX2>>(_size, a.data());
+            TestUtility::compareValues(resSIMD1, expected, "SIMD AVX2 Sum", _tolerance, true);
+        }
+
+        {
+            // T resSIMD2 = MathOperations::sum<T, ExecutionTraitSIMD<T_SIMD::AVX512>>(_size, a.data());
+            // TestUtility::compareValues(resSIMD2, expected, "SIMD AVX512 Sum", _tolerance);
+        }
+
+        ThreadTraitSTDThread ThreadTrait = ThreadTraitSTDThread();
+        auto nThreads = ThreadTrait.getNumThreads();
+        auto nThreadsStr = std::to_string(nThreads);
+        _logs.addParameter("numThreads", nThreadsStr);
+
+        {
+            // T resClassicThreaded = MathOperations::sum<T, ThreadTraitSTDThread, ExecutionTraitClassic<>>(ThreadTrait, _size, a.data());
+            // TestUtility::compareValues(resClassicThreaded, expected, "Classic Threaded Sum", _tolerance);
+        }
+
+        {
+            // T resMetaThreaded = MathOperations::sum<T, ThreadTraitSTDThread, ExecutionTraitUnrolled<16>>(ThreadTrait, _size, a.data());
+            // TestUtility::compareValues(resMetaThreaded, expected, "Meta Threaded Sum", _tolerance);
+        }
+
+        {
+            // T resSIMD1Threaded = MathOperations::sum<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2>>(ThreadTrait, _size, a.data());
+            // TestUtility::compareValues(resSIMD1Threaded, expected, "SIMD AVX2 Threaded Sum", _tolerance);
+        }
+
+        {
+            // T resSIMD2Threaded = MathOperations::sum<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512>>(ThreadTrait, _size, a.data());
+            // TestUtility::compareValues(resSIMD2Threaded, expected, "SIMD AVX512 Threaded Sum", _tolerance);
+        }
         
+    }
 
-    };
+    template<typename T>
+    void _testScale() {
+        printSubtitle("Scale " + typeToString<T>(), T_Color::BARBIE_PINK);
+
+        // Data
+        auto input = createAlignedVector<T>(_size);
+        Random::uniform<T>(_size, input.data(), 0, 10);
+
+        // Scalar with safe range for integral types
+        T scalar = static_cast<T>(3.14);
+
+        // Expected
+        auto expected = createAlignedVector<T>(_size);
+        for (size_t i = 0; i < _size; ++i) expected[i] = static_cast<T>(input[i] * scalar);
+
+        // Non-threaded variants (in-place)
+        {
+            auto a = input;
+            MathOperations::scale<T, ExecutionTraitClassic<>>(_size, a.data(), scalar);
+            TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "Classic", _tolerance);
+        }
+        {
+            auto a = input;
+            MathOperations::scale<T, ExecutionTraitUnrolled<16>>(_size, a.data(), scalar);
+            TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "Meta", _tolerance);
+        }
+        {
+            auto a = input;
+            MathOperations::scale<T, ExecutionTraitSIMD<T_SIMD::AVX2>>(_size, a.data(), scalar);
+            TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "SIMD AVX2", _tolerance);
+        }
+        {
+            auto a = input;
+            MathOperations::scale<T, ExecutionTraitSIMD<T_SIMD::AVX512>>(_size, a.data(), scalar);
+            TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "SIMD AVX512", _tolerance);
+        }
+
+        // Threaded variants (out-of-place)
+        ThreadTraitSTDThread ThreadTrait = ThreadTraitSTDThread();
+        _logs.addParameter("numThreads", std::to_string(ThreadTrait.getNumThreads()));
+
+        {
+            auto a = input;
+            MathOperations::scale<T, ThreadTraitSTDThread, ExecutionTraitClassic<>>(ThreadTrait, _size, a.data(), scalar);
+            TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "Classic Threaded", _tolerance);
+        }
+        {
+            auto a = input;
+            MathOperations::scale<T, ThreadTraitSTDThread, ExecutionTraitUnrolled<16>>(ThreadTrait, _size, a.data(), scalar);
+            TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "Meta Threaded", _tolerance);
+        }
+        {
+            auto a = input;
+            MathOperations::scale<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2>>(ThreadTrait, _size, a.data(), scalar);
+            TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "SIMD AVX2 Threaded", _tolerance);
+        }
+        {
+            auto a = input;
+            MathOperations::scale<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512>>(ThreadTrait, _size, a.data(), scalar);
+            TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "SIMD AVX512 Threaded", _tolerance);
+        }
+    }
+
+};
 
 
 } // namespace STLKR_Tests

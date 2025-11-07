@@ -93,7 +93,7 @@ using namespace Stalker::Core::Config;
         }
 
         template <typename T, size_t Unroll = DefaultUnroll()>
-        static constexpr inline void scale(size_t size, const T* __restrict  data, T scalar) {
+        static constexpr inline void scale(size_t size, T* __restrict data, T scalar) {
             auto limit = size - (size % Unroll);
             for (size_t i = 0; i < limit; i += Unroll)
                 _scale<T, T>(data + i, scalar, std::make_index_sequence<Unroll>{});
@@ -197,7 +197,7 @@ using namespace Stalker::Core::Config;
         }
 
         template <typename T, typename R, size_t... Indices>
-        static constexpr inline void _scale(const T* __restrict data, T scalar, std::index_sequence<Indices...>) {
+        static constexpr inline void _scale(T* __restrict data, T scalar, std::index_sequence<Indices...>) {
             ((data[Indices] *= scalar), ...);
         }
 

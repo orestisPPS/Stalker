@@ -51,6 +51,26 @@ private:
             (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_mul_pd(_mm512_load_pd(a + Is * Base::registerSize),
                                                                                             _mm512_load_pd(b + Is * Base::registerSize))), ...);
     }
+
+    template <T_SIMDStore Policy, size_t... Is>
+    static inline void _scale(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+        (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_mul_pd(_mm512_load_pd(data + Is * Base::registerSize), *scalar)), ...);
+    }
+
+    template <T_SIMDStore Policy, size_t... Is>
+    static inline void _scale(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+        (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm512_mul_pd(_mm512_load_pd(data + Is * Base::registerSize), *scalar)), ...);
+    }
+
+    template <T_SIMDStore Policy, size_t... Is>
+    static inline void _addConstant(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+        (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_add_pd(_mm512_load_pd(data + Is * Base::registerSize), *scalar)), ...);
+    }
+
+    template <T_SIMDStore Policy, size_t... Is>
+    static inline void _addConstant(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+        (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm512_add_pd(_mm512_load_pd(data + Is * Base::registerSize), *scalar)), ...);
+    }
 };
 
 template<>
@@ -97,6 +117,26 @@ template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_mul_ps(_mm512_load_ps(a + Is * Base::registerSize),
                                                                                                 _mm512_load_ps(b + Is * Base::registerSize))),...);
         }
+
+        template <T_SIMDStore Policy,size_t... Is>
+        static inline void _scale(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_mul_ps(_mm512_load_ps(data + Is * Base::registerSize), *scalar)), ...);
+        }
+
+        template <T_SIMDStore Policy, size_t... Is>
+        static inline void _scale(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+            (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm512_mul_ps(_mm512_load_ps(data + Is * Base::registerSize), *scalar)), ...);
+        }
+
+        template <T_SIMDStore Policy, size_t... Is>
+        static inline void _addConstant(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_add_ps(_mm512_load_ps(data + Is * Base::registerSize), *scalar)), ...);
+        }
+
+        template <T_SIMDStore Policy, size_t... Is>
+        static inline void _addConstant(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+            (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm512_add_ps(_mm512_load_ps(data + Is * Base::registerSize), *scalar)), ...);
+        }
 };
 
 template<>
@@ -140,6 +180,26 @@ private:
         else
             (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_mullo_epi32(_mm512_load_si512(reinterpret_cast<const void*>(a + Is * Base::registerSize)),
                                                                                                  _mm512_load_si512(reinterpret_cast<const void*>(b + Is * Base::registerSize)))), ...);
+    }
+
+    template <T_SIMDStore Policy, size_t... Is>
+    static inline void _scale(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+        (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_mullo_epi32(_mm512_load_si512(reinterpret_cast<const __m512i *>(data + Is * Base::registerSize)), *scalar)), ...);
+    }
+    
+    template <T_SIMDStore Policy, size_t... Is>
+    static inline void _scale(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+        (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm512_mullo_epi32(_mm512_load_si512(reinterpret_cast<const __m512i *>(data + Is * Base::registerSize)), *scalar)), ...);
+    }
+
+    template <T_SIMDStore Policy, size_t... Is>
+    static inline void _addConstant(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+        (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_add_epi32(_mm512_load_si512(reinterpret_cast<const __m512i *>(data + Is * Base::registerSize)), *scalar)), ...);
+    }
+
+    template <T_SIMDStore Policy, size_t... Is>
+    static inline void _addConstant(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+        (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm512_add_epi32(_mm512_load_si512(reinterpret_cast<const __m512i *>(data + Is * Base::registerSize)), *scalar)), ...);
     }
 };
 
@@ -185,6 +245,26 @@ friend Base;
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_mullo_epi32(_mm512_load_si512(reinterpret_cast<const __m512i *>(a + Is * Base::registerSize)), 
                                                                                                      _mm512_load_si512(reinterpret_cast<const __m512i *>(b + Is * Base::registerSize)))),...);
         }
+
+        template <T_SIMDStore Policy, size_t... Is>
+        static inline void _scale(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_mullo_epi32(_mm512_load_si512(reinterpret_cast<const __m512i *>(data + Is * Base::registerSize)), *scalar)), ...);
+        }
+
+        template <T_SIMDStore Policy, size_t... Is>
+        static inline void _scale(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+            (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm512_mullo_epi32(_mm512_load_si512(reinterpret_cast<const __m512i *>(data + Is * Base::registerSize)), *scalar)), ...);
+        }
+
+        template <T_SIMDStore Policy, size_t... Is>
+        static inline void _addConstant(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_add_epi32(_mm512_load_si512(reinterpret_cast<const __m512i *>(data + Is * Base::registerSize)), *scalar)), ...);
+        }
+
+        template <T_SIMDStore Policy, size_t... Is>
+        static inline void _addConstant(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+            (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm512_add_epi32(_mm512_load_si512(reinterpret_cast<const __m512i *>(data + Is * Base::registerSize)), *scalar)), ...);
+        }
     };
 
 template<>
@@ -225,6 +305,26 @@ private:
         else
             (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_mullo_epi16(_mm512_load_si512(reinterpret_cast<const void*>(a + Is * Base::registerSize)),
                                                                                                  _mm512_load_si512(reinterpret_cast<const void*>(b + Is * Base::registerSize)))), ...);
+    }
+
+    template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
+    static inline void _scale(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+        (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_mullo_epi16(_mm512_load_si512(reinterpret_cast<const __m512i *>(data + Is * Base::registerSize)), *scalar)), ...);
+    }
+
+    template <T_SIMDStore Policy, size_t... Is>
+    static inline void _scale(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+        (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm512_mullo_epi16(_mm512_load_si512(reinterpret_cast<const __m512i *>(data + Is * Base::registerSize)), *scalar)), ...);
+    }
+
+    template <T_SIMDStore Policy, size_t... Is>
+    static inline void _addConstant(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+        (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_add_epi16(_mm512_load_si512(reinterpret_cast<const __m512i *>(data + Is * Base::registerSize)), *scalar)), ...);
+    }
+
+    template <T_SIMDStore Policy, size_t... Is>
+    static inline void _addConstant(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
+        (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm512_add_epi16(_mm512_load_si512(reinterpret_cast<const __m512i *>(data + Is * Base::registerSize)), *scalar)), ...);
     }
 };
 

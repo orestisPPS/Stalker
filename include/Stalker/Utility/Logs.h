@@ -4,15 +4,11 @@
 #pragma once
 
 #include <fstream>
-#include <string>
 #include <algorithm>
-#include <vector>
 #include <list>
-#include <unordered_map>
 #include <filesystem>
 #include <random>
 #include <sstream>
-#include <iomanip>
 #include <Stalker/Core/Units.h>
 #include <Stalker/Utility/Stopwatch.h>
 #include <Stalker/Utility/Printers.h>
@@ -453,17 +449,15 @@ class Logs {
     string _name;
 
     string _generateUUID() {
+        // Generate a short, filename-safe identifier.
+        // 12 hex characters (~48 bits of randomness) is ample when combined with the timestamp in the filename.
         static std::random_device rd;
-        static std::mt19937 gen(rd());
+        static std::mt19937_64 gen(rd());
         static std::uniform_int_distribution<uint64_t> dis;
 
+        uint64_t v = dis(gen) & 0xFFFFFFFFFFFFULL; // 48 bits
         std::ostringstream oss;
-        oss << std::hex << std::setfill('0')
-            << std::setw(8) << dis(gen) << "-"
-            << std::setw(4) << (dis(gen) & 0xFFFF) << "-"
-            << std::setw(4) << (dis(gen) & 0x0FFF) << "-"
-            << std::setw(4) << (dis(gen) & 0x3FFF | 0x8000) << "-"
-            << std::setw(12) << dis(gen);
+        oss << std::hex << std::nouppercase << std::setfill('0') << std::setw(12) << v;
         return oss.str();
     }
 

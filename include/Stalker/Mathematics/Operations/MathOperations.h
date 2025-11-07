@@ -82,6 +82,11 @@ namespace Stalker::Mathematics {
             Launcher::call(threadTrait, Dispatcher<T_Operation::Multiply, T, Trait>(), n, a, b, result, scalarA, scalarB);
         }
 
+        template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
+        constexpr inline static void scale(size_t n, T* data, T scalar) {
+            Dispatcher<T_Operation::Scale, T, Trait>::call(n, data, scalar);
+        }
+
         template<typename T, typename Trait = DefaultExecutionTrait>
         constexpr inline static void scale(size_t n, const T* data, T* result, T scalar) {
             Dispatcher<T_Operation::Scale, T, Trait>::call(n, data, result, scalar);
@@ -91,6 +96,12 @@ namespace Stalker::Mathematics {
         constexpr inline static void scale(const ThreadTrait& threadTrait, size_t n, const T* data, T* result, T scalar) {
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Unary>;
             Launcher::call(threadTrait, Dispatcher<T_Operation::Scale, T, Trait>(), n, data, result, scalar);
+        }
+
+        template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
+        constexpr inline static void scale(const ThreadTrait& threadTrait, size_t n, T* data, T scalar) {
+            using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Unary>;
+            Launcher::call(threadTrait, Dispatcher<T_Operation::Scale, T, Trait>(), n, data, scalar);
         }
 
         template<typename T, typename Trait = DefaultExecutionTrait>

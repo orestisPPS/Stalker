@@ -105,7 +105,7 @@ public:
         T_simd scalarSIMD;
         MemoryOps::broadcast(&scalarSIMD, scalar);
         for (size_t i = 0; i < limit; i += blockSize)
-            Child::_scale(data + i, result + i, scalarSIMD, std::make_index_sequence<Unroll>{});
+            Child::template _scale<Policy>(data + i, result + i, &scalarSIMD, std::make_index_sequence<Unroll>{});
         for (size_t i = limit; i < size; i++)
             result[i] = data[i] * scalar;
     }
@@ -117,7 +117,7 @@ public:
         T_simd scalarSIMD;
         MemoryOps::broadcast(&scalarSIMD, scalar);
         for (size_t i = 0; i < limit; i += blockSize)
-            Child::_scale(data + i, data + i, scalarSIMD, std::make_index_sequence<Unroll>{});
+            Child::template _scale<Policy>(data + i, &scalarSIMD, std::make_index_sequence<Unroll>{});
         for (size_t i = limit; i < size; i++)
             data[i] *= scalar;
     }
