@@ -1,115 +1,93 @@
-#cmake_minimum_required(VERSION 3.27)
-#project(stalker)
-#
-#set(CMAKE_CXX_STANDARD 17)
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2 -mfma -O0 ")
-#
-#add_executable(stalker main.cpp
-#        Tests/NumericalVectorTest.h
-#        Tests/TestBase.h
-#        Tests/STLKR_PerformanceTests/STLKR_PerformanceTestBase.h
-#        Tests/STLKR_TestBase.cpp
-#        Tests/STLKR_TestBase.h
-#        Tests/STLKR_PerformanceTests/STLKR_PerformanceTestBase.cpp
-#        Tests/StalkerVector_ValidityTests.h
-#        Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_PerformanceTests.h
-#        Tests/STLKR_PerformanceTests/StalkerVector/SingleThreadPerformance/SingleThreadOperationsPerformanceTest.h
-#        
-#        Utility/Timer.cpp
-#        Utility/Timer.h
-#        Utility/Logs.cpp
-#        Utility/Units/STLKR_Units.h
-#        
-#        Threading/CPUTopology/CPU.h
-#        Threading/CPUTopology/Core.h
-#        Threading/CPUTopology/Cache.h
-#        Threading/CPUTopology/Thread.h
-#        Threading/CPUTopology/SharedCache.h
-#        Threading/CPUTopology/CPU_Manager.h
-#        Threading/ThreadJob.h
-#        Threading/ThreadOperations.h
-#        
-#
-#        StalkerVector/StalkerVector.h 
-#        StalkerVector/StalkerVector_Iterator.h
-#        StalkerVector/AVX2/MathTraits.h
-#        StalkerVector/AVX2/MemoryTraits.h
-#        StalkerVector/AVX2/Prefetch.h
-#        StalkerVector/AVX2/Operations.h
-#        Threading/CPUTopology/Cache.h
-#)
+cmake_minimum_required(VERSION 3.18)
+project(Stalker VERSION 0.1.0 LANGUAGES CXX)
 
-# cmake_minimum_required(VERSION 3.27)
-# project(stalker)
-
-# set(CMAKE_CXX_STANDARD 20)
-# set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2 -mfma -O3")
-
-# # Define the stalker_core header-only library
-# add_library(stalker_core INTERFACE)
-
-# # Add include directories to the stalker_core library
-# target_include_directories(stalker_core INTERFACE
-#         ${PROJECT_SOURCE_DIR}/DataStructures/StalkerVector
-#         ${PROJECT_SOURCE_DIR}/DataStructures/StalkerMatrix
-#         ${PROJECT_SOURCE_DIR}/DataStructures/StalkerMatrix
-#         ${PROJECT_SOURCE_DIR}/DataStructures/Iterators
-#         ${PROJECT_SOURCE_DIR}/DataStructures/Buffers
-#         ${PROJECT_SOURCE_DIR}/StalkerMathematics
-#         ${PROJECT_SOURCE_DIR}/Threading
-#         ${PROJECT_SOURCE_DIR}/Utility
-
-
-# )
-# # Define the stalker_tests library
-# add_library(stalker_tests STATIC
-#         Tests/StalkerTestRunner.h
-#         Tests/STLKR_PerformanceTests/STLKR_PerformanceTestBase.h
-#         Tests/STLKR_TestBase.cpp
-#         Tests/STLKR_TestBase.h
-#         Tests/StalkerVector_ValidityTests.h
-#         Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_PerformanceTests.h
-#         Tests/STLKR_PerformanceTests/StalkerVector/SingleThreadPerformance/SingleThreadOperationsPerformanceTest.h
-#         Tests/CPUTopologyTest.h
-#         Tests/StalkerMatrix/DataAccess_ValidityTests.h
-#         Tests/StalkerMatrix/Iterator_ValidityTests.h
-#         Tests/StalkerMatrix/FixedStridePtrBuffer_ValidityTest.h
-#         Tests/StalkerMathematics/Differentiation_ValidityTests.h
-#         Tests/StalkerMathematics/MetaMath_ValidityTests.h
-# )
-
-# # Link the stalker_tests library with stalker_core
-# target_link_libraries(stalker_tests PRIVATE stalker_core)
-
-# # Add the main executable
-# add_executable(stalker main.cpp
-#         Utility/Readers.h
-#         Tests/STLKR_PerformanceTests/StalkerVector/StalkerVector_OperationsTests.h)
-
-# # Link the executable with stalker_core and stalker_tests
-# target_link_libraries(stalker stalker_core stalker_tests)
-
-cmake_minimum_required(VERSION 3.27)
-project(Stalker LANGUAGES CXX)
-
-# Global SIMD option for whole project
-option(STALKER_ENABLE_SIMD "Enable SIMD (vectorization) support" ON)
-
-# Optionally: instruction set (for more advanced use)
-set(STALKER_SIMD_INSTRUCTION_SET "avx2" CACHE STRING "SIMD instruction set (avx2, avx512, esp-dsp, none)")
-
-
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Compiler version check
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0)
+        message(FATAL_ERROR "GCC 7.0 or newer required (for C++17: if constexpr, index_sequence, etc)")
+    endif()
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0)
+        message(FATAL_ERROR "Clang 7.0 or newer required (for C++17 features)")
+    endif()
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.12)
+        message(FATAL_ERROR "MSVC 19.12 (VS2017 15.5) or newer required (for C++17 features)")
+    endif()
+else()
+    message(WARNING "Unknown compiler: ${CMAKE_CXX_COMPILER_ID}. C++17 support not guaranteed.")
+endif()
+
 
 add_subdirectory(Core)
 add_subdirectory(Memory)
 add_subdirectory(Utility)
 add_subdirectory(Mathematics)
-add_subdirectory(Tests)
+add_subdirectory(Threading)
 
-add_executable(stalker main.cpp)
-# target_link_libraries(stalker PRIVATE StalkerCore StalkerThreading)
-target_link_libraries(stalker PRIVATE StalkerCore StalkerMemory StalkerUtility StalkerMathematics)
+# Create interface library for the complete Stalker library
+add_library(Stalker INTERFACE)
+target_link_libraries(Stalker INTERFACE
+    StalkerCore
+    StalkerMemory
+    StalkerUtility
+    StalkerMathematics
+    StalkerThreading
+)
+
+# Optional in-tree alias for namespaced usage
+add_library(Stalker::Stalker ALIAS Stalker)
+
+
+# Always build tests and benchmarks by default
+option(STALKER_BUILD_TESTS "Build tests" OFF)
+option(STALKER_BUILD_BENCHMARKS "Build benchmarks" OFF)
+
+if(STALKER_BUILD_TESTS)
+    add_subdirectory(Tests)
+endif()
+
+if(STALKER_BUILD_BENCHMARKS)
+    add_subdirectory(Benchmarks)
+endif()
+
+# -------------------------
+# Install and CMake package
+# -------------------------
+include(CMakePackageConfigHelpers)
+
+# Install umbrella INTERFACE target into export set
+install(TARGETS Stalker
+    EXPORT StalkerTargets
+    INCLUDES DESTINATION include
+)
+
+# Export all targets (modules add to the same export in their CMakeLists)
+install(
+    EXPORT StalkerTargets
+    NAMESPACE Stalker::
+    DESTINATION lib/cmake/Stalker
+)
+
+# Configure and install package config files
+configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tools/cmake/StalkerConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/StalkerConfig.cmake
+    INSTALL_DESTINATION lib/cmake/Stalker
+)
+
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/StalkerConfigVersion.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/StalkerConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/StalkerConfigVersion.cmake
+    DESTINATION lib/cmake/Stalker
+)

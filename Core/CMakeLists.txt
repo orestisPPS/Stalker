@@ -1,4 +1,4 @@
- cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.18)
 project(StalkerCore LANGUAGES CXX)
 
 ################################################################################
@@ -156,30 +156,14 @@ endif()
      
 
 ################################################################################
-# LOOP UNROLLING CONFIGURATION
+# LOOP UNROLL FACTOR (simplified: always active)
 ################################################################################
-
-# Enable or disable loop unrolling (user-overridable)
-option(STALKER_UNROLL_ENABLE "Enable loop unrolling in SIMD code" ON)
-
-if(STALKER_UNROLL_ENABLE)
-    if(NOT DEFINED STALKER_UNROLL_FACTOR)
-        set(STALKER_UNROLL_FACTOR 4 CACHE STRING "Loop unroll factor for SIMD" FORCE)
-    else()
-        # Validate unroll factor
-        if(NOT STALKER_UNROLL_FACTOR GREATER 0)
-            message(FATAL_ERROR "STALKER_UNROLL_FACTOR must be a positive integer. Set it with: -DSTALKER_UNROLL_FACTOR=VALUE")
-        endif()
-        if(STALKER_UNROLL_FACTOR EQUAL 1)
-            message(WARNING "STALKER_UNROLL_FACTOR=1 is effectively disabling unrolling. Consider setting STALKER_UNROLL_ENABLE=OFF instead.")
-        endif()
-    endif()
-else()
-    # Always enforce unroll factor = 1 when unrolling is off, regardless of user setting
-    if(DEFINED STALKER_UNROLL_FACTOR AND NOT (STALKER_UNROLL_FACTOR STREQUAL "1"))
-        message(WARNING "STALKER_UNROLL_ENABLE=OFF. Defaulting STALKER_UNROLL_FACTOR to 1 (was previously set to ${STALKER_UNROLL_FACTOR}).")
-        set(STALKER_UNROLL_FACTOR 1 CACHE STRING "Loop unroll factor for SIMD" FORCE)
-    endif()
+if(NOT DEFINED STALKER_UNROLL_FACTOR)
+    # Conservative default
+    set(STALKER_UNROLL_FACTOR 1 CACHE STRING "Loop unroll factor for SIMD" FORCE)
+endif()
+if(NOT STALKER_UNROLL_FACTOR GREATER 0)
+    message(FATAL_ERROR "STALKER_UNROLL_FACTOR must be a positive integer. Set it with: -DSTALKER_UNROLL_FACTOR=VALUE")
 endif()
 
 
@@ -214,7 +198,7 @@ else()
 endif()
 
 option(STALKER_THREADING_ENABLE "Enable multithreading support" ON)
-option(STALKER_THREADING_ENABLE_MAX_THREADS "Enable maximum machine threads" OFF)
+option(STALKER_THREADING_MAX_THREADS_ENABLE "Enable maximum machine threads" OFF)
 
 # Function to ensure valid thread count
 function(validate_and_set_thread_count)
@@ -229,7 +213,7 @@ function(validate_and_set_thread_count)
     endif()
     
     # Handle MAX_THREADS override
-    if(STALKER_THREADING_ENABLE_MAX_THREADS)
+    if(STALKER_THREADING_MAX_THREADS_ENABLE)
         set(STALKER_THREADING_NUM_THREADS ${NUM_CPU_CORES} CACHE STRING "" FORCE)
         return()
     endif()
@@ -270,9 +254,9 @@ else()
     message(STATUS "STALKER_THREADING_ENABLE=OFF: Forcing STALKER_THREADING_NUM_THREADS=0")
 endif()
 
-option(STALKER_THREADING_ENABLE_STDTHREAD      "Use std::thread for multithreading" OFF)
-option(STALKER_THREADING_ENABLE_PTHREAD        "Use pthreads for multithreading (Linux/POSIX only)" ON)
-option(STALKER_THREADING_ENABLE_SMT "Enable hyperthreading (only valid with pthreads on Linux)" ON)
+option(STALKER_THREADING_STD_ENABLE      "Use std::thread for multithreading" ON)
+option(STALKER_THREADING_POSIX_ENABLE        "Use pthreads for multithreading (Linux/POSIX only)" OFF)
+option(STALKER_THREADING_POSIX_SMT_ENABLE "Enable hyperthreading (only valid with pthreads on Linux)" OFF)
 
 if(STALKER_THREADING_ENABLE)
 
@@ -282,42 +266,51 @@ if(STALKER_THREADING_ENABLE)
 
     # On Windows: pthread is always OFF, std::thread is ON, hyperthreading is always OFF
     if(STALKER_PLATFORM STREQUAL "WINDOWS")
-        if(STALKER_THREADING_ENABLE_PTHREAD OR NOT STALKER_THREADING_ENABLE_STDTHREAD OR STALKER_THREADING_ENABLE_SMT)
-            set(STALKER_THREADING_ENABLE_PTHREAD        OFF CACHE BOOL "" FORCE)
-            set(STALKER_THREADING_ENABLE_STDTHREAD      ON  CACHE BOOL "" FORCE)
-            set(STALKER_THREADING_ENABLE_SMT OFF CACHE BOOL "" FORCE)
-            message(STATUS "Windows detected: Forcing STALKER_THREADING_ENABLE_PTHREAD=OFF, STALKER_THREADING_ENABLE_STDTHREAD=ON, STALKER_THREADING_ENABLE_SMT=OFF.")
+        if(STALKER_THREADING_POSIX_ENABLE OR NOT STALKER_THREADING_STD_ENABLE OR STALKER_THREADING_POSIX_SMT_ENABLE)
+            set(STALKER_THREADING_POSIX_ENABLE        OFF CACHE BOOL "" FORCE)
+            set(STALKER_THREADING_STD_ENABLE      ON  CACHE BOOL "" FORCE)
+            set(STALKER_THREADING_POSIX_SMT_ENABLE OFF CACHE BOOL "" FORCE)
+            message(STATUS "Windows detected: Forcing STALKER_THREADING_POSIX_ENABLE=OFF, STALKER_THREADING_STD_ENABLE=ON, STALKER_THREADING_POSIX_SMT_ENABLE=OFF.")
         endif()
     endif()
 
     # Only one backend can be enabled
-    if(STALKER_THREADING_ENABLE_PTHREAD AND STALKER_THREADING_ENABLE_STDTHREAD)
-        message(FATAL_ERROR "Cannot enable both pthread and std::thread. Choose one backend.")
+    # If both backends are enabled, prefer the most appropriate one for the platform
+    if(STALKER_THREADING_POSIX_ENABLE AND STALKER_THREADING_STD_ENABLE)
+        if(STALKER_PLATFORM STREQUAL "WINDOWS")
+            # pthread not supported on Windows; keep std::thread
+            set(STALKER_THREADING_POSIX_ENABLE OFF CACHE BOOL "" FORCE)
+            message(WARNING "Both pthread and std::thread were enabled. pthread is not supported on Windows; disabling pthread and using std::thread.")
+        else()
+            # On Linux prefer pthread for lower-level control; disable std::thread
+            set(STALKER_THREADING_STD_ENABLE OFF CACHE BOOL "" FORCE)
+            message(WARNING "Both pthread and std::thread were enabled. Selecting pthread (Linux) and disabling std::thread.")
+        endif()
     endif()
 
     # If neither is enabled, select platform default
-    if(NOT STALKER_THREADING_ENABLE_PTHREAD AND NOT STALKER_THREADING_ENABLE_STDTHREAD)
+    if(NOT STALKER_THREADING_POSIX_ENABLE AND NOT STALKER_THREADING_STD_ENABLE)
         if(STALKER_PLATFORM STREQUAL "WINDOWS")
-            set(STALKER_THREADING_ENABLE_STDTHREAD ON CACHE BOOL "" FORCE)
+            set(STALKER_THREADING_STD_ENABLE ON CACHE BOOL "" FORCE)
             message(STATUS "No thread backend enabled, defaulting to std::thread (Windows).")
         else()
-            set(STALKER_THREADING_ENABLE_PTHREAD    ON CACHE BOOL "" FORCE)
-            set(STALKER_THREADING_ENABLE_STDTHREAD  OFF CACHE BOOL "" FORCE)
-            set(STALKER_THREADING_ENABLE_SMT        OFF CACHE BOOL "" FORCE)
+            set(STALKER_THREADING_POSIX_ENABLE    ON CACHE BOOL "" FORCE)
+            set(STALKER_THREADING_STD_ENABLE  OFF CACHE BOOL "" FORCE)
+            set(STALKER_THREADING_POSIX_SMT_ENABLE        OFF CACHE BOOL "" FORCE)
             message(STATUS "No thread backend enabled, defaulting to pthread (Linux/POSIX).")
         endif()
     endif()
 
     # If std::thread, force hyperthreading off
-    if(STALKER_THREADING_ENABLE_STDTHREAD AND STALKER_THREADING_ENABLE_SMT)
-        set(STALKER_THREADING_ENABLE_SMT OFF CACHE BOOL "" FORCE)
+    if(STALKER_THREADING_STD_ENABLE AND STALKER_THREADING_POSIX_SMT_ENABLE)
+        set(STALKER_THREADING_POSIX_SMT_ENABLE OFF CACHE BOOL "" FORCE)
         message(STATUS "Hyperthreading is not supported with std::thread, forcing OFF.")
     endif()
 
 else()
-    set(STALKER_THREADING_ENABLE_PTHREAD        OFF CACHE BOOL "" FORCE)
-    set(STALKER_THREADING_ENABLE_STDTHREAD      OFF CACHE BOOL "" FORCE)
-    set(STALKER_THREADING_ENABLE_SMT            OFF CACHE BOOL "" FORCE)
+    set(STALKER_THREADING_POSIX_ENABLE        OFF CACHE BOOL "" FORCE)
+    set(STALKER_THREADING_STD_ENABLE      OFF CACHE BOOL "" FORCE)
+    set(STALKER_THREADING_POSIX_SMT_ENABLE            OFF CACHE BOOL "" FORCE)
 endif()
 
 
@@ -353,13 +346,12 @@ target_compile_definitions(StalkerCore INTERFACE
     STALKER_PLATFORM_CACHE_LINE_SIZE=${STALKER_PLATFORM_CACHE_LINE_SIZE}
     STALKER_ALIGNMENT=${STALKER_ALIGNMENT}
     STALKER_SIMD_ENABLE=$<BOOL:${STALKER_SIMD_ENABLE}>
-    STALKER_UNROLL_ENABLE=$<BOOL:${STALKER_UNROLL_ENABLE}>
     STALKER_UNROLL_FACTOR=${STALKER_UNROLL_FACTOR}
     STALKER_THREADING_ENABLE=$<BOOL:${STALKER_THREADING_ENABLE}>
     STALKER_THREADING_NUM_THREADS=${STALKER_THREADING_NUM_THREADS}
-    STALKER_THREADING_ENABLE_PTHREAD=$<BOOL:${STALKER_THREADING_ENABLE_PTHREAD}>
-    STALKER_THREADING_ENABLE_SMT=$<BOOL:${STALKER_THREADING_ENABLE_SMT}>
-    STALKER_THREADING_ENABLE_STDTHREAD=$<BOOL:${STALKER_THREADING_ENABLE_STDTHREAD}>
+    STALKER_THREADING_POSIX_ENABLE=$<BOOL:${STALKER_THREADING_POSIX_ENABLE}>
+    STALKER_THREADING_POSIX_SMT_ENABLE=$<BOOL:${STALKER_THREADING_POSIX_SMT_ENABLE}>
+    STALKER_THREADING_STD_ENABLE=$<BOOL:${STALKER_THREADING_STD_ENABLE}>
 )
 
 
@@ -399,6 +391,7 @@ endif()
 # Hiph Performance flags
 option(STALKER_ALL_GAS_NO_BRAKES "Enable maximum performance compiler flags" OFF)
 
+
 if(STALKER_ALL_GAS_NO_BRAKES)
     target_compile_options(StalkerCore INTERFACE
         # GCC and Clang only, for release/max perf builds
@@ -427,9 +420,8 @@ if(STALKER_ALL_GAS_NO_BRAKES)
 
 
 ################################################################################
-# SECTION: Install Logic
+# Install Logic (headers + export once)
 ################################################################################
-
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../include/Stalker/Core
     DESTINATION include/Stalker
@@ -449,19 +441,6 @@ message(STATUS "=========================================")
 message(STATUS "========== STALKER BUILD CONFIG ==========") 
 message(STATUS "==========================================")
 message(STATUS "")
-message(STATUS "STALKER_PLATFORM: ${STALKER_PLATFORM}")
-message(STATUS "STALKER_PLATFORM_BITS: ${STALKER_PLATFORM_BITS}")
-message(STATUS "STALKER_PLATFORM_CACHE_LINE_SIZE: ${STALKER_PLATFORM_CACHE_LINE_SIZE}")
-message(STATUS "STALKER_SIMD_ENABLE: ${STALKER_SIMD_ENABLE}")
-message(STATUS "STALKER_SIMD_INSTRUCTION_SET: ${STALKER_SIMD_INSTRUCTION_SET}")
-message(STATUS "STALKER_UNROLL_ENABLE: ${STALKER_UNROLL_ENABLE}")
-message(STATUS "STALKER_UNROLL_FACTOR: ${STALKER_UNROLL_FACTOR}")
-message(STATUS "STALKER_THREADING_ENABLE: ${STALKER_THREADING_ENABLE}")
-message(STATUS "STALKER_THREADING_NUM_THREADS: ${STALKER_THREADING_NUM_THREADS}")
-message(STATUS "STALKER_THREADING_ENABLE_PTHREAD: ${STALKER_THREADING_ENABLE_PTHREAD}")
-message(STATUS "STALKER_THREADING_ENABLE_STDTHREAD: ${STALKER_THREADING_ENABLE_STDTHREAD}")
-message(STATUS "STALKER_THREADING_ENABLE_SMT: ${STALKER_THREADING_ENABLE_SMT}")
-message(STATUS "=========================================")
 
 get_cmake_property(_variableNames CACHE_VARIABLES)
 foreach (_variableName IN LISTS _variableNames)

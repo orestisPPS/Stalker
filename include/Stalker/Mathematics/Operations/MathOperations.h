@@ -116,6 +116,17 @@ namespace Stalker::Mathematics {
         }
 
         template<typename T, typename Trait = DefaultExecutionTrait>
+        constexpr inline static void addConstant(size_t n, T* data, T constant) {
+            Dispatcher<T_Operation::AddConstant, T, Trait>::call(n, data, constant);
+        }
+
+        template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
+        constexpr inline static void addConstant(const ThreadTrait& threadTrait, size_t n, T* data, T constant) {
+            using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Unary>;
+            Launcher::call(threadTrait, Dispatcher<T_Operation::AddConstant, T, Trait>(), n, data, constant);
+        }
+
+        template<typename T, typename Trait = DefaultExecutionTrait>
         constexpr inline static T sum(size_t n, const T* __restrict data) {
             return Dispatcher<T_Operation::Sum, T, Trait>::call(n, data);
         }

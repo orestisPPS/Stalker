@@ -17,19 +17,16 @@ import math
 import json
 import argparse
 from dataclasses import dataclass, field
-from typing import Dict, List, Any, Tuple, Iterable
+from typing import Dict, List, Any, Tuple
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
-import warnings
 try:
     from rich.console import Console
     from rich.table import Table
     from rich.panel import Panel
-    from rich.progress import track
-    from rich.rule import Rule
     _RICH_AVAILABLE = True
     _console = Console()
 except Exception:
@@ -251,7 +248,7 @@ class BenchmarkPlotter:
     def _plotMetricSet(self, result: MetricSetResult) -> str:
         methods = list(result.method_stats.keys())
         medians = [result.method_stats[m].median for m in methods]
-        stds = [result.method_stats[m].std for m in methods]
+        # stds not needed directly here; error bars handled in bar constructor via yerr
 
         fig = plt.figure(figsize=(8, 4.5), dpi=self.dpi)
         ax = fig.add_subplot(111)
@@ -267,7 +264,7 @@ class BenchmarkPlotter:
             yerr = [ result.method_stats[m].std * self.err_scale for m in methods ]
 
         x = np.arange(len(methods))
-        bars = ax.bar(x, medians, yerr=yerr, capsize=4)
+        ax.bar(x, medians, yerr=yerr, capsize=4)
         ax.set_xticks(x, methods, rotation=20, ha="right")
         title = result.metric_name if not self.run_label else f"{result.metric_name} — {self.run_label}"
         ax.set_title(title)
@@ -374,6 +371,49 @@ class MultiBenchmarkPlotter:
         self._compare_over = {}
         # Accumulate computed percent differences across metrics for CSV export
         self._diff_records = []  # type: List[Dict[str, Any]]
+        # Parsed run metadata (operation, type, unroll, size)
+        self._run_meta: Dict[str, Dict[str, Any]] = {}
+        # Scaling plots collected paths
+        self._scaling_plots: List[str] = []
+
+    # ---------------------------- Run label parsing ----------------------------
+    @staticmethod
+    def _parse_run_label(run_label: str) -> Dict[str, Any]:
+        """Parse labels in the general form operation_type_unroll_size.
+        Robust to variants like ..._u<digits> and ..._s<digits>.
+        Returns dict with keys: operation (str), type (str|None), unroll (int|None), size (int|None).
+        """
+        tokens = run_label.split("_") if run_label else []
+        if not tokens:
+            return {"operation": None, "type": None, "unroll": None, "size": None}
+        operation = tokens[0]
+        type_tokens: List[str] = []
+        unroll = None
+        size = None
+        # Prefer tokens with explicit markers first
+        for tok in tokens[1:]:
+            low = tok.lower()
+            if (low.startswith("u") and low[1:].isdigit()) or low.startswith("unroll"):
+                # u<digits> or unroll<digits>
+                digits = ''.join(ch for ch in low if ch.isdigit())
+                if digits:
+                    try:
+                        unroll = int(digits)
+                    except Exception:
+                        unroll = None
+                continue
+            if low.startswith("s") and low[1:].isdigit():
+                try:
+                    size = int(low[1:])
+                except Exception:
+                    size = None
+                continue
+            # Otherwise consider part of type descriptor
+            # Ignore bare numeric tokens (likely timestamps or counters)
+            if not tok.isdigit():
+                type_tokens.append(tok)
+        type_str = "_".join(type_tokens) if type_tokens else None
+        return {"operation": operation, "type": type_str, "unroll": unroll, "size": size}
 
     @staticmethod
     def _findJsonFiles(directory: str) -> List[str]:
@@ -394,7 +434,7 @@ class MultiBenchmarkPlotter:
 
     # Simplified: removed unused helpers _collectAllMetrics and _availableMethodsForMetric
 
-    def _plotMedianByMethod(self, combined_df: pd.DataFrame, metric: str, out_dir: str) -> str:
+    def _plotMedianByMethod(self, combined_df: pd.DataFrame, metric: str, out_dir: str, quiet: bool = False) -> str:
         # combined_df has per-run rows with columns: Run, Metric, Method, Median
         df_m = combined_df[combined_df["Metric"] == metric].copy()
         if df_m.empty:
@@ -409,26 +449,27 @@ class MultiBenchmarkPlotter:
             methods = list(dict.fromkeys(df_m["Method"].tolist()))
         # Median of per-run medians for each method
         med_by_method = df_m.groupby("Method")["Median"].median().reindex(methods)
-        # Print medians table for this metric
-        try:
-            if _RICH_AVAILABLE:
-                tbl = Table(title=f"Medians — {metric}", show_lines=False, header_style="bold cyan")
-                tbl.add_column("#", justify="right", style="dim")
-                tbl.add_column("Method")
-                tbl.add_column("Median", justify="right")
-                for idx, m in enumerate(methods, start=1):
-                    val = med_by_method.get(m)
-                    txt = f"{val:.6g}" if (val is not None and np.isfinite(val)) else "NA"
-                    tbl.add_row(str(idx), m, txt)
-                _console.print(tbl)
-            else:
-                print(f"\nMedians — {metric}")
-                for idx, m in enumerate(methods, start=1):
-                    val = med_by_method.get(m)
-                    txt = f"{val:.6g}" if (val is not None and np.isfinite(val)) else "NA"
-                    print(f"  {idx:>2}. {m}: {txt}")
-        except Exception:
-            pass
+        # Print medians table for this metric (suppressed when quiet=True)
+        if not quiet:
+            try:
+                if _RICH_AVAILABLE:
+                    tbl = Table(title=f"Medians — {metric}", show_lines=False, header_style="bold cyan")
+                    tbl.add_column("#", justify="right", style="dim")
+                    tbl.add_column("Method")
+                    tbl.add_column("Median", justify="right")
+                    for idx, m in enumerate(methods, start=1):
+                        val = med_by_method.get(m)
+                        txt = f"{val:.6g}" if (val is not None and np.isfinite(val)) else "NA"
+                        tbl.add_row(str(idx), m, txt)
+                    _console.print(tbl)
+                else:
+                    print(f"\nMedians — {metric}")
+                    for idx, m in enumerate(methods, start=1):
+                        val = med_by_method.get(m)
+                        txt = f"{val:.6g}" if (val is not None and np.isfinite(val)) else "NA"
+                        print(f"  {idx:>2}. {m}: {txt}")
+            except Exception:
+                pass
         n_runs = df_m["Run"].nunique()
         # Determine label N: for a single run, show number of samples per method (from 'N');
         # for multiple runs, show runs and an approximate per-run N (median across methods/runs).
@@ -590,23 +631,24 @@ class MultiBenchmarkPlotter:
             rows.append(row)
 
         # Print diffs (Rich) as a flat table
-        try:
-            if flat_diffs:
-                if _RICH_AVAILABLE:
-                    dtbl = Table(title=f"Diffs — {metric} (Δ% = 100·(m − b)/b)", show_lines=False, header_style="bold magenta")
-                    dtbl.add_column("#", justify="right", style="dim")
-                    dtbl.add_column("Method")
-                    dtbl.add_column("Baseline")
-                    dtbl.add_column("Δ%", justify="right")
-                    for idx, (m_name, b_name, pct, _mv, _bv) in enumerate(flat_diffs, start=1):
-                        dtbl.add_row(str(idx), m_name, b_name, f"{pct:+.1f}%")
-                    _console.print(dtbl)
-                else:
-                    print(f"\nDiffs — {metric} (Δ% = 100·(m − b)/b)")
-                    for idx, (m_name, b_name, pct, _mv, _bv) in enumerate(flat_diffs, start=1):
-                        print(f"  {idx:>2}. {m_name} vs {b_name}: {pct:+.1f}%")
-        except Exception:
-            pass
+        if not quiet:
+            try:
+                if flat_diffs:
+                    if _RICH_AVAILABLE:
+                        dtbl = Table(title=f"Diffs — {metric} (Δ% = 100·(m − b)/b)", show_lines=False, header_style="bold magenta")
+                        dtbl.add_column("#", justify="right", style="dim")
+                        dtbl.add_column("Method")
+                        dtbl.add_column("Baseline")
+                        dtbl.add_column("Δ%", justify="right")
+                        for idx, (m_name, b_name, pct, _mv, _bv) in enumerate(flat_diffs, start=1):
+                            dtbl.add_row(str(idx), m_name, b_name, f"{pct:+.1f}%")
+                        _console.print(dtbl)
+                    else:
+                        print(f"\nDiffs — {metric} (Δ% = 100·(m − b)/b)")
+                        for idx, (m_name, b_name, pct, _mv, _bv) in enumerate(flat_diffs, start=1):
+                            print(f"  {idx:>2}. {m_name} vs {b_name}: {pct:+.1f}%")
+            except Exception:
+                pass
 
         # Accumulate for CSV export
         for (m_name, b_name, pct, m_val, b_val) in flat_diffs:
@@ -689,45 +731,83 @@ class MultiBenchmarkPlotter:
             has_sw = isinstance(sw, dict) and any(isinstance(v, list) and len(v) > 0 for v in sw.values())
             return has_ms or has_sw
 
-        file_iter = track(json_files, description="Parsing JSON files") if _RICH_AVAILABLE else json_files
-        for path in file_iter:
+        # Prepare deferred notices for clean output
+        skipped_non_benchmarks: List[str] = []
+        empty_runs: List[str] = []
+
+        # Helper: process a single JSON file path, update state and return a DataFrame of records or None
+        def process_one(path: str):
             run_label = self._labelFromFilename(path)
             data = self._loadJson(path)
+            # benchmark JSON check
+            def _is_benchmark_json(data: Dict[str, Any]) -> bool:
+                ms = data.get("_measurementSets") or {}
+                sw = data.get("_stopwatches") or {}
+                has_ms = False
+                if isinstance(ms, dict):
+                    for v in ms.values():
+                        if (isinstance(v, dict) and any((isinstance(lst, list) and len(lst) > 0) or (isinstance(lst, dict) and isinstance(lst.get("values", []), list) and len(lst.get("values", [])) > 0) for lst in v.values())) \
+                           or (isinstance(v, list) and len(v) > 0):
+                            has_ms = True
+                            break
+                has_sw = isinstance(sw, dict) and any(isinstance(v, list) and len(v) > 0 for v in sw.values())
+                return has_ms or has_sw
+
             if not _is_benchmark_json(data):
-                if _RICH_AVAILABLE:
-                    _console.print(f"[yellow]Skipping non-benchmark JSON (no measurement sets or stopwatches):[/] {path}")
-                else:
-                    warnings.warn(f"Skipping non-benchmark JSON (no measurement sets or stopwatches): {path}")
-                continue
-            # Build per-run statistics without creating per-run plots
+                skipped_non_benchmarks.append(path)
+                return None
+
+            # Parse run metadata
+            meta = self._parse_run_label(run_label)
+            # Prepare per-run output directory
+            per_run_dir = os.path.join(self.out_dir, run_label)
+            os.makedirs(per_run_dir, exist_ok=True)
+            # Build per-run stats
             plotter = BenchmarkPlotter(data, out_dir=self.out_dir, dpi=self.dpi, run_label=run_label, err=self.err, err_scale=self.err_scale, log_y=self.log_y)
-            # Capture first run parameters
+            # Fallback populate meta from JSON parameters if missing
+            try:
+                params = plotter.parameters or {}
+                if meta.get("unroll") is None:
+                    ur = params.get("Unroll") or params.get("unroll")
+                    if ur is not None:
+                        try:
+                            meta["unroll"] = int(float(str(ur)))
+                        except Exception:
+                            pass
+                if meta.get("size") is None:
+                    sz = params.get("Size") or params.get("size")
+                    if sz is not None:
+                        try:
+                            meta["size"] = int(float(str(sz)))
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+            # Store run meta and parameters
+            self._run_meta[run_label] = meta
             if not self._first_run_parameters and isinstance(plotter.parameters, dict):
                 self._first_run_parameters = dict(plotter.parameters)
-            # Merge compareOver map (first-seen wins) for measurement sets
+            # Merge compareOver maps
             for mt, mp in (plotter.compare_over or {}).items():
                 tgt = self._compare_over.setdefault(mt, {})
                 for meth, lst in (mp or {}).items():
                     if meth not in tgt:
                         tgt[meth] = list(lst)
-            # Merge compareOver for stopwatches if present
             if getattr(plotter, '_cmp_sw_extracted', None):
                 tgt_sw = self._compare_over.setdefault("Stopwatches", {})
                 for meth, lst in (plotter._cmp_sw_extracted or {}).items():
                     if meth not in tgt_sw:
                         tgt_sw[meth] = list(lst)
-            # Track first-seen metric order
+            # Track first-seen metric/method order
             for metric in (plotter.measurement_sets or {}).keys():
                 if metric not in self._metric_order:
                     self._metric_order.append(metric)
-                # Track first-seen method order per metric
                 methods_keys = list((plotter.measurement_sets or {}).get(metric, {}).keys())
                 if methods_keys:
                     lst = self._method_order.setdefault(metric, [])
                     for m in methods_keys:
                         if m not in lst:
                             lst.append(m)
-            # Stopwatches as a special metric: keep order too
             if plotter.stopwatches:
                 if "Stopwatches" not in self._metric_order:
                     self._metric_order.append("Stopwatches")
@@ -737,7 +817,7 @@ class MultiBenchmarkPlotter:
                     for m in sw_methods:
                         if m not in lst:
                             lst.append(m)
-            # Merge raw values for aggregated std over ALL iterations (honoring flags via extractor)
+            # Merge raw values for aggregated errors
             for metric, methods in (plotter.measurement_sets or {}).items():
                 tgt = self._agg_values.setdefault(metric, {})
                 for method, vals in (methods or {}).items():
@@ -745,7 +825,6 @@ class MultiBenchmarkPlotter:
                         continue
                     lst = tgt.setdefault(method, [])
                     lst.extend([float(x) for x in vals])
-            # Also merge stopwatches under a dedicated metric name
             if plotter.stopwatches:
                 tgt_sw = self._agg_values.setdefault("Stopwatches", {})
                 for method, vals in (plotter.stopwatches or {}).items():
@@ -753,6 +832,7 @@ class MultiBenchmarkPlotter:
                         continue
                     lst = tgt_sw.setdefault(method, [])
                     lst.extend([float(x) for x in vals])
+            # Compute stats to records
             metric_results, sw_result = plotter._computeAllStats()
             records: List[Dict[str, Any]] = []
             for res in metric_results + ([sw_result] if sw_result.method_stats else []):
@@ -768,13 +848,108 @@ class MultiBenchmarkPlotter:
                         "Min": stats.min,
                         "Max": stats.max,
                     })
-            if records:
-                aggregated_records.append(pd.DataFrame.from_records(records))
-            else:
+            if not records:
+                empty_runs.append(f"{run_label} ← {path}")
+                return None
+            # Per-run plots with this run's parameters and raw-only yerr
+            try:
+                per_df = pd.DataFrame.from_records(records)
+                old_params = dict(self._first_run_parameters)
+                self._first_run_parameters = dict(plotter.parameters or {})
+                old_agg = self._agg_values
+                try:
+                    temp_agg: Dict[str, Dict[str, List[float]]] = {}
+                    for met_name, methods in (plotter.measurement_sets or {}).items():
+                        temp_agg[met_name] = {m: list(vals) for m, vals in (methods or {}).items() if isinstance(vals, (list, tuple))}
+                    if plotter.stopwatches:
+                        temp_agg["Stopwatches"] = {m: list(vals) for m, vals in (plotter.stopwatches or {}).items() if isinstance(vals, (list, tuple))}
+                    self._agg_values = temp_agg
+                    present_metrics = sorted(per_df["Metric"].unique().tolist())
+                    for met in present_metrics:
+                        try:
+                            self._plotMedianByMethod(per_df, met, per_run_dir, quiet=True)
+                        except Exception:
+                            pass
+                finally:
+                    self._agg_values = old_agg
+                    self._first_run_parameters = old_params
+            except Exception:
+                pass
+            return pd.DataFrame.from_records(records)
+
+        # Use a proper Rich progress bar with in-place updates; no printing inside the loop
+        use_progress = _RICH_AVAILABLE
+        if use_progress:
+            try:
+                from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeElapsedColumn, TimeRemainingColumn
+                progress = Progress(
+                    SpinnerColumn(style="cyan"),
+                    TextColumn("[progress.description]{task.description}"),
+                    BarColumn(bar_width=None),
+                    TaskProgressColumn(),
+                    TextColumn("•"),
+                    TimeElapsedColumn(),
+                    TextColumn("•"),
+                    TimeRemainingColumn(),
+                    transient=False,
+                )
+            except Exception:
+                use_progress = False
+
+        if use_progress:
+            try:
+                with progress as prog:
+                    task_id = prog.add_task("Parsing JSON files", total=len(json_files))
+                    for path in json_files:
+                        try:
+                            prog.update(task_id, description=f"Parsing: {os.path.basename(path)}")
+                        except Exception:
+                            pass
+                        df = process_one(path)
+                        if df is not None:
+                            aggregated_records.append(df)
+                        try:
+                            prog.advance(task_id)
+                        except Exception:
+                            pass
+            except Exception:
+                # Fallback to simple loop if progress bar initialization fails
+                use_progress = False
+
+        if not use_progress:
+            for path in json_files:
+                df = process_one(path)
+                if df is not None:
+                    aggregated_records.append(df)
+
+        # After parsing, print any deferred notices
+        try:
+            if skipped_non_benchmarks:
                 if _RICH_AVAILABLE:
-                    _console.print(f"[yellow]No metrics extracted for run:[/] {run_label} from {path}")
+                    tbl = Table(title="Skipped non-benchmark JSONs", show_lines=False, header_style="bold yellow")
+                    tbl.add_column("#", justify="right", style="dim")
+                    tbl.add_column("Path", overflow="fold")
+                    for idx, p in enumerate(skipped_non_benchmarks, start=1):
+                        tbl.add_row(str(idx), p)
+                    _console.print(tbl)
                 else:
-                    warnings.warn(f"No metrics extracted for run: {run_label} from {path}")
+                    print("\nSkipped non-benchmark JSONs:")
+                    for p in skipped_non_benchmarks:
+                        print(" -", p)
+            if empty_runs:
+                if _RICH_AVAILABLE:
+                    tbl = Table(title="Runs with no extractable metrics", show_lines=False, header_style="bold yellow")
+                    tbl.add_column("#", justify="right", style="dim")
+                    tbl.add_column("Run")
+                    for idx, r in enumerate(empty_runs, start=1):
+                        tbl.add_row(str(idx), r)
+                    _console.print(tbl)
+                else:
+                    print("\nRuns with no extractable metrics:")
+                    for r in empty_runs:
+                        print(" -", r)
+        except Exception:
+            pass
 
         # Aggregate summaries
         if len(aggregated_records) > 0:
@@ -811,6 +986,102 @@ class MultiBenchmarkPlotter:
             if plot_path:
                 combined_plots.append(plot_path)
 
+        # Build scaling plots per operation and per metric: median vs size, one line per dataset (method+unroll)
+        self._scaling_plots = []
+        if not agg_df.empty and self._run_meta:
+            # Attach Size, Operation, Unroll to agg_df rows
+            def _meta_col(run, key):
+                m = self._run_meta.get(run, {})
+                return m.get(key)
+            agg_df = agg_df.copy()
+            agg_df["Size"] = agg_df["Run"].map(lambda r: _meta_col(r, "size"))
+            agg_df["Operation"] = agg_df["Run"].map(lambda r: _meta_col(r, "operation"))
+            agg_df["Unroll"] = agg_df["Run"].map(lambda r: _meta_col(r, "unroll"))
+            agg_df = agg_df[pd.notna(agg_df["Size"]) & pd.notna(agg_df["Operation"])].copy()
+            if not agg_df.empty:
+                for op in sorted(agg_df["Operation"].dropna().unique().tolist()):
+                    op_df = agg_df[agg_df["Operation"] == op]
+                    # output folder for scaling of this operation
+                    op_out = os.path.join(self.out_dir, f"scaling_{op}")
+                    os.makedirs(op_out, exist_ok=True)
+                    for metric in sorted(op_df["Metric"].unique().tolist()):
+                        mdf = op_df[op_df["Metric"] == metric]
+                        if mdf.empty:
+                            continue
+                        # datasets: (method, unroll)
+                        datasets = sorted(set((row["Method"], row["Unroll"]) for _, row in mdf[["Method", "Unroll"]].drop_duplicates().iterrows()), key=lambda x: (str(x[0]), x[1] if x[1] is not None else -1))
+                        if not datasets:
+                            continue
+                        # Prepare figure
+                        fig, ax = plt.subplots(figsize=(8.8, 5.2), dpi=self.dpi)
+                        # Family -> marker mapping (consistent symbols per similar type)
+                        family_marker = {
+                            'avx2': 'x',
+                            'avx512': 'o',
+                            'std': 's',
+                            'blas': '^',
+                            'eigen': 'D',
+                            'other': 'v',
+                        }
+
+
+                        def _family_from_method(m: str) -> str:
+                            s = (m or '').strip().lower()
+                            if s.startswith('stalker avx2'):
+                                return 'avx2'
+                            if s.startswith('stalker avx512'):
+                                return 'avx512'
+                            if s.startswith('std::'):
+                                return 'std'
+                            if s.startswith('blas'):
+                                return 'blas'
+                            if s.startswith('eigen'):
+                                return 'eigen'
+                            return 'other'
+
+                        for idx, (method, unroll) in enumerate(datasets):
+                            # filter by both Method and Unroll for dataset continuity
+                            if unroll is None:
+                                ddf = mdf[(mdf["Method"] == method) & (mdf["Unroll"].isna())]
+                            else:
+                                ddf = mdf[(mdf["Method"] == method) & (mdf["Unroll"] == unroll)]
+                            if pd.isna(ddf).all().any():
+                                ddf = ddf.dropna()
+                            # aggregate per size
+                            by_size = ddf.groupby("Size")["Median"].median().sort_index()
+                            sizes = by_size.index.to_list()
+                            values = by_size.values.tolist()
+
+                            fam = _family_from_method(method)
+                            mrk = family_marker.get(fam, family_marker['other'])
+
+                            ax.plot(
+                                sizes,
+                                values,
+                                marker=mrk,
+                                linewidth=0.9,
+                                markersize=5.0,
+                                markerfacecolor='none',
+                                markeredgewidth=1.0,
+                                label=f"{method} (u{unroll if unroll is not None else '?'})",
+                            )
+                        ax.set_title(f"{op} — {metric} vs Size")
+                        ax.set_xlabel("Size")
+                        ax.set_ylabel(metric)
+                        ax.grid(True, which='both', axis='both', linestyle=':', linewidth=0.8, alpha=0.9)
+                        try:
+                            ax.xaxis.set_major_locator(mticker.MaxNLocator(nbins=8, min_n_ticks=4, integer=True))
+                        except Exception:
+                            pass
+                        # Place legend neatly
+                        ax.legend(fontsize=9, loc='best', frameon=True)
+                        plt.tight_layout()
+                        fname = f"{op}_{BenchmarkPlotter._sanitizeFileName(metric)}_scaling.png"
+                        fpath = os.path.join(op_out, fname)
+                        fig.savefig(fpath, bbox_inches="tight")
+                        plt.close(fig)
+                        self._scaling_plots.append(fpath)
+
         # Write diffs CSV if any
         diffs_csv = None
         try:
@@ -826,6 +1097,7 @@ class MultiBenchmarkPlotter:
 
         return {
             "combined_plots": combined_plots,
+            "scaling_plots": list(self._scaling_plots),
             "all_runs_summary_csv": agg_csv,
             "all_runs_diffs_csv": diffs_csv,
             "json_files": json_files,
@@ -836,7 +1108,7 @@ class MultiBenchmarkPlotter:
 
 def main():
     parser = argparse.ArgumentParser(description="HPC Benchmark Plotter (multi-file)")
-    parser.add_argument("--input_dir", required=True, help="Directory containing one or more JSON files")
+    parser.add_argument("--input_dir", "--in", dest="input_dir", required=True, help="Directory containing one or more JSON files")
     parser.add_argument("--out", default=None, help="Output base directory (optional). If omitted, input_dir is used. A timestamped subdir will be created inside.")
     parser.add_argument("--dpi", type=int, default=140, help="Figure DPI")
     parser.add_argument("--show", action="store_true", help="Display plots after saving")
@@ -887,6 +1159,15 @@ def main():
             _console.print(plots_tbl)
         else:
             _console.print(Panel("No plots generated.", title="Plots", title_align="left"))
+
+        # Scaling plots table
+        if results.get("scaling_plots"):
+            s_tbl = Table(title="Scaling Plots", show_lines=False, header_style="bold yellow")
+            s_tbl.add_column("#", justify="right", style="dim")
+            s_tbl.add_column("Path", overflow="fold")
+            for idx, p in enumerate(results["scaling_plots"], start=1):
+                s_tbl.add_row(str(idx), p)
+            _console.print(s_tbl)
     else:
         print("Parsed JSON files:")
         for p in results["json_files"]:
@@ -901,6 +1182,10 @@ def main():
         print("\nAll-runs CSV:", results["all_runs_summary_csv"])
         if results.get("all_runs_diffs_csv"):
             print("All-diffs CSV:", results["all_runs_diffs_csv"]) 
+        if results.get("scaling_plots"):
+            print("\nScaling plots:")
+            for p in results["scaling_plots"]:
+                print(" ", p)
 
 
 if __name__ == "__main__":

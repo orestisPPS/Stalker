@@ -1,0 +1,31 @@
+#pragma once
+#include <array>
+#include <cstddef>
+#include <string_view>
+
+namespace Benchmarks {
+
+// sizes
+inline constexpr std::array<std::size_t, @_bench_sizes_len@> Sizes = { @_bench_sizes_csv@ };
+inline constexpr std::size_t SizeCount = Sizes.size();
+
+// unrolls
+inline constexpr std::array<std::size_t, @_bench_unrolls_len@> Unrolls = { @_bench_unrolls_csv@ };
+inline constexpr std::size_t UnrollCount = Unrolls.size();
+
+// iterations
+inline constexpr int WarmupIterations     = @_bench_warmup@;
+inline constexpr int Iterations = @_bench_iterations@;
+
+// memory op names
+inline constexpr std::array<std::string_view, @_bench_memops_len@>
+    MemOpNames = { @_bench_memops_csv_quoted@ };
+
+inline constexpr std::array<std::string_view, @_bench_mathops_len@>
+    MathOpNames = { @_bench_mathops_csv_quoted@ };
+
+} // namespace Benchmarks
+
+// global macro (macros are not namespaced)
+#define BENCH_FOR_EACH_TYPE(X) @_bench_types_macro@
+#define BENCH_FOR_EACH_UNROLL(X) @_bench_unrolls_macro@

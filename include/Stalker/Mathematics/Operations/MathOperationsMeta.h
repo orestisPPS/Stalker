@@ -112,7 +112,7 @@ using namespace Stalker::Core::Config;
         }
         //needs test
         template <typename T, size_t Unroll = DefaultUnroll(), typename ResultT = T>
-        static constexpr inline void addConstant(size_t size, const T* __restrict data, T constant) {
+        static constexpr inline void addConstant(size_t size, T* __restrict data, T constant) {
             auto limit = size - (size % Unroll);
             for (size_t i = 0; i < limit; i += Unroll)
                 _addConstant<T, ResultT>(data + i, constant, std::make_index_sequence<Unroll>{});
@@ -207,7 +207,7 @@ using namespace Stalker::Core::Config;
         }
 
         template <typename T, typename R, size_t... Indices>
-        static constexpr inline void _addConstant(const __restrict T* data, T constant, std::index_sequence<Indices...>) {
+        static constexpr inline void _addConstant(__restrict T* data, T constant, std::index_sequence<Indices...>) {
             ((data[Indices] += constant), ...);
         }
 

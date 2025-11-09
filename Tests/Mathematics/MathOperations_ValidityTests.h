@@ -17,9 +17,6 @@ namespace STLKR_Tests {
     class MathOperations_ValidityTests : public STLKR_TestBase {
     public:
 
-
-    // explicit MathOperations_ValidityTests(size_t size = 1'200'000'000, double tolerance = 1e-4)  
-    // explicit MathOperations_ValidityTests(size_t size = 100'000'000, double tolerance = 1e-4)  
     explicit MathOperations_ValidityTests(size_t size = 10000, double tolerance = 1e-4)  
                 : STLKR_TestBase("MathOperations"), _size(size), _tolerance(tolerance) {
             setPath(_testName + "Logs", getPath(_testName) + "/logs/" + _testName);
@@ -56,7 +53,13 @@ namespace STLKR_Tests {
         _testScale<float>();
         _testScale<int>();
         _testScale<unsigned>();
-        _testScale<short>();  
+        _testScale<short>(); 
+
+        _testAddConstant<double>();
+        _testAddConstant<float>();
+        _testAddConstant<int>();
+        _testAddConstant<unsigned>();
+        _testAddConstant<short>();  
 
     }
     private:
@@ -140,7 +143,6 @@ namespace STLKR_Tests {
         ThreadTraitSTDThread ThreadTrait = ThreadTraitSTDThread(1);
         auto nThreads = ThreadTrait.getNumThreads();
         auto nThreadsStr = std::to_string(nThreads);
-        _logs.addParameter("numThreads", nThreadsStr);
 
         {
             auto resClassicThreaded = createAlignedVector<T>(_size);
@@ -352,7 +354,7 @@ namespace STLKR_Tests {
         TestUtility::compareVectors<T>(resScaledSIMD2Threaded.data(), expectedScaled.data(), _size, "SIMD AVX512 Scaled Threaded", _tolerance);
     }
 
-        template<typename T>
+    template<typename T>
     void _testSum() {
         printSubtitle("Sum " + typeToString<T>(), T_Color::BARBIE_PINK);
         auto typeName = typeToString<T>();
@@ -390,7 +392,6 @@ namespace STLKR_Tests {
         ThreadTraitSTDThread ThreadTrait = ThreadTraitSTDThread();
         auto nThreads = ThreadTrait.getNumThreads();
         auto nThreadsStr = std::to_string(nThreads);
-        _logs.addParameter("numThreads", nThreadsStr);
 
         {
             // T resClassicThreaded = MathOperations::sum<T, ThreadTraitSTDThread, ExecutionTraitClassic<>>(ThreadTrait, _size, a.data());
@@ -453,7 +454,6 @@ namespace STLKR_Tests {
 
         // Threaded variants (out-of-place)
         ThreadTraitSTDThread ThreadTrait = ThreadTraitSTDThread();
-        _logs.addParameter("numThreads", std::to_string(ThreadTrait.getNumThreads()));
 
         {
             auto a = input;
@@ -473,6 +473,68 @@ namespace STLKR_Tests {
         {
             auto a = input;
             MathOperations::scale<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512>>(ThreadTrait, _size, a.data(), scalar);
+            TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "SIMD AVX512 Threaded", _tolerance);
+        }
+    }
+
+    template<typename T>
+    void _testAddConstant() {
+        printSubtitle("Add Constant " + typeToString<T>(), T_Color::BARBIE_PINK);
+
+        // Data
+        auto input = createAlignedVector<T>(_size);
+        Random::uniform<T>(_size, input.data(), 0, 10);
+
+        // Scalar with safe range for integral types
+        T scalar = static_cast<T>(3.14);
+
+        // Expected
+        auto expected = createAlignedVector<T>(_size);
+        for (size_t i = 0; i < _size; ++i) expected[i] = static_cast<T>(input[i] + scalar);
+
+        // Non-threaded variants (in-place)
+        {
+            auto a = input;
+            MathOperations::addConstant<T, ExecutionTraitClassic<>>(_size, a.data(), scalar);
+            TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "Classic", _tolerance);
+        }
+        {
+            auto a = input;
+            MathOperations::addConstant<T, ExecutionTraitUnrolled<16>>(_size, a.data(), scalar);
+            TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "Meta", _tolerance);
+        }
+        {
+            auto a = input;
+            MathOperations::addConstant<T, ExecutionTraitSIMD<T_SIMD::AVX2>>(_size, a.data(), scalar);
+            TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "SIMD AVX2", _tolerance);
+        }
+        {
+            auto a = input;
+            MathOperations::addConstant<T, ExecutionTraitSIMD<T_SIMD::AVX512>>(_size, a.data(), scalar);
+            TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "SIMD AVX512", _tolerance);
+        }
+
+        // Threaded variants (out-of-place)
+        ThreadTraitSTDThread ThreadTrait = ThreadTraitSTDThread();
+
+        {
+            auto a = input;
+            MathOperations::addConstant<T, ThreadTraitSTDThread, ExecutionTraitClassic<>>(ThreadTrait, _size, a.data(), scalar);
+            TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "Classic Threaded", _tolerance);
+        }
+        {
+            auto a = input;
+            MathOperations::addConstant<T, ThreadTraitSTDThread, ExecutionTraitUnrolled<16>>(ThreadTrait, _size, a.data(), scalar);
+            TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "Meta Threaded", _tolerance);
+        }
+        {
+            auto a = input;
+            MathOperations::addConstant<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2>>(ThreadTrait, _size, a.data(), scalar);
+            TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "SIMD AVX2 Threaded", _tolerance);
+        }
+        {
+            auto a = input;
+            MathOperations::addConstant<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512>>(ThreadTrait, _size, a.data(), scalar);
             TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "SIMD AVX512 Threaded", _tolerance);
         }
     }

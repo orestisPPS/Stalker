@@ -129,7 +129,7 @@ public:
         T_simd scalarSIMD;
         MemoryOps::broadcast(&scalarSIMD, constant);
         for (size_t i = 0; i < limit; i += blockSize)
-            Child::_addConstant(data + i, result + i, scalarSIMD, std::make_index_sequence<Unroll>{});
+            Child::template _addConstant<Policy>(data + i, result + i, &scalarSIMD, std::make_index_sequence<Unroll>{});
         for (size_t i = limit; i < size; i++)
             result[i] = data[i] + constant;
     }
@@ -141,7 +141,7 @@ public:
         T_simd scalarSIMD;
         MemoryOps::broadcast(&scalarSIMD, constant);
         for (size_t i = 0; i < limit; i += blockSize)
-            Child::_addConstant(data + i, scalarSIMD, std::make_index_sequence<Unroll>{});
+            Child::template _addConstant<Policy>(data + i, &scalarSIMD, std::make_index_sequence<Unroll>{});
         for (size_t i = limit; i < size; i++)
             data[i] += constant;
     }
