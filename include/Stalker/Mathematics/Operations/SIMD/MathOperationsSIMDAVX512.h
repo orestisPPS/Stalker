@@ -27,6 +27,12 @@ private:
                                                                                             _mm512_load_pd(b + Is * Base::registerSize))), ...);
     }
 
+    template <T_SIMDStore Policy, size_t... Is>
+    static inline void _axpy(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>, const Base::T_simd *scalar = nullptr) {
+        (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_fmadd_pd(_mm512_load_pd(a + Is * Base::registerSize), *scalar,
+                                                                                          _mm512_load_pd(b + Is * Base::registerSize))), ...);
+    }
+
     template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
     static inline void _subtract(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
                                 const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr){
@@ -71,6 +77,16 @@ private:
     static inline void _addConstant(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
         (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm512_add_pd(_mm512_load_pd(data + Is * Base::registerSize), *scalar)), ...);
     }
+
+    template <size_t... Is>
+    static inline void _sum(const Base::T_data* __restrict data, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+        ((accumulators[Is] = _mm512_add_pd(accumulators[Is], _mm512_load_pd(data + Is * Base::registerSize))), ...);
+    }
+
+    template <size_t... Is>
+    static inline void _dot(const Base::T_data __restrict *a, const Base::T_data __restrict *b, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+        ((accumulators[Is] = _mm512_fmadd_pd(_mm512_load_pd(a + Is * Base::registerSize), _mm512_load_pd(b + Is * Base::registerSize), accumulators[Is])), ...);
+    }
 };
 
 template<>
@@ -82,7 +98,7 @@ private:
     
     friend Base;
 
-template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
+        template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
         static inline void _add(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
                                 const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr)
         {
@@ -92,6 +108,12 @@ template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
             else
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_add_ps(_mm512_load_ps(a + Is * Base::registerSize),
                                                                                                 _mm512_load_ps(b + Is * Base::registerSize))), ...);
+        }
+
+        template <T_SIMDStore Policy, size_t... Is>
+        static inline void _axpy(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>, const Base::T_simd *scalar = nullptr) {
+            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_fmadd_ps(_mm512_load_ps(a + Is * Base::registerSize), *scalar,
+                                                                                            _mm512_load_ps(b + Is * Base::registerSize))), ...);
         }
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
@@ -137,6 +159,16 @@ template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
         static inline void _addConstant(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
             (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm512_add_ps(_mm512_load_ps(data + Is * Base::registerSize), *scalar)), ...);
         }
+
+        template <size_t... Is>
+        static inline void _sum(const Base::T_data* __restrict data, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm512_add_ps(accumulators[Is], _mm512_load_ps(data + Is * Base::registerSize))), ...);
+        }
+
+        template <size_t... Is>
+        static inline void _dot(const Base::T_data __restrict *a, const Base::T_data __restrict *b, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm512_fmadd_ps(_mm512_load_ps(a + Is * Base::registerSize), _mm512_load_ps(b + Is * Base::registerSize), accumulators[Is])), ...);
+        }
 };
 
 template<>
@@ -158,6 +190,12 @@ private:
             (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_add_epi32(_mm512_load_si512(reinterpret_cast<const void*>(a + Is * Base::registerSize)),
                                                                                           _mm512_load_si512(reinterpret_cast<const void*>(b + Is * Base::registerSize)))), ...);
         }
+    }
+
+    template<T_SIMDStore Policy, size_t... Is>
+    static inline void _axpy(const Base::T_data* a, const Base::T_data* b, Base::T_data* result, std::index_sequence<Is...>, const Base::T_simd* scalar = nullptr) {
+        (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_add_epi32(_mm512_mullo_epi32(_mm512_load_si512(reinterpret_cast<const void*>(a + Is * Base::registerSize)), *scalar),
+                                                                                                              _mm512_load_si512(reinterpret_cast<const void*>(b + Is * Base::registerSize)))), ...);
     }
 
     template<T_SIMDStore Policy, bool IsScaled, size_t... Is>
@@ -201,6 +239,17 @@ private:
     static inline void _addConstant(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
         (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm512_add_epi32(_mm512_load_si512(reinterpret_cast<const __m512i *>(data + Is * Base::registerSize)), *scalar)), ...);
     }
+
+    template <size_t... Is>
+    static inline void _sum(const Base::T_data* __restrict data, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+        ((accumulators[Is] = _mm512_add_epi32(accumulators[Is], _mm512_load_si512(reinterpret_cast<const __m512i *>(data + Is * Base::registerSize)))), ...);
+    }
+    
+    template <size_t... Is>
+    static inline void _dot(const Base::T_data __restrict *a, const Base::T_data __restrict *b, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+        ((accumulators[Is] = _mm512_add_epi32(accumulators[Is],_mm512_mullo_epi32(_mm512_loadu_si512(reinterpret_cast<const __m512i *>(a + Is * Base::registerSize)),
+                                                                                    _mm512_loadu_si512(reinterpret_cast<const __m512i *>(b + Is * Base::registerSize))))), ...);
+    }
 };
 
 template<>
@@ -221,6 +270,12 @@ friend Base;
             else
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_add_epi32(_mm512_load_si512(reinterpret_cast<const __m512i *>(a + Is * Base::registerSize)),
                                                                                                    _mm512_load_si512(reinterpret_cast<const __m512i *>(b + Is * Base::registerSize)))), ...);
+        }
+
+        template <T_SIMDStore Policy, size_t... Is>
+        static inline void _axpy(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>, const Base::T_simd *scalar = nullptr) {
+            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_add_epi32(_mm512_mullo_epi32(_mm512_load_si512(reinterpret_cast<const __m512i *>(a + Is * Base::registerSize)), *scalar),
+                                                                                                                  _mm512_load_si512(reinterpret_cast<const __m512i *>(b + Is * Base::registerSize)))), ...);
         }
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
@@ -265,6 +320,17 @@ friend Base;
         static inline void _addConstant(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
             (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm512_add_epi32(_mm512_load_si512(reinterpret_cast<const __m512i *>(data + Is * Base::registerSize)), *scalar)), ...);
         }
+
+        template <size_t... Is>
+        static inline void _sum(const Base::T_data* __restrict data, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm512_add_epi32(accumulators[Is], _mm512_load_si512(reinterpret_cast<const __m512i *>(data + Is * Base::registerSize)))), ...);
+        }
+
+        template <size_t... Is>
+        static inline void _dot(const Base::T_data __restrict *a, const Base::T_data __restrict *b, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm512_add_epi32(accumulators[Is],_mm512_mullo_epi32(_mm512_loadu_si512(reinterpret_cast<const __m512i *>(a + Is * Base::registerSize)),
+                                                                                      _mm512_loadu_si512(reinterpret_cast<const __m512i *>(b + Is * Base::registerSize))))), ...);
+        }
     };
 
 template<>
@@ -284,7 +350,13 @@ private:
         else
             (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_add_epi16(_mm512_load_si512(reinterpret_cast<const void*>(a + Is * Base::registerSize)),
                                                                                                _mm512_load_si512(reinterpret_cast<const void*>(b + Is * Base::registerSize)))), ...);
-    }   
+    }
+
+    template<T_SIMDStore Policy, size_t... Is>
+    static inline void _axpy(const Base::T_data* a, const Base::T_data* b, Base::T_data* result, std::index_sequence<Is...>, const Base::T_simd* scalar = nullptr) {
+        (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm512_add_epi16(_mm512_mullo_epi16(_mm512_load_si512(reinterpret_cast<const void*>(a + Is * Base::registerSize)), *scalar),
+                                                                                                              _mm512_load_si512(reinterpret_cast<const void*>(b + Is * Base::registerSize)))), ...);
+    }
 
     template<T_SIMDStore Policy, bool IsScaled, size_t... Is>
     static inline void _subtract(const Base::T_data* a, const Base::T_data* b, Base::T_data* result, std::index_sequence<Is...>, const Base::T_simd* scalarA = nullptr, const Base::T_simd* scalarB = nullptr) {
@@ -325,6 +397,17 @@ private:
     template <T_SIMDStore Policy, size_t... Is>
     static inline void _addConstant(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
         (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm512_add_epi16(_mm512_load_si512(reinterpret_cast<const __m512i *>(data + Is * Base::registerSize)), *scalar)), ...);
+    }
+
+    template <size_t... Is>
+    static inline void _sum(const Base::T_data* __restrict data, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+        ((accumulators[Is] = _mm512_add_epi16(accumulators[Is], _mm512_load_si512(reinterpret_cast<const __m512i *>(data + Is * Base::registerSize)))), ...);
+    }
+
+    template <size_t... Is>
+    static inline void _dot(const Base::T_data __restrict *a, const Base::T_data __restrict *b, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+        ((accumulators[Is] = _mm512_add_epi16(accumulators[Is],_mm512_mullo_epi16(_mm512_loadu_si512(reinterpret_cast<const __m512i *>(a + Is * Base::registerSize)),
+                                                                                  _mm512_loadu_si512(reinterpret_cast<const __m512i *>(b + Is * Base::registerSize))))), ...);
     }
 };
 

@@ -21,6 +21,12 @@ public:
     }
 
     template <typename T, typename ResultT = T>
+    static constexpr inline void axpy(size_t size, const T* a, const T * b, ResultT* result, T scalar) {
+        for (size_t i = 0; i < size; ++i)
+            result[i] = (a[i] * scalar) + b[i];
+    }
+
+    template <typename T, typename ResultT = T>
     static constexpr inline void subtract(size_t size, const T* a, const T * b, ResultT* result) {
         for (size_t i = 0; i < size; ++i)
             result[i] = a[i] - b[i];
@@ -88,21 +94,11 @@ public:
         return result;
     }
     
-
-
     template <typename T, typename ResultT = T>
     static inline ResultT dot(size_t size, const T* a, const T* b) {
         ResultT result = ResultT{};
         for (size_t i = 0; i < size; ++i)
             result += a[i] * b[i];
-        return result;
-    }
-
-    template <typename T, typename ResultT = T>
-    constexpr static inline ResultT dot(size_t size, const T* a, const T* b, T scalarA, T scalarB) {
-        ResultT result = ResultT{};
-        for (size_t i = 0; i < size; ++i)
-            result += (a[i] * scalarA) * (b[i] * scalarB);
         return result;
     }
 

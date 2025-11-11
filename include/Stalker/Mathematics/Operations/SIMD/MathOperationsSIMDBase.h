@@ -50,6 +50,18 @@ public:
     }
 
     template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+    inline static void axpy(size_t size, const T_data *a, const T_data  *b, T_data *result, T_data scale) {
+        constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
+        auto limit = size - (size % blockSize);
+        T_simd scalarSIMD;
+        MemoryOps::broadcast(&scalarSIMD, scale);
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::template _axpy<Policy>(a + i, b + i, result  + i, std::make_index_sequence<Unroll>{}, &scalarSIMD);
+        for (size_t i = limit; i < size; i++)
+            result[i] = a[i] * scale + b[i];
+    }
+
+    template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
     inline static void subtract(size_t size, const T_data *a, const T_data  *b, T_data *result, T_data scaleA, T_data scaleB) {
         constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
         auto limit = size - (size % blockSize);
@@ -150,21 +162,47 @@ public:
     inline static T_data sum(size_t size, const T* __restrict data) {
         constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
         auto limit = size - (size % blockSize);
-        T_data result = 0;
         T_simd accumulators[Unroll];
         for (auto& acc : accumulators) 
-            MemoryOps::setZeroRegister(&acc);
+        MemoryOps::setZeroRegister(&acc);
         for (size_t i = 0; i < limit; i += blockSize)
-            Child::_sum(data + i, accumulators, std::make_index_sequence<Unroll>{});
-        for (size_t iRegister = 0; iRegister < Unroll; ++iRegister)
-            result += Child::_horizontalRegisterSum(&accumulators[iRegister]);
+            Child::_sum(data + i, accumulators , std::make_index_sequence<Unroll>{});
+        T_data result = _registerSum(accumulators, Unroll);
         for (size_t i = limit; i < size; i++)
             result += data[i];
         return result;
     }
 
+    template<unsigned Unroll = DefaultUnroll()>
+    inline static T_data dot(size_t size, const T* __restrict a, const T* __restrict b) {
+        constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
+        auto limit = size - (size % blockSize);
+        T_simd accumulators[Unroll];
+        for (auto& acc : accumulators) 
+        MemoryOps::setZeroRegister(&acc);
+        for (size_t i = 0; i < limit; i += blockSize)
+        Child::_dot(a + i, b + i, accumulators, std::make_index_sequence<Unroll>{});
+        T_data result = _registerSum(accumulators, Unroll);
+        for (size_t i = limit; i < size; i++)
+            result += (a[i] * b[i]);
+        return result;
+    }
+
     inline static T registerHorizontalSum(const T_simd* __restrict data) {
         Child::_horizontalRegisterSum(data);
+    }
+
+private:
+    inline static T _registerSum(const T_simd* __restrict data, size_t size) {
+        T_data result = 0;
+        for (unsigned i = 0; i < size; ++i) {
+            alignas(64) T_data temp[Traits::RegisterSize()];
+            MemoryOps::template store<T_SIMDStore::Cached>(temp, data[i]);
+            for (unsigned j = 0; j < Traits::RegisterSize(); ++j) {
+                result += temp[j];
+            }
+        }
+        return result;
     }
 };
 

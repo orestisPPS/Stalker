@@ -30,6 +30,12 @@ namespace Stalker::Mathematics::SIMD
                                                                                                 _mm256_load_pd(b + Is * Base::registerSize))), ...);
         }
 
+        template <T_SIMDStore Policy, size_t... Is>
+        static inline void _axpy(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>, const Base::T_simd *scalar = nullptr) {
+            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_fmadd_pd(_mm256_load_pd(a + Is * Base::registerSize), *scalar,
+                                                                                              _mm256_load_pd(b + Is * Base::registerSize))), ...);
+        }
+
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
         static inline void _subtract(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
                                      const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr){
@@ -78,12 +84,9 @@ namespace Stalker::Mathematics::SIMD
             ((accumulators[Is] = _mm256_add_pd(accumulators[Is], _mm256_loadu_pd(data + Is * Base::registerSize))), ...);
         }
 
-        static inline T_data _horizontalRegisterSum(const Base::T_simd* __restrict data) {
-            __m128d low = _mm256_castpd256_pd128(*data);
-            __m128d high = _mm256_extractf128_pd(*data, 1);
-            __m128d sum128 = _mm_add_pd(low, high);
-            __m128d swapped = _mm_shuffle_pd(sum128, sum128, 1);
-            return _mm_cvtsd_f64(_mm_add_sd(sum128, swapped));
+        template <size_t... Is>
+        static inline void _dot(const Base::T_data __restrict *a, const Base::T_data __restrict *b, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm256_fmadd_pd(_mm256_loadu_pd(a + Is * Base::registerSize), _mm256_loadu_pd(b + Is * Base::registerSize), accumulators[Is])), ...);
         }
     };
 
@@ -91,7 +94,6 @@ namespace Stalker::Mathematics::SIMD
     struct MathOperationsSIMD<float,T_SIMD::AVX2>
             : public MathOperationsSIMDBase<float, T_SIMD::AVX2, MathOperationsSIMD<float,T_SIMD::AVX2>> {
         using Base = MathOperationsSIMDBase<float, T_SIMD::AVX2, MathOperationsSIMD<float,T_SIMD::AVX2>>;
-        
         private:
         
         friend Base;
@@ -105,6 +107,12 @@ namespace Stalker::Mathematics::SIMD
             else
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_ps(_mm256_load_ps(a + Is * Base::registerSize),
                                                                                                 _mm256_load_ps(b + Is * Base::registerSize))), ...);
+        }
+
+        template <T_SIMDStore Policy, size_t... Is>
+        static inline void _axpy(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>, const Base::T_simd *scalar = nullptr) {
+            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_fmadd_ps(_mm256_load_ps(a + Is * Base::registerSize), *scalar,
+                                                                                              _mm256_load_ps(b + Is * Base::registerSize))), ...);
         }
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
@@ -151,21 +159,13 @@ namespace Stalker::Mathematics::SIMD
 
         template <size_t... Is>
         static inline void _sum(const Base::T_data* __restrict data, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-            ((accumulators[Is] = _mm256_add_ps(accumulators[Is], _mm256_load_ps(data + Is * Base::registerSize))), ...);
+            ((accumulators[Is] = _mm256_add_ps(_mm256_loadu_ps(data + Is * Base::registerSize), accumulators[Is])), ...);
         }
 
-static inline float _horizontalRegisterSum(const __m256* __restrict data) {
-    // Debug version - store and sum manually to verify
-    alignas(32) float temp[8];
-    _mm256_store_ps(temp, *data);
-    
-    float sum = 0.0f;
-    for (int i = 0; i < 8; i++) {
-        sum += temp[i];
-    }
-    return sum;
-}
-
+        template <size_t... Is>
+        static inline void _dot(const Base::T_data __restrict *a, const Base::T_data __restrict *b, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm256_fmadd_ps(_mm256_loadu_ps(a + Is * Base::registerSize), _mm256_loadu_ps(b + Is * Base::registerSize), accumulators[Is])), ...);
+        }
     };
 
     template <>
@@ -188,6 +188,12 @@ static inline float _horizontalRegisterSum(const __m256* __restrict data) {
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_epi32(
                                                 _mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
                                                 _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))),...);
+        }
+
+        template <T_SIMDStore Policy, size_t... Is>
+        static inline void _axpy(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>, const Base::T_simd *scalar = nullptr) {
+                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_epi32(_mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)), *scalar),
+                                                                                                                      _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))), ...);
         }
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
@@ -241,19 +247,11 @@ static inline float _horizontalRegisterSum(const __m256* __restrict data) {
             ((accumulators[Is] = _mm256_add_epi32(accumulators[Is], _mm256_loadu_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)))), ...);
         }
 
-        static inline int _horizontalRegisterSum(const Base::T_simd* __restrict data) {
-            // Sum 128-bit lanes
-            __m128i low = _mm256_castsi256_si128(*data);
-            __m128i high = _mm256_extracti128_si256(*data, 1);
-            __m128i sum128 = _mm_add_epi32(low, high);
-            
-            // Efficient 4-element reduction
-            __m128i hi64 = _mm_unpackhi_epi64(sum128, sum128);  // Copy high 64 bits to low
-            __m128i sum64 = _mm_add_epi32(sum128, hi64);        // [a0+a2, a1+a3, ...]
-            __m128i hi32 = _mm_shuffle_epi32(sum64, 0b11110101);  // [a1+a3, ...]
-            return _mm_extract_epi32(_mm_add_epi32(sum64, hi32), 0);
+        template <size_t... Is>
+        static inline void _dot(const Base::T_data __restrict *a, const Base::T_data __restrict *b, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm256_add_epi32(accumulators[Is],_mm256_mullo_epi32(_mm256_loadu_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
+                                                                                      _mm256_loadu_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize))))), ...);
         }
-
     };
 
     template <>
@@ -280,6 +278,12 @@ static inline float _horizontalRegisterSum(const __m256* __restrict data) {
                                                 _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))),...);
         }
 
+        template <T_SIMDStore Policy, size_t... Is>
+        static inline void _axpy(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>, const Base::T_simd *scalar = nullptr) {
+                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_epi32(_mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)), *scalar),
+                                                                                                                      _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))), ...);
+        }
+
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
         static inline void _subtract(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
                                      const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr)
@@ -332,6 +336,14 @@ static inline float _horizontalRegisterSum(const __m256* __restrict data) {
         static inline void _sum(const Base::T_data __restrict *data, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
             ((accumulators[Is] = _mm256_add_epi32(accumulators[Is], _mm256_loadu_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)))), ...);
         }
+
+        template <size_t... Is>
+        static inline void _dot(const Base::T_data __restrict *a, const Base::T_data __restrict *b, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm256_add_epi32(accumulators[Is],_mm256_mullo_epi32(_mm256_loadu_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
+                                                                                      _mm256_loadu_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize))))), ...);
+        }
+
+
 
         static inline T_data _horizontalRegisterSum(const Base::T_simd* __restrict data) {
             // Same as signed int - bitwise identical operations
@@ -366,6 +378,12 @@ static inline float _horizontalRegisterSum(const __m256* __restrict data) {
                 (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_epi16(
                                                   _mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
                                                   _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))), ...);
+        }
+
+        template <T_SIMDStore Policy, size_t... Is>
+        static inline void _axpy(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>, const Base::T_simd *scalar = nullptr) {
+                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_epi16(_mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)), *scalar),
+                                                                                                                      _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))), ...);
         }
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
@@ -421,21 +439,10 @@ static inline float _horizontalRegisterSum(const __m256* __restrict data) {
             ((accumulators[Is] = _mm256_add_epi16(accumulators[Is], _mm256_loadu_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)))), ...);
         }
 
-        static inline T_data _horizontalRegisterSum(const Base::T_simd* __restrict data) {
-            // Sum to 32-bit to prevent overflow
-            __m256i evens = _mm256_srli_epi32(*data, 16);     // Shift high 16-bits to low
-            __m256i sum32 = _mm256_add_epi32(*data, evens);   // Add low and high 16-bits
-
-            // Now reduce 8x 32-bit integers
-            __m128i low = _mm256_castsi256_si128(sum32);
-            __m128i high = _mm256_extracti128_si256(sum32, 1);
-            __m128i sum128 = _mm_add_epi32(low, high);
-            
-            // Horizontal reduction
-            __m128i hi64 = _mm_unpackhi_epi64(sum128, sum128);
-            __m128i sum64 = _mm_add_epi32(sum128, hi64);
-            __m128i hi32 = _mm_shuffle_epi32(sum64, 0b11110101);
-            return _mm_extract_epi32(_mm_add_epi32(sum64, hi32), 0);
+        template <size_t... Is>
+        static inline void _dot(const Base::T_data __restrict *a, const Base::T_data __restrict *b, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm256_add_epi16(accumulators[Is],_mm256_mullo_epi16(_mm256_loadu_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
+                                                                                      _mm256_loadu_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize))))), ...);
         }
     };
 

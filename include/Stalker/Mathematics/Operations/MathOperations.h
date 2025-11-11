@@ -39,6 +39,17 @@ namespace Stalker::Mathematics {
         }
 
         template<typename T, typename Trait = DefaultExecutionTrait>
+        constexpr inline static void axpy(size_t n, const T* a, const T* b, T* result, T scalar) {
+            Dispatcher<T_Operation::Axpy, T, Trait>::call(n, a, b, result, scalar);
+        }
+
+        template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
+        constexpr inline static void axpy(const ThreadTrait& threadTrait, size_t n, const T* a, const T* b, T* result, T scalar) {
+            using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Binary>;
+            Launcher::call(threadTrait, Dispatcher<T_Operation::Axpy, T, Trait>(), n, a, b, result, scalar);
+        }
+
+        template<typename T, typename Trait = DefaultExecutionTrait>
         constexpr inline static void subtract(size_t n, const T* a, const T* b, T* result){
             Dispatcher<T_Operation::Subtract, T, Trait>::call(n, a, b, result);
         }
@@ -130,11 +141,17 @@ namespace Stalker::Mathematics {
         constexpr inline static T sum(size_t n, const T* __restrict data) {
             return Dispatcher<T_Operation::Sum, T, Trait>::call(n, data);
         }
+        
+        template<typename T, typename Trait = DefaultExecutionTrait>
+        constexpr inline static T dot(size_t n, const T* __restrict a, const T* __restrict b) {
+            return Dispatcher<T_Operation::DotProduct, T, Trait>::call(n, a, b);
+        }
 
     private:
 
         enum class T_Operation {
             Add,
+            Axpy,
             Subtract,
             Multiply,
             Divide,
@@ -169,6 +186,20 @@ namespace Stalker::Mathematics {
                     MathOperationsMeta::add<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else
                     MathOperationsClassic::add<T>(std::forward<Args>(args)...);    
+            }
+        };
+
+        template<typename T, typename Trait>
+        struct Dispatcher<T_Operation::Axpy, T, Trait>
+            : public DispatcherBase<Dispatcher<T_Operation::Axpy, T, Trait>, T_Operation::Axpy, T, Trait> {
+            template<typename... Args>
+            constexpr inline static void call(Args&&... args) {
+                if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDEnabled())
+                    MathOperationsSIMD<T, Trait::SIMDArch>::template axpy<Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
+                else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
+                    MathOperationsMeta::axpy<T, Trait::Unroll>(std::forward<Args>(args)...);
+                else
+                    MathOperationsClassic::axpy<T>(std::forward<Args>(args)...);
             }
         };
 
@@ -240,6 +271,20 @@ namespace Stalker::Mathematics {
                     return MathOperationsMeta::sum<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else
                     return MathOperationsClassic::sum<T>(std::forward<Args>(args)...);
+            }
+        };
+
+        template<typename T, typename Trait>
+        struct Dispatcher<T_Operation::DotProduct, T, Trait>
+            : public DispatcherBase<Dispatcher<T_Operation::DotProduct, T, Trait>, T_Operation::DotProduct, T, Trait> {
+            template<typename... Args>
+            constexpr inline static auto call(Args&&... args) {             
+                if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDEnabled())
+                    return MathOperationsSIMD<T, Trait::SIMDArch>::template dot<Trait::Unroll>(std::forward<Args>(args)...);
+                else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
+                    return MathOperationsMeta::dot<T, Trait::Unroll>(std::forward<Args>(args)...);
+                else
+                    return MathOperationsClassic::dot<T>(std::forward<Args>(args)...);
             }
         };
 

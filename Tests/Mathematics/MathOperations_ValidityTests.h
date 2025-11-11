@@ -17,7 +17,7 @@ namespace STLKR_Tests {
     class MathOperations_ValidityTests : public STLKR_TestBase {
     public:
 
-    explicit MathOperations_ValidityTests(size_t size = 10000, double tolerance = 1e-4)  
+    explicit MathOperations_ValidityTests(size_t size = 10000, double tolerance = 1e-8)  
                 : STLKR_TestBase("MathOperations"), _size(size), _tolerance(tolerance) {
             setPath(_testName + "Logs", getPath(_testName) + "/logs/" + _testName);
             Random::setSeed(42); // Set a fixed seed for reproducibility
@@ -30,6 +30,12 @@ namespace STLKR_Tests {
         _testAdd<int>();
         _testAdd<unsigned>();
         _testAdd<short>();
+
+        _testAxpy<double>();
+        _testAxpy<float>();
+        _testAxpy<int>();
+        _testAxpy<unsigned>();
+        _testAxpy<short>();
 
         _testSubtract<double>();
         _testSubtract<float>();
@@ -60,6 +66,12 @@ namespace STLKR_Tests {
         _testAddConstant<int>();
         _testAddConstant<unsigned>();
         _testAddConstant<short>();  
+
+        _testDotProduct<double>();
+        _testDotProduct<float>();
+        _testDotProduct<int>();
+        _testDotProduct<unsigned>();
+        _testDotProduct<short>();  
 
     }
     private:
@@ -198,6 +210,82 @@ namespace STLKR_Tests {
             TestUtility::compareVectors<T>(resScaledSIMD2Threaded.data(), expectedScaled.data(), _size, "SIMD AVX512 Scaled Threaded", _tolerance);
         }
 
+    }
+
+    template<typename T>
+    void _testAxpy() {
+
+        printSubtitle("Axpy " + typeToString<T>(), T_Color::BARBIE_PINK);
+        auto typeName = typeToString<T>();
+        auto unit = Stalker::Core::TimeUnit::nanoseconds;
+
+
+        // auto logs = _logs.
+
+        auto a = createAlignedVector<T>(_size);
+        auto b = createAlignedVector<T>(_size);
+        Random::uniform<T>(_size, a.data(), 0, 100);
+        Random::uniform<T>(_size, b.data(), 0, 100);
+        auto scalarA = Random::uniform<T>(0, 100);
+        
+        auto expected = createAlignedVector<T>(_size);
+        auto expectedScaled = createAlignedVector<T>(_size);
+        for (size_t i = 0; i < _size; i++) {
+            expected[i] = (a[i] * scalarA) + b[i];
+        }
+        
+        {
+            auto resClassic = createAlignedVector<T>(_size);
+            MathOperations::axpy<T, ExecutionTraitClassic<>>(_size, a.data(), b.data(), resClassic.data(), scalarA);
+            TestUtility::compareVectors(resClassic.data(), expected.data(), _size, "Classic");
+        }
+
+        {
+            auto resMeta = createAlignedVector<T>(_size);
+            MathOperations::axpy<T, ExecutionTraitUnrolled<100>>(_size, a.data(), b.data(), resMeta.data(), scalarA);
+            TestUtility::compareVectors(resMeta.data(), expected.data(), _size, "Meta");
+        }
+        
+        {
+            auto resSIMD1 = createAlignedVector<T>(_size);
+            MathOperations::axpy<T, ExecutionTraitSIMD<T_SIMD::AVX2, 1>>(_size, a.data(), b.data(), resSIMD1.data(), scalarA);
+            TestUtility::compareVectors<T>(resSIMD1.data(), expected.data(), _size, "SIMD AVX2", _tolerance);
+        }
+
+        {
+            auto resSIMD2 = createAlignedVector<T>(_size);
+            MathOperations::axpy<T, ExecutionTraitSIMD<T_SIMD::AVX512, 1>>(_size, a.data(), b.data(), resSIMD2.data(), scalarA);
+            TestUtility::compareVectors<T>(resSIMD2.data(), expected.data(), _size, "SIMD AVX512", _tolerance);
+        }
+
+
+        ThreadTraitSTDThread ThreadTrait = ThreadTraitSTDThread();
+        auto nThreads = ThreadTrait.getNumThreads();
+        auto nThreadsStr = std::to_string(nThreads);
+
+        {
+            auto resClassic = createAlignedVector<T>(_size);
+            MathOperations::axpy<T, ThreadTraitSTDThread, ExecutionTraitClassic<>>(ThreadTrait, _size, a.data(), b.data(), resClassic.data(), scalarA);
+            TestUtility::compareVectors(resClassic.data(), expected.data(), _size, "Classic Threaded (" + nThreadsStr + " threads)");
+        }
+
+        {
+            auto resMeta = createAlignedVector<T>(_size);
+            MathOperations::axpy<T, ThreadTraitSTDThread, ExecutionTraitUnrolled<100>>(ThreadTrait, _size, a.data(), b.data(), resMeta.data(), scalarA);
+            TestUtility::compareVectors(resMeta.data(), expected.data(), _size, "Meta Threaded (" + nThreadsStr + " threads)");
+        }
+        
+        {
+            auto resSIMD1 = createAlignedVector<T>(_size);
+            MathOperations::axpy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, 1>>(ThreadTrait, _size, a.data(), b.data(), resSIMD1.data(), scalarA);
+            TestUtility::compareVectors<T>(resSIMD1.data(), expected.data(), _size, "SIMD AVX2 Threaded (" + nThreadsStr + " threads)", _tolerance);
+        }
+
+        {
+            auto resSIMD2 = createAlignedVector<T>(_size);
+            MathOperations::axpy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, 1>>(ThreadTrait, _size, a.data(), b.data(), resSIMD2.data(), scalarA);
+            TestUtility::compareVectors<T>(resSIMD2.data(), expected.data(), _size, "SIMD AVX512 Threaded (" + nThreadsStr + " threads)", _tolerance);
+        }
     }
 
     template<typename T>
@@ -361,7 +449,7 @@ namespace STLKR_Tests {
         auto unit = Stalker::Core::TimeUnit::nanoseconds;
 
         auto a = createAlignedVector<T>(_size);
-        Random::uniform<T>(_size, a.data(), 0, 1);
+        Random::uniform<T>(_size, a.data(), 0, 10);
 
         T expected = 0;
 
@@ -385,8 +473,8 @@ namespace STLKR_Tests {
         }
 
         {
-            // T resSIMD2 = MathOperations::sum<T, ExecutionTraitSIMD<T_SIMD::AVX512>>(_size, a.data());
-            // TestUtility::compareValues(resSIMD2, expected, "SIMD AVX512 Sum", _tolerance);
+            T resSIMD2 = MathOperations::sum<T, ExecutionTraitSIMD<T_SIMD::AVX512>>(_size, a.data());
+            TestUtility::compareValues(resSIMD2, expected, "SIMD AVX512 Sum", _tolerance, true);
         }
 
         ThreadTraitSTDThread ThreadTrait = ThreadTraitSTDThread();
@@ -539,6 +627,39 @@ namespace STLKR_Tests {
         }
     }
 
+    template<typename T>
+    void _testDotProduct() {
+        printSubtitle("Dot Product " + typeToString<T>(), T_Color::BARBIE_PINK);
+
+        // Data
+        auto a = createAlignedVector<T>(_size);
+        auto b = createAlignedVector<T>(_size);
+        Random::uniform<T>(_size, a.data(), 0, 10);
+        Random::uniform<T>(_size, b.data(), 0, 10);
+
+        // Expected
+        T expected = 0;
+        for (size_t i = 0; i < _size; ++i) expected += a[i] * b[i];
+
+        // Non-threaded variants (in-place)
+        auto tolerance = 1e-4;
+        {
+            auto res = MathOperations::dot<T, ExecutionTraitClassic<>>(_size, a.data(), b.data());
+            TestUtility::compareValues<T>(res, expected, "Classic", tolerance, true);
+        }
+        {
+            auto res = MathOperations::dot<T, ExecutionTraitUnrolled<1>>(_size, a.data(), b.data());
+            TestUtility::compareValues<T>(res, expected, "Meta", tolerance, true);
+        }
+        {
+            auto res = MathOperations::dot<T, ExecutionTraitSIMD<T_SIMD::AVX2>>(_size, a.data(), b.data());
+            TestUtility::compareValues<T>(res, expected, "SIMD AVX2", tolerance, true);
+        }
+        {
+            auto res = MathOperations::dot<T, ExecutionTraitSIMD<T_SIMD::AVX512>>(_size, a.data(), b.data());
+            TestUtility::compareValues<T>(res, expected, "SIMD AVX512", _tolerance, true);
+        }
+    }
 };
 
 

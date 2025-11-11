@@ -29,6 +29,17 @@ using namespace Stalker::Core::Config;
         }
 
         template <typename T, size_t Unroll = DefaultUnroll(), typename ResultT = T>
+        static constexpr inline void axpy(size_t size, const T* a, const T* b, ResultT* result, T scalarA) {
+            auto limit = size - (size % Unroll);
+            for (size_t i = 0; i < limit; i += Unroll)
+                _add<T, ResultT, true>(a + i, b + i, result + i, std::make_index_sequence<Unroll>{}, scalarA);
+            for (size_t i = limit; i < size; ++i)
+                result[i] = (a[i] * scalarA) + b[i];
+        }
+
+
+
+        template <typename T, size_t Unroll = DefaultUnroll(), typename ResultT = T>
         static constexpr inline void subtract(size_t size, const T* a, const T* b, ResultT* result) {
             auto limit = size - (size % Unroll);
             for (size_t i = 0; i < limit; i += Unroll)
@@ -137,20 +148,9 @@ using namespace Stalker::Core::Config;
             T result = 0;
             auto limit = size - (size % Unroll);
             for (size_t i = 0; i < limit; i += Unroll)
-                _dot<T, T, false>(a + i, b + i, result, std::make_index_sequence<Unroll>{});
+                _dot<T, ResultT>(a + i, b + i, result, std::make_index_sequence<Unroll>{});
             for (size_t i = limit; i < size; ++i)
                 result += a[i] * b[i];
-            return result;
-        }
-
-        template <typename T, size_t Unroll = DefaultUnroll(), typename ResultT = T>
-        static constexpr inline T dot(size_t size, const T* a, const T* b, T scalarA, T scalarB) {
-            T result = 0;
-            auto limit = size - (size % Unroll);
-            for (size_t i = 0; i < limit; i += Unroll)
-                _dot<T, ResultT, true>(a + i, b + i, result, std::make_index_sequence<Unroll>{}, scalarA, scalarB);
-            for (size_t i = limit; i < size; ++i)
-                result += (a[i] * scalarA) * (b[i] * scalarB);
             return result;
         }
 
@@ -162,6 +162,11 @@ using namespace Stalker::Core::Config;
             } else {
                 ((result[Indices] = a[Indices] + b[Indices]), ...);
             }
+        }
+
+        template <typename T, typename R, size_t... Indices>
+        static constexpr inline void _axpy(const T* a, const T* b, T* result, std::index_sequence<Indices...>, T scalar) {
+            ((result[Indices] = (a[Indices] * scalar) + b[Indices]), ...);
         }
 
         template <typename T, typename R, bool IsScaled, size_t... Indices>
@@ -216,12 +221,9 @@ using namespace Stalker::Core::Config;
             ((result += data[Indices]), ...);
         }
 
-        template <typename T, typename R, bool IsScaled, size_t... Indices>
-        static constexpr inline void _dot (const T* a, const T* b, T &result, std::index_sequence<Indices...>, T scalarA = 1, T scalarB = 1) {
-            if constexpr (IsScaled)
-                ((result += (a[Indices] * scalarA) * (b[Indices] * scalarB)), ...);
-            else
-                ((result += a[Indices] * b[Indices]), ...);
+        template <typename T, typename R, size_t... Indices>
+        static constexpr inline void _dot (const T* a, const T* b, T &result, std::index_sequence<Indices...>) {
+            ((result += a[Indices] * b[Indices]), ...);
         }
     };
 

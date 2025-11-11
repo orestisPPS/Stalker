@@ -57,7 +57,7 @@ namespace Benchmarks {
 		Stalker::Mathematics::Random::uniform<T>(size, src.data(), 0, 100);
 		const auto totalBytes = 2 * size * sizeof(T);
 
-		config.compareOver = { "memcpy " + type, "blas " + type };
+		config.compareOver = { "memcpy " + type, "blas " + type, "eigen " + type };
 		config.name = "stalker avx2 " + type;
 		_benchmarkPAPI(
 				[&](auto& dst) {
@@ -94,6 +94,23 @@ namespace Benchmarks {
 				},
 				allocator, config, totalBytes
 		);
+
+	#if STALKER_BENCH_EIGEN_AVAILABLE
+
+		auto eigenAllocator = [&]() { return createAlignedVector<T>(size); };
+
+		config.name = "eigen " + type;
+		Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> eigenData(src.data(), static_cast<int>(size));
+		_benchmarkPAPI(
+			[&](auto& dst) {
+				Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> dstMap(dst.data(), static_cast<int>(size));
+				dstMap = eigenData; // assignment timing only
+			},
+			eigenAllocator, config, totalBytes
+		);
+
+	#endif
+
 		_logs.exportToJSON(_logExportPath + "/copy_t_" + type + "_s" + std::to_string(size) + "_u" + std::to_string(Unroll));
 		_logs.clear();
 	}
@@ -113,7 +130,7 @@ namespace Benchmarks {
 		T value = static_cast<T>(3.14159265358979323846);
 		const auto totalBytes = 1 * size * sizeof(T);
 
-		config.compareOver.clear();
+		config.compareOver = { "std::fill " + type, "eigen " + type };
 		config.name = "stalker avx2 " + type;
 		_benchmarkPAPI(
 				[&](auto& dst) {
@@ -137,6 +154,22 @@ namespace Benchmarks {
 				},
 				allocator, config, totalBytes
 		);
+
+	#if STALKER_BENCH_EIGEN_AVAILABLE
+
+		// Eigen baseline for setValue: allocator returns owning vector, lambda only sets values.
+		auto eigenAllocator = [&]() { return createAlignedVector<T>(size); };
+
+		config.name = "eigen " + type;
+		_benchmarkPAPI(
+			[&](auto& dst) {
+				Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> dstMap(dst.data(), static_cast<int>(size));
+				dstMap.setConstant(value);
+			},
+			eigenAllocator, config, totalBytes
+		);
+
+	#endif
 
 		_logs.exportToJSON(_logExportPath + "/setvalue_t_" + type + "_s" + std::to_string(size) + "_u" + std::to_string(Unroll));
 		_logs.clear();
