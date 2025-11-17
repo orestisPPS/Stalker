@@ -1,0 +1,24 @@
+{
+  "help": {
+  },
+  
+  "iterations"              : 10,
+  "warmup_iterations"       : 2,
+  "slave_thread_id"         : 3,
+  "data_types"              : ["double", "float"],
+  "sizes"                   : [],
+  "size_range"              : [256, 2000000000],
+  "size_samples_small"      : 30,
+  "size_samples_large"      : 30,
+
+  "unroll_factors"          : [1, 2, 4],
+  "operations_math"         : ["dot", "axpy"],
+  "operations_memory"       : ["copy"],
+
+  "papiDir": "/home/hal10000/code/papi/src/install",
+
+  "enable_eigen"            : true,
+  "enable_openblas"         : true,
+  "enable_papi"             : true
+}
+

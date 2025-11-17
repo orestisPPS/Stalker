@@ -6,6 +6,8 @@ option(STALKER_BENCH_PAPI_ENABLE      "Fail if PAPI is missing"      ON)
 
 add_executable(Benchmarks ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
 target_compile_features(Benchmarks PRIVATE cxx_std_20)
+find_package(Threads REQUIRED)
+target_link_libraries(Benchmarks PRIVATE Threads::Threads)
 
 # ---------------- Eigen ----------------
 set(HAVE_EIGEN 0)
@@ -80,71 +82,144 @@ target_link_libraries(Benchmarks PRIVATE Stalker)
 
 
 
-# Data types iteration
-set(STALKER_BENCH_TYPES "float;double" CACHE STRING "")
+#############################
+# Benchmark configuration ingestion
+#############################
+# Optional: slave thread id for affinity pinning
+set(_bench_slave_thread_id 0)
+if(DEFINED STALKER_BENCH_SLAVE_THREAD_ID)
+  if(NOT STALKER_BENCH_SLAVE_THREAD_ID MATCHES "^[0-9]+$")
+    message(FATAL_ERROR "STALKER_BENCH_SLAVE_THREAD_ID must be a non-negative integer")
+  endif()
+  set(_bench_slave_thread_id ${STALKER_BENCH_SLAVE_THREAD_ID})
+endif()
+
+
+# Require user-specified benchmark configuration (no implicit defaults)
+if(NOT DEFINED STALKER_BENCH_TYPES OR STALKER_BENCH_TYPES STREQUAL "")
+  message(FATAL_ERROR "STALKER_BENCH_TYPES must be set (e.g. -DSTALKER_BENCH_TYPES=double;float)")
+endif()
 set(_bench_types_macro "")
 foreach(t IN LISTS STALKER_BENCH_TYPES)
-    set(_bench_types_macro "${_bench_types_macro} X(${t})")
+  set(_bench_types_macro "${_bench_types_macro} X(${t})")
 endforeach()
 
-# Vector sizes
-# set(STALKER_BENCH_VECTOR_SIZES "256" CACHE STRING "Vector sizes to benchmark")
-# Generate a dense, presentation-grade set of sizes across ranges
-# Base: powers of two from 2^8 (256) up to <= 2,000,000,000
-# Plus: in-between points at +25%, +50%, +75% of each power-of-two octave
-# This yields 4 points per octave: 1.00x, 1.25x, 1.50x, 1.75x (all integers for exp>=2)
-# ---- Tunables ----
-set(_bench_start_elems 4096)           # first size
-set(_bench_start_elems 100000)           # first size
-set(_bench_max_elems   2000000000)     # cap (elements)
-set(_bench_align       64)             # align up to multiple of 64
-# ratio r = P/Q = 3/2
-set(_P 3)
-set(_Q 2)
+# ----- Vector sizes -----
+# Accept a single combined list (computed by the Python driver); CMake validates and prints.
+if(NOT DEFINED STALKER_BENCH_VECTOR_SIZES OR STALKER_BENCH_VECTOR_SIZES STREQUAL "")
+  message(FATAL_ERROR "No vector sizes provided. Set STALKER_BENCH_VECTOR_SIZES.")
+endif()
 
-# ---- Build geometric series ----
-set(_bench_sizes_list "")
-set(_cur ${_bench_start_elems})
-set(_last 0)
+set(_all_sizes ${STALKER_BENCH_VECTOR_SIZES})
+list(REMOVE_DUPLICATES _all_sizes)
+list(SORT _all_sizes COMPARE NATURAL)
 
-while(TRUE)
-  # align current up
-  math(EXPR _cur_aligned "((${_cur} + ${_bench_align} - 1) / ${_bench_align}) * ${_bench_align}")
-
-  # ensure strict increase after alignment
-  if(_cur_aligned GREATER _bench_max_elems)
-    break()
+string(REPLACE ";" ", " _bench_sizes_csv "${_all_sizes}")
+list(LENGTH _all_sizes _bench_sizes_len)
+if(_bench_sizes_len LESS 1)
+  message(FATAL_ERROR "Vector sizes: must contain at least one size")
+endif()
+set(_seen_sizes "")
+foreach(sz IN LISTS _all_sizes)
+  if(NOT sz MATCHES "^[0-9]+$")
+    message(FATAL_ERROR "Vector sizes: '${sz}' is not an integer")
   endif()
-  if(_cur_aligned GREATER _last)
-    if(_bench_sizes_list)
-      set(_bench_sizes_list "${_bench_sizes_list};${_cur_aligned}")
+  if(sz STREQUAL "0")
+    message(FATAL_ERROR "Vector sizes: size must be > 0 (got 0)")
+  endif()
+  if(sz GREATER 4294967295)
+    message(FATAL_ERROR "Vector sizes: size '${sz}' exceeds 32-bit element count sanity limit")
+  endif()
+  if(";${_seen_sizes};" MATCHES ";${sz};")
+    message(FATAL_ERROR "Vector sizes: duplicate size '${sz}'")
+  endif()
+  set(_seen_sizes "${_seen_sizes};${sz}")
+endforeach()
+
+# Export a normalized combined list for downstream header generation
+set(STALKER_BENCH_VECTOR_SIZES "${_all_sizes}")
+
+# Derive or accept small/large partitions for header diagnostics
+set(_sizes_small)
+set(_sizes_large)
+if(DEFINED STALKER_BENCH_VECTOR_SIZES_SMALL AND NOT STALKER_BENCH_VECTOR_SIZES_SMALL STREQUAL "")
+  list(APPEND _sizes_small ${STALKER_BENCH_VECTOR_SIZES_SMALL})
+endif()
+if(DEFINED STALKER_BENCH_VECTOR_SIZES_LARGE AND NOT STALKER_BENCH_VECTOR_SIZES_LARGE STREQUAL "")
+  list(APPEND _sizes_large ${STALKER_BENCH_VECTOR_SIZES_LARGE})
+endif()
+
+if(_sizes_small STREQUAL "" AND _sizes_large STREQUAL "")
+  # Fallback: split around arithmetic midpoint
+  list(GET _all_sizes 0 _sz_first)
+  list(GET _all_sizes -1 _sz_last)
+  math(EXPR _mid "(${_sz_first} + ${_sz_last}) / 2")
+  foreach(sz IN LISTS _all_sizes)
+    if(sz LESS_EQUAL ${_mid})
+      list(APPEND _sizes_small ${sz})
     else()
-      set(_bench_sizes_list "${_cur_aligned}")
+      list(APPEND _sizes_large ${sz})
     endif()
-    set(_last ${_cur_aligned})
+  endforeach()
+endif()
+
+string(REPLACE ";" ", " _bench_sizes_small_csv "${_sizes_small}")
+string(REPLACE ";" ", " _bench_sizes_large_csv "${_sizes_large}")
+list(LENGTH _sizes_small _bench_sizes_small_len)
+list(LENGTH _sizes_large _bench_sizes_large_len)
+
+# Rough memory footprint validation (max element size heuristic)
+set(_type_size_max 0)
+foreach(t IN LISTS STALKER_BENCH_TYPES)
+  if(t STREQUAL "double")
+    set(_ts 8)
+  elseif(t STREQUAL "float")
+    set(_ts 4)
+  elseif(t STREQUAL "int")
+    set(_ts 4)
+  elseif(t STREQUAL "long" OR t STREQUAL "long long")
+    set(_ts 8)
+  else()
+    set(_ts 8)
   endif()
-
-  # next = ceil(cur * P / Q)
-  math(EXPR _next_raw "((${_cur} * ${_P}) + ${_Q} - 1) / ${_Q}")
-
-  # guard against stall due to integer/align rounding
-  if(_next_raw LESS_EQUAL ${_cur})
-    math(EXPR _next_raw "${_cur} + ${_bench_align}")
+  if(_ts GREATER _type_size_max)
+    set(_type_size_max ${_ts})
   endif()
+endforeach()
+math(EXPR _warn_bytes_threshold "64 * 1024 * 1024 * 1024")
+foreach(sz IN LISTS STALKER_BENCH_VECTOR_SIZES)
+  math(EXPR _footprint "${sz} * ${_type_size_max}")
+  if(_footprint GREATER _warn_bytes_threshold)
+    math(EXPR _footprint_mb "${_footprint} / (1024 * 1024)")
+    message(WARNING "Benchmark footprint large (~${_footprint_mb} MiB for size ${sz}); consider reducing sizes.")
+  endif()
+endforeach()
 
-  set(_cur ${_next_raw})
-endwhile()
-
-# ---- Export to your bench config ----
-set(STALKER_BENCH_VECTOR_SIZES "${_bench_sizes_list}" CACHE STRING "Geometric sizes (start=${_bench_start_elems}, ratio=${_P}/${_Q})")
-string(REPLACE ";" ", " _bench_sizes_csv "${STALKER_BENCH_VECTOR_SIZES}")
-list(LENGTH STALKER_BENCH_VECTOR_SIZES _bench_sizes_len)
-
-# Unroll factors
-# set(STALKER_BENCH_UNROLLS "1" CACHE STRING "Unroll factors")
-set(STALKER_BENCH_UNROLLS "1" CACHE STRING "Unroll factors")
+# ----- Unroll factors -----
+if(NOT DEFINED STALKER_BENCH_UNROLLS OR STALKER_BENCH_UNROLLS STREQUAL "")
+  message(FATAL_ERROR "STALKER_BENCH_UNROLLS must be set (e.g. -DSTALKER_BENCH_UNROLLS=1;2;4)")
+endif()
 string(REPLACE ";" ", " _bench_unrolls_csv "${STALKER_BENCH_UNROLLS}")
 list(LENGTH STALKER_BENCH_UNROLLS _bench_unrolls_len)
+if(_bench_unrolls_len LESS 1)
+  message(FATAL_ERROR "STALKER_BENCH_UNROLLS: must contain at least one factor")
+endif()
+set(_seen_unrolls "")
+foreach(uf IN LISTS STALKER_BENCH_UNROLLS)
+  if(NOT uf MATCHES "^[0-9]+$")
+    message(FATAL_ERROR "STALKER_BENCH_UNROLLS: '${uf}' is not an integer")
+  endif()
+  if(uf STREQUAL "0")
+    message(FATAL_ERROR "STALKER_BENCH_UNROLLS: unroll must be > 0")
+  endif()
+  if(";${_seen_unrolls};" MATCHES ";${uf};")
+    message(FATAL_ERROR "STALKER_BENCH_UNROLLS: duplicate factor '${uf}'")
+  endif()
+  if(uf GREATER 64)
+    message(FATAL_ERROR "STALKER_BENCH_UNROLLS: '${uf}' exceeds conservative upper limit (64)")
+  endif()
+  set(_seen_unrolls "${_seen_unrolls};${uf}")
+endforeach()
 
 set(_bench_unrolls_macro "")
 foreach(u IN LISTS STALKER_BENCH_UNROLLS)
@@ -152,17 +227,46 @@ foreach(u IN LISTS STALKER_BENCH_UNROLLS)
 endforeach()
 
 # ----- iterations -----
-set(STALKER_BENCH_ITERATIONS 10 CACHE STRING "Benchmark repeats per case")
-set(STALKER_BENCH_WARMUP_ITERATIONS 2 CACHE STRING "Warmup repeats per case")
+if(NOT DEFINED STALKER_BENCH_ITERATIONS OR STALKER_BENCH_ITERATIONS STREQUAL "")
+  message(FATAL_ERROR "STALKER_BENCH_ITERATIONS must be set (e.g. -DSTALKER_BENCH_ITERATIONS=10)")
+endif()
+if(NOT DEFINED STALKER_BENCH_WARMUP_ITERATIONS OR STALKER_BENCH_WARMUP_ITERATIONS STREQUAL "")
+  message(FATAL_ERROR "STALKER_BENCH_WARMUP_ITERATIONS must be set (e.g. -DSTALKER_BENCH_WARMUP_ITERATIONS=2)")
+endif()
+if(NOT STALKER_BENCH_ITERATIONS MATCHES "^[0-9]+$")
+  message(FATAL_ERROR "STALKER_BENCH_ITERATIONS must be a positive integer")
+endif()
+if(STALKER_BENCH_ITERATIONS LESS 1)
+  message(FATAL_ERROR "STALKER_BENCH_ITERATIONS must be >= 1")
+endif()
+if(STALKER_BENCH_ITERATIONS GREATER 100000)
+  message(FATAL_ERROR "STALKER_BENCH_ITERATIONS excessively large (>100000)")
+endif()
+if(NOT STALKER_BENCH_WARMUP_ITERATIONS MATCHES "^[0-9]+$")
+  message(FATAL_ERROR "STALKER_BENCH_WARMUP_ITERATIONS must be a non-negative integer")
+endif()
+if(STALKER_BENCH_WARMUP_ITERATIONS LESS 0)
+  message(FATAL_ERROR "STALKER_BENCH_WARMUP_ITERATIONS must be >= 0")
+endif()
+if(STALKER_BENCH_WARMUP_ITERATIONS GREATER 100000)
+  message(FATAL_ERROR "STALKER_BENCH_WARMUP_ITERATIONS excessively large (>100000)")
+endif()
 
 # make them literals for C++
 set(_bench_iterations "${STALKER_BENCH_ITERATIONS}")
 set(_bench_warmup     "${STALKER_BENCH_WARMUP_ITERATIONS}")
 
-# ----- memory ops -----
-# set(STALKER_BENCH_MEMOPS "copy" CACHE STRING "Memory ops")
-set(STALKER_BENCH_MEMOPS "setValue" CACHE STRING "Memory ops")
-# set(STALKER_BENCH_MEMOPS "copy;setValue;setZero" CACHE STRING "Memory ops")
+# ----- Memory Operations -----
+if(NOT DEFINED STALKER_BENCH_MEMOPS OR STALKER_BENCH_MEMOPS STREQUAL "")
+  message(FATAL_ERROR "STALKER_BENCH_MEMOPS must be set (e.g. -DSTALKER_BENCH_MEMOPS=copy;setZero)")
+endif()
+set(_seen_memops "")
+foreach(mo IN LISTS STALKER_BENCH_MEMOPS)
+  if(";${_seen_memops};" MATCHES ";${mo};")
+    message(FATAL_ERROR "STALKER_BENCH_MEMOPS: duplicate entry '${mo}'")
+  endif()
+  set(_seen_memops "${_seen_memops};${mo}")
+endforeach()
 
 set(_bench_memops_csv_quoted "${STALKER_BENCH_MEMOPS}")
 string(REPLACE ";" "\", \"" _bench_memops_csv_quoted "${_bench_memops_csv_quoted}")
@@ -170,10 +274,17 @@ set(_bench_memops_csv_quoted "\"${_bench_memops_csv_quoted}\"")
 
 list(LENGTH STALKER_BENCH_MEMOPS _bench_memops_len)
 
-
-# ----- math ops -----
-# Names for mathematical operations benchmarks (used by BenchmarkConfig.hpp)
-set(STALKER_BENCH_MATHOPS "scale" CACHE STRING "Math operations")
+# ----- Math Operations -----
+if(NOT DEFINED STALKER_BENCH_MATHOPS OR STALKER_BENCH_MATHOPS STREQUAL "")
+  message(FATAL_ERROR "STALKER_BENCH_MATHOPS must be set (e.g. -DSTALKER_BENCH_MATHOPS=dot;sum;axpy)")
+endif()
+set(_seen_mathops "")
+foreach(mo IN LISTS STALKER_BENCH_MATHOPS)
+  if(";${_seen_mathops};" MATCHES ";${mo};")
+    message(FATAL_ERROR "STALKER_BENCH_MATHOPS: duplicate entry '${mo}'")
+  endif()
+  set(_seen_mathops "${_seen_mathops};${mo}")
+endforeach()
 
 set(_bench_mathops_csv_quoted "${STALKER_BENCH_MATHOPS}")
 string(REPLACE ";" "\", \"" _bench_mathops_csv_quoted "${_bench_mathops_csv_quoted}")
@@ -181,13 +292,34 @@ set(_bench_mathops_csv_quoted "\"${_bench_mathops_csv_quoted}\"")
 
 list(LENGTH STALKER_BENCH_MATHOPS _bench_mathops_len)
 
+# ---- Per-operation compile definitions for selective compilation/gating ----
+foreach(memop IN LISTS STALKER_BENCH_MEMOPS)
+  if(NOT memop STREQUAL "")
+    string(TOUPPER ${memop} memop_upper)
+    target_compile_definitions(Benchmarks PRIVATE STALKER_BENCH_MEMOP_${memop_upper}=1)
+  endif()
+endforeach()
+foreach(mathop IN LISTS STALKER_BENCH_MATHOPS)
+  if(NOT mathop STREQUAL "")
+    string(TOUPPER ${mathop} mathop_upper)
+    target_compile_definitions(Benchmarks PRIVATE STALKER_BENCH_MATHOP_${mathop_upper}=1)
+  endif()
+endforeach()
+
 
 # Generate header into the build dir
+set(_bench_slave_thread_id "${_bench_slave_thread_id}")
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/BenchmarkConfig.hpp.in
   ${CMAKE_CURRENT_BINARY_DIR}/BenchmarkConfig.hpp
   @ONLY
 )
+
+# Provide replacement tokens for BenchmarkConfig.hpp.in
+set(_bench_slave_thread_id ${_bench_slave_thread_id} CACHE INTERNAL "Slave thread ID for benchmarks")
+
+# Echo affinity choice for visibility
+message(STATUS "Benchmark suite affinity core (slave_thread_id) = ${_bench_slave_thread_id}")
 
 # Make the generated header visible to Benchmarks
 target_include_directories(Benchmarks PRIVATE ${CMAKE_CURRENT_BINARY_DIR})

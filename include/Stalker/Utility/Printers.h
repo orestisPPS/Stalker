@@ -9,10 +9,10 @@
 namespace Stalker::Utility{
 
 /**
- * @enum ColourType
+ * @enum T_Color
  * @brief Represents ANSI colour codes for terminal text colouring.
  */
-enum class ColourType {
+enum class T_Color {
     RED,
     GREEN,
     YELLOW,
@@ -36,39 +36,39 @@ enum class ColourType {
 };
 
 /**
- * @brief Retrieves the ANSI escape code for the given ColourType.
+ * @brief Retrieves the ANSI escape code for the given T_Color.
  * @param colour The colour to retrieve the code for.
  * @return The ANSI escape code as a string.
  * @throws std::out_of_range If the colour is not defined.
  */
-static inline const std::string& getColourCode(ColourType colour) {
-    static const std::unordered_map<ColourType, std::string> colourMap = {
-        {ColourType::RED,                   "\033[38;5;196m"},  // Punchy Red
-        {ColourType::GREEN,                 "\033[38;5;46m"},   // Lush Green
-        {ColourType::YELLOW,                "\033[38;5;226m"},  // Bright Yellow
-        {ColourType::BLUE,                  "\033[38;5;21m"},   // Vivid Blue
-        {ColourType::MAGENTA,               "\033[38;5;201m"},  // Funky Magenta
-        {ColourType::CYAN,                  "\033[38;5;51m"},   // Electric Cyan
-        {ColourType::WHITE,                 "\033[38;5;15m"},   // Blinding White
-        {ColourType::GRAY,                  "\033[38;5;240m"},  // Subtle Gray
-        {ColourType::BRIGHT_WHITE,          "\033[1;97m"},      // Bold Bright White
-        {ColourType::ORANGE,                "\033[38;5;214m"},  // Zesty Orange
-        {ColourType::TOXIC_GREEN,           "\033[38;5;118m"},  // Toxic Green
-        {ColourType::DEEP_RED,              "\033[38;5;88m"},   // Deep Red
-        {ColourType::LIGHT_BLUE,            "\033[38;5;39m"},   // Light Blue
-        {ColourType::SHIT_BROWN,            "\033[38;5;94m"},   // Shit Brown
-        {ColourType::FERRARI_RED,           "\033[1;31m"},      // Ferrari Red
-        {ColourType::BARBIE_PINK,           "\033[38;5;200m"},  // Barbie Pink
-        {ColourType::GANDALF_GRAY,          "\033[38;5;244m"},  // Gandalf Gray
-        {ColourType::BUTIAS_ORANGE,         "\033[38;2;254;111;45m"},  // Fotini Patsioura Erwtodikio 1997
-        {ColourType::PATSIOURA_RED,   "\033[38;2;253;53;19m"}, // Mr Butias Erwtodikio 1997
-        {ColourType::RESET,                 "\033[0m"},         // Reset
+static inline const std::string& getColourCode(T_Color colour) {
+    static const std::unordered_map<T_Color, std::string> colourMap = {
+        {T_Color::RED,                   "\033[38;5;196m"},  // Punchy Red
+        {T_Color::GREEN,                 "\033[38;5;46m"},   // Lush Green
+        {T_Color::YELLOW,                "\033[38;5;226m"},  // Bright Yellow
+        {T_Color::BLUE,                  "\033[38;5;21m"},   // Vivid Blue
+        {T_Color::MAGENTA,               "\033[38;5;201m"},  // Funky Magenta
+        {T_Color::CYAN,                  "\033[38;5;51m"},   // Electric Cyan
+        {T_Color::WHITE,                 "\033[38;5;15m"},   // Blinding White
+        {T_Color::GRAY,                  "\033[38;5;240m"},  // Subtle Gray
+        {T_Color::BRIGHT_WHITE,          "\033[1;97m"},      // Bold Bright White
+        {T_Color::ORANGE,                "\033[38;5;214m"},  // Zesty Orange
+        {T_Color::TOXIC_GREEN,           "\033[38;5;118m"},  // Toxic Green
+        {T_Color::DEEP_RED,              "\033[38;5;88m"},   // Deep Red
+        {T_Color::LIGHT_BLUE,            "\033[38;5;39m"},   // Light Blue
+        {T_Color::SHIT_BROWN,            "\033[38;5;94m"},   // Shit Brown
+        {T_Color::FERRARI_RED,           "\033[1;31m"},      // Ferrari Red
+        {T_Color::BARBIE_PINK,           "\033[38;5;200m"},  // Barbie Pink
+        {T_Color::GANDALF_GRAY,          "\033[38;5;244m"},  // Gandalf Gray
+        {T_Color::BUTIAS_ORANGE,         "\033[38;2;254;111;45m"},  // Fotini Patsioura Erwtodikio 1997
+        {T_Color::PATSIOURA_RED,   "\033[38;2;253;53;19m"}, // Mr Butias Erwtodikio 1997
+        {T_Color::RESET,                 "\033[0m"},         // Reset
     };
     auto it = colourMap.find(colour);
     if (it != colourMap.end()) {
         return it->second;
     } else {
-        throw std::out_of_range("Unknown ColourType value");
+        throw std::out_of_range("Unknown T_Color value");
     }
 }
 
@@ -83,7 +83,7 @@ static inline std::string resetColour() { return "\033[0m"; }
  * @param message The message to print.
  * @param colour The colour to print the message in.
  */
-static inline void print(const std::string& message, ColourType colour = ColourType::WHITE) {
+static inline void print(const std::string& message, T_Color colour = T_Color::WHITE) {
     try {
         std::cout << getColourCode(colour) << message << resetColour() << std::endl;
     } catch (const std::out_of_range& e) {
@@ -96,12 +96,12 @@ static inline void print(const std::string& message, ColourType colour = ColourT
  * 
  * @param title The title to be displayed.
  * @param message The message to be displayed.
- * @param titleColour The colour of the title text. Default is ColourType::WHITE.
- * @param messageColour The colour of the message text. Default is ColourType::WHITE.
+ * @param titleColour The colour of the title text. Default is T_Color::WHITE.
+ * @param messageColour The colour of the message text. Default is T_Color::WHITE.
  * @return A formatted string with the title and message in specified colours.
  * @throws std::out_of_range if an invalid colour type is provided.
  */
-static inline std::string stringWithTitle(const std::string& title, const std::string& message, ColourType titleColour = ColourType::WHITE, ColourType messageColour = ColourType::WHITE) {
+static inline std::string stringWithTitle(const std::string& title, const std::string& message, T_Color titleColour = T_Color::WHITE, T_Color messageColour = T_Color::WHITE) {
     try {
         return getColourCode(titleColour) + title + ": " + resetColour() + getColourCode(messageColour) + message + resetColour();
     } catch (const std::out_of_range& e) {
@@ -117,10 +117,10 @@ static inline std::string stringWithTitle(const std::string& title, const std::s
  *
  * @param title The title to be printed.
  * @param message The message to be printed.
- * @param titleColour The colour of the title text. Defaults to ColourType::WHITE.
- * @param messageColour The colour of the message text. Defaults to ColourType::WHITE.
+ * @param titleColour The colour of the title text. Defaults to T_Color::WHITE.
+ * @param messageColour The colour of the message text. Defaults to T_Color::WHITE.
  */
-static inline void printWithTitle(const std::string& title, const std::string& message, ColourType titleColour = ColourType::WHITE, ColourType messageColour = ColourType::WHITE) {
+static inline void printWithTitle(const std::string& title, const std::string& message, T_Color titleColour = T_Color::WHITE, T_Color messageColour = T_Color::WHITE) {
     std::cout << stringWithTitle(title, message, titleColour, messageColour) << std::endl;
 }
 
@@ -129,7 +129,7 @@ static inline void printWithTitle(const std::string& title, const std::string& m
  * @param message The error message content.
  * @return Formatted error message string with ANSI colour codes.
  */
-static inline std::string errorMessage(const std::string& message) { return stringWithTitle("Error", message, ColourType::FERRARI_RED); }
+static inline std::string errorMessage(const std::string& message) { return stringWithTitle("Error", message, T_Color::FERRARI_RED); }
 
 /**
  * @brief Prints an error message in red.
@@ -142,7 +142,7 @@ static inline void printError(const std::string& message) { std::cout << errorMe
  * @param message The warning message content.
  * @return Formatted warning message string with ANSI colour codes.
  */
-static inline std::string warningMessage(const std::string& message) { return stringWithTitle("Warning", message, ColourType::ORANGE); }
+static inline std::string warningMessage(const std::string& message) { return stringWithTitle("Warning", message, T_Color::ORANGE); }
 
 /**
  * @brief Prints a warning message in orange.
@@ -155,7 +155,7 @@ static inline void printWarning(const std::string& message) { std::cout << warni
  * @param message The success message content.
  * @return Formatted success message string with ANSI colour codes.
  */
-static inline std::string successMessage(const std::string& message) { return stringWithTitle("Success", message, ColourType::TOXIC_GREEN); }
+static inline std::string successMessage(const std::string& message) { return stringWithTitle("Success", message, T_Color::TOXIC_GREEN); }
 
 /**
  * @brief Prints a success message in green.
@@ -168,7 +168,7 @@ static inline void printSuccess(const std::string& message) { std::cout << succe
  * @param message The failure message content.
  * @return Formatted failure message string with ANSI colour codes.
  */
-static inline std::string failureMessage(const std::string& message) { return stringWithTitle("FAIL", message, ColourType::PATSIOURA_RED, ColourType::WHITE); }
+static inline std::string failureMessage(const std::string& message) { return stringWithTitle("FAIL", message, T_Color::PATSIOURA_RED, T_Color::WHITE); }
 
 /**
  * @brief Prints a failure message in red.
@@ -184,7 +184,7 @@ static inline void printConditionalSuccess(bool condition, const std::string& me
  * @param message The informational message content.
  * @return Formatted informational message string with ANSI colour codes.
  */
-static inline std::string infoMessage(const std::string& message) { return stringWithTitle("Info", message, ColourType::CYAN); }
+static inline std::string infoMessage(const std::string& message) { return stringWithTitle("Info", message, T_Color::GANDALF_GRAY, T_Color::GANDALF_GRAY); }
 
 /**
  * @brief Prints an informational message in cyan.
@@ -197,7 +197,7 @@ static inline void printInfo(const std::string& message) { std::cout << infoMess
  * @param message The debug message content.
  * @return Formatted debug message string with ANSI colour codes.
  */
-static inline std::string debugMessage(const std::string& message) { return stringWithTitle("Debug", message, ColourType::MAGENTA); }
+static inline std::string debugMessage(const std::string& message) { return stringWithTitle("Debug", message, T_Color::MAGENTA); }
 
 /**
  * @brief Prints a debug message in magenta.
@@ -205,7 +205,7 @@ static inline std::string debugMessage(const std::string& message) { return stri
  */
 static inline void printDebug(const std::string& message) { std::cout << debugMessage(message) << std::endl; }
 
-static void printTitle(const std::string& title, std::string symbol, ColourType colour = ColourType::WHITE, int padding = 20) {
+static void printTitle(const std::string& title, std::string symbol, T_Color colour = T_Color::WHITE, int padding = 20) {
     if (padding > 50) {
         padding = 50;
     }
@@ -218,7 +218,7 @@ static void printTitle(const std::string& title, std::string symbol, ColourType 
     std::cout << border << resetColour() << std::endl;
 }
 
-static void printSubtitle(const std::string& subtitle, ColourType colour = ColourType::WHITE) {
+static void printSubtitle(const std::string& subtitle, T_Color colour = T_Color::WHITE) {
     std::cout << getColourCode(colour) << "- " << subtitle << resetColour() << std::endl;
 }
 
@@ -239,4 +239,32 @@ static inline std::string arrayToString(const T* array, std::size_t size, int pr
     oss << "]";
     return oss.str();
 }
+
+template <typename T>
+static inline std::string typeToString() {
+    if constexpr (std::is_same_v<T, int>) {
+        return "int";
+    } else if constexpr (std::is_same_v<T, float>) {
+        return "float";
+    } else if constexpr (std::is_same_v<T, double>) {
+        return "double";
+    } else if constexpr (std::is_same_v<T, short>) {
+        return "short";
+    } else if constexpr (std::is_same_v<T, long>) {
+        return "long";
+    } else if constexpr (std::is_same_v<T, long long>) {
+        return "long long";
+    } else if constexpr (std::is_same_v<T, unsigned int>) {
+        return "unsigned int";
+    } else if constexpr (std::is_same_v<T, unsigned short>) {
+        return "unsigned short";
+    } else if constexpr (std::is_same_v<T, unsigned long>) {
+        return "unsigned long";
+    } else if constexpr (std::is_same_v<T, unsigned long long>) {
+        return "unsigned long long";
+    } else {
+        return "Unknown Type";
+    }
+}
+
 } // namespace Stalker::Utility

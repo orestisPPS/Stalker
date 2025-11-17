@@ -111,7 +111,7 @@ namespace Benchmarks {
 
 	#endif
 
-		_logs.exportToJSON(_logExportPath + "/copy_t_" + type + "_s" + std::to_string(size) + "_u" + std::to_string(Unroll));
+		_logs.exportToJSON(_logExportPath + "/copy_t_" + type + "_s" + std::to_string(size) + "_" + _getSizeType(size) + "_u" + std::to_string(Unroll));
 		_logs.clear();
 	}
 
@@ -146,7 +146,7 @@ namespace Benchmarks {
 				},
 				allocator, config, totalBytes
 		);
-
+		config.compareOver.clear();
 		config.name = "std::fill " + type;
 		_benchmarkPAPI(
 				[&](auto& dst) {
@@ -170,8 +170,7 @@ namespace Benchmarks {
 		);
 
 	#endif
-
-		_logs.exportToJSON(_logExportPath + "/setvalue_t_" + type + "_s" + std::to_string(size) + "_u" + std::to_string(Unroll));
+		_logs.exportToJSON(_logExportPath + "/set_value_t_" + type + "_s" + std::to_string(size) + "_" + _getSizeType(size) + "_u" + std::to_string(Unroll));
 		_logs.clear();
 	}
 

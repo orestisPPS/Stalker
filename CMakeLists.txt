@@ -73,12 +73,12 @@ install(
     DESTINATION lib/cmake/Stalker
 )
 
-# Configure and install package config files
-configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Tools/cmake/StalkerConfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/StalkerConfig.cmake
-    INSTALL_DESTINATION lib/cmake/Stalker
-)
+# # Configure and install package config files
+# configure_package_config_file(
+#     ${CMAKE_CURRENT_SOURCE_DIR}/Tools/cmake/StalkerConfig.cmake.in
+#     ${CMAKE_CURRENT_BINARY_DIR}/StalkerConfig.cmake
+#     INSTALL_DESTINATION lib/cmake/Stalker
+# )
 
 write_basic_package_version_file(
     ${CMAKE_CURRENT_BINARY_DIR}/StalkerConfigVersion.cmake

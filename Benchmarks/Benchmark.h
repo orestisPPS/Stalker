@@ -2,6 +2,9 @@
 #include <Stalker/Utility/Logs.h>
 #include <Stalker/Utility/Printers.h>
 #include <cassert>
+#include <thread>
+#include <pthread.h>
+#include <sched.h>
 #include "BenchmarkConfig.hpp"   // from ${CMAKE_CURRENT_BINARY_DIR}
 
 #if defined(STALKER_BENCH_PAPI_AVAILABLE) && STALKER_BENCH_PAPI_AVAILABLE
@@ -146,7 +149,9 @@ namespace fs = std::filesystem;
 
                 if (config.verbose) printInfo("Allocating result vector...");
                 auto result = allocFunc();
-                if (config.verbose) printInfo("Executing function...");
+                if (config.verbose) {
+                    printInfo(std::string("Executing function (affinity core ") + std::to_string(Benchmarks::SlaveThreadId) + ")...");
+                }
                 timer.start();
                 func(result);
                 timer.stop();
@@ -257,23 +262,61 @@ namespace fs = std::filesystem;
             printError("Failed to create log export path '" + path + "': " + ec.message());
             return false;
         }
+
+        std::string _getSizeType(size_t size) const {
+            if (SizesSmall.size() == 0 && SizesLarge.size() == 0)
+                return "ND";
+            if (SizesSmall.size() > 0 && std::find(SizesSmall.begin(), SizesSmall.end(), size) != SizesSmall.end())
+                return "S";
+            if (SizesLarge.size() > 0 && std::find(SizesLarge.begin(), SizesLarge.end(), size) != SizesLarge.end())
+                return "L";
+            return "ND";
+        }
     public:
 
         void run() {
-            auto timer = Timer();
-            timer.start();
-            for (size_t sIndex = 0; sIndex < Benchmarks::Sizes.size(); ++sIndex) {
+            auto suiteBody = [this]() {
+                // Pin this std::thread to configured core (SlaveThreadId) if valid
+                const unsigned hw = std::thread::hardware_concurrency();
+                if (hw == 0) {
+                    printWarning("hardware_concurrency() returned 0; skipping affinity pin.");
+                } else if (Benchmarks::SlaveThreadId >= static_cast<int>(hw)) {
+                    printWarning("Requested slave_thread_id (" + std::to_string(Benchmarks::SlaveThreadId) + 
+                                 ") >= hardware_concurrency (" + std::to_string(hw) + ") — skipping affinity pin.");
+                } else if (Benchmarks::SlaveThreadId >= 0) {
+                    cpu_set_t cpuset;
+                    CPU_ZERO(&cpuset);
+                    CPU_SET(static_cast<unsigned>(Benchmarks::SlaveThreadId), &cpuset);
+                    pthread_t self = pthread_self();
+                    int rc = pthread_setaffinity_np(self, sizeof(cpu_set_t), &cpuset);
+                    if (rc != 0) {
+                        printWarning("pthread_setaffinity_np failed (rc=" + std::to_string(rc) + ")");
+                    } else {
+                        printInfo("Suite affinity set to core " + std::to_string(Benchmarks::SlaveThreadId));
+                    }
+                }
+
+                // Your original body
+                auto timer = Timer();
+                timer.start();
+                for (size_t sIndex = 0; sIndex < Benchmarks::Sizes.size(); ++sIndex) {
                     size_t size = Benchmarks::Sizes[sIndex];
-                    auto papiConfig = PAPILogsConfig{};                    
-        
+                    auto papiConfig = PAPILogsConfig{};
                     #define CALL_UNROLL(U) static_cast<Child*>(this)->template _run<U>(size);
                     BENCH_FOR_EACH_UNROLL(CALL_UNROLL)
                     #undef CALL_UNROLL
-            }
-            timer.stop();
-            printTitle("Benchmark Suite '" + _name + "' completed in " +
-                       std::to_string(timer.durationValue(TimeUnit::minutes)) + " minutes.", "=");
-            
+                }
+                timer.stop();
+                printTitle("Benchmark Suite '" + _name + "' completed in " +
+                        std::to_string(timer.durationValue(TimeUnit::minutes)) +
+                        " minutes.", "=");
+            };
+
+            std::thread t(suiteBody);
+            t.join();
         }
+
+    private:
+        // No pinning / affinity: std::thread isolation only.
     };
 }; // namespace Benchmarks
