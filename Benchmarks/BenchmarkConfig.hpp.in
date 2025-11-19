@@ -22,6 +22,7 @@ inline constexpr std::size_t UnrollCount = Unrolls.size();
 inline constexpr int WarmupIterations     = @_bench_warmup@;
 inline constexpr int Iterations = @_bench_iterations@;
 inline constexpr int SlaveThreadId = @_bench_slave_thread_id@;
+inline constexpr int NumThreads = @_bench_num_threads@;
 
 // memory op names
 inline constexpr std::array<std::string_view, @_bench_memops_len@>

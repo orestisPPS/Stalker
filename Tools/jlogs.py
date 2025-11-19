@@ -381,15 +381,19 @@ class MultiBenchmarkPlotter:
     def _parse_run_label(run_label: str) -> Dict[str, Any]:
         """Parse labels in the general form operation_type_unroll_size.
         Robust to variants like ..._u<digits> and ..._s<digits>.
-        Returns dict with keys: operation (str), type (str|None), unroll (int|None), size (int|None).
+        Returns dict with keys: operation (str), type (str|None), unroll (int|None), size (int|None),
+        dtype (str|None in {"d","f"}), sizeType (str|None in {"S","L","ND"}).
         """
         tokens = run_label.split("_") if run_label else []
         if not tokens:
-            return {"operation": None, "type": None, "unroll": None, "size": None}
+            return {"operation": None, "type": None, "unroll": None, "size": None, "dtype": None, "sizeType": None}
         operation = tokens[0]
         type_tokens: List[str] = []
         unroll = None
         size = None
+        dtype = None  # 'd' or 'f'
+        size_type = None  # 'S' | 'L' | 'ND'
+        prev_tok = None
         # Prefer tokens with explicit markers first
         for tok in tokens[1:]:
             low = tok.lower()
@@ -408,12 +412,30 @@ class MultiBenchmarkPlotter:
                 except Exception:
                     size = None
                 continue
+            # Size type explicitly as separate token: 'S' or 'L' (case-insensitive)
+            if tok in ("S", "L", "s", "l"):
+                size_type = tok.upper()
+                continue
+            # DType immediately after a 't' token: expect 'd' or 'f'
+            if prev_tok and prev_tok.lower() == 't':
+                if low in ("d", "double"):
+                    dtype = 'd'
+                    prev_tok = tok
+                    continue
+                if low in ("f", "float"):
+                    dtype = 'f'
+                    prev_tok = tok
+                    continue
             # Otherwise consider part of type descriptor
             # Ignore bare numeric tokens (likely timestamps or counters)
             if not tok.isdigit():
                 type_tokens.append(tok)
+            prev_tok = tok
         type_str = "_".join(type_tokens) if type_tokens else None
-        return {"operation": operation, "type": type_str, "unroll": unroll, "size": size}
+        # Default sizeType to ND if not explicitly set
+        if size_type is None:
+            size_type = "ND"
+        return {"operation": operation, "type": type_str, "unroll": unroll, "size": size, "dtype": dtype, "sizeType": size_type}
 
     @staticmethod
     def _findJsonFiles(directory: str) -> List[str]:
@@ -470,9 +492,9 @@ class MultiBenchmarkPlotter:
                         print(f"  {idx:>2}. {m}: {txt}")
             except Exception:
                 pass
-        n_runs = df_m["Run"].nunique()
         # Determine label N: for a single run, show number of samples per method (from 'N');
         # for multiple runs, show runs and an approximate per-run N (median across methods/runs).
+        n_runs = df_m["Run"].nunique()
         if n_runs == 1:
             try:
                 n_samples = int(df_m["N"].max())
@@ -986,10 +1008,11 @@ class MultiBenchmarkPlotter:
             if plot_path:
                 combined_plots.append(plot_path)
 
-        # Build scaling plots per operation and per metric: median vs size, one line per dataset (method+unroll)
+        # Build scaling plots per operation and per metric: now partitioned by dtype and sizeType,
+        # with all unrolls for Stalker and only one curve for other families.
         self._scaling_plots = []
         if not agg_df.empty and self._run_meta:
-            # Attach Size, Operation, Unroll to agg_df rows
+            # Attach Size, Operation, Unroll, DType, SizeType to agg_df rows
             def _meta_col(run, key):
                 m = self._run_meta.get(run, {})
                 return m.get(key)
@@ -997,90 +1020,127 @@ class MultiBenchmarkPlotter:
             agg_df["Size"] = agg_df["Run"].map(lambda r: _meta_col(r, "size"))
             agg_df["Operation"] = agg_df["Run"].map(lambda r: _meta_col(r, "operation"))
             agg_df["Unroll"] = agg_df["Run"].map(lambda r: _meta_col(r, "unroll"))
+            agg_df["DType"] = agg_df["Run"].map(lambda r: _meta_col(r, "dtype"))
+            agg_df["SizeType"] = agg_df["Run"].map(lambda r: _meta_col(r, "sizeType"))
             agg_df = agg_df[pd.notna(agg_df["Size"]) & pd.notna(agg_df["Operation"])].copy()
             if not agg_df.empty:
                 for op in sorted(agg_df["Operation"].dropna().unique().tolist()):
-                    op_df = agg_df[agg_df["Operation"] == op]
-                    # output folder for scaling of this operation
+                    op_base_df = agg_df[agg_df["Operation"] == op]
+                    if op_base_df.empty:
+                        continue
                     op_out = os.path.join(self.out_dir, f"scaling_{op}")
                     os.makedirs(op_out, exist_ok=True)
-                    for metric in sorted(op_df["Metric"].unique().tolist()):
-                        mdf = op_df[op_df["Metric"] == metric]
-                        if mdf.empty:
+                    for dtype in sorted([x for x in op_base_df["DType"].dropna().unique().tolist()]):
+                        dtype_df = op_base_df[op_base_df["DType"] == dtype]
+                        if dtype_df.empty:
                             continue
-                        # datasets: (method, unroll)
-                        datasets = sorted(set((row["Method"], row["Unroll"]) for _, row in mdf[["Method", "Unroll"]].drop_duplicates().iterrows()), key=lambda x: (str(x[0]), x[1] if x[1] is not None else -1))
-                        if not datasets:
-                            continue
-                        # Prepare figure
-                        fig, ax = plt.subplots(figsize=(8.8, 5.2), dpi=self.dpi)
-                        # Family -> marker mapping (consistent symbols per similar type)
-                        family_marker = {
-                            'avx2': 'x',
-                            'avx512': 'o',
-                            'std': 's',
-                            'blas': '^',
-                            'eigen': 'D',
-                            'other': 'v',
-                        }
+                        present_groups = set([str(x) for x in dtype_df["SizeType"].dropna().unique().tolist()])
+                        groups_to_render: List[str] = []
+                        if present_groups - {"ND"}:
+                            if "S" in present_groups:
+                                groups_to_render.append("S")
+                            if "L" in present_groups:
+                                groups_to_render.append("L")
+                        elif "ND" in present_groups:
+                            groups_to_render = ["ND"]
+                        for grp in groups_to_render:
+                            grp_df = dtype_df[dtype_df["SizeType"] == grp]
+                            if grp_df.empty:
+                                continue
+                            for metric in sorted(grp_df["Metric"].unique().tolist()):
+                                mdf = grp_df[grp_df["Metric"] == metric]
+                                if mdf.empty:
+                                    continue
+                                # Candidate datasets by (method, unroll)
+                                all_pairs = sorted(set((row["Method"], row["Unroll"]) for _, row in mdf[["Method", "Unroll"]].drop_duplicates().iterrows()), key=lambda x: (str(x[0]), x[1] if x[1] is not None else -1))
+                                if not all_pairs:
+                                    continue
+                                family_marker = {
+                                    'avx2': 'x',
+                                    'avx512': 'o',
+                                    'std': 's',
+                                    'blas': '^',
+                                    'eigen': 'D',
+                                    'other': 'v',
+                                }
 
+                                def _family_from_method(m: str) -> str:
+                                    s = (m or '').strip().lower()
+                                    if s.startswith('stalker avx2'):
+                                        return 'avx2'
+                                    if s.startswith('stalker avx512'):
+                                        return 'avx512'
+                                    if s.startswith('std::'):
+                                        return 'std'
+                                    if s.startswith('blas'):
+                                        return 'blas'
+                                    if s.startswith('eigen'):
+                                        return 'eigen'
+                                    return 'other'
 
-                        def _family_from_method(m: str) -> str:
-                            s = (m or '').strip().lower()
-                            if s.startswith('stalker avx2'):
-                                return 'avx2'
-                            if s.startswith('stalker avx512'):
-                                return 'avx512'
-                            if s.startswith('std::'):
-                                return 'std'
-                            if s.startswith('blas'):
-                                return 'blas'
-                            if s.startswith('eigen'):
-                                return 'eigen'
-                            return 'other'
+                                datasets: List[Tuple[str, Any]] = []
+                                unrolls_by_method: Dict[str, List[Any]] = {}
+                                for method, unroll in all_pairs:
+                                    unrolls_by_method.setdefault(method, []).append(unroll)
+                                for method, unrolls in unrolls_by_method.items():
+                                    fam = _family_from_method(method)
+                                    if fam in ("avx2", "avx512"):
+                                        for u in sorted(unrolls, key=lambda x: (x is None, x if x is not None else -1)):
+                                            datasets.append((method, u))
+                                    else:
+                                        pick = None
+                                        if 1 in unrolls:
+                                            pick = 1
+                                        else:
+                                            nums = [u for u in unrolls if isinstance(u, (int, float))]
+                                            if nums:
+                                                pick = int(sorted(nums)[0])
+                                        datasets.append((method, pick))
+                                fig, ax = plt.subplots(figsize=(8.8, 5.2), dpi=self.dpi)
+                                for idx, (method, unroll) in enumerate(datasets):
+                                    if unroll is None or (isinstance(unroll, float) and math.isnan(unroll)):
+                                        ddf = mdf[(mdf["Method"] == method) & (mdf["Unroll"].isna())]
+                                    else:
+                                        ddf = mdf[(mdf["Method"] == method) & (mdf["Unroll"] == unroll)]
+                                    if pd.isna(ddf).all().any():
+                                        ddf = ddf.dropna()
+                                    by_size = ddf.groupby("Size")["Median"].median().sort_index()
+                                    sizes = by_size.index.to_list()
+                                    values = by_size.values.tolist()
 
-                        for idx, (method, unroll) in enumerate(datasets):
-                            # filter by both Method and Unroll for dataset continuity
-                            if unroll is None:
-                                ddf = mdf[(mdf["Method"] == method) & (mdf["Unroll"].isna())]
-                            else:
-                                ddf = mdf[(mdf["Method"] == method) & (mdf["Unroll"] == unroll)]
-                            if pd.isna(ddf).all().any():
-                                ddf = ddf.dropna()
-                            # aggregate per size
-                            by_size = ddf.groupby("Size")["Median"].median().sort_index()
-                            sizes = by_size.index.to_list()
-                            values = by_size.values.tolist()
-
-                            fam = _family_from_method(method)
-                            mrk = family_marker.get(fam, family_marker['other'])
-
-                            ax.plot(
-                                sizes,
-                                values,
-                                marker=mrk,
-                                linewidth=0.9,
-                                markersize=5.0,
-                                markerfacecolor='none',
-                                markeredgewidth=1.0,
-                                label=f"{method} (u{unroll if unroll is not None else '?'})",
-                            )
-                        ax.set_title(f"{op} — {metric} vs Size")
-                        ax.set_xlabel("Size")
-                        ax.set_ylabel(metric)
-                        ax.grid(True, which='both', axis='both', linestyle=':', linewidth=0.8, alpha=0.9)
-                        try:
-                            ax.xaxis.set_major_locator(mticker.MaxNLocator(nbins=8, min_n_ticks=4, integer=True))
-                        except Exception:
-                            pass
-                        # Place legend neatly
-                        ax.legend(fontsize=9, loc='best', frameon=True)
-                        plt.tight_layout()
-                        fname = f"{op}_{BenchmarkPlotter._sanitizeFileName(metric)}_scaling.png"
-                        fpath = os.path.join(op_out, fname)
-                        fig.savefig(fpath, bbox_inches="tight")
-                        plt.close(fig)
-                        self._scaling_plots.append(fpath)
+                                    fam = _family_from_method(method)
+                                    mrk = family_marker.get(fam, family_marker['other'])
+                                    if fam in ("avx2", "avx512"):
+                                        lbl = f"{method} (u{unroll if unroll is not None else '?'})"
+                                    else:
+                                        lbl = f"{method}"
+                                    ax.plot(
+                                        sizes,
+                                        values,
+                                        marker=mrk,
+                                        linewidth=0.9,
+                                        markersize=5.0,
+                                        markerfacecolor='none',
+                                        markeredgewidth=1.0,
+                                        label=lbl,
+                                    )
+                                title_dtype = {"d": "double", "f": "float"}.get(dtype, str(dtype))
+                                grp_name = {"S": "Small", "L": "Large", "ND": "All"}.get(grp, grp)
+                                ax.set_title(f"{op} — {metric} vs Size — {title_dtype} — {grp_name}")
+                                ax.set_xlabel("Size")
+                                ax.set_ylabel(metric)
+                                ax.grid(True, which='both', axis='both', linestyle=':', linewidth=0.8, alpha=0.9)
+                                try:
+                                    ax.xaxis.set_major_locator(mticker.MaxNLocator(nbins=8, min_n_ticks=4, integer=True))
+                                except Exception:
+                                    pass
+                                ax.legend(fontsize=9, loc='best', frameon=True)
+                                plt.tight_layout()
+                                fname = f"{op}_{BenchmarkPlotter._sanitizeFileName(metric)}_{title_dtype}_{grp}_scaling.png"
+                                fpath = os.path.join(op_out, fname)
+                                fig.savefig(fpath, bbox_inches="tight")
+                                plt.close(fig)
+                                self._scaling_plots.append(fpath)
 
         # Write diffs CSV if any
         diffs_csv = None

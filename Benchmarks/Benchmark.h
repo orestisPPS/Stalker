@@ -5,10 +5,24 @@
 #include <thread>
 #include <pthread.h>
 #include <sched.h>
+#include <cstdlib>
 #include "BenchmarkConfig.hpp"   // from ${CMAKE_CURRENT_BINARY_DIR}
 
 #if defined(STALKER_BENCH_PAPI_AVAILABLE) && STALKER_BENCH_PAPI_AVAILABLE
 #include <papi.h>
+#endif
+#if defined(STALKER_BENCH_OPENBLAS_AVAILABLE) && STALKER_BENCH_OPENBLAS_AVAILABLE
+#include <cblas.h>
+extern "C" {
+    void openblas_set_num_threads(int);
+}
+#endif
+#if defined(STALKER_BENCH_EIGEN_AVAILABLE) && STALKER_BENCH_EIGEN_AVAILABLE
+#include <Eigen/Core>
+#include <Eigen/src/Core/util/Memory.h>
+#ifdef EIGEN_USE_THREADS
+#include <unsupported/Eigen/CXX11/ThreadPool>
+#endif
 #endif
 
 namespace Benchmarks {
@@ -276,6 +290,23 @@ namespace fs = std::filesystem;
 
         void run() {
             auto suiteBody = [this]() {
+                // Configure math library thread counts to match Benchmarks::NumThreads
+                if constexpr (true) {
+                    const int nth = Benchmarks::NumThreads;
+                    // Set OpenBLAS threads through environment for deterministic behavior
+                    if (nth > 0) {
+                        std::string nthStr = std::to_string(nth);
+                        setenv("OPENBLAS_NUM_THREADS", nthStr.c_str(), 1);
+                        printInfo(std::string("Set env: OPENBLAS_NUM_THREADS=") + nthStr);
+                    }
+                    #if defined(STALKER_BENCH_OPENBLAS_AVAILABLE) && STALKER_BENCH_OPENBLAS_AVAILABLE
+                    if (nth > 0) openblas_set_num_threads(nth);
+                    #endif
+                    #if defined(STALKER_BENCH_EIGEN_AVAILABLE) && STALKER_BENCH_EIGEN_AVAILABLE
+                    // Eigen's default is single-threaded for plain vectorization; for parallel modules, set global threads
+                    if (nth > 0) Eigen::setNbThreads(nth);
+                    #endif
+                }
                 // Pin this std::thread to configured core (SlaveThreadId) if valid
                 const unsigned hw = std::thread::hardware_concurrency();
                 if (hw == 0) {

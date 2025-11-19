@@ -12,437 +12,448 @@ namespace Stalker::Mathematics::SIMD
     template <>
     struct MathOperationsSIMD<double,T_SIMD::AVX2>
             : public MathOperationsSIMDBase<double, T_SIMD::AVX2, MathOperationsSIMD<double,T_SIMD::AVX2>> {
-        using Base = MathOperationsSIMDBase<double, T_SIMD::AVX2, MathOperationsSIMD<double,T_SIMD::AVX2>>;
         
-        private:
+        using Base = MathOperationsSIMDBase<double, T_SIMD::AVX2, MathOperationsSIMD<double,T_SIMD::AVX2>>;
+        using Traits = TypeTraitsSIMD<double, T_SIMD::AVX2>;
+        using T_simd = typename Traits::typeSIMD;
+        using T_data = typename Traits::typeData;
+        using Memory = MemoryOperationsSIMD<double, T_SIMD::AVX2>;
+    private:
 
         friend Base;
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _add(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
-                                const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr) {
+        static inline void _add(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>,
+                                const T_simd *scalarA = nullptr, const T_simd *scalarB = nullptr) {
 
             if constexpr (IsScaled)
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_fmadd_pd(_mm256_load_pd(a + Is * Base::registerSize), *scalarA,
-                                                                                                  _mm256_mul_pd(_mm256_load_pd(b + Is * Base::registerSize), *scalarB))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_fmadd_pd(_mm256_load_pd(a + _registerOffset<Is>()), *scalarA,
+                                                                                       _mm256_mul_pd(_mm256_load_pd(b + _registerOffset<Is>()), *scalarB))), ...);
             else
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_pd(_mm256_load_pd(a + Is * Base::registerSize),
-                                                                                                _mm256_load_pd(b + Is * Base::registerSize))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_add_pd(_mm256_load_pd(a + _registerOffset<Is>()),
+                                                                                     _mm256_load_pd(b + _registerOffset<Is>()))), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _axpy(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>, const Base::T_simd *scalar = nullptr) {
-            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_fmadd_pd(_mm256_load_pd(a + Is * Base::registerSize), *scalar,
-                                                                                              _mm256_load_pd(b + Is * Base::registerSize))), ...);
+        static inline void _axpy(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>, const T_simd *scalar = nullptr) {
+            (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_fmadd_pd(_mm256_load_pd(a + _registerOffset<Is>()), *scalar,
+                                                                                   _mm256_load_pd(b + _registerOffset<Is>()))), ...);
         }
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _subtract(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
-                                     const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr){
+        static inline void _subtract(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>,
+                                     const T_simd *scalarA = nullptr, const T_simd *scalarB = nullptr){
             if constexpr (IsScaled)
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_fmadd_pd(_mm256_load_pd(a + Is * Base::registerSize), *scalarA,
-                                                                                                  _mm256_mul_pd(_mm256_load_pd(b + Is * Base::registerSize), *scalarB))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_fmadd_pd(_mm256_load_pd(a + _registerOffset<Is>()), *scalarA,
+                                                                                       _mm256_mul_pd(_mm256_load_pd(b + _registerOffset<Is>()), *scalarB))), ...);
             else
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_sub_pd(_mm256_load_pd(a + Is * Base::registerSize),
-                                                                                                _mm256_load_pd(b + Is * Base::registerSize))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_sub_pd(_mm256_load_pd(a + _registerOffset<Is>()),
+                                                                                     _mm256_load_pd(b + _registerOffset<Is>()))), ...);
 
         }
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _multiply(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
-                                     const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr) {
+        static inline void _multiply(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>,
+                                     const T_simd *scalarA = nullptr, const T_simd *scalarB = nullptr) {
             if constexpr (IsScaled)
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mul_pd(_mm256_mul_pd(_mm256_load_pd(a + Is * Base::registerSize), *scalarA),
-                                                                                                _mm256_mul_pd(_mm256_load_pd(b + Is * Base::registerSize), *scalarB))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_mul_pd(_mm256_mul_pd(_mm256_load_pd(a + _registerOffset<Is>()), *scalarA),
+                                                                                     _mm256_mul_pd(_mm256_load_pd(b + _registerOffset<Is>()), *scalarB))), ...);
             else
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mul_pd(_mm256_load_pd(a + Is * Base::registerSize),
-                                                                                                _mm256_load_pd(b + Is * Base::registerSize))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_mul_pd(_mm256_load_pd(a + _registerOffset<Is>()),
+                                                                                     _mm256_load_pd(b + _registerOffset<Is>()))), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _scale(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mul_pd(_mm256_load_pd(data + Is * Base::registerSize), *scalar)), ...);
+        static inline void _scale(const T_data *data, T_data *result, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_mul_pd(_mm256_load_pd(data + _registerOffset<Is>()), *scalar)), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _scale(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm256_mul_pd(_mm256_load_pd(data + Is * Base::registerSize), *scalar)), ...);
+        static inline void _scale(__restrict T_data *data, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(data + _registerOffset<Is>(), _mm256_mul_pd(_mm256_load_pd(data + _registerOffset<Is>()), *scalar)), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _addConstant(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_pd(_mm256_load_pd(data + Is * Base::registerSize), *scalar)), ...);
+        static inline void _addConstant(const T_data *data, T_data *result, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_add_pd(_mm256_load_pd(data + _registerOffset<Is>()), *scalar)), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _addConstant(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm256_add_pd(_mm256_load_pd(data + Is * Base::registerSize), *scalar)), ...);
+        static inline void _addConstant(__restrict T_data *data, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(data + _registerOffset<Is>(), _mm256_add_pd(_mm256_load_pd(data + _registerOffset<Is>()), *scalar)), ...);
         }
         
         template <size_t... Is>
-        static inline void _sum(const Base::T_data __restrict *data, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-            ((accumulators[Is] = _mm256_add_pd(accumulators[Is], _mm256_loadu_pd(data + Is * Base::registerSize))), ...);
+        static inline void _sum(const T_data __restrict *data, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm256_add_pd(accumulators[Is], _mm256_load_pd(data + _registerOffset<Is>()))), ...);
         }
 
         template <size_t... Is>
-        static inline void _dot(const Base::T_data __restrict *a, const Base::T_data __restrict *b, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-            ((accumulators[Is] = _mm256_fmadd_pd(_mm256_loadu_pd(a + Is * Base::registerSize), _mm256_loadu_pd(b + Is * Base::registerSize), accumulators[Is])), ...);
+        static inline void _dot(const T_data __restrict *a, const T_data __restrict *b, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm256_fmadd_pd(_mm256_load_pd(a + _registerOffset<Is>()), _mm256_load_pd(b + _registerOffset<Is>()), accumulators[Is])), ...);
         }
     };
 
     template <>
     struct MathOperationsSIMD<float,T_SIMD::AVX2>
             : public MathOperationsSIMDBase<float, T_SIMD::AVX2, MathOperationsSIMD<float,T_SIMD::AVX2>> {
+        
         using Base = MathOperationsSIMDBase<float, T_SIMD::AVX2, MathOperationsSIMD<float,T_SIMD::AVX2>>;
-        private:
+        using Traits = TypeTraitsSIMD<float, T_SIMD::AVX2>;
+        using T_simd = typename Traits::typeSIMD;
+        using T_data = typename Traits::typeData;
+        using Memory = MemoryOperationsSIMD<float, T_SIMD::AVX2>;
+
+    private:
         
         friend Base;
         
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _add(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
-                                const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr) {
+        static inline void _add(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>,
+                                const T_simd *scalarA = nullptr, const T_simd *scalarB = nullptr) {
             if constexpr (IsScaled)
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_fmadd_ps(_mm256_load_ps(a + Is * Base::registerSize), *scalarA,
-                                                                                                  _mm256_mul_ps(_mm256_load_ps(b + Is * Base::registerSize), *scalarB))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_fmadd_ps(_mm256_load_ps(a + _registerOffset<Is>()), *scalarA,
+                                                                                       _mm256_mul_ps(_mm256_load_ps(b + _registerOffset<Is>()), *scalarB))), ...);
             else
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_ps(_mm256_load_ps(a + Is * Base::registerSize),
-                                                                                                _mm256_load_ps(b + Is * Base::registerSize))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_add_ps(_mm256_load_ps(a + _registerOffset<Is>()),
+                                                                                     _mm256_load_ps(b + _registerOffset<Is>()))), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _axpy(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>, const Base::T_simd *scalar = nullptr) {
-            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_fmadd_ps(_mm256_load_ps(a + Is * Base::registerSize), *scalar,
-                                                                                              _mm256_load_ps(b + Is * Base::registerSize))), ...);
+        static inline void _axpy(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>, const T_simd *scalar = nullptr) {
+            (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_fmadd_ps(_mm256_load_ps(a + _registerOffset<Is>()), *scalar,
+                                                                                   _mm256_load_ps(b + _registerOffset<Is>()))), ...);
         }
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _subtract(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
-                                     const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr) {
+        static inline void _subtract(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>,
+                                     const T_simd *scalarA = nullptr, const T_simd *scalarB = nullptr) {
             if constexpr (IsScaled)
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_fmadd_ps(_mm256_load_ps(a + Is * Base::registerSize), *scalarA,
-                                                                                                _mm256_mul_ps(_mm256_load_ps(b + Is * Base::registerSize), *scalarB))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_fmadd_ps(_mm256_load_ps(a + _registerOffset<Is>()), *scalarA,
+                                                                                       _mm256_mul_ps(_mm256_load_ps(b + _registerOffset<Is>()), *scalarB))), ...);
             else
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_sub_ps(_mm256_load_ps(a + Is * Base::registerSize),
-                                                                                                _mm256_load_ps(b + Is * Base::registerSize))),...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_sub_ps(_mm256_load_ps(a + _registerOffset<Is>()),
+                                                                                     _mm256_load_ps(b + _registerOffset<Is>()))),...);
         }
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _multiply(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
-                                     const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr) {
+        static inline void _multiply(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>,
+                                     const T_simd *scalarA = nullptr, const T_simd *scalarB = nullptr) {
             if constexpr (IsScaled)
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mul_ps(_mm256_mul_ps(_mm256_load_ps(a + Is * Base::registerSize), *scalarA),
-                                                                                                _mm256_mul_ps(_mm256_load_ps(b + Is * Base::registerSize), *scalarB))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_mul_ps(_mm256_mul_ps(_mm256_load_ps(a + _registerOffset<Is>()), *scalarA),
+                                                                                     _mm256_mul_ps(_mm256_load_ps(b + _registerOffset<Is>()), *scalarB))), ...);
             else
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mul_ps(_mm256_load_ps(a + Is * Base::registerSize),
-                                                                                                _mm256_load_ps(b + Is * Base::registerSize))),...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_mul_ps(_mm256_load_ps(a + _registerOffset<Is>()),
+                                                                                     _mm256_load_ps(b + _registerOffset<Is>()))),...);
         }
 
         template <T_SIMDStore Policy,size_t... Is>
-        static inline void _scale(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mul_ps(_mm256_load_ps(data + Is * Base::registerSize), *scalar)), ...);
+        static inline void _scale(const T_data *data, T_data *result, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_mul_ps(_mm256_load_ps(data + _registerOffset<Is>()), *scalar)), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _scale(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm256_mul_ps(_mm256_load_ps(data + Is * Base::registerSize), *scalar)), ...);
+        static inline void _scale(__restrict T_data *data, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(data + _registerOffset<Is>(), _mm256_mul_ps(_mm256_load_ps(data + _registerOffset<Is>()), *scalar)), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _addConstant(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_ps(_mm256_load_ps(data + Is * Base::registerSize), *scalar)), ...);
+        static inline void _addConstant(const T_data *data, T_data *result, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_add_ps(_mm256_load_ps(data + _registerOffset<Is>()), *scalar)), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _addConstant(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm256_add_ps(_mm256_load_ps(data + Is * Base::registerSize), *scalar)), ...);
+        static inline void _addConstant(__restrict T_data *data, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(data + _registerOffset<Is>(), _mm256_add_ps(_mm256_load_ps(data + _registerOffset<Is>()), *scalar)), ...);
         }
 
         template <size_t... Is>
-        static inline void _sum(const Base::T_data* __restrict data, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-            ((accumulators[Is] = _mm256_add_ps(_mm256_loadu_ps(data + Is * Base::registerSize), accumulators[Is])), ...);
+        static inline void _sum(const T_data* __restrict data, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm256_add_ps(_mm256_load_ps(data + _registerOffset<Is>()), accumulators[Is])), ...);
         }
 
         template <size_t... Is>
-        static inline void _dot(const Base::T_data __restrict *a, const Base::T_data __restrict *b, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-            ((accumulators[Is] = _mm256_fmadd_ps(_mm256_loadu_ps(a + Is * Base::registerSize), _mm256_loadu_ps(b + Is * Base::registerSize), accumulators[Is])), ...);
+        static inline void _dot(const T_data __restrict *a, const T_data __restrict *b, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm256_fmadd_ps(_mm256_load_ps(a + _registerOffset<Is>()), _mm256_load_ps(b + _registerOffset<Is>()), accumulators[Is])), ...);
         }
     };
 
     template <>
     struct MathOperationsSIMD<int, T_SIMD::AVX2>
             : public MathOperationsSIMDBase<int, T_SIMD::AVX2, MathOperationsSIMD<int,T_SIMD::AVX2>> {
-        using Base = MathOperationsSIMDBase<int, T_SIMD::AVX2, MathOperationsSIMD<int,T_SIMD::AVX2>>;
         
-        private:
+        using Base = MathOperationsSIMDBase<int, T_SIMD::AVX2, MathOperationsSIMD<int,T_SIMD::AVX2>>;
+        using Traits = TypeTraitsSIMD<int, T_SIMD::AVX2>;
+        using T_simd = typename Traits::typeSIMD;
+        using T_data = typename Traits::typeData;
+        using Memory = MemoryOperationsSIMD<int, T_SIMD::AVX2>;
+
+    private:
         
         friend Base;
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _add(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
-                                const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr) {
+        static inline void _add(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>,
+                                const T_simd *scalarA = nullptr, const T_simd *scalarB = nullptr) {
             if constexpr (IsScaled)
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_epi32(
-                                                  _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)), *scalarA),
-                                                  _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)), *scalarB))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_add_epi32(
+                                                  _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())), *scalarA),
+                                                  _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())), *scalarB))), ...);
             else
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_epi32(
-                                                _mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
-                                                _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))),...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_add_epi32(
+                                                _mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())),
+                                                _mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())))),...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _axpy(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>, const Base::T_simd *scalar = nullptr) {
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_epi32(_mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)), *scalar),
-                                                                                                                      _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))), ...);
+        static inline void _axpy(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>, const T_simd *scalar = nullptr) {
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_add_epi32(_mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())), *scalar),
+                                                                                                           _mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())))), ...);
         }
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _subtract(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
-                                     const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr) {
+        static inline void _subtract(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>,
+                                     const T_simd *scalarA = nullptr, const T_simd *scalarB = nullptr) {
             if constexpr (IsScaled)
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_sub_epi32(
-                            _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i*>(a + Is * Base::registerSize)), *scalarA),
-                            _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i*>(b + Is * Base::registerSize)), *scalarB))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_sub_epi32(
+                            _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i*>(a + _registerOffset<Is>())), *scalarA),
+                            _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i*>(b + _registerOffset<Is>())), *scalarB))), ...);
             else
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_sub_epi32(
-                                                _mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
-                                                _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))),...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_sub_epi32(
+                                                _mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())),
+                                                _mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())))),...);
         }
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _multiply(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
-                                     const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr) {
+        static inline void _multiply(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>,
+                                     const T_simd *scalarA = nullptr, const T_simd *scalarB = nullptr) {
             if constexpr (IsScaled)
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mullo_epi32(
-                                                  _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)), *scalarA),
-                                                  _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)), *scalarB))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_mullo_epi32(
+                                                  _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())), *scalarA),
+                                                  _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())), *scalarB))), ...);
             else
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mullo_epi32(
-                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
-                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_mullo_epi32(
+                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())),
+                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())))), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _scale(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)), *scalar)), ...);
+        static inline void _scale(const T_data *data, T_data *result, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + _registerOffset<Is>())), *scalar)), ...);
         }
         
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _scale(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)), *scalar)), ...);
+        static inline void _scale(__restrict T_data *data, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(data + _registerOffset<Is>(), _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + _registerOffset<Is>())), *scalar)), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _addConstant(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)), *scalar)), ...);
+        static inline void _addConstant(const T_data *data, T_data *result, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_add_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + _registerOffset<Is>())), *scalar)), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _addConstant(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm256_add_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)), *scalar)), ...);
+        static inline void _addConstant(__restrict T_data *data, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(data + _registerOffset<Is>(), _mm256_add_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + _registerOffset<Is>())), *scalar)), ...);
         }
 
         template <size_t... Is>
-        static inline void _sum(const Base::T_data __restrict *data, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-            ((accumulators[Is] = _mm256_add_epi32(accumulators[Is], _mm256_loadu_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)))), ...);
+        static inline void _sum(const T_data __restrict *data, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm256_add_epi32(accumulators[Is], _mm256_load_si256(reinterpret_cast<const __m256i *>(data + _registerOffset<Is>())))), ...);
         }
 
         template <size_t... Is>
-        static inline void _dot(const Base::T_data __restrict *a, const Base::T_data __restrict *b, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-            ((accumulators[Is] = _mm256_add_epi32(accumulators[Is],_mm256_mullo_epi32(_mm256_loadu_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
-                                                                                      _mm256_loadu_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize))))), ...);
+        static inline void _dot(const T_data __restrict *a, const T_data __restrict *b, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm256_add_epi32(accumulators[Is],_mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())),
+                                                                                      _mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>()))))), ...);
         }
     };
 
     template <>
     struct MathOperationsSIMD<unsigned int,T_SIMD::AVX2>
             : public MathOperationsSIMDBase<unsigned int, T_SIMD::AVX2, MathOperationsSIMD<unsigned int,T_SIMD::AVX2>> {
-        using Base = MathOperationsSIMDBase<unsigned int, T_SIMD::AVX2, MathOperationsSIMD<unsigned int,T_SIMD::AVX2>>;
         
-        private:
+        using Base = MathOperationsSIMDBase<unsigned int, T_SIMD::AVX2, MathOperationsSIMD<unsigned int,T_SIMD::AVX2>>;
+        using Traits = TypeTraitsSIMD<unsigned int, T_SIMD::AVX2>;
+        using T_simd = typename Traits::typeSIMD;
+        using T_data = typename Traits::typeData;
+        using Memory = MemoryOperationsSIMD<unsigned int, T_SIMD::AVX2>;
+
+    private:
 
         friend Base;
 
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _add(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
-                                const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr)
+        static inline void _add(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>,
+                                const T_simd *scalarA = nullptr, const T_simd *scalarB = nullptr)
         {
             if constexpr (IsScaled)
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_epi32(
-                                                  _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)), *scalarA),
-                                                  _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)), *scalarB))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_add_epi32(
+                                                  _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())), *scalarA),
+                                                  _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())), *scalarB))), ...);
             else
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_epi32(
-                                                _mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
-                                                _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))),...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_add_epi32(
+                                                _mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())),
+                                                _mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())))),...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _axpy(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>, const Base::T_simd *scalar = nullptr) {
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_epi32(_mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)), *scalar),
-                                                                                                                      _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))), ...);
+        static inline void _axpy(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>, const T_simd *scalar = nullptr) {
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_add_epi32(_mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())), *scalar),
+                                                                                                                      _mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())))), ...);
         }
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _subtract(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
-                                     const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr)
+        static inline void _subtract(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>,
+                                     const T_simd *scalarA = nullptr, const T_simd *scalarB = nullptr)
         {
             if constexpr (IsScaled)
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_sub_epi32(
-                            _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i*>(a + Is * Base::registerSize)), *scalarA),
-                            _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i*>(b + Is * Base::registerSize)), *scalarB))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_sub_epi32(
+                            _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i*>(a + _registerOffset<Is>())), *scalarA),
+                            _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i*>(b + _registerOffset<Is>())), *scalarB))), ...);
             else
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_sub_epi32(
-                                                _mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
-                                                _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))),...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_sub_epi32(
+                                                _mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())),
+                                                _mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())))),...);
         }
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _multiply(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
-                                     const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr)
+        static inline void _multiply(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>,
+                                     const T_simd *scalarA = nullptr, const T_simd *scalarB = nullptr)
         {
             if constexpr (IsScaled)
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mullo_epi32(
-                                                  _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)), *scalarA),
-                                                  _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)), *scalarB))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_mullo_epi32(
+                                                  _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())), *scalarA),
+                                                  _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())), *scalarB))), ...);
             else
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mullo_epi32(
-                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
-                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_mullo_epi32(
+                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())),
+                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())))), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _scale(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)), *scalar)), ...);
+        static inline void _scale(const T_data *data, T_data *result, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + _registerOffset<Is>())), *scalar)), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _scale(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)), *scalar)), ...);
+        static inline void _scale(__restrict T_data *data, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(data + _registerOffset<Is>(), _mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + _registerOffset<Is>())), *scalar)), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _addConstant(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)), *scalar)), ...);
+        static inline void _addConstant(const T_data *data, T_data *result, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_add_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + _registerOffset<Is>())), *scalar)), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _addConstant(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm256_add_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)), *scalar)), ...);
+        static inline void _addConstant(__restrict T_data *data, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(data + _registerOffset<Is>(), _mm256_add_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + _registerOffset<Is>())), *scalar)), ...);
         }
 
         template <size_t... Is>
-        static inline void _sum(const Base::T_data __restrict *data, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-            ((accumulators[Is] = _mm256_add_epi32(accumulators[Is], _mm256_loadu_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)))), ...);
+        static inline void _sum(const T_data __restrict *data, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm256_add_epi32(accumulators[Is], _mm256_load_si256(reinterpret_cast<const __m256i *>(data + _registerOffset<Is>())))), ...);
         }
 
         template <size_t... Is>
-        static inline void _dot(const Base::T_data __restrict *a, const Base::T_data __restrict *b, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-            ((accumulators[Is] = _mm256_add_epi32(accumulators[Is],_mm256_mullo_epi32(_mm256_loadu_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
-                                                                                      _mm256_loadu_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize))))), ...);
-        }
-
-
-
-        static inline T_data _horizontalRegisterSum(const Base::T_simd* __restrict data) {
-            // Same as signed int - bitwise identical operations
-            __m128i low = _mm256_castsi256_si128(*data);
-            __m128i high = _mm256_extracti128_si256(*data, 1);
-            __m128i sum128 = _mm_add_epi32(low, high);
-            
-            __m128i hi64 = _mm_unpackhi_epi64(sum128, sum128);
-            __m128i sum64 = _mm_add_epi32(sum128, hi64);
-            __m128i hi32 = _mm_shuffle_epi32(sum64, 0b11110101);
-            return (T_data)_mm_extract_epi32(_mm_add_epi32(sum64, hi32), 0);
+        static inline void _dot(const T_data __restrict *a, const T_data __restrict *b, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm256_add_epi32(accumulators[Is],_mm256_mullo_epi32(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())),
+                                                                                      _mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>()))))), ...);
         }
     };
 
     template <>
     struct MathOperationsSIMD<short,T_SIMD::AVX2>
             : public MathOperationsSIMDBase<short, T_SIMD::AVX2, MathOperationsSIMD<short,T_SIMD::AVX2>> {
-        using Base = MathOperationsSIMDBase<short, T_SIMD::AVX2, MathOperationsSIMD<short,T_SIMD::AVX2>>;
         
+        using Base = MathOperationsSIMDBase<short, T_SIMD::AVX2, MathOperationsSIMD<short,T_SIMD::AVX2>>;
+        using Traits = TypeTraitsSIMD<short, T_SIMD::AVX2>;
+        using T_simd = typename Traits::typeSIMD;
+        using T_data = typename Traits::typeData;
+        using Memory = MemoryOperationsSIMD<short, T_SIMD::AVX2>;
+
     private:
 
         friend Base;
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _add(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
-                                const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr) {
+        static inline void _add(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>,
+                                const T_simd *scalarA = nullptr, const T_simd *scalarB = nullptr) {
             if constexpr (IsScaled)
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_epi16(
-                                                  _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)), *scalarA),
-                                                  _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)), *scalarB))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_add_epi16(
+                                                  _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())), *scalarA),
+                                                  _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())), *scalarB))), ...);
             else
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_epi16(
-                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
-                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_add_epi16(
+                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())),
+                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())))), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _axpy(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>, const Base::T_simd *scalar = nullptr) {
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_epi16(_mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)), *scalar),
-                                                                                                                      _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))), ...);
+        static inline void _axpy(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>, const T_simd *scalar = nullptr) {
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_add_epi16(_mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())), *scalar),
+                                                                                                           _mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())))), ...);
         }
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _subtract(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
-                                     const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr)
+        static inline void _subtract(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>,
+                                     const T_simd *scalarA = nullptr, const T_simd *scalarB = nullptr)
         {
             if constexpr (IsScaled)
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_sub_epi16(
-                                                  _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)), *scalarA),
-                                                  _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)), *scalarB))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_sub_epi16(
+                                                  _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())), *scalarA),
+                                                  _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())), *scalarB))), ...);
             else
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_sub_epi16(
-                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
-                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))), ...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_sub_epi16(
+                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())),
+                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())))), ...);
         }
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _multiply(const Base::T_data *a, const Base::T_data *b, Base::T_data *result, std::index_sequence<Is...>,
-                                     const Base::T_simd *scalarA = nullptr, const Base::T_simd *scalarB = nullptr)
+        static inline void _multiply(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>,
+                                     const T_simd *scalarA = nullptr, const T_simd *scalarB = nullptr)
         {
             if constexpr (IsScaled)
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mullo_epi16(
-                                                  _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)), *scalarA),
-                                                  _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)), *scalarB))),...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_mullo_epi16(
+                                                  _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())), *scalarA),
+                                                  _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())), *scalarB))),...);
             else
-                (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mullo_epi16(
-                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
-                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize)))),...);
+                (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_mullo_epi16(
+                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())),
+                                                  _mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>())))),...);
         }
 
         template <T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _scale(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)), *scalar)), ...);
+        static inline void _scale(const T_data *data, T_data *result, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + _registerOffset<Is>())), *scalar)), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _scale(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)), *scalar)), ...);
+        static inline void _scale(__restrict T_data *data, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(data + _registerOffset<Is>(), _mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + _registerOffset<Is>())), *scalar)), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _addConstant(const Base::T_data *data, Base::T_data *result, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(result + Is * Base::registerSize, _mm256_add_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)), *scalar)), ...);
+        static inline void _addConstant(const T_data *data, T_data *result, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(result + _registerOffset<Is>(), _mm256_add_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + _registerOffset<Is>())), *scalar)), ...);
         }
 
         template <T_SIMDStore Policy, size_t... Is>
-        static inline void _addConstant(__restrict Base::T_data *data, const Base::T_simd *scalar, std::index_sequence<Is...>) {
-            (Base::MemoryOps::store<Policy>(data + Is * Base::registerSize, _mm256_add_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)), *scalar)), ...);
+        static inline void _addConstant(__restrict T_data *data, const T_simd *scalar, std::index_sequence<Is...>) {
+            (Memory::store<Policy>(data + _registerOffset<Is>(), _mm256_add_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(data + _registerOffset<Is>())), *scalar)), ...);
         }
 
         template <size_t... Is>
-        static inline void _sum(const Base::T_data __restrict *data, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-            ((accumulators[Is] = _mm256_add_epi16(accumulators[Is], _mm256_loadu_si256(reinterpret_cast<const __m256i *>(data + Is * Base::registerSize)))), ...);
+        static inline void _sum(const T_data __restrict *data, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm256_add_epi16(accumulators[Is], _mm256_load_si256(reinterpret_cast<const __m256i *>(data + _registerOffset<Is>())))), ...);
         }
 
         template <size_t... Is>
-        static inline void _dot(const Base::T_data __restrict *a, const Base::T_data __restrict *b, Base::T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-            ((accumulators[Is] = _mm256_add_epi16(accumulators[Is],_mm256_mullo_epi16(_mm256_loadu_si256(reinterpret_cast<const __m256i *>(a + Is * Base::registerSize)),
-                                                                                      _mm256_loadu_si256(reinterpret_cast<const __m256i *>(b + Is * Base::registerSize))))), ...);
+        static inline void _dot(const T_data __restrict *a, const T_data __restrict *b, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
+            ((accumulators[Is] = _mm256_add_epi16(accumulators[Is],_mm256_mullo_epi16(_mm256_load_si256(reinterpret_cast<const __m256i *>(a + _registerOffset<Is>())),
+                                                                                      _mm256_load_si256(reinterpret_cast<const __m256i *>(b + _registerOffset<Is>()))))), ...);
         }
     };
 

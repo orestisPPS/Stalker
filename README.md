@@ -178,7 +178,7 @@ The following CMake cache variables are available to configure the library:
   cmake -S . -B build \
   -DCMAKE_BUILD_TYPE=Release \
   -DSTALKER_ALIGNMENT=64 \
-  -DSTALKER_UNROLL_FACTOR=1 \
+  -DSTALKER_UNROLL_FACTOR=2 \
   -DSTALKER_SIMD_ENABLE=ON \
   -DSTALKER_SIMD_INSTRUCTION_SET=avx2 \
   -DSTALKER_SIMD_STORE_POLICY=stream \

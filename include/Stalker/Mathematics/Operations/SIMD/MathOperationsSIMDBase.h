@@ -187,10 +187,9 @@ public:
             result += (a[i] * b[i]);
         return result;
     }
-
-    inline static T registerHorizontalSum(const T_simd* __restrict data) {
-        Child::_horizontalRegisterSum(data);
-    }
+protected:
+    template <size_t Index>
+    static constexpr inline size_t _registerOffset() { return Index * Traits::RegisterSize(); }
 
 private:
     inline static T _registerSum(const T_simd* __restrict data, size_t size) {

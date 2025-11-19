@@ -2,7 +2,6 @@
 // Created by hal9000 on 7/8/24.
 //
 #pragma once
-#include <utility>
 #include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDBase.h>
 
 namespace Stalker::Memory::SIMD {
@@ -62,18 +61,13 @@ using namespace Stalker::Core;
             return result;
         }
         
-        template<unsigned Unroll = DefaultUnroll()>
-        constexpr inline static void load(size_t size, const T_data* __restrict source, T_simd* __restrict destination) {
-            constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
-            auto limit = size - (size % blockSize);
-            for (size_t i = 0; i < limit; i += blockSize)
-                Child::template _load(source + i, destination + i, std::make_index_sequence<Unroll>{});
-            for (size_t i = limit; i < size; i++)
-                    destination[i] = source[i];
+        template <bool IsAligned = false>
+        constexpr inline static T_simd load(const T_data* __restrict data) {
+            return Child::_load(data);
         }
         
         template<T_SIMDStore Policy = DefaultSIMDStore()>
-        constexpr inline static void store(T_data* __restrict destination, const T_simd __restrict source) {
+        constexpr inline static void store(T_data* __restrict destination, const T_simd& source) {
             Child::template _store<Policy>(destination, source);
         }
         
@@ -88,7 +82,8 @@ using namespace Stalker::Core;
 
     protected:
 
-        static constexpr unsigned registerSize = Traits::RegisterSize();
+        template <size_t Index>
+        static constexpr inline size_t _registerOffset() { return Index * Traits::RegisterSize(); }
         
     };
 
