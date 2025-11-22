@@ -33,15 +33,15 @@ It is a personal playground and learning space that offers easy to use experimen
       - [Memory and unrolling](#memory-and-unrolling)
       - [SIMD](#simd)
       - [Threading](#threading)
-      - [PUSH IT TO THE LIMIT (Walk along the razor's edge)](#push-it-to-the-limit-walk-along-the-razors-edge)
+      - [Build Profiles](#build-profiles)
       - [Example Configuration: Performance focused release build](#example-configuration-performance-focused-release-build)
     - [Installation \& Integration](#installation--integration)
     - [Option A — Installed package (recommended)](#option-a--installed-package-recommended)
     - [Option B — Subdirectory configuration](#option-b--subdirectory-configuration)
   - [Examples](#examples)
-    - [Example 1: Vectorized and unrolled copy of 32-bit alignened std::vector with AVX2 instructions and streamed store.](#example-1-vectorized-and-unrolled-copy-of-32-bit-alignened-stdvector-with-avx2-instructions-and-streamed-store)
-    - [Example 2: Partially unrolled dot product of raw pointers with default alignement.](#example-2-partially-unrolled-dot-product-of-raw-pointers-with-default-alignement)
-    - [Example 3: Fully unrolled and evaluated at compile-time sum of std::array.](#example-3-fully-unrolled-and-evaluated-at-compile-time-sum-of-stdarray)
+    - [Example 1: Vectorized copy with AVX2 + streamed store](#example-1-vectorized-copy-with-avx2--streamed-store)
+    - [Example 2: Partially unrolled dot product of raw pointers with default alignment.](#example-2-partially-unrolled-dot-product-of-raw-pointers-with-default-alignment)
+    - [Example 3: Fully unrolled compile-time sum](#example-3-fully-unrolled-compile-time-sum)
   - [Performance \& Benchmarks](#performance--benchmarks)
     - [Performance](#performance)
     - [Benchmarks](#benchmarks)
@@ -57,7 +57,7 @@ It is a personal playground and learning space that offers easy to use experimen
 - **Template Metaprogramming**: Metaprogramming techniques and templating (CRTP, template specialization, `std::index_sequence`, etc.) enable zero-overhead compile-time dispatching and static polymorphism (no vtable lookups) with type safe, almost branchless code. Users can enable and configure compile-time unrolling for fully unrolled small loops and large loops with reduced check overhead and perform arithmetic operations exclusively with the compiler.
 - **Hardware Concurrency**: Dual multithreading backend support for operations on contiguous memory blocks:
   - `std::thread` Cross-platform, simple but only number of threads can be configured.
-  - `pthread`  Linux only backend wrapping posix thread. High configurability based on the exact topology of the machine. Users can enable Simultaneous Multi-Threading (SMT), set thread number and thread affinity with custom cpu pools that share resources.
+  - `pthread`  Linux only backend wrapping POSIX thread. High configurability based on the exact topology of the machine. Users can enable Simultaneous Multi-Threading (SMT), set thread number and thread affinity with custom CPU pools that share resources.
     >Parallel operations due to their nature (thread creation & launching, safety checks, synchronization) increase branching and overhead. Of course compile-time evaluations cannot be performed.
 
 ### Memory
@@ -77,17 +77,17 @@ All operations marked with [constexpr] can be evaluated at compile-time.
   - Weighted and unweighted variants [where applicable]
   - Vectorized with AVX2 and AVX512 instruction sets (with / without unroll) [except for divide]
   - Loops (with / without unroll)
-- **Differantiation [constexpr]**: Numerical calculation of 1st and 2nd order derivatives (Finite Difference Method). Forward, backward and central FD schemes with error order up to $\Delta x^6$
-- **Integration [constexpr]**: Numerical integration algorithms: Trapezoidal, Simpson1, Simpson2
-- **Meta Mathematics [constexpr]**: Compile-time evaluated fundamental mathematial operations: `power`, `sumOfPower`, `factorial`, `fibonacci` 
+- **Differentiation [constexpr]**: Numerical calculation of 1st and 2nd order derivatives (Finite Difference Method). Forward, backward and central FD schemes with error order up to $\Delta x^6$.
+- **Integration [constexpr]**: Numerical integration algorithms: Trapezoidal, Simpson1, Simpson2.
+- **Meta Mathematics [constexpr]**: Compile-time evaluated fundamental mathematical operations: `power`, `sumOfPower`, `factorial`, `fibonacci`.
 ---
 
 ## Getting Started
 
 ### Prerequisites
-- Modern C++ compiler (GCC 8+, Clang 5+, MSVC 2019+) supporting C++17.
-- CMake (3.10 or later)
-- [Optional] CPU supporting SIMD instructions (AVX2, AVX512, esp-dsp).
+- Modern C++ compiler supporting C++17: GCC 7+, Clang 7+, or MSVC 19.12+ (VS2017 15.5) or newer.
+- CMake (3.18 or later)
+- [Optional] CPU supporting SIMD instructions (AVX2, AVX512).
     ```bash
     # Check for AVX2 and FMA support (returns flags if supported)
     grep -q "avx2" /proc/cpuinfo && grep -q "fma" /proc/cpuinfo && echo "-mavx2 -mfma"
@@ -148,7 +148,7 @@ The following CMake cache variables are available to configure the library:
 | Variable                       | Description                                                         | Default  |
 | ------------------------------ | ------------------------------------------------------------------- | -------- |
 | `STALKER_SIMD_ENABLE`          | Enable SIMD vectorization                                           | `ON`     |
-| `STALKER_SIMD_INSTRUCTION_SET` | SIMD ISA: `auto`, `avx2`, `avx512`, `esp-dsp`, `none`               | `auto`   |
+| `STALKER_SIMD_INSTRUCTION_SET` | SIMD ISA: `auto`, `avx2`, `avx512`, `none` (auto prefers AVX2)      | `auto`   |
 | `STALKER_SIMD_STORE_POLICY`    | SIMD store policy: `stream` (non-temporal) or `cache`               | `stream` |
 
 #### Threading
@@ -162,11 +162,36 @@ The following CMake cache variables are available to configure the library:
 | `STALKER_THREADING_POSIX_ENABLE`    | Use `pthread` backend (Linux/POSIX only)                                | `OFF`   |
 | `STALKER_THREADING_POSIX_SMT_ENABLE`| Enable hyperthreading (only with `pthread` backend on Linux)            | `OFF`   |
 
-#### PUSH IT TO THE LIMIT (Walk along the razor's edge)
+#### Build Profiles
 
-| Variable                     | Description                                       | Default |
-| ---------------------------- | ------------------------------------------------- | ------- |
-| `STALKER_ALL_GAS_NO_BRAKES`  | VERY aggressive compiler flag set: `-O3 -ffast-math -funroll-loops -march=native -flto -fomit-frame-pointer -falign-functions=32 -falign-loops=32 -fno-math-errno -DNDEBUG`. May sacrifice numerical stability, portability, and predictable profiling for peak speed. | `OFF`   |
+| Variable | Description | Default |
+| -------- | ----------- | ------- |
+| `STALKER_BUILD_PROFILE` | Unified build profile selector: `debug`, `release`, `perf`, `relwithdebinfo`, `custom`. | `release` |
+| `STALKER_BUILD_CUSTOM_FLAGS` | Semicolon list of custom compiler flags (active only when profile=`custom`). | `` |
+
+Profile semantics (GNU/Clang):
+
+| Profile | Flags | Notes |
+| ------- | ----- | ----- |
+| `debug` | `-O0 -g` | Full symbols; no optimization. |
+| `release` | `-O3 -DNDEBUG` | Standard optimized build. |
+| `perf` | `-O3 -DNDEBUG -ffast-math -funroll-loops -march=native -flto -fomit-frame-pointer -falign-functions=32 -falign-loops=32 -fno-math-errno` | Maximum speed; sacrifices portability & strict IEEE semantics. |
+| `relwithdebinfo` | `-O2 -g -DNDEBUG` | Mirrors CMake built-in variant. |
+| `custom` | (user supplied) | Use `STALKER_BUILD_CUSTOM_FLAGS`. No automatic safety or perf flags added. |
+
+MSVC equivalents map similarly (`/Od /Zi`, `/O2 /DNDEBUG`, `perf` adds `/Ox /GL /Ot /fp:fast`).
+
+#### CMake module responsibilities
+
+- `Options.cmake`: centralizes the cache entries for alignment, SIMD knobs, threading toggles, and the unified build profile so every front-end (command-line, GUI) sees the defaults before detection runs.
+- `DetectPlatform.cmake`: detects Linux vs. Windows, the bitness, and the cache line size, then publishes those as read-only cache entries plus defines that downstream targets can consume.
+- `ConfigureAlignment.cmake`: validates the requested alignment (defaulting to the platform cache line size) and enforces that it is a power two.
+- `DetectSIMD.cmake`: probes for AVX2/AVX512 compiler support, resolves the requested ISA (`auto`, `avx2`, `avx512`, `none`), and keeps the detection results in cache entries used for compile-time defines.
+- `DetectThreads.cmake`: negotiates the thread count (defaulting to two when `STALKER_THREADING_NUM_THREADS` is `0` and max-threads isn’t enabled), clamps it to the hardware, updates `STALKER_THREADING_NUM_THREADS` with the resolved value, and exports the required `Threads::Threads` link library.
+- `ConfigureCompilerFlags.cmake`: produces the unified warning + optimization flag list for every profile (`-Wall -Wextra -Wpedantic` plus the per-profile flags on GCC/Clang or `/W4`/`/permissive-` plus the MSVC equivalents) and exposes a flattened cache entry for the resulting set.
+- `ConfigureUnroll.cmake`: validates that `STALKER_UNROLL_FACTOR` is a positive integer so traits depending on loop unrolling get sane inputs.
+- `CoreTarget.cmake`: wires the `StalkerCore` interface target by applying the compile definitions and options collected from the detection functions, linking the detected thread library, and publishing the header install/install rules for the interface target.
+- `StalkerModules.cmake`: provides helpers to declare module dependencies, expand the requested module list with those dependencies, and realize the selected modules when `stalker_modules_realize()` runs.
 
 #### Example Configuration: Performance focused release build
 - Loop unrolling factor = 2
@@ -176,7 +201,7 @@ The following CMake cache variables are available to configure the library:
 
   ```bash
   cmake -S . -B build \
-  -DCMAKE_BUILD_TYPE=Release \
+  -DSTALKER_BUILD_PROFILE=perf \
   -DSTALKER_ALIGNMENT=64 \
   -DSTALKER_UNROLL_FACTOR=2 \
   -DSTALKER_SIMD_ENABLE=ON \
@@ -206,7 +231,7 @@ This produces an installable CMake package so downstream projects can use `find_
 
 - CMake (equivalent):
     ```bash
-    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DSTALKER_UNROLL_FACTOR=2 -DSTALKER_SIMD_ENABLE=ON -DSTALKER_SIMD_INSTRUCTION_SET=avx2
+    cmake -S . -B build -DSTALKER_BUILD_PROFILE=release -DSTALKER_UNROLL_FACTOR=2 -DSTALKER_SIMD_ENABLE=ON -DSTALKER_SIMD_INSTRUCTION_SET=avx2
     ```
 
 2) Install (header-only; optional)
@@ -237,18 +262,18 @@ This produces an installable CMake package so downstream projects can use `find_
 
     ```bash
     # Variant 1
-    cmake -S . -B build-avx2 -DCMAKE_BUILD_TYPE=Release -DSTALKER_SIMD_ENABLE=ON -DSTALKER_SIMD_INSTRUCTION_SET=avx2
+    cmake -S . -B build-avx2 -DSTALKER_BUILD_PROFILE=release -DSTALKER_SIMD_ENABLE=ON -DSTALKER_SIMD_INSTRUCTION_SET=avx2
     cmake --install build-avx2 --prefix /opt/stalker-v1
 
     # Variant 2
-    cmake -S . -B build-avx512 -DCMAKE_BUILD_TYPE=Release -DSTALKER_SIMD_ENABLE=ON -DSTALKER_SIMD_INSTRUCTION_SET=avx512
+    cmake -S . -B build-avx512 -DSTALKER_BUILD_PROFILE=release -DSTALKER_SIMD_ENABLE=ON -DSTALKER_SIMD_INSTRUCTION_SET=avx512
     cmake --install build-avx512 --prefix /opt/stalker-v2
     ```
 
-    Consumer projects can then point to the desired variant:
-    ```bash
-    export CMAKE_PREFIX_PATH=/opt/stalker-avx512:$CMAKE_PREFIX_PATH
-    ```
+  Consumer projects can then point to the desired variant:
+  ```bash
+  export CMAKE_PREFIX_PATH=/opt/stalker-v2:$CMAKE_PREFIX_PATH
+  ```
 
 ### Option B — Subdirectory configuration
 
@@ -273,7 +298,7 @@ Vendor Stalker in your source tree as a submodule and configure it as part of yo
     Override Stalker options from your project (if desired):
 
     ```bash
-    cmake -S . -B build -DSTALKER_SIMD_ENABLE=ON -DSTALKER_SIMD_INSTRUCTION_SET=avx2 #configure more
+  cmake -S . -B build -DSTALKER_SIMD_ENABLE=ON -DSTALKER_SIMD_INSTRUCTION_SET=avx2 #configure more
     ```
 
 ## Examples
@@ -281,7 +306,7 @@ This section provides some copy-pastable C++ snippets that showcase how to confi
 
 Almost all operations can be performed with one of three backends (SIMD, Unrolled, Loops/STL). Their parameters can be set as template parameters at compile time or left defaulted to the cmake configuration defined values. Every aspect of a **single thread** operation can be configured at compile-time as template parameters with `ExecutionTraits<>`.
 
-### Example 1: Vectorized and unrolled copy of 32-bit alignened std::vector with AVX2 instructions and streamed store.
+### Example 1: Vectorized copy with AVX2 + streamed store
 
   ```cpp
   #include <Stalker/Core/Traits/ExecutionTraits.h>
@@ -314,7 +339,7 @@ Almost all operations can be performed with one of three backends (SIMD, Unrolle
 
   ```
 
-  ### Example 2: Partially unrolled dot product of raw pointers with default alignement.
+  ### Example 2: Partially unrolled dot product of raw pointers with default alignment.
 
   ```cpp
 
@@ -327,7 +352,7 @@ Almost all operations can be performed with one of three backends (SIMD, Unrolle
       
       using UnrolledTrait = Stalker::Core::ExecutionTraitUnrolled<8>;
 
-      //Create 2 raw pointers with default alignement and fill with random numbers [0, 10].
+  //Create 2 raw pointers with default alignment and fill with random numbers [0, 10].
       size_t size = 20;
 
       auto a =  Stalker::Memory::createAlignedRaw<double>(size);
@@ -346,7 +371,7 @@ Almost all operations can be performed with one of three backends (SIMD, Unrolle
   }
   ```
 
-  ### Example 3: Fully unrolled and evaluated at compile-time sum of std::array.
+  ### Example 3: Fully unrolled compile-time sum
 
   ```cpp
 
@@ -376,7 +401,7 @@ Almost all operations can be performed with one of three backends (SIMD, Unrolle
 ## Performance & Benchmarks
 
 ### Performance
-Main goal of this library is to be fast. And it is fast.
+The library focuses on memory bandwidth efficiency and minimizing control overhead. Vector operations are implemented with selectable execution traits (classic loops, unrolled metaprogrammed loops, and SIMD paths) to let you match workload characteristics to hardware.
 
 ### Benchmarks
 

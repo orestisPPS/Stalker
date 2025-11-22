@@ -5,6 +5,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Optional: speed up local rebuilds via ccache when available
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+    message(STATUS "ccache detected: ${CCACHE_PROGRAM}")
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+    set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+endif()
+
 # Compiler version check
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0)
@@ -23,20 +31,77 @@ else()
 endif()
 
 
-add_subdirectory(Core)
-add_subdirectory(Memory)
-add_subdirectory(Utility)
-add_subdirectory(Mathematics)
-add_subdirectory(Threading)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(cmake/Options.cmake)
+include(cmake/StalkerModules.cmake)
+include(cmake/DetectPlatform.cmake)
+include(cmake/ConfigureAlignment.cmake)
+include(cmake/DetectSIMD.cmake)
+include(cmake/DetectThreads.cmake)
+include(cmake/ConfigureCompilerFlags.cmake)
+include(cmake/ConfigureUnroll.cmake)
+include(cmake/CoreTarget.cmake)
+
+function(stalker_summary_print)
+    message(STATUS "")
+    message(STATUS "=========================================")
+    message(STATUS "========== STALKER BUILD CONFIG ==========")
+    message(STATUS "==========================================")
+    message(STATUS "")
+    get_cmake_property(_variableNames CACHE_VARIABLES)
+    foreach(_vn IN LISTS _variableNames)
+        if(_vn MATCHES "^STALKER_")
+            message(STATUS "${_vn} = ${${_vn}}")
+        endif()
+    endforeach()
+    if(DEFINED STALKER_EFFECTIVE_COMPILE_FLAGS)
+        string(REPLACE ";" " " _flags_str "${STALKER_EFFECTIVE_COMPILE_FLAGS}")
+        message(STATUS "Effective compile flags: ${_flags_str}")
+    endif()
+endfunction()
+
+function(stalker_print_summary)
+    stalker_summary_print()
+endfunction()
+
+# ------------------------------------------------------------
+# Consolidated detection previously in Core/CMakeLists.txt
+# ------------------------------------------------------------
+stalker_platform_detect()
+stalker_alignment_init()
+stalker_simd_init()
+stalker_threads_init()
+stalker_unroll_init()
+
+if(NOT CMAKE_CONFIGURATION_TYPES)
+    if(STALKER_BUILD_PROFILE STREQUAL "debug")
+        set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type" FORCE)
+    elseif(STALKER_BUILD_PROFILE STREQUAL "relwithdebinfo")
+        set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Build type" FORCE)
+    elseif(NOT DEFINED CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
+        # Generally default to Release when not specified by the user
+        set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
+    endif()
+endif()
+
+stalker_compiler_flags_init(_stalkerCompilerFlags)
+
+add_library(StalkerCore INTERFACE)
+stalker_core_target_init(StalkerCore)
+
+stalker_modules_define_deps()
+stalker_modules_expand("${STALKER_MODULES}" _effective_modules)
+stalker_modules_realize("${_effective_modules}")
 
 # Create interface library for the complete Stalker library
 add_library(Stalker INTERFACE)
 target_link_libraries(Stalker INTERFACE
     StalkerCore
-    StalkerMemory
-    StalkerUtility
-    StalkerMathematics
-    StalkerThreading
+    $<$<TARGET_EXISTS:StalkerMemory>:StalkerMemory>
+    $<$<TARGET_EXISTS:StalkerUtility>:StalkerUtility>
+    $<$<TARGET_EXISTS:StalkerContainers>:StalkerContainers>
+    $<$<TARGET_EXISTS:StalkerMathematics>:StalkerMathematics>
+    $<$<TARGET_EXISTS:StalkerThreading>:StalkerThreading>
 )
 
 # Optional in-tree alias for namespaced usage
@@ -73,12 +138,15 @@ install(
     DESTINATION lib/cmake/Stalker
 )
 
-# # Configure and install package config files
-# configure_package_config_file(
-#     ${CMAKE_CURRENT_SOURCE_DIR}/Tools/cmake/StalkerConfig.cmake.in
-#     ${CMAKE_CURRENT_BINARY_DIR}/StalkerConfig.cmake
-#     INSTALL_DESTINATION lib/cmake/Stalker
-# )
+# Diagnostics (single summary call)
+stalker_summary_print()
+
+
+configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/StalkerConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/StalkerConfig.cmake
+    INSTALL_DESTINATION lib/cmake/Stalker
+)
 
 write_basic_package_version_file(
     ${CMAKE_CURRENT_BINARY_DIR}/StalkerConfigVersion.cmake

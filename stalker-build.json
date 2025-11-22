@@ -6,21 +6,30 @@
     "simd_default_instructions": "Which SIMD instruction set to use. Options: 'avx2', 'avx512', 'esp-dsp', 'none'. Default is 'avx2' if SIMD is enabled.",
 
     "unroll_factor": "Factor by which to unroll loops. Higher values may improve performance but increase binary size. Too high values can lead to cache mess.",
+    "threading_enable": "Enable Stalker parallel execution layer (multi-threaded ops).",
+    "threading_max_threads_enable": "Use all available logical (hardware) threads; overrides threading_num_threads.",
+    "threading_num_threads": "Explicit thread count (integer). 0 = auto-detect. Ignored if threading_max_threads_enable is true.",
+    "threading_std_enable": "Use C++ std::thread backend (portable).",
+    "threading_posix_enable": "Use pthread backend (Linux / ESP only) for affinity control.",
+    "threading_posix_smt_enable": "With pthread backend, allow SMT (hyperthread sibling) cores to be used.",
+    "enableHyperthreading": "High-level alias for enabling SMT siblings; only effective if pthread backend is active.",
 
-    "enableHyperthreading": "Set to true to enable enable hyperthreading support (Use all core threads). Set to false to disable.",
-    "threading_std_enable": "Set to true to use C++ standard threading library. Set to false to disable., Cross-platform support.",
-    "threading_posix_enable": "Set to true to use POSIX threads (pthreads). Set to false to disable. Available only on Linux and ESP platforms, not on macOS.",
-
-    "build_type": "Type of build. Options: 'Release', 'Debug', 'AllGasNoBrakes' (for maximum performance).",
     "build_jobs": "Number of parallel compilation build_jobs. Set to the number of CPU cores for fastest builds.",
     "build_target": "Build target. Usually 'all' to build everything, or specify a target name."
+    ,"build_profile": "Build optimization profile: 'debug' (-O1 -g), 'release' (-O3 -DNDEBUG), 'perf' (aggressive: -O3 -DNDEBUG -ffast-math -funroll-loops -march=native -flto ...), 'relwithdebinfo' (-O2 -g -DNDEBUG), 'custom' (use build_custom_flags list)."
+    ,"build_tests": "Boolean: build tests executable (maps to -DSTALKER_BUILD_TESTS)."
+    ,"build_benchmarks": "Boolean: build benchmarks suite (maps to -DSTALKER_BUILD_BENCHMARKS)."
+    ,"alignment": "Memory alignment in bytes (power of two)." 
+    ,"build_custom_flags": "List of custom compiler flags used only when build_profile='custom'."
+    ,"papiDir": "Path to PAPI installation prefix (adds to CMAKE_PREFIX_PATH for benchmark metrics)."
   },
 
-  "build_directory"              : "build",
-  "build_type"                   : "Debug",
+  "build_directory"             : "build",
+  "build_profile"               : "release",
+  "build_custom_flags"          : [],
   "build_jobs"                   : 16,
   "build_tests"                  : true,
-  "build_benchmarks"             : true,
+  "build_benchmarks"             : false,
 
   "alignment"                    : 64,
 
@@ -35,9 +44,6 @@
   "threading_std_enable"         : true,
   "threading_posix_enable"       : false,
   "threading_posix_smt_enable"   : false,
-
-  
-
 
   "papiDir": "/home/hal10000/code/papi/src/install"
 }

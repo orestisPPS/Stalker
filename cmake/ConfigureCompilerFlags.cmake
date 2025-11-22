@@ -1,0 +1,89 @@
+## ConfigureCompilerFlags.cmake
+# Unified build profile implementation.
+# Profiles (GNU/Clang):
+#   debug          -O0 -g
+#   release        -O3 -DNDEBUG
+#   perf           - release base + aggressive extras
+#   relwithdebinfo -O2 -g -DNDEBUG
+#   custom         user-supplied flags
+
+function(stalker_compiler_flags_init OUT_VAR)
+    set(_flags)
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        list(APPEND _flags -Wall -Wextra -Wpedantic)
+        if(STALKER_BUILD_PROFILE STREQUAL "debug")
+            list(APPEND _flags -O0 -g)
+        elseif(STALKER_BUILD_PROFILE STREQUAL "release")
+            list(APPEND _flags -O3 -DNDEBUG)
+        elseif(STALKER_BUILD_PROFILE STREQUAL "perf")
+            list(APPEND _flags -O3 -DNDEBUG -ffast-math -funroll-loops -march=native -flto -fomit-frame-pointer -falign-functions=32 -falign-loops=32 -fno-math-errno)
+        elseif(STALKER_BUILD_PROFILE STREQUAL "relwithdebinfo")
+            list(APPEND _flags -O2 -g -DNDEBUG)
+        elseif(STALKER_BUILD_PROFILE STREQUAL "custom")
+            if(STALKER_BUILD_CUSTOM_FLAGS)
+                separate_arguments(_customFlags UNIX_COMMAND "${STALKER_BUILD_CUSTOM_FLAGS}")
+                list(APPEND _flags ${_customFlags})
+            endif()
+        else()
+            message(FATAL_ERROR "Unknown STALKER_BUILD_PROFILE='${STALKER_BUILD_PROFILE}'")
+        endif()
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        list(APPEND _flags /W4 /permissive-)
+        if(STALKER_BUILD_PROFILE STREQUAL "debug")
+            list(APPEND _flags /Od /Zi)
+        elseif(STALKER_BUILD_PROFILE STREQUAL "release")
+            list(APPEND _flags /O2 /DNDEBUG)
+        elseif(STALKER_BUILD_PROFILE STREQUAL "perf")
+            list(APPEND _flags /O2 /DNDEBUG /Ox /GL /Ot /fp:fast)
+        elseif(STALKER_BUILD_PROFILE STREQUAL "relwithdebinfo")
+            list(APPEND _flags /O2 /Zi /DNDEBUG)
+        elseif(STALKER_BUILD_PROFILE STREQUAL "custom")
+            if(STALKER_BUILD_CUSTOM_FLAGS)
+                separate_arguments(_customFlags WINDOWS_COMMAND "${STALKER_BUILD_CUSTOM_FLAGS}")
+                list(APPEND _flags ${_customFlags})
+            endif()
+        else()
+            message(FATAL_ERROR "Unknown STALKER_BUILD_PROFILE='${STALKER_BUILD_PROFILE}'")
+        endif()
+    endif()
+
+    # Append SIMD ISA flags (capability gated)
+    if(STALKER_SIMD_ENABLE)
+        if(STALKER_SIMD_AVX512_OK AND STALKER_SIMD_AVX2_OK)
+            list(APPEND _flags $<$<CXX_COMPILER_ID:GNU,Clang>:-mavx512f -mavx512dq -mavx512bw -mfma> $<$<CXX_COMPILER_ID:MSVC>:/arch:AVX512>)
+        elseif(STALKER_SIMD_AVX512_OK)
+            list(APPEND _flags $<$<CXX_COMPILER_ID:GNU,Clang>:-mavx512f -mavx512dq -mavx512bw -mfma> $<$<CXX_COMPILER_ID:MSVC>:/arch:AVX512>)
+        elseif(STALKER_SIMD_AVX2_OK)
+            list(APPEND _flags $<$<CXX_COMPILER_ID:GNU,Clang>:-mavx2 -mfma> $<$<CXX_COMPILER_ID:MSVC>:/arch:AVX2>)
+        endif()
+    endif()
+
+    # Optional global extension from cache var (semicolon-separated)
+    if(DEFINED STALKER_EXTRA_COMPILE_FLAGS AND NOT STALKER_EXTRA_COMPILE_FLAGS STREQUAL "")
+        separate_arguments(_extra UNIX_COMMAND "${STALKER_EXTRA_COMPILE_FLAGS}")
+        list(APPEND _flags ${_extra})
+    endif()
+
+    # Expose final flags to caller and to a well-known cache var for summaries.
+    set(${OUT_VAR} ${_flags} PARENT_SCOPE)
+    set(STALKER_EFFECTIVE_COMPILE_FLAGS "${_flags}" CACHE STRING "Flattened list of effective compiler flags" FORCE)
+endfunction()
+
+# Allow users (advanced) to extend an existing list var with extra flags in a guarded way.
+# Usage: stalker_extend_flags(<list-var> EXTRA_FLAGS f1 f2 ...)
+function(stalker_extend_flags LIST_VAR)
+    set(options)
+    set(oneValueArgs)
+    set(multiValueArgs EXTRA_FLAGS)
+    cmake_parse_arguments(EXT "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+    if(NOT LIST_VAR)
+        message(FATAL_ERROR "stalker_extend_flags: LIST_VAR is required")
+    endif()
+    if(EXT_EXTRA_FLAGS)
+        # Read current value from parent
+        set(_cur ${${LIST_VAR}})
+        list(APPEND _cur ${EXT_EXTRA_FLAGS})
+        set(${LIST_VAR} ${_cur} PARENT_SCOPE)
+    endif()
+endfunction()

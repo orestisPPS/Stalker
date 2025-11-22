@@ -316,14 +316,12 @@ class BenchmarkConfig:
 
 class StalkerBuildConfig:
     SIMD_OPTIONS = {"avx2", "avx512", "esp-dsp", "auto", "none"}
-    BUILD_TYPES = {"Release", "Debug", "RelWithDebInfo", "MinSizeRel", "AllGasNoBrakes"}
 
     # Flat, ordered list for summary
     SUMMARY_FIELDS = [
         ("build_directory", "General build directory"),
         ("build_target", "Build target"),
         ("build_target_reason", "Target selection"),
-        ("build_type", "Build type"),
         ("build_jobs", "Build build_jobs"),
         ("build_tests", "Build tests"),
         ("build_benchmarks", "Build benchmarks"),
@@ -337,7 +335,7 @@ class StalkerBuildConfig:
         ("threading_std_enable", "Enable std::thread"),
         ("threading_posix_enable", "Enable POSIX threads"),
         ("enableHyperthreading", "Enable hyperthreading"),
-        ("allGasNoBrakes", "ALL GAS NO BRAKES"),
+        ("build_profile", "Build profile"),
         # Benchmark details (if enabled)
         ("bench_vector_sizes", "Benchmark vector sizes"),
         ("bench_vector_sizes_small", "Benchmark sizes (small range)"),
@@ -392,12 +390,17 @@ class StalkerBuildConfig:
 
         # Build target selection (auto if not specified)
         requested_target = self.raw.get("build_target", "auto")
-        self.build_type = self._parseConfigArgument("build_type", "Debug", str)
-        if self.build_type not in self.BUILD_TYPES:
-            raise StalkerBuildConfigError(f"Invalid build_type '{self.build_type}'. Supported: {self.BUILD_TYPES}")
-
-        self.allGasNoBrakes = (self.build_type == "AllGasNoBrakes")
-        self._cmake_build_type = "Release" if self.allGasNoBrakes else self.build_type
+        # Unified build profile
+        self.build_profile = str(self.raw.get("build_profile", "release")).lower()
+        valid_profiles = {"debug", "release", "perf", "relwithdebinfo", "custom"}
+        if self.build_profile not in valid_profiles:
+            raise StalkerBuildConfigError(f"Invalid build_profile '{self.build_profile}' (valid: {', '.join(sorted(valid_profiles))})")
+        if self.build_profile == "debug":
+            self._cmake_build_type = "Debug"
+        elif self.build_profile == "relwithdebinfo":
+            self._cmake_build_type = "RelWithDebInfo"
+        else:
+            self._cmake_build_type = "Release"
 
         # Whether to build tests/benchmarks
         self.build_tests = bool(self.raw.get("build_tests", True))
@@ -492,9 +495,12 @@ class StalkerBuildConfig:
         self._cmake_args.append(f"-DSTALKER_THREADING_STD_ENABLE={'ON' if self.threading_std_enable else 'OFF'}")
         self._cmake_args.append(f"-DSTALKER_THREADING_POSIX_ENABLE={'ON' if self.threading_posix_enable else 'OFF'}")
         self._cmake_args.append(f"-DSTALKER_THREADING_POSIX_SMT_ENABLE={'ON' if self.enableHyperthreading else 'OFF'}")
-        if self.allGasNoBrakes:
-            # User selected aggressive optimization bundle; enable macro (ON)
-            self._cmake_args.append("-DSTALKER_ALL_GAS_NO_BRAKES=ON")
+        self._cmake_args.append(f"-DSTALKER_BUILD_PROFILE={self.build_profile}")
+        custom_flags = self.raw.get("build_custom_flags")
+        if self.build_profile == "custom" and isinstance(custom_flags, list) and custom_flags:
+            joined = ";".join(str(f) for f in custom_flags if f)
+            if joined:
+                self._cmake_args.append(f"-DSTALKER_BUILD_CUSTOM_FLAGS={joined}")
         papi_dir = self.raw.get("papiDir")
         if papi_dir:
             self._cmake_args.append(f"-DCMAKE_PREFIX_PATH={papi_dir}")
@@ -538,7 +544,7 @@ class StalkerBuildConfig:
 
     def get_flat_summary(self):
         rows = []
-        for field, desc in self.SUMMARY_FIELDS:
+        for field, _ in self.SUMMARY_FIELDS:
             val = getattr(self, field, "N/A")
             rows.append((field, str(val)))
         return rows
@@ -576,7 +582,6 @@ class StalkerBuilder:
             "cmake",
             "--build", self.cfg.build_directory,
             "--target", self.cfg.build_target,
-            "--config", self.cfg.build_type,
             "-j", str(self.cfg.build_jobs)
         ]
         if getattr(self.cfg, "verbose", False):
@@ -616,21 +621,20 @@ def print_help():
         "  This enables [vg-info]CMAKE_VERBOSE_MAKEFILE[/vg-info] during configure and passes [vg-info]--verbose[/vg-info] to the build step.\n\n"
         "[bold]Configuration via JSON[/bold] ([cyan]stalker-build.json[/cyan]):\n"
         "  • [vg-info]build_directory[/vg-info]           Target build folder (default: build).\n"
-    "  • [vg-info]build_target[/vg-info]              Target name or 'auto' (default). Auto builds: both→all, tests→Tests, benchmarks→Benchmarks, none→all.\n"
-        "  • [vg-info]build_type[/vg-info]                One of: Release, Debug, RelWithDebInfo, MinSizeRel, AllGasNoBrakes.\n"
+        "  • [vg-info]build_target[/vg-info]              Target name or 'auto' (default). Auto builds: both→all, tests→Tests, benchmarks→Benchmarks, none→all.\n"
         "  • [vg-info]build_jobs[/vg-info]                Parallel build jobs (integer).\n"
+        "  • [vg-info]build_profile[/vg-info]             debug | release | perf | relwithdebinfo | custom.\n"
         "  • [vg-info]build_tests[/vg-info]               true/false → -DSTALKER_BUILD_TESTS.\n"
         "  • [vg-info]build_benchmarks[/vg-info]          true/false → -DSTALKER_BUILD_BENCHMARKS.\n"
         "  • [vg-info]alignment[/vg-info]                 Positive power-of-two (e.g., 64).\n"
         "  • [vg-info]simd_enable[/vg-info]               true/false → enable SIMD at configure time.\n"
         "  • [vg-info]simd_default_instructions[/vg-info] avx2 | avx512 | esp-dsp | auto | none.\n"
-        "  • [vg-info]unroll_enable[/vg-info]             true/false → metaprogram unrolling.\n"
-        "  • [vg-info]unroll_factor[/vg-info]             Positive power-of-two (ignored if unroll disabled).\n"
+        "  • [vg-info]unroll_factor[/vg-info]             Positive power-of-two (1 = disabled).\n"
         "  • [vg-info]threading_enable[/vg-info]          true/false.\n"
         "  • [vg-info]threading_num_threads[/vg-info]     Thread count (0 = auto).\n"
         "  • [vg-info]threading_std_enable[/vg-info]      true/false → std::thread backend.\n"
         "  • [vg-info]threading_posix_enable[/vg-info]    true/false → pthread backend.\n"
-        "  • [vg-info]enableHyperthreading[/vg-info]      true/false (only with pthread backend).\n"
+        "  • [vg-info]threading_posix_smt_enable[/vg-info] true/false → enable SMT with pthread backend.\n"
         "  • [vg-info]papiDir[/vg-info]                    Optional path to PAPI install (for find_package).\n\n"
     )
     console.print(Panel(help_text, title="Stalker Builder Help", border_style="vg-border", style="vg-panel"))
