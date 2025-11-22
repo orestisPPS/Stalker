@@ -6,7 +6,6 @@
 
 #include <cmath>
 #include <vector>
-#include <Stalker/Core/Config/Parallel.h>
 #include <Stalker/Threading/ThreadingTraits.h>
 
 namespace Stalker::Threading {

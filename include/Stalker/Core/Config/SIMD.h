@@ -71,7 +71,8 @@
 #endif
 
 
-#if defined(STALKER_SIMD_ENABLE) && STALKER_SIMD_ENABLE == 1
+#if defined(STALKER_SIMD_ENABLE) && STALKER_SIMD_ENABLE == 1 && \
+    (defined(STALKER_SIMD_AVX2_OK) || defined(STALKER_SIMD_AVX512_OK))
     #include <immintrin.h>
 #endif
 
@@ -189,64 +190,17 @@ namespace Stalker::Core::Config {
     }
 
     /**
-     * @brief Returns true if AVX2 support is enabled at compile time.
-     * @return true if AVX2 is active.
+     * @brief Returns true if SIMD is enabled and at least one AVX capability was detected.
      */
-    inline constexpr bool IsAVX2Enabled() {
-        #if STALKER_SIMD_ENABLE != 0 && defined(STALKER_SIMD_INSTRUCTION_SET_AVX2)
+    inline constexpr bool IsSIMDOk() {
+        #if defined(STALKER_SIMD_ENABLE) && STALKER_SIMD_ENABLE == 1 && \
+            (defined(STALKER_SIMD_AVX2_OK) || defined(STALKER_SIMD_AVX512_OK))
             return true;
         #else
             return false;
         #endif
     }
-
-    /**
-     * @brief Returns true if AVX-2 is supported by the build machine.
-     * @return true if AVX-512 is active.
-     */
-    inline constexpr bool IsAVX2Supported() {
-        #if defined STALKER_SIMD_SUPPORT_AVX2 && STALKER_SIMD_SUPPORT_AVX2 != 0
-            return true;
-        #else
-            return false;
-        #endif
-    }
-
-    /**
-     * @brief Returns true if AVX-512 support is enabled at compile time.
-     * @return true if AVX-512 is active.
-     */
-    inline constexpr bool IsAVX512Enabled() {
-        #if STALKER_SIMD_ENABLE != 0 && defined(STALKER_SIMD_INSTRUCTION_SET_AVX512)
-            return true;
-        #else
-            return false;
-        #endif
-    }
-
-    /**
-     * @brief Returns true if AVX-512 is supported by the build machine.
-     * @return true if AVX-512 is active.
-     */
-    inline constexpr bool IsAVX512Supported() {
-        #if defined STALKER_SIMD_SUPPORT_AVX512 && STALKER_SIMD_SUPPORT_AVX512 != 0
-            return true;
-        #else
-            return false;
-        #endif
-    }
-
-    /**
-     * @brief Returns true if ESP32 DSP SIMD support is enabled at compile time.
-     */
-    inline constexpr bool IsESPDSPEnabled() {
-        #if STALKER_SIMD_ENABLE != 0 && defined(STALKER_SIMD_INSTRUCTION_SET_ESP_DSP)
-            return true;
-        #else
-            return false;
-        #endif
-    }
-
+    
     /**
      * @brief Returns the enumerator for the active SIMD type.
      * @return T_SIMD corresponding to the active SIMD instruction set.
@@ -255,7 +209,8 @@ namespace Stalker::Core::Config {
      * @note Throws a compile-time error if no SIMD instruction set is defined.
      */
     inline constexpr T_SIMD DefaultSIMDType() {
-        #if defined(STALKER_SIMD_ENABLE) && STALKER_SIMD_ENABLE != 0
+        #if defined(STALKER_SIMD_ENABLE) && STALKER_SIMD_ENABLE != 0 && \
+            (defined(STALKER_SIMD_AVX2_OK) || defined(STALKER_SIMD_AVX512_OK))
             #if defined(STALKER_SIMD_INSTRUCTION_SET_AVX512)
                 return T_SIMD::AVX512;
             #elif defined(STALKER_SIMD_INSTRUCTION_SET_AVX2)

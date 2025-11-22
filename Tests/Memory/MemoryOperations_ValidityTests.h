@@ -12,7 +12,7 @@
 namespace STLKR_Tests {
 
     using namespace Stalker::Memory;
-    using namespace Stalker::Memory::SIMD;
+    using namespace Stalker::Memory;
     
     class MemoryOperations_ValidityTests : public STLKR_TestBase {
     public:
@@ -73,6 +73,7 @@ namespace STLKR_Tests {
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
             
+            #if defined(STALKER_SIMD_AVX2_OK)
             {
                 name = {"SIMD_AVX2_Cached"};
                 auto result = createAlignedUnique<T>(_size);
@@ -86,7 +87,9 @@ namespace STLKR_Tests {
                 MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX2, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
+            #endif
 
+            #if defined(STALKER_SIMD_AVX512_OK)
             {
                 name = {"SIMD_AVX512_Cached"};
                 auto result = createAlignedUnique<T>(_size);
@@ -100,6 +103,9 @@ namespace STLKR_Tests {
                 MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX512, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
+            #endif
+
+            #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
 
             ThreadTraitSTDThread threadTrait = ThreadTraitSTDThread();
             auto nThreads = threadTrait.getNumThreads();
@@ -128,6 +134,7 @@ namespace STLKR_Tests {
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
             
+            #if defined(STALKER_SIMD_AVX2_OK)
             {
                 name = {"Parallel_SIMD_AVX2_Cached"};
                 auto result = createAlignedUnique<T>(_size);
@@ -141,7 +148,9 @@ namespace STLKR_Tests {
                 MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
+            #endif
 
+            #if defined(STALKER_SIMD_AVX512_OK)
             {
                 name = {"Parallel_SIMD_AVX512_Cached"};
                 auto result = createAlignedUnique<T>(_size);
@@ -155,6 +164,9 @@ namespace STLKR_Tests {
                 MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
+            #endif
+
+            #endif
         
         }
 
@@ -192,6 +204,7 @@ namespace STLKR_Tests {
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
             
+            #if defined(STALKER_SIMD_AVX2_OK)
             {
                 name = {"SIMD_AVX2_Cached"};
                 auto result = createAlignedUnique<T>(_size);
@@ -205,7 +218,9 @@ namespace STLKR_Tests {
                 MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX2, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
+            #endif
 
+            #if defined(STALKER_SIMD_AVX512_OK)
             {
                 name = {"SIMD_AVX512_Cached"};
                 auto result = createAlignedUnique<T>(_size);
@@ -219,6 +234,9 @@ namespace STLKR_Tests {
                 MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX512, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
+            #endif
+
+            #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
 
             ThreadTraitSTDThread threadTrait = ThreadTraitSTDThread();
             auto nThreads = threadTrait.getNumThreads();
@@ -247,6 +265,7 @@ namespace STLKR_Tests {
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
             
+            #if defined(STALKER_SIMD_AVX2_OK)
             {
                 name = {"Parallel_SIMD_AVX2_Cached"};
                 auto result = createAlignedUnique<T>(_size);
@@ -260,7 +279,9 @@ namespace STLKR_Tests {
                 MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
+            #endif
 
+            #if defined(STALKER_SIMD_AVX512_OK)
             {
                 name = {"Parallel_SIMD_AVX512_Cached"};
                 auto result = createAlignedUnique<T>(_size);
@@ -274,6 +295,8 @@ namespace STLKR_Tests {
                 MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
+            #endif
+            #endif
         
         }
 
@@ -311,6 +334,7 @@ namespace STLKR_Tests {
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
             
+            #if defined(STALKER_SIMD_AVX2_OK)
             {
                 name = {"SIMD_AVX2_Cached"};
                 auto result = createAlignedUnique<T>(_size);
@@ -324,7 +348,9 @@ namespace STLKR_Tests {
                 MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX2, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
+            #endif
 
+            #if defined(STALKER_SIMD_AVX512_OK)
             {
                 name = {"SIMD_AVX512_Cached"};
                 auto result = createAlignedUnique<T>(_size);
@@ -338,6 +364,9 @@ namespace STLKR_Tests {
                 MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX512, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
+            #endif
+
+            #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
 
             ThreadTraitSTDThread threadTrait = ThreadTraitSTDThread();
             auto nThreads = threadTrait.getNumThreads();
@@ -366,6 +395,7 @@ namespace STLKR_Tests {
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
             
+            #if defined(STALKER_SIMD_AVX2_OK)
             {
                 name = {"ParallelSIMD_AVX2_Cached"};
                 auto result = createAlignedUnique<T>(_size);
@@ -379,7 +409,9 @@ namespace STLKR_Tests {
                 MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
+            #endif
 
+            #if defined(STALKER_SIMD_AVX512_OK)
             {
                 name = {"ParallelSIMD_AVX512_Cached"};
                 auto result = createAlignedUnique<T>(_size);
@@ -393,6 +425,8 @@ namespace STLKR_Tests {
                 MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
+            #endif
+            #endif
         
         }
 

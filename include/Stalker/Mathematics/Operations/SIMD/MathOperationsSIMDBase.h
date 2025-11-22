@@ -9,10 +9,10 @@
 #include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDBase.h>
 #include <Stalker/Memory/SIMD/MemoryOperationsSIMDBase.h>
 
-namespace Stalker::Mathematics::SIMD {
+namespace Stalker::Mathematics {
 
     using namespace Stalker::Core;
-    using namespace Stalker::Memory::SIMD;
+    using namespace Stalker::Memory;
 
 // CRTP Base
 template<typename T, T_SIMD Type, typename Child>
@@ -21,7 +21,7 @@ struct MathOperationsSIMDBase {
     using Traits = TypeTraitsSIMD<T, Type>;
     using T_simd = typename Traits::typeSIMD;
     using T_data = typename Traits::typeData;
-    using MemoryOps = Stalker::Memory::SIMD::MemoryOperationsSIMD<T, Type>;
+    using MemoryOps = Stalker::Memory::MemoryOperationsSIMD<T, Type>;
     
 public:
     static constexpr unsigned registerSize = TypeTraitsSIMD<T, Type>::RegisterSize();

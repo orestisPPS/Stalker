@@ -115,18 +115,20 @@ namespace STLKR_Tests {
             MathOperations::add<T, ExecutionTraitUnrolled<100>>(_size, a.data(), b.data(), resMeta.data());
             TestUtility::compareVectors(resMeta.data(), expected.data(), _size, "Meta");
         }
-        
+        #if defined(STALKER_SIMD_AVX2_OK)
         {
             auto resSIMD1 = createAlignedVector<T>(_size);
             MathOperations::add<T, ExecutionTraitSIMD<T_SIMD::AVX2, 1>>(_size, a.data(), b.data(), resSIMD1.data());
             TestUtility::compareVectors<T>(resSIMD1.data(), expected.data(), _size, "SIMD AVX2", _tolerance);
         }
-
+        #endif
+        #if defined(STALKER_SIMD_AVX512_OK)
         {
             auto resSIMD2 = createAlignedVector<T>(_size);
             MathOperations::add<T, ExecutionTraitSIMD<T_SIMD::AVX512, 1>>(_size, a.data(), b.data(), resSIMD2.data());
             TestUtility::compareVectors<T>(resSIMD2.data(), expected.data(), _size, "SIMD AVX512", _tolerance);
         }
+        #endif
 
         {
             auto resScaledClassic = createAlignedVector<T>(_size);
@@ -140,17 +142,22 @@ namespace STLKR_Tests {
             TestUtility::compareVectors(resScaledMeta.data(), expectedScaled.data(), _size, "Meta Scaled");
         }
 
+        #if defined(STALKER_SIMD_AVX2_OK)
         {
             auto resScaledSIMD1 = createAlignedVector<T>(_size);
-            MathOperations::add<T, ExecutionTraitSIMD<T_SIMD::AVX2, 2>>(_size, a.data(), b.data(), resScaledSIMD1.data(), scalarA, scalarB);
+            MathOperations::add<T, ExecutionTraitSIMD<T_SIMD::AVX2, 1>>(_size, a.data(), b.data(), resScaledSIMD1.data(), scalarA, scalarB);
             TestUtility::compareVectors<T>(resScaledSIMD1.data(), expectedScaled.data(), _size, "SIMD AVX2 Scaled", _tolerance);
         }
-
+        #endif
+        #if defined(STALKER_SIMD_AVX512_OK)
         {
             auto resScaledSIMD2 = createAlignedVector<T>(_size);
             MathOperations::add<T, ExecutionTraitSIMD<T_SIMD::AVX512, 2>>(_size, a.data(), b.data(), resScaledSIMD2.data(), scalarA, scalarB);
             TestUtility::compareVectors<T>(resScaledSIMD2.data(), expectedScaled.data(), _size, "SIMD AVX512 Scaled", _tolerance);
         }
+        #endif
+
+        #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
 
         ThreadTraitSTDThread ThreadTrait = ThreadTraitSTDThread(1);
         auto nThreads = ThreadTrait.getNumThreads();
@@ -174,18 +181,20 @@ namespace STLKR_Tests {
             TestUtility::compareVectors(resMetaThreaded.data(), expected.data(), _size, "Meta Threaded");
         }
 
+        #if defined(STALKER_SIMD_AVX2_OK)
         {
             auto resSIMD1Threaded = createAlignedVector<T>(_size);
             MathOperations::add<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2>>(ThreadTrait, _size, a.data(), b.data(), resSIMD1Threaded.data());
             TestUtility::compareVectors<T>(resSIMD1Threaded.data(), expected.data(), _size, "SIMD AVX2 Threaded", _tolerance);
         }
-
+        #endif
+        #if defined(STALKER_SIMD_AVX512_OK)
         {
             auto resSIMD2Threaded = createAlignedVector<T>(_size);
             MathOperations::add<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, 1>>(ThreadTrait, _size, a.data(), b.data(), resSIMD2Threaded.data());
             TestUtility::compareVectors<T>(resSIMD2Threaded.data(), expected.data(), _size, "SIMD AVX512 Threaded", _tolerance);
         }
-
+        #endif
         {
             auto resScaledClassicThreaded = createAlignedVector<T>(_size);
             MathOperations::add<T, ThreadTraitSTDThread, ExecutionTraitClassic<>>(ThreadTrait, _size, a.data(), b.data(), resScaledClassicThreaded.data(), scalarA, scalarB);
@@ -198,18 +207,21 @@ namespace STLKR_Tests {
             TestUtility::compareVectors(resScaledMetaThreaded.data(), expectedScaled.data(), _size, "Meta Scaled Threaded");
         }
 
+        #if defined(STALKER_SIMD_AVX2_OK)
         {
             auto resScaledSIMD1Threaded = createAlignedVector<T>(_size);
             MathOperations::add<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2>>(ThreadTrait, _size, a.data(), b.data(), resScaledSIMD1Threaded.data(), scalarA, scalarB);
             TestUtility::compareVectors<T>(resScaledSIMD1Threaded.data(), expectedScaled.data(), _size, "SIMD AVX2 Scaled Threaded", _tolerance);
         }
-
+        #endif
+        #if defined(STALKER_SIMD_AVX512_OK)
         {
             auto resScaledSIMD2Threaded = createAlignedVector<T>(_size);
             MathOperations::add<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512>>(ThreadTrait, _size, a.data(), b.data(), resScaledSIMD2Threaded.data(), scalarA, scalarB);
             TestUtility::compareVectors<T>(resScaledSIMD2Threaded.data(), expectedScaled.data(), _size, "SIMD AVX512 Scaled Threaded", _tolerance);
         }
-
+        #endif
+        #endif
     }
 
     template<typename T>
@@ -246,18 +258,23 @@ namespace STLKR_Tests {
             TestUtility::compareVectors(resMeta.data(), expected.data(), _size, "Meta");
         }
         
+        #if defined(STALKER_SIMD_AVX2_OK)
         {
             auto resSIMD1 = createAlignedVector<T>(_size);
             MathOperations::axpy<T, ExecutionTraitSIMD<T_SIMD::AVX2, 1>>(_size, a.data(), b.data(), resSIMD1.data(), scalarA);
             TestUtility::compareVectors<T>(resSIMD1.data(), expected.data(), _size, "SIMD AVX2", _tolerance);
         }
+        #endif
 
+        #if defined(STALKER_SIMD_AVX512_OK)
         {
             auto resSIMD2 = createAlignedVector<T>(_size);
             MathOperations::axpy<T, ExecutionTraitSIMD<T_SIMD::AVX512, 1>>(_size, a.data(), b.data(), resSIMD2.data(), scalarA);
             TestUtility::compareVectors<T>(resSIMD2.data(), expected.data(), _size, "SIMD AVX512", _tolerance);
         }
+        #endif
 
+        #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
 
         ThreadTraitSTDThread ThreadTrait = ThreadTraitSTDThread();
         auto nThreads = ThreadTrait.getNumThreads();
@@ -275,17 +292,23 @@ namespace STLKR_Tests {
             TestUtility::compareVectors(resMeta.data(), expected.data(), _size, "Meta Threaded (" + nThreadsStr + " threads)");
         }
         
+        #if defined(STALKER_SIMD_AVX2_OK)
         {
             auto resSIMD1 = createAlignedVector<T>(_size);
             MathOperations::axpy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, 1>>(ThreadTrait, _size, a.data(), b.data(), resSIMD1.data(), scalarA);
             TestUtility::compareVectors<T>(resSIMD1.data(), expected.data(), _size, "SIMD AVX2 Threaded (" + nThreadsStr + " threads)", _tolerance);
         }
+        #endif
 
+        #if defined(STALKER_SIMD_AVX512_OK)
         {
             auto resSIMD2 = createAlignedVector<T>(_size);
             MathOperations::axpy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, 1>>(ThreadTrait, _size, a.data(), b.data(), resSIMD2.data(), scalarA);
             TestUtility::compareVectors<T>(resSIMD2.data(), expected.data(), _size, "SIMD AVX512 Threaded (" + nThreadsStr + " threads)", _tolerance);
         }
+        #endif
+
+        #endif
     }
 
     template<typename T>
@@ -325,13 +348,19 @@ namespace STLKR_Tests {
         MathOperations::subtract<T, ExecutionTraitUnrolled<>>(_size, a.data(), b.data(), resScaledMeta.data(), scalarA, scalarB);
         TestUtility::compareVectors(resScaledMeta.data(), expectedScaled.data(), _size, "Meta Scaled");
 
+        #if defined(STALKER_SIMD_AVX2_OK)
         auto resScaledSIMD1 = createAlignedVector<T>(_size);
         MathOperations::subtract<T, ExecutionTraitSIMD<T_SIMD::AVX2>>(_size, a.data(), b.data(), resScaledSIMD1.data(), scalarA, scalarB);
         TestUtility::compareVectors<T>(resScaledSIMD1.data(), expectedScaled.data(), _size, "SIMD AVX2 Scaled", _tolerance);
+        #endif
 
+        #if defined(STALKER_SIMD_AVX512_OK)
         auto resScaledSIMD2 = createAlignedVector<T>(_size);
         MathOperations::subtract<T, ExecutionTraitSIMD<T_SIMD::AVX512>>(_size, a.data(), b.data(), resScaledSIMD2.data(), scalarA, scalarB);
         TestUtility::compareVectors<T>(resScaledSIMD2.data(), expectedScaled.data(), _size, "SIMD AVX512 Scaled", _tolerance);
+        #endif
+
+        #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
 
         ThreadTraitSTDThread ThreadTrait = ThreadTraitSTDThread();
 
@@ -355,15 +384,18 @@ namespace STLKR_Tests {
         MathOperations::subtract<T, ThreadTraitSTDThread, ExecutionTraitUnrolled<>>(ThreadTrait, _size, a.data(), b.data(), resScaledMetaThreaded.data(), scalarA, scalarB);
         TestUtility::compareVectors(resScaledMetaThreaded.data(), expectedScaled.data(), _size, "Meta Scaled Threaded");
 
+        #if defined(STALKER_SIMD_AVX2_OK)
         auto resScaledSIMD1Threaded = createAlignedVector<T>(_size);
         MathOperations::subtract<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2>>(ThreadTrait, _size, a.data(), b.data(), resScaledSIMD1Threaded.data(), scalarA, scalarB);
         TestUtility::compareVectors<T>(resScaledSIMD1Threaded.data(), expectedScaled.data(), _size, "SIMD AVX2 Scaled Threaded", _tolerance);
+        #endif
 
+        #if defined(STALKER_SIMD_AVX512_OK)
         auto resScaledSIMD2Threaded = createAlignedVector<T>(_size);
         MathOperations::subtract<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512>>(ThreadTrait, _size, a.data(), b.data(), resScaledSIMD2Threaded.data(), scalarA, scalarB);
         TestUtility::compareVectors<T>(resScaledSIMD2Threaded.data(), expectedScaled.data(), _size, "SIMD AVX512 Scaled Threaded", _tolerance);
-
-
+        #endif
+        #endif
     }
 
     template<typename T>
@@ -403,14 +435,19 @@ namespace STLKR_Tests {
         MathOperations::multiply<T, ExecutionTraitUnrolled<>>(_size, a.data(), b.data(), resScaledMeta.data(), scalarA, scalarB);
         TestUtility::compareVectors(resScaledMeta.data(), expectedScaled.data(), _size, "Meta Scaled");
 
+        #if defined(STALKER_SIMD_AVX2_OK)
         auto resScaledSIMD1 = createAlignedVector<T>(_size);
         MathOperations::multiply<T, ExecutionTraitSIMD<T_SIMD::AVX2>>(_size, a.data(), b.data(), resScaledSIMD1.data(), scalarA, scalarB);
         TestUtility::compareVectors<T>(resScaledSIMD1.data(), expectedScaled.data(), _size, "SIMD AVX2 Scaled", _tolerance);
+        #endif
 
+        #if defined(STALKER_SIMD_AVX512_OK)
         auto resScaledSIMD2 = createAlignedVector<T>(_size);
         MathOperations::multiply<T, ExecutionTraitSIMD<T_SIMD::AVX512>>(_size, a.data(), b.data(), resScaledSIMD2.data(), scalarA, scalarB);
         TestUtility::compareVectors<T>(resScaledSIMD2.data(), expectedScaled.data(), _size, "SIMD AVX512 Scaled", _tolerance);
+        #endif
 
+        #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
         ThreadTraitSTDThread ThreadTrait = ThreadTraitSTDThread();
 
         auto resClassicThreaded = createAlignedVector<T>(_size);
@@ -421,9 +458,9 @@ namespace STLKR_Tests {
         MathOperations::multiply<T, ThreadTraitSTDThread, ExecutionTraitUnrolled<>>(ThreadTrait, _size, a.data(), b.data(), resMetaThreaded.data());
         TestUtility::compareVectors(resMetaThreaded.data(), expected.data(), _size, "Meta Threaded");
 
-        // auto resSIMDThreaded = createAlignedVector<T>(_size);
-        // MathOperations::multiply<T, ThreadTraitSTDThread, ExecutionTraitSIMD<>>(ThreadTrait, _size, a.data(), b.data(), resSIMDThreaded.data());
-        // TestUtility::compareVectors(resSIMDThreaded.data(), expected.data(), _size, "SIMD Threaded");
+        auto resSIMDThreaded = createAlignedVector<T>(_size);
+        MathOperations::multiply<T, ThreadTraitSTDThread, ExecutionTraitSIMD<>>(ThreadTrait, _size, a.data(), b.data(), resSIMDThreaded.data());
+        TestUtility::compareVectors(resSIMDThreaded.data(), expected.data(), _size, "SIMD Threaded");
 
         auto resScaledClassicThreaded = createAlignedVector<T>(_size);
         MathOperations::multiply<T, ThreadTraitSTDThread, ExecutionTraitClassic<>>(ThreadTrait, _size, a.data(), b.data(), resScaledClassicThreaded.data(), scalarA, scalarB);
@@ -433,13 +470,18 @@ namespace STLKR_Tests {
         MathOperations::multiply<T, ThreadTraitSTDThread, ExecutionTraitUnrolled<>>(ThreadTrait, _size, a.data(), b.data(), resScaledMetaThreaded.data(), scalarA, scalarB);
         TestUtility::compareVectors(resScaledMetaThreaded.data(), expectedScaled.data(), _size, "Meta Scaled Threaded");
 
+        #if defined(STALKER_SIMD_AVX2_OK)
         auto resScaledSIMD1Threaded = createAlignedVector<T>(_size);
         MathOperations::multiply<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2>>(ThreadTrait, _size, a.data(), b.data(), resScaledSIMD1Threaded.data(), scalarA, scalarB);
         TestUtility::compareVectors<T>(resScaledSIMD1Threaded.data(), expectedScaled.data(), _size, "SIMD AVX2 Scaled Threaded", _tolerance);
+        #endif
 
+        #if defined(STALKER_SIMD_AVX512_OK)
         auto resScaledSIMD2Threaded = createAlignedVector<T>(_size);
         MathOperations::multiply<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512>>(ThreadTrait, _size, a.data(), b.data(), resScaledSIMD2Threaded.data(), scalarA, scalarB);
         TestUtility::compareVectors<T>(resScaledSIMD2Threaded.data(), expectedScaled.data(), _size, "SIMD AVX512 Scaled Threaded", _tolerance);
+        #endif
+        #endif
     }
 
     template<typename T>
@@ -467,40 +509,49 @@ namespace STLKR_Tests {
             TestUtility::compareValues(resMeta, expected, "Meta Sum", _tolerance, true);
         }
 
+        #if defined(STALKER_SIMD_AVX2_OK)
         {
             T resSIMD1 = MathOperations::sum<T, ExecutionTraitSIMD<T_SIMD::AVX2>>(_size, a.data());
             TestUtility::compareValues(resSIMD1, expected, "SIMD AVX2 Sum", _tolerance, true);
         }
+        #endif
 
+        #if defined(STALKER_SIMD_AVX512_OK)
         {
             T resSIMD2 = MathOperations::sum<T, ExecutionTraitSIMD<T_SIMD::AVX512>>(_size, a.data());
             TestUtility::compareValues(resSIMD2, expected, "SIMD AVX512 Sum", _tolerance, true);
         }
+        #endif
 
-        ThreadTraitSTDThread ThreadTrait = ThreadTraitSTDThread();
-        auto nThreads = ThreadTrait.getNumThreads();
-        auto nThreadsStr = std::to_string(nThreads);
+        // #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
+        // ThreadTraitSTDThread ThreadTrait = ThreadTraitSTDThread();
+        // auto nThreads = ThreadTrait.getNumThreads();
+        // auto nThreadsStr = std::to_string(nThreads);
 
-        {
-            // T resClassicThreaded = MathOperations::sum<T, ThreadTraitSTDThread, ExecutionTraitClassic<>>(ThreadTrait, _size, a.data());
-            // TestUtility::compareValues(resClassicThreaded, expected, "Classic Threaded Sum", _tolerance);
-        }
+        // {
+        //     T resClassicThreaded = MathOperations::sum<T, ThreadTraitSTDThread, ExecutionTraitClassic<>>(ThreadTrait, _size, a.data());
+        //     TestUtility::compareValues(resClassicThreaded, expected, "Classic Threaded Sum", _tolerance);
+        // }
 
-        {
-            // T resMetaThreaded = MathOperations::sum<T, ThreadTraitSTDThread, ExecutionTraitUnrolled<16>>(ThreadTrait, _size, a.data());
-            // TestUtility::compareValues(resMetaThreaded, expected, "Meta Threaded Sum", _tolerance);
-        }
+        // {
+        //     T resMetaThreaded = MathOperations::sum<T, ThreadTraitSTDThread, ExecutionTraitUnrolled<16>>(ThreadTrait, _size, a.data());
+        //     TestUtility::compareValues(resMetaThreaded, expected, "Meta Threaded Sum", _tolerance);
+        // }
 
-        {
-            // T resSIMD1Threaded = MathOperations::sum<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2>>(ThreadTrait, _size, a.data());
-            // TestUtility::compareValues(resSIMD1Threaded, expected, "SIMD AVX2 Threaded Sum", _tolerance);
-        }
+        // #if defined(STALKER_SIMD_AVX2_OK)
+        // {
+        //     T resSIMD1Threaded = MathOperations::sum<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2>>(ThreadTrait, _size, a.data());
+        //     TestUtility::compareValues(resSIMD1Threaded, expected, "SIMD AVX2 Threaded Sum", _tolerance);
+        // }
+        // #endif
 
-        {
-            // T resSIMD2Threaded = MathOperations::sum<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512>>(ThreadTrait, _size, a.data());
-            // TestUtility::compareValues(resSIMD2Threaded, expected, "SIMD AVX512 Threaded Sum", _tolerance);
-        }
-        
+        // #if defined(STALKER_SIMD_AVX512_OK)
+        // {
+        //     T resSIMD2Threaded = MathOperations::sum<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512>>(ThreadTrait, _size, a.data());
+        //     TestUtility::compareValues(resSIMD2Threaded, expected, "SIMD AVX512 Threaded Sum", _tolerance);
+        // }
+        // #endif
+        // #endif
     }
 
     template<typename T>
@@ -518,7 +569,6 @@ namespace STLKR_Tests {
         auto expected = createAlignedVector<T>(_size);
         for (size_t i = 0; i < _size; ++i) expected[i] = static_cast<T>(input[i] * scalar);
 
-        // Non-threaded variants (in-place)
         {
             auto a = input;
             MathOperations::scale<T, ExecutionTraitClassic<>>(_size, a.data(), scalar);
@@ -529,18 +579,22 @@ namespace STLKR_Tests {
             MathOperations::scale<T, ExecutionTraitUnrolled<16>>(_size, a.data(), scalar);
             TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "Meta", _tolerance);
         }
+        #if defined(STALKER_SIMD_AVX2_OK)
         {
             auto a = input;
             MathOperations::scale<T, ExecutionTraitSIMD<T_SIMD::AVX2>>(_size, a.data(), scalar);
             TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "SIMD AVX2", _tolerance);
         }
+        #endif
+        #if defined(STALKER_SIMD_AVX512_OK)
         {
             auto a = input;
             MathOperations::scale<T, ExecutionTraitSIMD<T_SIMD::AVX512>>(_size, a.data(), scalar);
             TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "SIMD AVX512", _tolerance);
         }
+        #endif
 
-        // Threaded variants (out-of-place)
+        #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
         ThreadTraitSTDThread ThreadTrait = ThreadTraitSTDThread();
 
         {
@@ -553,16 +607,21 @@ namespace STLKR_Tests {
             MathOperations::scale<T, ThreadTraitSTDThread, ExecutionTraitUnrolled<16>>(ThreadTrait, _size, a.data(), scalar);
             TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "Meta Threaded", _tolerance);
         }
+        #if defined(STALKER_SIMD_AVX2_OK)
         {
             auto a = input;
             MathOperations::scale<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2>>(ThreadTrait, _size, a.data(), scalar);
             TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "SIMD AVX2 Threaded", _tolerance);
         }
+        #endif
+        #if defined(STALKER_SIMD_AVX512_OK)
         {
             auto a = input;
             MathOperations::scale<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512>>(ThreadTrait, _size, a.data(), scalar);
             TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "SIMD AVX512 Threaded", _tolerance);
         }
+        #endif
+        #endif
     }
 
     template<typename T>
@@ -580,7 +639,6 @@ namespace STLKR_Tests {
         auto expected = createAlignedVector<T>(_size);
         for (size_t i = 0; i < _size; ++i) expected[i] = static_cast<T>(input[i] + scalar);
 
-        // Non-threaded variants (in-place)
         {
             auto a = input;
             MathOperations::addConstant<T, ExecutionTraitClassic<>>(_size, a.data(), scalar);
@@ -591,18 +649,22 @@ namespace STLKR_Tests {
             MathOperations::addConstant<T, ExecutionTraitUnrolled<16>>(_size, a.data(), scalar);
             TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "Meta", _tolerance);
         }
+        #if defined(STALKER_SIMD_AVX2_OK)
         {
             auto a = input;
             MathOperations::addConstant<T, ExecutionTraitSIMD<T_SIMD::AVX2>>(_size, a.data(), scalar);
             TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "SIMD AVX2", _tolerance);
         }
+        #endif
+        #if defined(STALKER_SIMD_AVX512_OK)
         {
             auto a = input;
             MathOperations::addConstant<T, ExecutionTraitSIMD<T_SIMD::AVX512>>(_size, a.data(), scalar);
             TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "SIMD AVX512", _tolerance);
         }
+        #endif
 
-        // Threaded variants (out-of-place)
+        #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
         ThreadTraitSTDThread ThreadTrait = ThreadTraitSTDThread();
 
         {
@@ -615,16 +677,21 @@ namespace STLKR_Tests {
             MathOperations::addConstant<T, ThreadTraitSTDThread, ExecutionTraitUnrolled<16>>(ThreadTrait, _size, a.data(), scalar);
             TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "Meta Threaded", _tolerance);
         }
+        #if defined(STALKER_SIMD_AVX2_OK)
         {
             auto a = input;
             MathOperations::addConstant<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2>>(ThreadTrait, _size, a.data(), scalar);
             TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "SIMD AVX2 Threaded", _tolerance);
         }
+        #endif
+        #if defined(STALKER_SIMD_AVX512_OK)
         {
             auto a = input;
             MathOperations::addConstant<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512>>(ThreadTrait, _size, a.data(), scalar);
             TestUtility::compareVectors<T>(a.data(), expected.data(), _size, "SIMD AVX512 Threaded", _tolerance);
         }
+        #endif
+        #endif
     }
 
     template<typename T>
@@ -641,7 +708,6 @@ namespace STLKR_Tests {
         T expected = 0;
         for (size_t i = 0; i < _size; ++i) expected += a[i] * b[i];
 
-        // Non-threaded variants (in-place)
         auto tolerance = 1e-4;
         {
             auto res = MathOperations::dot<T, ExecutionTraitClassic<>>(_size, a.data(), b.data());
@@ -651,14 +717,43 @@ namespace STLKR_Tests {
             auto res = MathOperations::dot<T, ExecutionTraitUnrolled<1>>(_size, a.data(), b.data());
             TestUtility::compareValues<T>(res, expected, "Meta", tolerance, true);
         }
+        #if defined(STALKER_SIMD_AVX2_OK)
         {
             auto res = MathOperations::dot<T, ExecutionTraitSIMD<T_SIMD::AVX2>>(_size, a.data(), b.data());
             TestUtility::compareValues<T>(res, expected, "SIMD AVX2", tolerance, true);
         }
+        #endif
+        #if defined(STALKER_SIMD_AVX512_OK)
         {
             auto res = MathOperations::dot<T, ExecutionTraitSIMD<T_SIMD::AVX512>>(_size, a.data(), b.data());
             TestUtility::compareValues<T>(res, expected, "SIMD AVX512", _tolerance, true);
         }
+        #endif
+
+        // #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
+        // ThreadTraitSTDThread ThreadTrait = ThreadTraitSTDThread();
+
+        // {
+        //     auto res = MathOperations::dot<T, ThreadTraitSTDThread, ExecutionTraitClassic<>>(ThreadTrait, _size, a.data(), b.data());
+        //     TestUtility::compareValues<T>(res, expected, "Classic Threaded", tolerance, true);
+        // }
+        // {
+        //     auto res = MathOperations::dot<T, ThreadTraitSTDThread, ExecutionTraitUnrolled<1>>(ThreadTrait, _size, a.data(), b.data());
+        //     TestUtility::compareValues<T>(res, expected, "Meta Threaded", tolerance, true);
+        // }
+        // #if defined(STALKER_SIMD_AVX2_OK)
+        // {
+        //     auto res = MathOperations::dot<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2>>(ThreadTrait, _size, a.data(), b.data());
+        //     TestUtility::compareValues<T>(res, expected, "SIMD AVX2 Threaded", tolerance, true);
+        // }
+        // #endif
+        // #if defined(STALKER_SIMD_AVX512_OK)
+        // {
+        //     auto res = MathOperations::dot<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512>>(ThreadTrait, _size, a.data(), b.data());
+        //     TestUtility::compareValues<T>(res, expected, "SIMD AVX512 Threaded", _tolerance, true);
+        // }
+        // #endif
+        // #endif
     }
 };
 

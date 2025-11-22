@@ -38,7 +38,7 @@
  * @section thread_count Thread Count Behavior
  * Thread count is configured via build system macros with the following rules:
  * - If threading is disabled, thread count is forcibly 0.
- * - If @c STALKER_THREADING_ENABLE_MAX_THREADS is set, maximum available threads will be defaulted.
+ * - If @c STALKER_THREADING_MAX_THREADS_ENABLE is set, maximum available threads will be defaulted.
  *
  * @section enumerations Enumerations
  * @enum ThreadType
@@ -53,13 +53,13 @@
  *   - Enables or disables threading globally.
  * - @b STALKER_THREADING_NUM_THREADS:
  *   - Configured thread count.
- * - @b STALKER_THREADING_ENABLE_PTHREAD (0/1):
+ * - @b STALKER_THREADING_POSIX_ENABLE (0/1):
  *   - Use pthread backend (Linux/POSIX only).
- * - @b STALKER_THREADING_ENABLE_STDTHREAD (0/1):
+ * - @b STALKER_THREADING_STD_ENABLE (0/1):
  *   - Use std::thread backend.
- * - @b STALKER_THREADING_ENABLE_SMT (0/1):
+ * - @b STALKER_THREADING_POSIX_SMT_ENABLE (0/1):
  *   - Enables hyperthreading (SMT); only valid with pthread on Linux.
- * - @b STALKER_THREADING_ENABLE_MAX_THREADS (0/1):
+ * - @b STALKER_THREADING_MAX_THREADS_ENABLE (0/1):
  *   - Forces maximum hardware threads regardless of user-specified count.
  *
  * @section utilities Utilities
@@ -84,24 +84,24 @@
 
 #if STALKER_THREADING_ENABLE
 
-    #if STALKER_THREADING_ENABLE_PTHREAD
+    #if STALKER_THREADING_POSIX_ENABLE
         #ifndef STALKER_PLATFORM_LINUX
             #error "pthread backend is only supported when STALKER_PLATFORM_LINUX is defined.\n" \
                    "You better check yo self before you wreck yo self."
         #endif
     #endif
 
-    #if !(STALKER_THREADING_ENABLE_PTHREAD || STALKER_THREADING_ENABLE_STDTHREAD)
+    #if !(STALKER_THREADING_POSIX_ENABLE || STALKER_THREADING_STD_ENABLE)
         #error "STALKER_THREADING_ENABLE is ON but no backend selected.\n" \
                "You better check yo self before you wreck yo self."
     #endif
 
-    #if (STALKER_THREADING_ENABLE_PTHREAD) && (STALKER_THREADING_ENABLE_STDTHREAD)
+    #if (STALKER_THREADING_POSIX_ENABLE) && (STALKER_THREADING_STD_ENABLE)
         #error "Both pthread and std::thread backends are enabled. This is invalid.\n" \
                "You better check yo self before you wreck yo self."
     #endif
 
-    #if STALKER_THREADING_ENABLE_STDTHREAD && STALKER_THREADING_ENABLE_SMT
+    #if STALKER_THREADING_STD_ENABLE && STALKER_THREADING_POSIX_SMT_ENABLE
         #error "Hyperthreading (SMT) cannot be enabled with std::thread backend.\n" \
                "You better check yo self before you wreck yo self."
     #endif
@@ -113,7 +113,7 @@
 
 #else
 
-    #if STALKER_THREADING_ENABLE_PTHREAD || STALKER_THREADING_ENABLE_STDTHREAD || STALKER_THREADING_ENABLE_SMT
+    #if STALKER_THREADING_POSIX_ENABLE || STALKER_THREADING_STD_ENABLE || STALKER_THREADING_POSIX_SMT_ENABLE
         #error "Threading is disabled but backend-specific macros are set.\n" \
                "You better check yo self before you wreck yo self."
     #endif
@@ -122,10 +122,10 @@
 
 
 #if STALKER_THREADING_ENABLE
-    #if STALKER_THREADING_ENABLE_PTHREAD
+    #if STALKER_THREADING_POSIX_ENABLE
         #include <pthread.h>
         using PlatformThread = pthread_t;
-    #elif STALKER_THREADING_ENABLE_STDTHREAD
+    #elif STALKER_THREADING_STD_ENABLE
         #include <thread>
         using PlatformThread = std::thread;
     #else
@@ -216,7 +216,7 @@ namespace Stalker::Core::Config {
      * @return true if pthread is the selected threading backend; false otherwise.
      */
     constexpr inline bool isPthreadEnabled() {
-        #if defined(STALKER_THREADING_ENABLE_PTHREAD) && STALKER_THREADING_ENABLE_PTHREAD != 0
+        #if defined(STALKER_THREADING_POSIX_ENABLE) && STALKER_THREADING_POSIX_ENABLE != 0
             return true;
         #else
             return false;
@@ -228,7 +228,7 @@ namespace Stalker::Core::Config {
      * @return true if SMT is enabled (only valid with pthread backend); false otherwise.
     */
     constexpr inline bool isSMTEnabled() {
-        #if defined(STALKER_THREADING_ENABLE_SMT) && STALKER_THREADING_ENABLE_SMT != 0
+        #if defined(STALKER_THREADING_POSIX_SMT_ENABLE) && STALKER_THREADING_POSIX_SMT_ENABLE != 0
             return true;
         #else
             return false;
@@ -240,7 +240,7 @@ namespace Stalker::Core::Config {
      * @return true if std::thread is the selected threading backend; false otherwise.
      */
     constexpr inline bool isStdThreadEnabled() {
-        #if defined(STALKER_THREADING_ENABLE_STDTHREAD) && STALKER_THREADING_ENABLE_STDTHREAD != 0
+        #if defined(STALKER_THREADING_STD_ENABLE) && STALKER_THREADING_STD_ENABLE != 0
             return true;
         #else
             return false;
@@ -268,9 +268,9 @@ namespace Stalker::Core::Config {
     }
 
     constexpr inline ThreadType DefaultThreadType() {
-        #if defined(STALKER_THREADING_ENABLE_PTHREAD) && STALKER_THREADING_ENABLE_PTHREAD != 0
+        #if defined(STALKER_THREADING_POSIX_ENABLE) && STALKER_THREADING_POSIX_ENABLE != 0
             return ThreadType::PThread;
-        #elif defined(STALKER_THREADING_ENABLE_STDTHREAD) && STALKER_THREADING_ENABLE_STDTHREAD != 0
+        #elif defined(STALKER_THREADING_STD_ENABLE) && STALKER_THREADING_STD_ENABLE != 0
             return ThreadType::STDThread;
         #else
             return ThreadType::None;

@@ -3,7 +3,7 @@
 #include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDAVX2.h>
 #include <Stalker/Memory/SIMD/MemoryOperationsSIMDBase.h>
 
-namespace Stalker::Memory::SIMD {
+namespace Stalker::Memory {
     
 template<>
 struct MemoryOperationsSIMD<double, T_SIMD::AVX2>

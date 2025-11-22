@@ -3,9 +3,8 @@
 #include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDAVX2.h>
 #include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDBase.h>
 #include <Stalker/Memory/SIMD/MemoryOperationsSIMDAVX2.h>
-#include <Stalker/Core/Config/SIMD.h>
 
-namespace Stalker::Mathematics::SIMD
+namespace Stalker::Mathematics
 {
     // using namespace Stalker::Core::Config;
 
@@ -457,4 +456,4 @@ namespace Stalker::Mathematics::SIMD
         }
     };
 
-} // namespace Stalker::Mathematics::SIMD
+} // namespace Stalker::Mathematics

@@ -3,7 +3,7 @@
 #include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDAVX512.h>
 #include <Stalker/Memory/SIMD/MemoryOperationsSIMDBase.h>
 
-namespace Stalker::Memory::SIMD {
+namespace Stalker::Memory {
 
 // Double Specialization
 template<>

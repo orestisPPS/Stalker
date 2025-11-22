@@ -4,7 +4,7 @@
 #pragma once
 #include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDBase.h>
 
-namespace Stalker::Memory::SIMD {
+namespace Stalker::Memory {
 
 using namespace Stalker::Core;
 

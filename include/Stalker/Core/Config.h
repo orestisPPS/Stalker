@@ -8,9 +8,8 @@
  *
  * Included configuration headers:
  * - Config/Compiler.h: Compiler-specific macros and settings.
- * - Config/SIMD.h: SIMD (Single Instruction, Multiple Data) support.
- * - Config/CUDA.h: CUDA (Compute Unified Device Architecture) integration.
- * - Config/Parallel.h: General parallelization options.
+ * - Config/SIMD.h: SIMD (Single Instruction, Multiple Data) support.[Conditionally if SIMD is supported and enabled]
+ * - Config/Parallel.h: General parallelization options. [Conditionally if threading is enabled]
  * - Config/Alignment.h: Memory alignment macros and utilities.
  * - Config/LoopUnrolling.h: Loop unrolling optimization macros.
  *
@@ -22,7 +21,11 @@
 #include "Config/Platform.h"
 #include "Config/Alignment.h"
 #include "Config/Compiler.h"
-#include "Config/CUDA.h"
 #include "Config/LoopUnrolling.h"
+#if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
 #include "Config/Parallel.h"
+#endif
+#if defined(STALKER_SIMD_ENABLE) && STALKER_SIMD_ENABLE != 0 && \
+   (defined(STALKER_SIMD_AVX2_OK) || defined(STALKER_SIMD_AVX512_OK))
 #include "Config/SIMD.h"
+#endif

@@ -4,7 +4,7 @@
 #include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDBase.h>
 #include <Stalker/Memory/SIMD/MemoryOperationsSIMDAVX512.h>
 
-namespace Stalker::Mathematics::SIMD {
+namespace Stalker::Mathematics {
 
 template<>
 struct MathOperationsSIMD<double, T_SIMD::AVX512>
@@ -437,5 +437,5 @@ private:
 
 
 
-} // namespace Stalker::Mathematics::SIMD
+} // namespace Stalker::Mathematics
 

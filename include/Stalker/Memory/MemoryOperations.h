@@ -1,17 +1,25 @@
 #pragma once
 
 #include <Stalker/Core/Traits/ExecutionTraits.h>
-#include <Stalker/Threading/ThreadOperations.h>
 #include <Stalker/Memory/MemoryOperationsClassic.h>
 #include <Stalker/Memory/MemoryOperationsMeta.h>
+#if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
+#include <Stalker/Threading/ThreadOperations.h>
+#endif
+#if defined(STALKER_SIMD_ENABLE) && STALKER_SIMD_ENABLE == 1 && defined(STALKER_SIMD_AVX2_OK)
 #include <Stalker/Memory/SIMD/MemoryOperationsSIMDAVX2.h>
+#endif
+#if defined(STALKER_SIMD_ENABLE) && STALKER_SIMD_ENABLE == 1 && defined(STALKER_SIMD_AVX512_OK)
 #include <Stalker/Memory/SIMD/MemoryOperationsSIMDAVX512.h>
+#endif
 
 namespace Stalker::Memory {
     
     using namespace Stalker::Core;
-    using namespace Stalker::Memory::SIMD;
+    using namespace Stalker::Memory;
+    #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
     using namespace Stalker::Threading;
+    #endif
 
     class MemoryOperations {
 
@@ -22,15 +30,22 @@ namespace Stalker::Memory {
             OperationExecutor<T_Operation::Copy, Trait, T>::call(size, destination, source);
         }
 
+        template<typename T, typename Trait = DefaultExecutionTrait>
+        constexpr inline static void setValue(size_t size, T* __restrict data, T value){
+            OperationExecutor<T_Operation::SetValue, Trait, T>::call(size, data, value);
+        }
+        
+        template<typename T, typename Trait = DefaultExecutionTrait>
+        constexpr inline static void setZero(size_t size, T* __restrict data){
+            OperationExecutor<T_Operation::SetZero, Trait, T>::call(size, data);
+        }
+        
+        #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
+
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
         constexpr inline static void copy(const ThreadTrait& threadTrait, size_t n, T* destination, const T* source) {
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Binary>;
             Launcher::call(threadTrait, OperationExecutor<T_Operation::Copy, Trait, T>(), n, destination, source);
-        }
-
-        template<typename T, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void setValue(size_t size, T* __restrict data, T value){
-            OperationExecutor<T_Operation::SetValue, Trait, T>::call(size, data, value);
         }
 
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
@@ -38,19 +53,17 @@ namespace Stalker::Memory {
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Unary>;
             Launcher::call(threadTrait, OperationExecutor<T_Operation::SetValue, Trait, T>(), size, data, value);
         }
-
-        template<typename T, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void setZero(size_t size, T* __restrict data){
-            OperationExecutor<T_Operation::SetZero, Trait, T>::call(size, data);
-        }
-
+        
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
         constexpr inline static void setZero(const ThreadTrait& threadTrait, size_t size, T* data) {
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Unary>;
             Launcher::call(threadTrait, OperationExecutor<T_Operation::SetZero, Trait, T>(), size, data);
         }
-    
-    private:
+
+        #endif
+        
+        private:
+
         enum class T_Operation {
             Copy,
             SetValue,
@@ -76,7 +89,7 @@ namespace Stalker::Memory {
             template<typename... Args>
             constexpr inline static void call(Args&&... args) {
                 
-                if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDEnabled())
+                if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
                     MemoryOperationsSIMD<T, Trait::SIMDArch>::template copy<Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
                     MemoryOperationsMeta::copy<T, Trait::Unroll>(std::forward<Args>(args)...);
@@ -93,7 +106,7 @@ namespace Stalker::Memory {
             template<typename... Args>
             constexpr inline static void call(Args&&... args) {
                 
-                if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDEnabled())
+                if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
                     MemoryOperationsSIMD<T, Trait::SIMDArch>::template setValue<Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
                     MemoryOperationsMeta::setValue<T, Trait::Unroll>(std::forward<Args>(args)...);
@@ -110,7 +123,7 @@ namespace Stalker::Memory {
             template<typename... Args>
             constexpr inline static void call(Args&&... args) {
                 
-                if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDEnabled())
+                if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
                     MemoryOperationsSIMD<T, Trait::SIMDArch>::template setZero<Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
                     MemoryOperationsMeta::setZero<T, Trait::Unroll>(std::forward<Args>(args)...);

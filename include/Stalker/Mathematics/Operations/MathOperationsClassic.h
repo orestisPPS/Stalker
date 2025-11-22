@@ -187,8 +187,6 @@ public:
         }
         return minIdx;
     }
-
-    
 };
 
 struct Norms {
@@ -215,7 +213,6 @@ struct Norms {
             maxVal = std::max(maxVal, std::abs(data[i]));
         return maxVal;
     }
-
 };
 
 } // namespace Stalker::Mathematics

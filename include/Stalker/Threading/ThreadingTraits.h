@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <Stalker/Core/Config/Parallel.h>
 
 namespace Stalker::Threading
@@ -46,9 +47,8 @@ namespace Stalker::Threading
 
         size_t _loopBlockSize;
     };
-
-    #if defined(STALKER_THREADING_SUPPORT_PTHREAD) && STALKER_THREADING_SUPPORT_PTHREAD != 0
     
+    #if defined(STALKER_THREADING_POSIX_ENABLE) && STALKER_THREADING_POSIX_ENABLE != 0
     struct ThreadTraitPThread : public ThreadTraitBase<ThreadType::PThread, ThreadTraitPThread> {
         using Base = ThreadTraitBase<ThreadType::PThread, ThreadTraitPThread>;
 
@@ -66,6 +66,7 @@ namespace Stalker::Threading
     };
     #endif
 
+    #if defined(STALKER_THREADING_STD_ENABLE) && STALKER_THREADING_STD_ENABLE != 0
     struct ThreadTraitSTDThread : public ThreadTraitBase<ThreadType::STDThread, ThreadTraitSTDThread> {
         using Base = ThreadTraitBase<ThreadType::STDThread, ThreadTraitSTDThread>;
         
@@ -77,10 +78,10 @@ namespace Stalker::Threading
         friend Base;
 
         static size_t _maxNumThreads() {
-
             return std::thread::hardware_concurrency();
         }
     };
+    #endif
 
     struct ThreadTraitNone : public ThreadTraitBase<ThreadType::None, ThreadTraitNone> {
         using Base = ThreadTraitBase<ThreadType::None, ThreadTraitNone>;
@@ -90,7 +91,7 @@ namespace Stalker::Threading
     protected:
         friend Base;
         static size_t _maxNumThreads() {
-            return 1; // Single-threaded fallback
+            return 1;
         }
     };  
 
