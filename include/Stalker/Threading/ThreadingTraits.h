@@ -24,7 +24,9 @@ namespace Stalker::Threading
         }
 
         inline void setNumThreads(size_t numThreads) {
-            if (numThreads == 0 || numThreads > Child::_maxNumThreads())
+            if (numThreads == 0)
+                numThreads = 1;
+            else if (numThreads > Child::_maxNumThreads())
                 _numThreads = Child::_maxNumThreads();
             else
                 _numThreads = numThreads;
@@ -35,16 +37,25 @@ namespace Stalker::Threading
         }
 
         inline void setLoopBlockSize(size_t loopBlockSize) {
-            _loopBlockSize = loopBlockSize;
+            if (loopBlockSize == 0)
+                _loopBlockSize = 1;
+            else
+                _loopBlockSize = loopBlockSize;
         }
         
     protected:
-        explicit ThreadTraitBase(size_t numThreads)
-            : _numThreads((numThreads == 0 || numThreads > Child::_maxNumThreads()) ? Child::_maxNumThreads() : numThreads) {
+
+        ThreadTraitBase(size_t numThreads) {
+            if (numThreads == 0)
+                numThreads = 1;
+            else if (numThreads > Child::_maxNumThreads())
+                _numThreads = Child::_maxNumThreads();
+            else
+                _numThreads = numThreads;
+            _loopBlockSize = 1;
         }
 
         size_t _numThreads;
-
         size_t _loopBlockSize;
     };
     
@@ -52,17 +63,17 @@ namespace Stalker::Threading
     struct ThreadTraitPThread : public ThreadTraitBase<ThreadType::PThread, ThreadTraitPThread> {
         using Base = ThreadTraitBase<ThreadType::PThread, ThreadTraitPThread>;
 
-        explicit ThreadTraitPThread(size_t numThreads = DefaultNumThreads()) : Base(numThreads) {}
+        ThreadTraitPThread(size_t numThreads = DefaultNumThreads() = 1) : Base(numThreads) {}
 
-        static constexpr ThreadType _Type = ThreadType::PThread;
+        protected:
 
-    protected:
         friend Base;
+        
+        static constexpr ThreadType _Type = ThreadType::PThread;
 
         static size_t _maxNumThreads() {
             return 2;
         }
-
     };
     #endif
 
@@ -72,28 +83,15 @@ namespace Stalker::Threading
         
         explicit ThreadTraitSTDThread(size_t numThreads = DefaultNumThreads()) : Base(numThreads) {}
         
-        static constexpr ThreadType _Type = ThreadType::STDThread;
-    
-    protected:
+        protected:
+
         friend Base;
+        
+        static constexpr ThreadType _Type = ThreadType::STDThread;
 
         static size_t _maxNumThreads() {
             return std::thread::hardware_concurrency();
         }
     };
     #endif
-
-    struct ThreadTraitNone : public ThreadTraitBase<ThreadType::None, ThreadTraitNone> {
-        using Base = ThreadTraitBase<ThreadType::None, ThreadTraitNone>;
-        using ThreadT = void; // No threading support
-        explicit ThreadTraitNone(size_t numThreads = DefaultNumThreads()) : Base(numThreads) {}
-        static constexpr ThreadType _Type = ThreadType::None;
-    protected:
-        friend Base;
-        static size_t _maxNumThreads() {
-            return 1;
-        }
-    };  
-
-    
 } // namespace Stalker::Threading

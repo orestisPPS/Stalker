@@ -6,6 +6,7 @@
 
 #include <cmath>
 #include <vector>
+#include <atomic>
 #include <Stalker/Threading/ThreadingTraits.h>
 
 namespace Stalker::Threading {
@@ -22,13 +23,26 @@ namespace Stalker::Threading {
 
         template<typename JobT, typename... Args>
         inline static auto call(const ThreadTrait& trait, JobT&& job, size_t size, Args&&... args) {
+            if (size == 0) {
+                if constexpr (_isReduced()) return T{};
+                else return;
+            }
+
             const size_t numThreads = trait.getNumThreads();
-            const size_t blockSize  = (size + numThreads - 1) / numThreads;
-            PlatformThread threads[numThreads];
-            T reducedResult[_isReduced() ? numThreads : 1];
+            const size_t loopBlockSize = trait.getLoopBlockSize();
+            
+            size_t blockSize = (size + numThreads - 1) / numThreads;
+            if (loopBlockSize > 1) {
+                size_t rem = blockSize % loopBlockSize;
+                if (rem != 0) blockSize += (loopBlockSize - rem);
+            }
 
+            const size_t effectiveThreads = (size + blockSize - 1) / blockSize;
+            
+            PlatformThread threads[effectiveThreads];
+            T reducedResult[_isReduced() ? effectiveThreads : 1];
 
-            for (size_t iThread = 0; iThread < numThreads; ++iThread) {
+            for (size_t iThread = 0; iThread < effectiveThreads; ++iThread) {
                 threads[iThread] = PlatformThread([&, iThread]() {
                     size_t start = iThread * blockSize;
                     size_t end = std::min(start + blockSize, size);
@@ -40,8 +54,16 @@ namespace Stalker::Threading {
                     }
                 });
             }
-            for (auto& thread : threads)
-                if (thread.joinable()) thread.join();
+            for (size_t i = 0; i < effectiveThreads; ++i)
+                if (threads[i].joinable()) threads[i].join();
+
+            if constexpr (_isReduced()) {
+                T finalResult = reducedResult[0];
+                for (size_t i = 1; i < effectiveThreads; ++i) {
+                    finalResult += reducedResult[i];
+                }
+                return finalResult;
+            }
         }
 
     private:

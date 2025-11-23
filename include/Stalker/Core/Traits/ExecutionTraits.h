@@ -1,6 +1,13 @@
 #pragma once
+#if defined(STALKER_SIMD_AVX2_OK)
+#include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDAVX2.h>
+#endif
+#if defined(STALKER_SIMD_AVX512_OK)
+#include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDAVX512.h>
+#endif
+#if (!defined(STALKER_SIMD_AVX2_OK) && !defined(STALKER_SIMD_AVX512_OK))
 #include <Stalker/Core/Config/LoopUnrolling.h>
-#include <Stalker/Core/Config/SIMD.h>
+#endif
 
 namespace Stalker::Core {
 
@@ -16,7 +23,12 @@ namespace Stalker::Core {
 
     template <typename Child>
     struct ExecutionTrait {
-        static constexpr T_ExecTrait Type = Child::Type;
+        static constexpr T_ExecTrait Type = Child::_Type();
+
+        template <typename T>
+        static constexpr size_t BlockSize(){
+            return Child::template _BlockSize<T>();
+        }
 
     protected:
         inline Child& child() { return *static_cast<Child*>(this); }
@@ -25,15 +37,35 @@ namespace Stalker::Core {
 
     template <bool EnableSTD = true>
     struct ExecutionTraitClassic : public ExecutionTrait<ExecutionTraitClassic<EnableSTD>> {
-        static constexpr T_ExecTrait Type   = T_ExecTrait::Classic;
-        /// Use std algorithm if applicable
         static constexpr bool IsSTD = EnableSTD;
+
+    protected:
+        friend ExecutionTrait<ExecutionTraitClassic<EnableSTD>>;
+
+        static constexpr T_ExecTrait _Type() {
+            return T_ExecTrait::Classic;
+        }
+
+        template <typename T>
+        static constexpr size_t _BlockSize(){
+            return 1;
+        }
     };
 
     template <size_t UnrollFactor = DefaultUnroll()>
     struct ExecutionTraitUnrolled : public ExecutionTrait<ExecutionTraitUnrolled<UnrollFactor>>{
-        static constexpr size_t      Unroll = UnrollFactor;
-        static constexpr T_ExecTrait Type   = T_ExecTrait::Unrolled;
+        static constexpr size_t Unroll = UnrollFactor;
+    protected:
+        friend ExecutionTrait<ExecutionTraitUnrolled<UnrollFactor>>;
+
+        static constexpr T_ExecTrait _Type() {
+            return T_ExecTrait::Unrolled;
+        }
+
+        template <typename T>
+        static constexpr size_t _BlockSize(){
+            return Unroll;
+        }
     };
 
     template< T_SIMD SIMDT = DefaultSIMDType(),
@@ -41,9 +73,21 @@ namespace Stalker::Core {
               T_SIMDStore  SIMDStoreT = DefaultSIMDStore() >
     struct ExecutionTraitSIMD : public ExecutionTrait<ExecutionTraitSIMD<SIMDT, UnrollFactor, SIMDStoreT>> {
         static constexpr size_t      Unroll      = UnrollFactor;
-        static constexpr T_ExecTrait Type        = T_ExecTrait::SIMD;
         static constexpr T_SIMD      SIMDArch    = SIMDT;  
         static constexpr T_SIMDStore StorePolicy = SIMDStoreT;
+
+    protected:
+
+        friend ExecutionTrait<ExecutionTraitSIMD<SIMDT, UnrollFactor, SIMDStoreT>>;
+
+        static constexpr T_ExecTrait _Type() {
+            return T_ExecTrait::SIMD;
+        }
+        
+        template <typename T>
+        static constexpr size_t _BlockSize(){
+            return TypeTraitsSIMD<T, SIMDArch>::RegisterSize() * Unroll;
+        }
     };
 
 

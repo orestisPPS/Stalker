@@ -5,10 +5,10 @@
 #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
 #include <Stalker/Threading/ThreadOperations.h>
 #endif
-#if defined(STALKER_SIMD_ENABLE) && STALKER_SIMD_ENABLE == 1 && defined(STALKER_SIMD_AVX2_OK)
+#if defined(STALKER_SIMD_AVX2_OK)
 #include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDAVX2.h>
 #endif
-#if defined(STALKER_SIMD_ENABLE) && STALKER_SIMD_ENABLE == 1 && defined(STALKER_SIMD_AVX512_OK)
+#if defined(STALKER_SIMD_AVX512_OK)
 #include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDAVX512.h>
 #endif
 
@@ -90,76 +90,89 @@ namespace Stalker::Mathematics {
         #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
 
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void add(const ThreadTrait& threadTrait, size_t n, const T* a, const T* b, T* result) {
+        constexpr inline static void add(ThreadTrait& threadTrait, size_t n, const T* a, const T* b, T* result) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Binary>;
             Launcher::call(threadTrait, Dispatcher<T_Operation::Add, T, Trait>(), n, a, b, result);
         }
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void add(const ThreadTrait& threadTrait, size_t n, const T* a, const T* b, T* result, T scalarA, T scalarB) {
+        constexpr inline static void add(ThreadTrait& threadTrait, size_t n, const T* a, const T* b, T* result, T scalarA, T scalarB) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Binary>;
             Launcher::call(threadTrait, Dispatcher<T_Operation::Add, T, Trait>(), n, a, b, result, scalarA, scalarB);
         }
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void axpy(const ThreadTrait& threadTrait, size_t n, const T* a, const T* b, T* result, T scalar) {
+        constexpr inline static void axpy(ThreadTrait& threadTrait, size_t n, const T* a, const T* b, T* result, T scalar) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Binary>;
             Launcher::call(threadTrait, Dispatcher<T_Operation::Axpy, T, Trait>(), n, a, b, result, scalar);
         }
 
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void subtract(const ThreadTrait& threadTrait, size_t n, const T* a, const T* b, T* result, T scalarA, T scalarB) {
+        constexpr inline static void subtract(ThreadTrait& threadTrait, size_t n, const T* a, const T* b, T* result, T scalarA, T scalarB) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Binary>;
             Launcher::call(threadTrait, Dispatcher<T_Operation::Subtract, T, Trait>(), n, a, b, result, scalarA, scalarB);
         }
 
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void subtract(const ThreadTrait& threadTrait, size_t n, const T* a, const T* b, T* result) {
+        constexpr inline static void subtract(ThreadTrait& threadTrait, size_t n, const T* a, const T* b, T* result) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Binary>;
             Launcher::call(threadTrait, Dispatcher<T_Operation::Subtract, T, Trait>(), n, a, b, result);
         }
                 
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void multiply(const ThreadTrait& threadTrait, size_t n, const T* a, const T* b, T* result) {
+        constexpr inline static void multiply(ThreadTrait& threadTrait, size_t n, const T* a, const T* b, T* result) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Binary>;
             Launcher::call(threadTrait, Dispatcher<T_Operation::Multiply, T, Trait>(), n, a, b, result);
         }
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void multiply(const ThreadTrait& threadTrait, size_t n, const T* a, const T* b, T* result, T scalarA, T scalarB) {
+        constexpr inline static void multiply(ThreadTrait& threadTrait, size_t n, const T* a, const T* b, T* result, T scalarA, T scalarB) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Binary>;
             Launcher::call(threadTrait, Dispatcher<T_Operation::Multiply, T, Trait>(), n, a, b, result, scalarA, scalarB);
         }
 
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void scale(const ThreadTrait& threadTrait, size_t n, const T* data, T* result, T scalar) {
+        constexpr inline static void scale(ThreadTrait& threadTrait, size_t n, const T* data, T* result, T scalar) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Unary>;
             Launcher::call(threadTrait, Dispatcher<T_Operation::Scale, T, Trait>(), n, data, result, scalar);
         }
 
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void scale(const ThreadTrait& threadTrait, size_t n, T* data, T scalar) {
+        constexpr inline static void scale(ThreadTrait& threadTrait, size_t n, T* data, T scalar) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Unary>;
             Launcher::call(threadTrait, Dispatcher<T_Operation::Scale, T, Trait>(), n, data, scalar);
         }
 
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void addConstant(const ThreadTrait& threadTrait, size_t n, const T* data, T* result, T constant) {
+        constexpr inline static void addConstant(ThreadTrait& threadTrait, size_t n, const T* data, T* result, T constant) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Unary>;
             Launcher::call(threadTrait, Dispatcher<T_Operation::AddConstant, T, Trait>(), n, data, result, constant);
         }
 
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void addConstant(const ThreadTrait& threadTrait, size_t n, T* data, T constant) {
+        constexpr inline static void addConstant(ThreadTrait& threadTrait, size_t n, T* data, T constant) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Unary>;
             Launcher::call(threadTrait, Dispatcher<T_Operation::AddConstant, T, Trait>(), n, data, constant);
         }
 
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static T sum(const ThreadTrait& threadTrait, size_t n, const T* __restrict data) {
+        constexpr inline static T sum(ThreadTrait& threadTrait, size_t n, const T* __restrict data) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::UnaryReduced>;
             return Launcher::call(threadTrait, Dispatcher<T_Operation::Sum, T, Trait>(), n, data);
         }
 
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static T dot(const ThreadTrait& threadTrait, size_t n, const T* __restrict a, const T* __restrict b) {
+        constexpr inline static T dot(ThreadTrait& threadTrait, size_t n, const T* __restrict a, const T* __restrict b) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::BinaryReduced>;
             return Launcher::call(threadTrait, Dispatcher<T_Operation::DotProduct, T, Trait>(), n, a, b);
         }

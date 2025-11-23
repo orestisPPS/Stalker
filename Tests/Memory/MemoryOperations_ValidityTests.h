@@ -12,7 +12,6 @@
 namespace STLKR_Tests {
 
     using namespace Stalker::Memory;
-    using namespace Stalker::Memory;
     
     class MemoryOperations_ValidityTests : public STLKR_TestBase {
     public:

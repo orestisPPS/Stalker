@@ -6,10 +6,10 @@
 #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
 #include <Stalker/Threading/ThreadOperations.h>
 #endif
-#if defined(STALKER_SIMD_ENABLE) && STALKER_SIMD_ENABLE == 1 && defined(STALKER_SIMD_AVX2_OK)
+#if defined(STALKER_SIMD_AVX2_OK)
 #include <Stalker/Memory/SIMD/MemoryOperationsSIMDAVX2.h>
 #endif
-#if defined(STALKER_SIMD_ENABLE) && STALKER_SIMD_ENABLE == 1 && defined(STALKER_SIMD_AVX512_OK)
+#if defined(STALKER_SIMD_AVX512_OK)
 #include <Stalker/Memory/SIMD/MemoryOperationsSIMDAVX512.h>
 #endif
 
@@ -39,23 +39,26 @@ namespace Stalker::Memory {
         constexpr inline static void setZero(size_t size, T* __restrict data){
             OperationExecutor<T_Operation::SetZero, Trait, T>::call(size, data);
         }
-        
+
         #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
 
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void copy(const ThreadTrait& threadTrait, size_t n, T* destination, const T* source) {
+        constexpr inline static void copy(ThreadTrait& threadTrait, size_t n, T* destination, const T* source) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Binary>;
             Launcher::call(threadTrait, OperationExecutor<T_Operation::Copy, Trait, T>(), n, destination, source);
         }
 
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void setValue(const ThreadTrait& threadTrait, size_t size, T* data, T value) {
+        constexpr inline static void setValue(ThreadTrait& threadTrait, size_t size, T* data, T value) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Unary>;
             Launcher::call(threadTrait, OperationExecutor<T_Operation::SetValue, Trait, T>(), size, data, value);
         }
         
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void setZero(const ThreadTrait& threadTrait, size_t size, T* data) {
+        constexpr inline static void setZero(ThreadTrait& threadTrait, size_t size, T* data) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Unary>;
             Launcher::call(threadTrait, OperationExecutor<T_Operation::SetZero, Trait, T>(), size, data);
         }
@@ -77,7 +80,6 @@ namespace Stalker::Memory {
             constexpr inline static auto call(Args&&... args) {
                 Child::call(std::forward<Args>(args)...);
             }
-
         };
 
         template<T_Operation OperationT, typename Trait, typename T> struct OperationExecutor;
@@ -96,7 +98,6 @@ namespace Stalker::Memory {
                 else if constexpr (Trait::Type == T_ExecTrait::Classic)
                     MemoryOperationsClassic::copy<T, Trait::IsSTD>(std::forward<Args>(args)...);
             }
-
         };
 
         template<typename Trait, typename T>
@@ -113,7 +114,6 @@ namespace Stalker::Memory {
                 else if constexpr (Trait::Type == T_ExecTrait::Classic)
                     MemoryOperationsClassic::setValue<T, Trait::IsSTD>(std::forward<Args>(args)...);
             }
-
         };
 
         template<typename Trait, typename T>

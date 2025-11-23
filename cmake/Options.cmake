@@ -28,7 +28,9 @@ set(STALKER_UNROLL_FACTOR 1 CACHE STRING "Loop unroll factor for meta/classic ex
 # Threading options
 option(STALKER_THREADING_ENABLE "Enable parallel (multi-threaded) execution of operations." ON)
 option(STALKER_THREADING_MAX_THREADS_ENABLE "Use all available hardware threads (overrides manual count)." OFF)
-set(STALKER_THREADING_NUM_THREADS 0 CACHE STRING "Thread count; 0 auto-detects logical CPUs (respecting SMT setting)." FORCE)
+if(NOT DEFINED STALKER_THREADING_NUM_THREADS)
+	set(STALKER_THREADING_NUM_THREADS 0 CACHE STRING "Thread count; 0 auto-detects logical CPUs (respecting SMT setting).")
+endif()
 option(STALKER_THREADING_STD_ENABLE "Use std::thread backend (portable)." ON)
 option(STALKER_THREADING_POSIX_ENABLE "Use pthread backend (Linux only) for affinity control." OFF)
 option(STALKER_THREADING_POSIX_SMT_ENABLE "Enable SMT (hyperthread siblings) with pthread backend." OFF)
