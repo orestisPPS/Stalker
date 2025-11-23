@@ -15,7 +15,7 @@ namespace Stalker::Threading
 
         static constexpr ThreadType Type = Child::_Type;
 
-        static const size_t maxNumThreads() {
+        static size_t maxNumThreads() {
             return Child::_maxNumThreads();
         }
 

@@ -27,12 +27,13 @@ public:
         _populate();
         setAvailableCores(1);
     }
-    explicit CPU_Manager(unsigned availableCores, bool enableHyperthreading = false) {
+    explicit CPU_Manager(unsigned availableCores) {
         _affinityConfig = SingleThread_CoreSet;
         _activeSets = std::list<cpu_set_t *>();
         _cpu = new CPU();
         _populate();
         setAvailableCores(availableCores);
+        
     }
     
     ~CPU_Manager() {
@@ -44,7 +45,7 @@ public:
         bool htEnabled = false;
         if (_affinityConfig == HT_CoreSet || _affinityConfig == HT_PoolSet) htEnabled = true;
         else if (_affinityConfig == SingleThread_PoolSet ||_affinityConfig == SingleThread_CoreSet) htEnabled = false;
-        auto iCore = -1;
+        size_t iCore = -1;
         for (const auto &core : _htCorePool) {
             if (++iCore < _availableCores && core.second) {
                 core.first->addThreadsToPool(threadPool, htEnabled);
@@ -79,7 +80,7 @@ public:
             if (numCores > pool.size()) throw std::invalid_argument("Not Sufficient Cores");
             auto cores = std::vector<Core*>();
             cores.reserve(numCores);
-            auto iCore = -1;
+            size_t iCore = -1;
             for (const auto &core : pool) {
                 if (++iCore < numCores && core.second) {
                     cores.push_back(core.first);

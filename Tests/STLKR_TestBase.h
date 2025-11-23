@@ -30,7 +30,7 @@ namespace STLKR_Tests {
     public:
 
         explicit STLKR_TestBase(std::string testName)
-            : _testName(testName), _manager(CPU_Manager()), _logs(Logs(testName)) 
+            : _manager(CPU_Manager()), _logs(Logs(testName)), _testName(testName) 
         {
             auto fullPath = std::filesystem::absolute(std::filesystem::path(__FILE__));
             auto basePath = fullPath.parent_path().parent_path();

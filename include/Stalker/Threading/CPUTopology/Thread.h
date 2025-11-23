@@ -6,7 +6,6 @@
 #define STALKER_THREAD_H
 
 #include "Cache.h"
-#include "../ThreadJob.h"
 #include <pthread.h>
 #include <cassert>
 
@@ -43,16 +42,16 @@ public:
 
     template<typename threadJob>
     void executeJob(threadJob job, unsigned startIndex, unsigned endIndex, unsigned L0CacheSize = 0) {
-        auto jobArgs = new JobArgs<threadJob>{job, startIndex, endIndex, L0CacheSize};
-        pthread_create(&_pThread, nullptr, jobWrapper<threadJob>, jobArgs);
-        assert(pthread_setaffinity_np(_pThread, sizeof(cpu_set_t), _cpuSet) == 0);
+        // auto jobArgs = new JobArgs<threadJob>{job, startIndex, endIndex, L0CacheSize};
+        // pthread_create(&_pThread, nullptr, jobWrapper<threadJob>, jobArgs);
+        // assert(pthread_setaffinity_np(_pThread, sizeof(cpu_set_t), _cpuSet) == 0);
     }
 
     template<typename threadJob, typename T>
     void executeJobWithReduction(threadJob job, unsigned startIndex, unsigned endIndex, T *result, unsigned L0CacheSize = 0) {
-        auto jobArgs = new ReducedJobArgs<threadJob, T>{job, startIndex, endIndex, result, L0CacheSize};
-        pthread_create(&_pThread, nullptr, reducedJobWrapper<threadJob, T>, jobArgs);
-        assert(pthread_setaffinity_np(_pThread, sizeof(cpu_set_t), _cpuSet) == 0);
+        // auto jobArgs = new ReducedJobArgs<threadJob, T>{job, startIndex, endIndex, result, L0CacheSize};
+        // pthread_create(&_pThread, nullptr, reducedJobWrapper<threadJob, T>, jobArgs);
+        // assert(pthread_setaffinity_np(_pThread, sizeof(cpu_set_t), _cpuSet) == 0);
     }
 
 

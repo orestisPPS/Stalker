@@ -30,7 +30,6 @@ namespace Stalker::Threading {
 
             const size_t numThreads = trait.getNumThreads();
             const size_t loopBlockSize = trait.getLoopBlockSize();
-            
             size_t blockSize = (size + numThreads - 1) / numThreads;
             if (loopBlockSize > 1) {
                 size_t rem = blockSize % loopBlockSize;
@@ -39,8 +38,8 @@ namespace Stalker::Threading {
 
             const size_t effectiveThreads = (size + blockSize - 1) / blockSize;
             
-            PlatformThread threads[effectiveThreads];
-            T reducedResult[_isReduced() ? effectiveThreads : 1];
+            std::vector<PlatformThread> threads(effectiveThreads);
+            std::vector<T> reducedResult(_isReduced() ? effectiveThreads : 1);
 
             for (size_t iThread = 0; iThread < effectiveThreads; ++iThread) {
                 threads[iThread] = PlatformThread([&, iThread]() {

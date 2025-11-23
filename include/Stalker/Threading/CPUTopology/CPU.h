@@ -27,7 +27,7 @@ namespace Stalker::Threading {
 class CPU {
 
 public:
-    explicit CPU(std::string cpuPath = "/sys/devices/system/cpu/") :_cpuPath("/sys/devices/system/cpu/") {
+    explicit CPU(std::string cpuPath = "/sys/devices/system/cpu/") :_cpuPath(std::move(cpuPath)) {
         _readMachineTopology();
     }
     
@@ -94,7 +94,7 @@ public:
 
         std::cout << "\n";
     }
-    const std::vector<Core*> &getCores(unsigned numCores = 0) const { return _physicalCores; }
+    const std::vector<Core*> &getCores() const { return _physicalCores; }
     
     const std::vector<Thread *> &getThreads() const { return _threads; }
     
@@ -120,7 +120,6 @@ private:
     //Reader functions
     //------------------------------------------------------------------
     inline void _readMachineTopology() {
-        auto start = std::chrono::high_resolution_clock::now();
         unsigned int size_kb = 0, coreTopologyId = 0;
         std::string type, shared_cpus_str;
 
@@ -181,9 +180,6 @@ private:
         std::sort(_physicalCores.begin(), _physicalCores.end(), [](const Core* a, const Core* b) {
             return a->getId() < b->getId();
         });
-        auto end = std::chrono::high_resolution_clock::now();
-        // std::cout << "Time to read the machine cores: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " μs" << std::endl;
-        // std::cout << "Cache info read successfully!" << std::endl;
     }
     
 

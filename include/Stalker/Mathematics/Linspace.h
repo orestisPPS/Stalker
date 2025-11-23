@@ -52,22 +52,26 @@ static inline std::vector<double> linspace(StartType start, EndType stop, int nu
     return result;
 }
 
-template <size_t Num = 50, typename StartType, typename EndType>
-constexpr std::array<double, Num> linspace(StartType start, EndType end, bool endpoint = true) {
-    static_assert(Num > 0, "N must be greater than 0");
-
-    return []<size_t... IndexSequence>(StartType s, EndType e, bool ep, std::index_sequence<IndexSequence...>) {
-        std::array<double, Num> result{};
-        if constexpr (Num == 1) {
+namespace Detail {
+    template <typename StartType, typename EndType, size_t... I>
+    constexpr std::array<double, sizeof...(I)> linspace_impl(StartType s, EndType e, bool ep, std::index_sequence<I...>) {
+        constexpr size_t N = sizeof...(I);
+        std::array<double, N> result{};
+        if constexpr (N == 1) {
             result[0] = s;
         } else {
-            const double denom = ep ? (Num - 1) : Num;
+            const double denom = ep ? (N - 1) : N;
             const double step  = (e - s) / denom;
-            ((result[IndexSequence] = s + IndexSequence * step), ...);
+            ((result[I] = s + I * step), ...);
         }
         return result;
     }
-    (start, end, endpoint, std::make_index_sequence<Num>{});
+}
+
+template <size_t Num = 50, typename StartType, typename EndType>
+constexpr std::array<double, Num> linspace(StartType start, EndType end, bool endpoint = true) {
+    static_assert(Num > 0, "N must be greater than 0");
+    return Detail::linspace_impl(start, end, endpoint, std::make_index_sequence<Num>{});
 }
 
 } // namespace Stalker::Mathematics

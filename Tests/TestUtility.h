@@ -75,7 +75,7 @@ static bool compareDoubles(double computed, double expected, const std::string& 
 template <typename T>
 static bool compareVectors(const T* computed, const T* expected, size_t size, const std::string& message, double tolerance = 1e-9) {
     auto failedIndeces = std::vector<int>();
-    for (int i = 0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
         bool success;
         if constexpr (std::is_floating_point<T>::value) {
             auto absDiff = std::fabs(computed[i] - expected[i]);
@@ -141,33 +141,33 @@ template <typename T>
 
         TestUtility::printConditionalSuccess(testSuccess, message, colour);
 
-        // if (!testSuccess || printSuccess) {
-        //     auto original_precision = std::cout.precision();
-        //     auto original_flags = std::cout.flags();
+        if (!testSuccess || printSuccess) {
+            auto original_precision = std::cout.precision();
+            auto original_flags = std::cout.flags();
 
-        //     if constexpr (std::is_floating_point<T>::value) {
-        //     std::cout << std::fixed << std::setprecision(6);
-        //     }
+            if constexpr (std::is_floating_point<T>::value) {
+            std::cout << std::fixed << std::setprecision(6);
+            }
 
-        //     std::cout << std::setw(columnWidth) << "Indices: ";
-        //     for (std::size_t i = 0; i < size; ++i)
-        //     std::cout << std::setw(columnWidth) << i;
-        //     std::cout << std::endl;
+            std::cout << std::setw(columnWidth) << "Indices: ";
+            for (std::size_t i = 0; i < size; ++i)
+            std::cout << std::setw(columnWidth) << i;
+            std::cout << std::endl;
 
-        //     std::cout << std::setw(columnWidth) << "Computed: ";
-        //     for (std::size_t i = 0; i < size; ++i)
-        //     std::cout << std::setw(columnWidth) << computed[i];
-        //     std::cout << std::endl;
+            std::cout << std::setw(columnWidth) << "Computed: ";
+            for (std::size_t i = 0; i < size; ++i)
+            std::cout << std::setw(columnWidth) << computed[i];
+            std::cout << std::endl;
 
-        //     std::cout << std::setw(columnWidth) << "Expected: ";
-        //     for (std::size_t i = 0; i < size; ++i)  // Fixed to use size parameter
-        //     std::cout << std::setw(columnWidth) << expected[i];
-        //     std::cout << std::endl;
-        //     std::cout << std::string(columnWidth * (size + 1), '-') << std::endl;
+            std::cout << std::setw(columnWidth) << "Expected: ";
+            for (std::size_t i = 0; i < size; ++i)  // Fixed to use size parameter
+            std::cout << std::setw(columnWidth) << expected[i];
+            std::cout << std::endl;
+            std::cout << std::string(columnWidth * (size + 1), '-') << std::endl;
 
-        //     std::cout.precision(original_precision);
-        //     std::cout.flags(original_flags);
-        // }
+            std::cout.precision(original_precision);
+            std::cout.flags(original_flags);
+        }
     }
 
 template <typename T>

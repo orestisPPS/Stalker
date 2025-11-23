@@ -5,7 +5,7 @@ option(STALKER_BENCH_OPENBLAS_ENABLE  "Fail if OpenBLAS is missing"  ON)
 option(STALKER_BENCH_PAPI_ENABLE      "Fail if PAPI is missing"      ON)
 
 add_executable(Benchmarks ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
-target_compile_features(Benchmarks PRIVATE cxx_std_20)
+target_compile_features(Benchmarks PRIVATE cxx_std_17)
 find_package(Threads REQUIRED)
 target_link_libraries(Benchmarks PRIVATE Threads::Threads)
 
@@ -92,6 +92,19 @@ if(DEFINED STALKER_BENCH_SLAVE_THREAD_ID)
     message(FATAL_ERROR "STALKER_BENCH_SLAVE_THREAD_ID must be a non-negative integer")
   endif()
   set(_bench_slave_thread_id ${STALKER_BENCH_SLAVE_THREAD_ID})
+endif()
+
+# Threads: mirror Stalker core thread count for Eigen/BLAS usage in benchmarks
+set(_bench_num_threads 1)
+if(DEFINED STALKER_THREADING_NUM_THREADS)
+  if(NOT STALKER_THREADING_NUM_THREADS MATCHES "^[0-9]+$")
+    message(FATAL_ERROR "STALKER_THREADING_NUM_THREADS must be a non-negative integer (got '${STALKER_THREADING_NUM_THREADS}')")
+  endif()
+  if(STALKER_THREADING_NUM_THREADS LESS 1)
+    set(_bench_num_threads 1)
+  else()
+    set(_bench_num_threads ${STALKER_THREADING_NUM_THREADS})
+  endif()
 endif()
 
 
@@ -309,6 +322,7 @@ endforeach()
 
 # Generate header into the build dir
 set(_bench_slave_thread_id "${_bench_slave_thread_id}")
+set(_bench_num_threads "${_bench_num_threads}")
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/BenchmarkConfig.hpp.in
   ${CMAKE_CURRENT_BINARY_DIR}/BenchmarkConfig.hpp
@@ -317,9 +331,11 @@ configure_file(
 
 # Provide replacement tokens for BenchmarkConfig.hpp.in
 set(_bench_slave_thread_id ${_bench_slave_thread_id} CACHE INTERNAL "Slave thread ID for benchmarks")
+set(_bench_num_threads ${_bench_num_threads} CACHE INTERNAL "Benchmark/Eigen/BLAS thread count")
 
 # Echo affinity choice for visibility
 message(STATUS "Benchmark suite affinity core (slave_thread_id) = ${_bench_slave_thread_id}")
+message(STATUS "Benchmark library thread count (Eigen/BLAS) = ${_bench_num_threads}")
 
 # Make the generated header visible to Benchmarks
 target_include_directories(Benchmarks PRIVATE ${CMAKE_CURRENT_BINARY_DIR})

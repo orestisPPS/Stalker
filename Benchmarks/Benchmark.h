@@ -40,7 +40,7 @@ namespace fs = std::filesystem;
     protected:
 
         Benchmark(const std::string& name, const std::string& logExportPath) :
-            _name(name), _logs(name), _logExportPath(logExportPath) {
+            _name(name), _logExportPath(logExportPath), _logs(name) {
             assert(_checkDir(logExportPath));
             printTitle("Benchmark Suite: " + name, "=", T_Color::FERRARI_RED);
         }

@@ -63,7 +63,7 @@ private:
         bool result = true;
         ((result = result && _mm256_testc_pd(_mm256_load_pd(a + _registerOffset<Is>()), _mm256_load_pd(b + _registerOffset<Is>()))), ...);
         return result;
-    };
+    }
 };
 
 // Float Specialization

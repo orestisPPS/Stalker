@@ -84,7 +84,6 @@ namespace STLKR_Tests {
 
         printSubtitle("Addition " + typeToString<T>(), T_Color::BARBIE_PINK);
         auto typeName = typeToString<T>();
-        auto unit = Stalker::Core::TimeUnit::nanoseconds;
 
 
         // auto logs = _logs.
@@ -228,10 +227,6 @@ namespace STLKR_Tests {
 
         printSubtitle("Axpy " + typeToString<T>(), T_Color::BARBIE_PINK);
         auto typeName = typeToString<T>();
-        auto unit = Stalker::Core::TimeUnit::nanoseconds;
-
-
-        // auto logs = _logs.
 
         auto a = createAlignedVector<T>(_size);
         auto b = createAlignedVector<T>(_size);
@@ -487,7 +482,6 @@ namespace STLKR_Tests {
     void _testSum() {
         printSubtitle("Sum " + typeToString<T>(), T_Color::BARBIE_PINK);
         auto typeName = typeToString<T>();
-        auto unit = Stalker::Core::TimeUnit::nanoseconds;
 
         auto a = createAlignedVector<T>(_size);
         Random::uniform<T>(_size, a.data(), 0, 10);

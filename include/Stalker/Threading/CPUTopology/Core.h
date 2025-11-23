@@ -16,7 +16,7 @@ namespace Stalker::Threading {
 class Core{
 public:
     Core(unsigned id, std::vector<Thread*> threads) :
-        _id(id), _threads(std::move(threads)), _isHyperThreaded(_threads.size() > 1), _thisCoreSet({}) {}
+        _id(id), _threads(std::move(threads)), _thisCoreSet({}), _isHyperThreaded(_threads.size() > 1) {}
         
     ~Core() = default;
     
