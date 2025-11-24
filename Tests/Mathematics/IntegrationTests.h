@@ -1,5 +1,4 @@
-#ifndef INTEGRATION_VALIDITYTESTS_H
-#define INTEGRATION_VALIDITYTESTS_H
+#pragma once
 
 #include <Stalker/Mathematics/Integration/Integral.h>
 #include <Stalker/Mathematics/MetaPolynomial.h>
@@ -7,9 +6,9 @@
 namespace STLKR_Tests {
 
 
-    class Integration_ValidityTests : public STLKR_TestBase {
+    class IntegrationTests : public STLKR_TestBase {
     public:
-        explicit Integration_ValidityTests()
+        explicit IntegrationTests()
             : STLKR_TestBase("Numeric Integration Tests"){
 
             }
@@ -95,8 +94,4 @@ namespace STLKR_Tests {
         }
 
     };
-
-
 } // namespace STLKR_Tests
-
-#endif // INTEGRATION_VALIDITYTESTS_H

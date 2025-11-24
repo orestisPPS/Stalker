@@ -1,5 +1,4 @@
-#ifndef METAMATH_VALIDITYTESTS_H
-#define METAMATH_VALIDITYTESTS_H
+#pragma once
 
 #include "../STLKR_TestBase.h"
 #include <Stalker/Mathematics/Operations/MathOperationsMeta.h>
@@ -10,9 +9,9 @@
 namespace STLKR_Tests {
 
     template <typename T>
-    class MetaprogrammingMath_ValidityTests : public STLKR_TestBase {
+    class MetaMathTests : public STLKR_TestBase {
     public:
-        explicit MetaprogrammingMath_ValidityTests()
+        explicit MetaMathTests()
             : STLKR_TestBase("Template Metaprogramming Mathematics Tests"){
 
             }
@@ -231,11 +230,5 @@ namespace STLKR_Tests {
             TestUtility::compareValues<double>(result_integral2, expected_integral2, "Integral (x=1.0 to x=2.0)", 1e-9);
             // static_assert(result_integral2 == expected_integral2, "Integral (x=1.0 to x=2.0) Test Failed");
         }
-
-    private:
-
     };
 } // namespace STLKR_Tests
-
-
-#endif // METAMATH_VALIDITYTESTS_H

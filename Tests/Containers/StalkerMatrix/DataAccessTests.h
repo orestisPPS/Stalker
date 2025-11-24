@@ -1,5 +1,4 @@
-#ifndef MATRIXDATA_VALIDITYTESTS_H
-#define MATRIXDATA_VALIDITYTESTS_H
+#pragma once
 
 #include "../STLKR_TestBase.h"
 #include "../StalkerMatrix/StalkerMatrix.h"
@@ -8,9 +7,9 @@
 namespace STLKR_Tests {
 
     template <typename T>
-    class DataAccess_ValidityTests : public STLKR_TestBase {
+    class DataAccessTests : public STLKR_TestBase {
     public:
-        explicit DataAccess_ValidityTests()
+        explicit DataAccessTests()
             : STLKR_TestBase("Stalker Matrix Data Access Tests"),
               _numRows(4), _numCols(4),
               _nonSymmetricRowMajorValues{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
@@ -180,5 +179,3 @@ namespace STLKR_Tests {
         }
     };
 } // namespace STLKR_Tests
-
-#endif // MATRIXDATA_VALIDITYTESTS_H

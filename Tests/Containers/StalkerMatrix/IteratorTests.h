@@ -8,9 +8,9 @@
 
 namespace STLKR_Tests {
 
-    class MatrixBlockIteratorTest : public STLKR_TestBase {
+    class IteratorTests : public STLKR_TestBase {
     public:
-        explicit MatrixBlockIteratorTest() 
+        explicit IteratorTests() 
             : STLKR_TestBase("Matrix Block Iterator Test") {}
 
         void runTest() override {
@@ -122,11 +122,6 @@ namespace STLKR_Tests {
     TestUtility::compareValues<bool>(it >= it2, true, ">=");
 
 }
-
-
-
     };
 
 } // namespace STLKR_Tests
-
-#endif // STALKERMATRIX_ITERATOR_VALIDITYTESTS_H

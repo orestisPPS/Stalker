@@ -1,5 +1,4 @@
-#ifndef LINSPACE_VALIDITYTEST_H
-#define LINSPACE_VALIDITYTEST_H
+#pragma once
 
 #include "STLKR_TestBase.h"
 #include <Stalker/Mathematics/Linspace.h>
@@ -8,10 +7,10 @@
 #include <sys/sysinfo.h>
 namespace STLKR_Tests {
 
-class Linspace_ValidityTests : public STLKR_TestBase {
+class LinspaceTests : public STLKR_TestBase {
 public:
-    explicit Linspace_ValidityTests()
-        : STLKR_TestBase("Linspace Validity Tests") {}
+    explicit LinspaceTests()
+        : STLKR_TestBase("Linspace Tests") {}
 
     void runTest() override {
         _testRunTime();
@@ -86,5 +85,3 @@ private:
 };
 
 } // namespace STLKR_Tests
-
-#endif // LINSPACE_VALIDITYTEST_H

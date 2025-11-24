@@ -1,5 +1,4 @@
-#ifndef MATRIXBUFFERS_VALIDITYTESTS_H
-#define MATRIXBUFFERS_VALIDITYTESTS_H
+#pragma once
 
 #include "../STLKR_TestBase.h"
 #include "../../DataStructures/Buffers/FixedStridePtrBuffer.h"
@@ -8,13 +7,13 @@
 
 namespace STLKR_Tests {
 
-    class MatrixBuffers_ValidityTests : public STLKR_TestBase {
+    class FixedStridePtrBufferTests : public STLKR_TestBase {
     public:
-        explicit MatrixBuffers_ValidityTests()
-            : STLKR_TestBase("Matrix Buffer Tests") {}
+        explicit FixedStridePtrBufferTests()
+            : STLKR_TestBase("Fixed Stride Pointer Buffer Tests") {}
 
         void runTest() override {
-            std::cout << "Running Matrix Buffer Tests..." << std::endl;
+            std::cout << "Running Fixed Stride Pointer Buffer Tests..." << std::endl;
             _testAllBuffers();
         }
 
@@ -143,5 +142,3 @@ namespace STLKR_Tests {
     };
 
 } // namespace STLKR_Tests
-
-#endif // MATRIXBUFFERS_VALIDITYTESTS_H

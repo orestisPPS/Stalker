@@ -1,5 +1,4 @@
-#ifndef DIFFERENTIATION_VALIDITYTESTS_H
-#define DIFFERENTIATION_VALIDITYTESTS_H
+#pragma once
 
 #include <Stalker/Mathematics/Differentiation/Derivative.h>
 #include <Stalker/Mathematics/MetaPolynomial.h>
@@ -9,9 +8,9 @@
 namespace STLKR_Tests {
     using namespace Stalker::Mathematics::Differentiation;
 
-    class Differentiation_ValidityTests : public STLKR_TestBase {
+    class DifferentiationTests : public STLKR_TestBase {
     public:
-        explicit Differentiation_ValidityTests()
+        explicit DifferentiationTests()
             : STLKR_TestBase("Numeric Differentiation Tests"){
                 
             }
@@ -110,9 +109,4 @@ namespace STLKR_Tests {
         }
 
     };
-
-
 } // namespace STLKR_Tests
-
-
-#endif // DIFFERENTIATION_VALIDITYTESTS_H

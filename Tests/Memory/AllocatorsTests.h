@@ -15,9 +15,9 @@ namespace STLKR_Tests {
 using namespace Stalker::Memory;
 using TU = TestUtility;     // brevity
 
-class Allocators_ValidityTests : public STLKR_TestBase {
+class AllocatorsTests : public STLKR_TestBase {
 public:
-    Allocators_ValidityTests() : STLKR_TestBase("Memory Allocators Validity Tests") {}
+    AllocatorsTests() : STLKR_TestBase("Memory Allocators Validity Tests") {}
 
     /*--------------------------------------------------------------
      *  1.  Helpers

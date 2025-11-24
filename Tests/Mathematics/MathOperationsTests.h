@@ -13,10 +13,10 @@ namespace STLKR_Tests {
     using namespace Stalker::Memory;
     using namespace Stalker::Threading;
 
-    class MathOperations_ValidityTests : public STLKR_TestBase {
+    class MathOperationsTests : public STLKR_TestBase {
     public:
 
-    explicit MathOperations_ValidityTests(size_t size = 10000, double tolerance = 1e-8)  
+    explicit MathOperationsTests(size_t size = 10000, double tolerance = 1e-8)  
                 : STLKR_TestBase("MathOperations"), _size(size), _tolerance(tolerance) {
             setPath(_testName + "Logs", getPath(_testName) + "/logs/" + _testName);
             Random::setSeed(42); // Set a fixed seed for reproducibility

@@ -7,9 +7,9 @@
 
 namespace STLKR_Tests {
     
-    class TraitsSIMD_ValidityTests : public STLKR_TestBase {
+    class TypeTraitsSIMDTests : public STLKR_TestBase {
     public:
-        explicit TraitsSIMD_ValidityTests() : STLKR_TestBase("SIMD Traits Validity Tests") {
+        explicit TypeTraitsSIMDTests() : STLKR_TestBase("SIMD Traits Validity Tests") {
 
         }
 
@@ -39,9 +39,9 @@ namespace STLKR_Tests {
         template<typename T, T_SIMD, T_SIMD SimdT>
         static void _testTypeTrait(){
             if constexpr (SimdT == T_SIMD::AVX2) {
-            _testTypeTraitAVX2<T>();
+                _testTypeTraitAVX2<T>();
             } else if constexpr (SimdT == T_SIMD::AVX512) {
-            _testTypeTraitAVX512<T>();
+                _testTypeTraitAVX512<T>();
             }
         }
 

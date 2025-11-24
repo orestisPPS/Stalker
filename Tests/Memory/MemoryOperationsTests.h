@@ -1,21 +1,17 @@
 #pragma once
 
 #include "../STLKR_TestBase.h"
-#include "../TestUtility.h"
 #include <Stalker/Memory/MemoryOperations.h>
 #include <Stalker/Memory/Allocators.h>
 #include <Stalker/Mathematics/Random.h>
-#include <Stalker/Utility/Logs.h>
-
-
 
 namespace STLKR_Tests {
 
     using namespace Stalker::Memory;
     
-    class MemoryOperations_ValidityTests : public STLKR_TestBase {
+    class MemoryOperationsTests : public STLKR_TestBase {
     public:
-        explicit MemoryOperations_ValidityTests(size_t size = 1024) : STLKR_TestBase("Memory Operations Validity Tests"), _size(size) { }
+        explicit MemoryOperationsTests(size_t size = 1024) : STLKR_TestBase("Memory Operations Validity Tests"), _size(size) { }
 
         void runTest() override {
             _copy<double>();
