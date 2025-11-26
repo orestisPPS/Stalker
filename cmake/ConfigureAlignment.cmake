@@ -1,7 +1,13 @@
 # Alignment configuration separated from platform detection.
 function(stalker_alignment_init)
-    # Empty or undefined value signals auto-default to platform cache line size.
-    if(NOT DEFINED STALKER_ALIGNMENT OR STALKER_ALIGNMENT STREQUAL "")
+    if(STALKER_PLATFORM STREQUAL "ESP32")
+        if(DEFINED STALKER_ALIGNMENT AND NOT STALKER_ALIGNMENT STREQUAL "" AND NOT STALKER_ALIGNMENT STREQUAL "32")
+            message(WARNING "STALKER_ALIGNMENT overrides ignored on ESP32 (forcing 32 bytes)")
+        endif()
+        set(STALKER_ALIGNMENT 32 CACHE STRING "Data alignment in bytes" FORCE)
+        message(STATUS "STALKER_ALIGNMENT forced to 32 bytes for ESP32")
+    elseif(NOT DEFINED STALKER_ALIGNMENT OR STALKER_ALIGNMENT STREQUAL "")
+        # Empty or undefined value signals auto-default to platform cache line size.
         set(STALKER_ALIGNMENT ${STALKER_PLATFORM_CACHE_LINE_SIZE} CACHE STRING "Data alignment in bytes" FORCE)
         message(STATUS "STALKER_ALIGNMENT auto-set to cache line size = ${STALKER_ALIGNMENT} bytes")
     endif()

@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.18)
 
 # Platform / bitness / cache line size are detected (non-overridable) in DetectPlatform.cmake.
 # Provide read-only cache entries for GUI visibility; detection will overwrite these.
-set(STALKER_PLATFORM "" CACHE STRING "Detected platform (WINDOWS or LINUX). Read-only." FORCE)
+set(STALKER_PLATFORM "" CACHE STRING "Detected platform (WINDOWS, LINUX or ESP32). Read-only." FORCE)
 set(STALKER_PLATFORM_BITS "" CACHE STRING "Detected architecture bitness (64 or 32). Read-only." FORCE)
 set(STALKER_PLATFORM_CACHE_LINE_SIZE "" CACHE STRING "Detected hardware cache line size in bytes. Read-only." FORCE)
 
@@ -13,8 +13,8 @@ set(STALKER_ALIGNMENT "" CACHE STRING "Alignment (bytes) for allocations. Empty 
 
 # SIMD options
 option(STALKER_SIMD_ENABLE "Enable compile-time SIMD vectorization paths." ON)
-set(STALKER_SIMD_INSTRUCTION_SET "auto" CACHE STRING "Requested default SIMD ISA: auto, avx2, avx512, none (auto prefers AVX2)." FORCE)
-set_property(CACHE STALKER_SIMD_INSTRUCTION_SET PROPERTY STRINGS auto avx2 avx512 none)
+set(STALKER_SIMD_INSTRUCTION_SET "auto" CACHE STRING "Requested default SIMD ISA: auto, avx2, avx512, esp-dsp, none (auto prefers AVX2)." FORCE)
+set_property(CACHE STALKER_SIMD_INSTRUCTION_SET PROPERTY STRINGS auto avx2 avx512 esp-dsp none)
 set(STALKER_SIMD_STORE_POLICY "stream" CACHE STRING "SIMD store policy: stream (non-temporal) or cache (temporal)." FORCE)
 set_property(CACHE STALKER_SIMD_STORE_POLICY PROPERTY STRINGS stream cache)
 
@@ -52,5 +52,3 @@ endif()
 
 # Module selection: empty = all modules; else a semicolon list from {Core,Memory,Mathematics,Threading,Utility}
 set(STALKER_MODULES "" CACHE STRING "Semicolon list of modules to build (empty=all). Core;Memory;Utility;Containers;Mathematics;Threading" )
-
-

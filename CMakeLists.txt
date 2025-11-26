@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.18)
-project(Stalker VERSION 0.1.0 LANGUAGES CXX)
+if(NOT DEFINED ESP_PLATFORM)
+    project(Stalker VERSION 0.1.0 LANGUAGES CXX)
+endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,33 +16,36 @@ if(CCACHE_PROGRAM)
 endif()
 
 # Compiler version check
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0)
-        message(FATAL_ERROR "GCC 7.0 or newer required (for C++17: if constexpr, index_sequence, etc)")
+if(CMAKE_CXX_COMPILER_ID)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0)
+            message(FATAL_ERROR "GCC 7.0 or newer required (for C++17: if constexpr, index_sequence, etc)")
+        endif()
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0)
+            message(FATAL_ERROR "Clang 7.0 or newer required (for C++17 features)")
+        endif()
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.12)
+            message(FATAL_ERROR "MSVC 19.12 (VS2017 15.5) or newer required (for C++17 features)")
+        endif()
+    else()
+        message(WARNING "Unknown compiler: ${CMAKE_CXX_COMPILER_ID}. C++17 support not guaranteed.")
     endif()
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0)
-        message(FATAL_ERROR "Clang 7.0 or newer required (for C++17 features)")
-    endif()
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.12)
-        message(FATAL_ERROR "MSVC 19.12 (VS2017 15.5) or newer required (for C++17 features)")
-    endif()
-else()
-    message(WARNING "Unknown compiler: ${CMAKE_CXX_COMPILER_ID}. C++17 support not guaranteed.")
 endif()
 
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-include(cmake/Options.cmake)
-include(cmake/StalkerModules.cmake)
-include(cmake/DetectPlatform.cmake)
-include(cmake/ConfigureAlignment.cmake)
-include(cmake/DetectSIMD.cmake)
-include(cmake/DetectThreads.cmake)
-include(cmake/ConfigureCompilerFlags.cmake)
-include(cmake/ConfigureUnroll.cmake)
-include(cmake/CoreTarget.cmake)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/Options.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/StalkerModules.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/DetectPlatform.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/ConfigureAlignment.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/DetectSIMD.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/DetectThreads.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/ConfigureCompilerFlags.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/ConfigureUnroll.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/ESP32Integration.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/CoreTarget.cmake)
 
 function(stalker_summary_print)
     message(STATUS "")
@@ -86,26 +91,37 @@ endif()
 
 stalker_compiler_flags_init(_stalkerCompilerFlags)
 
-add_library(StalkerCore INTERFACE)
-stalker_core_target_init(StalkerCore)
+if(NOT CMAKE_SCRIPT_MODE_FILE)
+    add_library(StalkerCore INTERFACE)
+    stalker_core_target_init(StalkerCore)
 
-stalker_modules_define_deps()
-stalker_modules_expand("${STALKER_MODULES}" _effective_modules)
-stalker_modules_realize("${_effective_modules}")
+    stalker_modules_define_deps()
+    stalker_modules_expand("${STALKER_MODULES}" _effective_modules)
+    stalker_modules_realize("${_effective_modules}")
 
-# Create interface library for the complete Stalker library
-add_library(Stalker INTERFACE)
-target_link_libraries(Stalker INTERFACE
-    StalkerCore
-    $<$<TARGET_EXISTS:StalkerMemory>:StalkerMemory>
-    $<$<TARGET_EXISTS:StalkerUtility>:StalkerUtility>
-    $<$<TARGET_EXISTS:StalkerContainers>:StalkerContainers>
-    $<$<TARGET_EXISTS:StalkerMathematics>:StalkerMathematics>
-    $<$<TARGET_EXISTS:StalkerThreading>:StalkerThreading>
-)
+    # Create interface library for the complete Stalker library
+    add_library(Stalker INTERFACE)
+    target_link_libraries(Stalker INTERFACE
+        StalkerCore
+        $<$<TARGET_EXISTS:StalkerMemory>:StalkerMemory>
+        $<$<TARGET_EXISTS:StalkerUtility>:StalkerUtility>
+        $<$<TARGET_EXISTS:StalkerContainers>:StalkerContainers>
+        $<$<TARGET_EXISTS:StalkerMathematics>:StalkerMathematics>
+        $<$<TARGET_EXISTS:StalkerThreading>:StalkerThreading>
+    )
 
-# Optional in-tree alias for namespaced usage
-add_library(Stalker::Stalker ALIAS Stalker)
+    # Optional in-tree alias for namespaced usage
+    add_library(Stalker::Stalker ALIAS Stalker)
+endif()
+
+# Bridge into ESP-IDF component builds when applicable
+set(STALKER_ESP32_COMPONENT_ACTIVE FALSE)
+stalker_esp32_component_init()
+
+if(STALKER_ESP32_COMPONENT_ACTIVE)
+    message(STATUS "Stalker registered as ESP-IDF component; skipping host target configuration.")
+    return()
+endif()
 
 
 # Always build tests and benchmarks by default
@@ -120,10 +136,11 @@ if(STALKER_BUILD_BENCHMARKS)
     add_subdirectory(Benchmarks)
 endif()
 
-# -------------------------
-# Install and CMake package
-# -------------------------
-include(CMakePackageConfigHelpers)
+if(NOT CMAKE_SCRIPT_MODE_FILE)
+    # -------------------------
+    # Install and CMake package
+    # -------------------------
+    include(CMakePackageConfigHelpers)
 
 # Install umbrella INTERFACE target into export set
 install(TARGETS Stalker
@@ -148,14 +165,14 @@ configure_package_config_file(
     INSTALL_DESTINATION lib/cmake/Stalker
 )
 
-write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/StalkerConfigVersion.cmake
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY SameMajorVersion
-)
-
+    write_basic_package_version_file(
+        ${CMAKE_CURRENT_BINARY_DIR}/StalkerConfigVersion.cmake
+        VERSION 0.1.0
+        COMPATIBILITY SameMajorVersion
+    )
 install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/StalkerConfig.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/StalkerConfigVersion.cmake
     DESTINATION lib/cmake/Stalker
 )
+endif()
