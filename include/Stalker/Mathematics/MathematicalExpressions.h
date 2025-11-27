@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <type_traits>
 
+namespace Stalker::Mathematics {
+
 template <typename Derived>
 class MathematicalExpressionBase {
 public:
@@ -151,4 +153,5 @@ Multiply<Operand1, Operand2> operator*(const MathematicalExpressionBase<Operand1
     return Multiply<Operand1, Operand2>(static_cast<const Operand1&>(lhs), static_cast<const Operand2&>(rhs));
 }
 
+} // namespace Stalker::Mathematics
 #endif // MATHEMATICAL_EXPRESSIONS_H

@@ -13,6 +13,7 @@
  * One of the following macros must be defined by CMake for platform and architecture detection:
  * - @b STALKER_PLATFORM_WINDOWS   Defined as 1 if targeting Windows, else undefined.
  * - @b STALKER_PLATFORM_LINUX     Defined as 1 if targeting Linux, else undefined.
+ * - @b STALKER_PLATFORM_ESP32     Defined as 1 if targeting ESP32, else undefined.
  * - @b STALKER_64BIT              Defined as 1 if targeting a 64-bit platform, else undefined.
  * - @b STALKER_32BIT              Defined as 1 if targeting a 32-bit platform, else undefined.
  * - @b STALKER_PLATFORM_CACHE_LINE_SIZE    The native cache line size in bytes for this platform.
@@ -24,6 +25,7 @@
  *   Enumerates supported target platforms
  * -   Platform::Windows : Microsoft Windows OS.
  * -   Platform::Linux   : Linux OS (all distributions).
+ * -   Platform::ESP32   : ESP32 microcontroller.
  * -   Platform::Unknown : Unknown or unsupported platform.
  * @enum Bitness
  *   Enumerates platform bitness
@@ -54,7 +56,9 @@
 
 #ifndef STALKER_PLATFORM_WINDOWS
     #ifndef STALKER_PLATFORM_LINUX
-        #error "STALKER_PLATFORM_WINDOWS or STALKER_PLATFORM_LINUX must be set by CMake!"
+        #ifndef STALKER_PLATFORM_ESP32
+            #error "STALKER_PLATFORM_WINDOWS or STALKER_PLATFORM_LINUX or STALKER_PLATFORM_ESP32 must be set by CMake!"
+        #endif
     #endif
 #endif
 
