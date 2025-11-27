@@ -7,7 +7,7 @@ namespace Stalker::Mathematics {
     
 using namespace Stalker::Core::Config;
 
-    struct MathOperationsMeta {
+    struct VectorMathMeta {
     public:
 
         template <typename T, size_t Unroll = DefaultUnroll(), typename ResultT = T>

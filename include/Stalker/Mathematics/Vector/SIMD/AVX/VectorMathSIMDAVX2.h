@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDAVX2.h>
-#include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDBase.h>
+#include <Stalker/Mathematics/Vector/SIMD/VectorMathSIMDBase.h>
 #include <Stalker/Memory/SIMD/MemoryOperationsSIMDAVX2.h>
 
 namespace Stalker::Mathematics
@@ -9,10 +9,10 @@ namespace Stalker::Mathematics
     // using namespace Stalker::Core::Config;
 
     template <>
-    struct MathOperationsSIMD<double,T_SIMD::AVX2>
-            : public MathOperationsSIMDBase<double, T_SIMD::AVX2, MathOperationsSIMD<double,T_SIMD::AVX2>> {
+    struct VectorMathSIMD<double,T_SIMD::AVX2>
+            : public VectorMathSIMDBase<double, T_SIMD::AVX2, VectorMathSIMD<double,T_SIMD::AVX2>> {
         
-        using Base = MathOperationsSIMDBase<double, T_SIMD::AVX2, MathOperationsSIMD<double,T_SIMD::AVX2>>;
+        using Base = VectorMathSIMDBase<double, T_SIMD::AVX2, VectorMathSIMD<double,T_SIMD::AVX2>>;
         using Traits = TypeTraitsSIMD<double, T_SIMD::AVX2>;
         using T_simd = typename Traits::typeSIMD;
         using T_data = typename Traits::typeData;
@@ -94,10 +94,10 @@ namespace Stalker::Mathematics
     };
 
     template <>
-    struct MathOperationsSIMD<float,T_SIMD::AVX2>
-            : public MathOperationsSIMDBase<float, T_SIMD::AVX2, MathOperationsSIMD<float,T_SIMD::AVX2>> {
+    struct VectorMathSIMD<float,T_SIMD::AVX2>
+            : public VectorMathSIMDBase<float, T_SIMD::AVX2, VectorMathSIMD<float,T_SIMD::AVX2>> {
         
-        using Base = MathOperationsSIMDBase<float, T_SIMD::AVX2, MathOperationsSIMD<float,T_SIMD::AVX2>>;
+        using Base = VectorMathSIMDBase<float, T_SIMD::AVX2, VectorMathSIMD<float,T_SIMD::AVX2>>;
         using Traits = TypeTraitsSIMD<float, T_SIMD::AVX2>;
         using T_simd = typename Traits::typeSIMD;
         using T_data = typename Traits::typeData;
@@ -178,10 +178,10 @@ namespace Stalker::Mathematics
     };
 
     template <>
-    struct MathOperationsSIMD<int, T_SIMD::AVX2>
-            : public MathOperationsSIMDBase<int, T_SIMD::AVX2, MathOperationsSIMD<int,T_SIMD::AVX2>> {
+    struct VectorMathSIMD<int, T_SIMD::AVX2>
+            : public VectorMathSIMDBase<int, T_SIMD::AVX2, VectorMathSIMD<int,T_SIMD::AVX2>> {
         
-        using Base = MathOperationsSIMDBase<int, T_SIMD::AVX2, MathOperationsSIMD<int,T_SIMD::AVX2>>;
+        using Base = VectorMathSIMDBase<int, T_SIMD::AVX2, VectorMathSIMD<int,T_SIMD::AVX2>>;
         using Traits = TypeTraitsSIMD<int, T_SIMD::AVX2>;
         using T_simd = typename Traits::typeSIMD;
         using T_data = typename Traits::typeData;
@@ -269,10 +269,10 @@ namespace Stalker::Mathematics
     };
 
     template <>
-    struct MathOperationsSIMD<unsigned int,T_SIMD::AVX2>
-            : public MathOperationsSIMDBase<unsigned int, T_SIMD::AVX2, MathOperationsSIMD<unsigned int,T_SIMD::AVX2>> {
+    struct VectorMathSIMD<unsigned int,T_SIMD::AVX2>
+            : public VectorMathSIMDBase<unsigned int, T_SIMD::AVX2, VectorMathSIMD<unsigned int,T_SIMD::AVX2>> {
         
-        using Base = MathOperationsSIMDBase<unsigned int, T_SIMD::AVX2, MathOperationsSIMD<unsigned int,T_SIMD::AVX2>>;
+        using Base = VectorMathSIMDBase<unsigned int, T_SIMD::AVX2, VectorMathSIMD<unsigned int,T_SIMD::AVX2>>;
         using Traits = TypeTraitsSIMD<unsigned int, T_SIMD::AVX2>;
         using T_simd = typename Traits::typeSIMD;
         using T_data = typename Traits::typeData;
@@ -364,10 +364,10 @@ namespace Stalker::Mathematics
     };
 
     template <>
-    struct MathOperationsSIMD<short,T_SIMD::AVX2>
-            : public MathOperationsSIMDBase<short, T_SIMD::AVX2, MathOperationsSIMD<short,T_SIMD::AVX2>> {
+    struct VectorMathSIMD<short,T_SIMD::AVX2>
+            : public VectorMathSIMDBase<short, T_SIMD::AVX2, VectorMathSIMD<short,T_SIMD::AVX2>> {
         
-        using Base = MathOperationsSIMDBase<short, T_SIMD::AVX2, MathOperationsSIMD<short,T_SIMD::AVX2>>;
+        using Base = VectorMathSIMDBase<short, T_SIMD::AVX2, VectorMathSIMD<short,T_SIMD::AVX2>>;
         using Traits = TypeTraitsSIMD<short, T_SIMD::AVX2>;
         using T_simd = typename Traits::typeSIMD;
         using T_data = typename Traits::typeData;

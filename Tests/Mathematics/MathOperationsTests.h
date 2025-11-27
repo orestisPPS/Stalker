@@ -1,7 +1,7 @@
 #pragma once
 
 #include "STLKR_TestBase.h"
-#include <Stalker/Mathematics/Operations/MathOperations.h>
+#include <Stalker/Mathematics/Vector/VectorMath.h>
 
 namespace STLKR_Tests {
 

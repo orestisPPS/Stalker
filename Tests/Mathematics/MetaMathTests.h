@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../STLKR_TestBase.h"
-#include <Stalker/Mathematics/Operations/MathOperationsMeta.h>
+#include <Stalker/Mathematics/Vector/VectorMathMeta.h>
 #include <Stalker/Mathematics/MetaMath.h>
 #include <Stalker/Mathematics/MetaPolynomial.h>
 
@@ -22,7 +22,7 @@ namespace STLKR_Tests {
             _testFallingFactorial();
             _testBinomialCoefficient();
             _testFibonacci();
-            printTitle("Unrolled MathOperationsMeta", "-", T_Color::WHITE);
+            printTitle("Unrolled VectorMathMeta", "-", T_Color::WHITE);
             _testAdd();
             _testSubtract();
             _testMultiply();
@@ -73,8 +73,8 @@ namespace STLKR_Tests {
             constexpr std::array<double, size()> data1 = {0, 1, 2, 3, 4};
             constexpr std::array<double, size()> data2 = {5, 6, 7, 8, 9};
             std::array<double, size()> result = {};
-            // MathOperationsMeta::add<double, size()>(data1.data(), data2.data(), result.data(), 1, 1);
-            MathOperationsMeta::add<double, size()>(size(), data1.data(), data2.data(), result.data());
+            // VectorMathMeta::add<double, size()>(data1.data(), data2.data(), result.data(), 1, 1);
+            VectorMathMeta::add<double, size()>(size(), data1.data(), data2.data(), result.data());
             constexpr std::array<double, size()> expected = {5, 7, 9, 11, 13};
             TestUtility::compareVectors<double>(result.data(), expected.data(), result.size(), "Addition of Two Arrays");
             // static_assert(result == expected, "Addition of Two Arrays Test Failed");
@@ -88,8 +88,8 @@ namespace STLKR_Tests {
             constexpr std::array<double, size()> data1 = {0, 1, 2, 3, 4};
             constexpr std::array<double, size()> data2 = {5, 6, 7, 8, 9};
             std::array<double, size()> result  = {};
-            // MathOperationsMeta::subtract<double, size()>(data1.data(), data2.data(), result.data(), 1, 1);
-            MathOperationsMeta::subtract<double, size()>(size(), data1.data(), data2.data(), result.data());
+            // VectorMathMeta::subtract<double, size()>(data1.data(), data2.data(), result.data(), 1, 1);
+            VectorMathMeta::subtract<double, size()>(size(), data1.data(), data2.data(), result.data());
             constexpr std::array<double, size()> expected = {-5, -5, -5, -5, -5};
             TestUtility::compareVectors<double>(result.data(), expected.data(), result.size(), "Subtraction of Two Arrays");
             // static_assert(result == expected, "Subtraction of Two Arrays Test Failed");
@@ -99,8 +99,8 @@ namespace STLKR_Tests {
             constexpr std::array<double, size()> data1 = {0, 1, 2, 3, 4};
             constexpr std::array<double, size()> data2 = {5, 6, 7, 8, 9};
             std::array<double, size()> result = {};
-            // MathOperationsMeta::multiply<double, size()>(data1.data(), data2.data(), result.data(), 1, 1);
-            MathOperationsMeta::multiply<double, size()>(size(), data1.data(), data2.data(), result.data());
+            // VectorMathMeta::multiply<double, size()>(data1.data(), data2.data(), result.data(), 1, 1);
+            VectorMathMeta::multiply<double, size()>(size(), data1.data(), data2.data(), result.data());
             constexpr std::array<double, size()> expected = {0, 6, 14, 24, 36};
             TestUtility::compareVectors<double>(result.data(), expected.data(), result.size(), "Multiplication of Two Arrays");
             // static_assert(result == expected, "Multiplication of Two Arrays Test Failed");
@@ -110,8 +110,8 @@ namespace STLKR_Tests {
             constexpr std::array<double, size()> data1 = {0, 1, 2, 3, 4};
             constexpr std::array<double, size()> data2 = {5, 6, 7, 8, 9};
             std::array<double, size()> result = {};
-            // MathOperationsMeta::divide<double, size()>(data1.data(), data2.data(), result.data(), 1, 1);
-            MathOperationsMeta::divide<double, size()>(size(), data1.data(), data2.data(), result.data());
+            // VectorMathMeta::divide<double, size()>(data1.data(), data2.data(), result.data(), 1, 1);
+            VectorMathMeta::divide<double, size()>(size(), data1.data(), data2.data(), result.data());
             constexpr std::array<double, size()> expected = {0, 1.0 / 6, 2.0 / 7, 3.0 / 8, 4.0 / 9};
             TestUtility::compareVectors<double>(result.data(), expected.data(), result.size(), "Division of Two Arrays");
             // static_assert(result == expected, "Division of Two Arrays Test Failed");
@@ -120,7 +120,7 @@ namespace STLKR_Tests {
         void _testDotProduct() {
             constexpr std::array<double, size()> data1 = {0, 1, 2, 3, 4};
             constexpr std::array<double, size()> data2 = {5, 6, 7, 8, 9};
-            constexpr auto result = MathOperationsMeta::dot<double, size()>(size(), data1.data(), data2.data());
+            constexpr auto result = VectorMathMeta::dot<double, size()>(size(), data1.data(), data2.data());
             constexpr auto expected = 80;
             TestUtility::compareValues<double>(result, expected, "Dot Product of Two Arrays");
             static_assert(result == expected, "Dot Product of Two Arrays Test Failed");
@@ -128,7 +128,7 @@ namespace STLKR_Tests {
 
         void _testSum() {
             constexpr std::array<double, size()> data = {0, 1, 2, 3, 4};
-            constexpr auto result = MathOperationsMeta::sum<double, size()>(size(), data.data());
+            constexpr auto result = VectorMathMeta::sum<double, size()>(size(), data.data());
             constexpr auto expected = 10;
             TestUtility::compareValues<double>(result, expected, "Sum of an Array");
             static_assert(result == expected, "Sum of an Array Test Failed");
@@ -138,21 +138,21 @@ namespace STLKR_Tests {
             constexpr std::array<double, size()> data = {0, 1, 2, 3, 4};
 
             {
-                constexpr auto result = MathOperationsMeta::sum<double, size()>(size(), data.data());
+                constexpr auto result = VectorMathMeta::sum<double, size()>(size(), data.data());
                 constexpr auto expected = 10.0;
                 TestUtility::compareValues<double>(result, expected, "Partial Sum 0..4");
                 static_assert(result == expected, "Partial Sum 0..4 Test Failed");
             }
 
             {
-                constexpr auto result = MathOperationsMeta::sum<double, 3>(3, data.data() + 1);
+                constexpr auto result = VectorMathMeta::sum<double, 3>(3, data.data() + 1);
                 constexpr auto expected = 6.0;
                 TestUtility::compareValues<double>(result, expected, "Partial Sum 1..3");
                 static_assert(result == expected, "Partial Sum 1..3 Test Failed");
             }
 
             {
-                constexpr auto result = MathOperationsMeta::sum<double, 1>(1, data.data() + 2);
+                constexpr auto result = VectorMathMeta::sum<double, 1>(1, data.data() + 2);
                 constexpr auto expected = 2.0;
                 TestUtility::compareValues<double>(result, expected, "Partial Sum 2..2");
                 static_assert(result == expected, "Partial Sum 2..2 Test Failed");

@@ -6,7 +6,7 @@
 
 namespace Stalker::Mathematics {
 
-struct MathOperationsClassic {
+struct VectorMathScalar {
 public:
     template <typename T, typename ResultT = T>
     static constexpr inline void add(size_t size, const T* a, const T * b, ResultT* result) {
@@ -202,7 +202,7 @@ struct Norms {
     template <typename T, typename ResultT = T>
     static inline ResultT L2(size_t size, const T* __restrict data) {
         static_assert(std::is_floating_point<ResultT>::value, "L2 norm result must be a floating-point type");
-        return std::sqrt(MathOperationsClassic::sumOfSquares<T, ResultT>(size, data));
+        return std::sqrt(VectorMathScalar::sumOfSquares<T, ResultT>(size, data));
     }
 
     template <typename T, typename ResultT = T>

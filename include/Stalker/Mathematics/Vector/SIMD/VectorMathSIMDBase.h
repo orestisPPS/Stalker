@@ -16,7 +16,7 @@ namespace Stalker::Mathematics {
 
 // CRTP Base
 template<typename T, T_SIMD Type, typename Child>
-struct MathOperationsSIMDBase {
+struct VectorMathSIMDBase {
     
     using Traits = TypeTraitsSIMD<T, Type>;
     using T_simd = typename Traits::typeSIMD;
@@ -205,7 +205,7 @@ private:
     }
 };
 
-template<typename T, T_SIMD Type> struct MathOperationsSIMD; 
+template<typename T, T_SIMD Type> struct VectorMathSIMD; 
 
 
 } // namespace Stalker::Mathematics

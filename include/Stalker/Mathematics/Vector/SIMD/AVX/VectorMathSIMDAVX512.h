@@ -1,16 +1,16 @@
 #pragma once
 
 #include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDAVX512.h>
-#include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDBase.h>
+#include <Stalker/Mathematics/Vector/SIMD/VectorMathSIMDBase.h>
 #include <Stalker/Memory/SIMD/MemoryOperationsSIMDAVX512.h>
 
 namespace Stalker::Mathematics {
 
 template<>
-struct MathOperationsSIMD<double, T_SIMD::AVX512>
-        : public MathOperationsSIMDBase<double, T_SIMD::AVX512, MathOperationsSIMD<double, T_SIMD::AVX512>> {
+struct VectorMathSIMD<double, T_SIMD::AVX512>
+        : public VectorMathSIMDBase<double, T_SIMD::AVX512, VectorMathSIMD<double, T_SIMD::AVX512>> {
     
-    using Base = MathOperationsSIMDBase<double, T_SIMD::AVX512, MathOperationsSIMD<double, T_SIMD::AVX512>>;
+    using Base = VectorMathSIMDBase<double, T_SIMD::AVX512, VectorMathSIMD<double, T_SIMD::AVX512>>;
     using Traits = TypeTraitsSIMD<double, T_SIMD::AVX512>;
     using T_simd = typename Traits::typeSIMD;
     using T_data = typename Traits::typeData;
@@ -95,10 +95,10 @@ private:
 };
 
 template<>
-struct MathOperationsSIMD<float, T_SIMD::AVX512>
-        : public MathOperationsSIMDBase<float, T_SIMD::AVX512, MathOperationsSIMD<float, T_SIMD::AVX512>> {
+struct VectorMathSIMD<float, T_SIMD::AVX512>
+        : public VectorMathSIMDBase<float, T_SIMD::AVX512, VectorMathSIMD<float, T_SIMD::AVX512>> {
     
-    using Base = MathOperationsSIMDBase<float, T_SIMD::AVX512, MathOperationsSIMD<float, T_SIMD::AVX512>>;
+    using Base = VectorMathSIMDBase<float, T_SIMD::AVX512, VectorMathSIMD<float, T_SIMD::AVX512>>;
     using Traits = TypeTraitsSIMD<float, T_SIMD::AVX512>;
     using T_simd = typename Traits::typeSIMD;
     using T_data = typename Traits::typeData;
@@ -182,10 +182,10 @@ private:
 };
 
 template<>
-struct MathOperationsSIMD<int, T_SIMD::AVX512>
-        : public MathOperationsSIMDBase<int, T_SIMD::AVX512, MathOperationsSIMD<int, T_SIMD::AVX512>> {
+struct VectorMathSIMD<int, T_SIMD::AVX512>
+        : public VectorMathSIMDBase<int, T_SIMD::AVX512, VectorMathSIMD<int, T_SIMD::AVX512>> {
     
-    using Base = MathOperationsSIMDBase<int, T_SIMD::AVX512, MathOperationsSIMD<int, T_SIMD::AVX512>>;
+    using Base = VectorMathSIMDBase<int, T_SIMD::AVX512, VectorMathSIMD<int, T_SIMD::AVX512>>;
     using Traits = TypeTraitsSIMD<int, T_SIMD::AVX512>;
     using T_simd = typename Traits::typeSIMD;
     using T_data = typename Traits::typeData;
@@ -267,10 +267,10 @@ private:
 };
 
 template<>
-struct MathOperationsSIMD<unsigned int, T_SIMD::AVX512>
-        : public MathOperationsSIMDBase<unsigned int, T_SIMD::AVX512, MathOperationsSIMD<unsigned int, T_SIMD::AVX512>> {
+struct VectorMathSIMD<unsigned int, T_SIMD::AVX512>
+        : public VectorMathSIMDBase<unsigned int, T_SIMD::AVX512, VectorMathSIMD<unsigned int, T_SIMD::AVX512>> {
     
-    using Base = MathOperationsSIMDBase<unsigned int, T_SIMD::AVX512, MathOperationsSIMD<unsigned int, T_SIMD::AVX512>>;
+    using Base = VectorMathSIMDBase<unsigned int, T_SIMD::AVX512, VectorMathSIMD<unsigned int, T_SIMD::AVX512>>;
     using Traits = TypeTraitsSIMD<unsigned int, T_SIMD::AVX512>;
     using T_simd = typename Traits::typeSIMD;
     using T_data = typename Traits::typeData;
@@ -353,10 +353,10 @@ private:
 };
 
 template<>
-struct MathOperationsSIMD<short, T_SIMD::AVX512>
-        : public MathOperationsSIMDBase<short, T_SIMD::AVX512, MathOperationsSIMD<short, T_SIMD::AVX512>> {
+struct VectorMathSIMD<short, T_SIMD::AVX512>
+        : public VectorMathSIMDBase<short, T_SIMD::AVX512, VectorMathSIMD<short, T_SIMD::AVX512>> {
     
-    using Base = MathOperationsSIMDBase<short, T_SIMD::AVX512, MathOperationsSIMD<short, T_SIMD::AVX512>>;
+    using Base = VectorMathSIMDBase<short, T_SIMD::AVX512, VectorMathSIMD<short, T_SIMD::AVX512>>;
     using Traits = TypeTraitsSIMD<short, T_SIMD::AVX512>;
     using T_simd = typename Traits::typeSIMD;
     using T_data = typename Traits::typeData;

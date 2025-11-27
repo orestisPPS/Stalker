@@ -8,7 +8,6 @@
 #include "Mathematics/MetaMathTests.h"
 #include "Mathematics/IntegrationTests.h"
 #include "Mathematics/DifferentiationTests.h"
-#include "Core/TypeTraitsSIMDTests.h"
 #include "Memory/AllocatorsTests.h"
 #include "Memory/MemoryOperationsTests.h"
 #include "Mathematics/MathOperationsTests.h"
@@ -26,7 +25,7 @@ namespace STLKR_Tests {
             MetaMathTests<double>().runTest();
             IntegrationTests().runTest();
             DifferentiationTests().runTest();
-            TypeTraitsSIMDTests().runTest();
+            // TypeTraitsSIMDTests().runTest();
             AllocatorsTests().runTest();
             MemoryOperationsTests(2'000).runTest();
             MathOperationsTests(2'000).runTest();

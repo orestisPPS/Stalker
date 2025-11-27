@@ -1,15 +1,15 @@
 #pragma once
 #include <Stalker/Core/Traits/ExecutionTraits.h>
-#include <Stalker/Mathematics/Operations/MathOperationsClassic.h>
-#include <Stalker/Mathematics/Operations/MathOperationsMeta.h>
+#include <Stalker/Mathematics/Vector/VectorMathScalar.h>
+#include <Stalker/Mathematics/Vector/VectorMathMeta.h>
 #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
 #include <Stalker/Threading/ThreadOperations.h>
 #endif
 #if defined(STALKER_SIMD_AVX2_OK)
-#include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDAVX2.h>
+#include <Stalker/Mathematics/Vector/SIMD/AVX/VectorMathSIMDAVX2.h>
 #endif
 #if defined(STALKER_SIMD_AVX512_OK)
-#include <Stalker/Mathematics/Operations/SIMD/MathOperationsSIMDAVX512.h>
+#include <Stalker/Mathematics/Vector/SIMD/AVX/VectorMathSIMDAVX512.h>
 #endif
 
 namespace Stalker::Mathematics {
@@ -212,11 +212,11 @@ namespace Stalker::Mathematics {
             template<typename... Args>
             constexpr inline static void call(Args&&... args) {
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    MathOperationsSIMD<T, Trait::SIMDArch>::template add<Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
+                    VectorMathSIMD<T, Trait::SIMDArch>::template add<Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
-                    MathOperationsMeta::add<T, Trait::Unroll>(std::forward<Args>(args)...);
+                    VectorMathMeta::add<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else
-                    MathOperationsClassic::add<T>(std::forward<Args>(args)...);    
+                    VectorMathScalar::add<T>(std::forward<Args>(args)...);    
             }
         };
 
@@ -226,11 +226,11 @@ namespace Stalker::Mathematics {
             template<typename... Args>
             constexpr inline static void call(Args&&... args) {
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    MathOperationsSIMD<T, Trait::SIMDArch>::template axpy<Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
+                    VectorMathSIMD<T, Trait::SIMDArch>::template axpy<Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
-                    MathOperationsMeta::axpy<T, Trait::Unroll>(std::forward<Args>(args)...);
+                    VectorMathMeta::axpy<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else
-                    MathOperationsClassic::axpy<T>(std::forward<Args>(args)...);
+                    VectorMathScalar::axpy<T>(std::forward<Args>(args)...);
             }
         };
 
@@ -240,11 +240,11 @@ namespace Stalker::Mathematics {
             template<typename... Args>
             constexpr inline static void call(Args&&... args) { 
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    MathOperationsSIMD<T, Trait::SIMDArch>::template subtract<Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
+                    VectorMathSIMD<T, Trait::SIMDArch>::template subtract<Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
-                    MathOperationsMeta::subtract<T, Trait::Unroll>(std::forward<Args>(args)...);
+                    VectorMathMeta::subtract<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else
-                    MathOperationsClassic::subtract<T>(std::forward<Args>(args)...);
+                    VectorMathScalar::subtract<T>(std::forward<Args>(args)...);
             }
         };
 
@@ -255,11 +255,11 @@ namespace Stalker::Mathematics {
             constexpr inline static void call(Args&&... args) {
 
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    MathOperationsSIMD<T, Trait::SIMDArch>::template multiply<Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
+                    VectorMathSIMD<T, Trait::SIMDArch>::template multiply<Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
-                    MathOperationsMeta::multiply<T, Trait::Unroll>(std::forward<Args>(args)...);
+                    VectorMathMeta::multiply<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else
-                    MathOperationsClassic::multiply<T>(std::forward<Args>(args)...);
+                    VectorMathScalar::multiply<T>(std::forward<Args>(args)...);
             }
         };
 
@@ -269,11 +269,11 @@ namespace Stalker::Mathematics {
             template<typename... Args>
             constexpr inline static void call(Args&&... args) {
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    MathOperationsSIMD<T, Trait::SIMDArch>::template scale<Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
+                    VectorMathSIMD<T, Trait::SIMDArch>::template scale<Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
-                    MathOperationsMeta::scale<T, Trait::Unroll>(std::forward<Args>(args)...);
+                    VectorMathMeta::scale<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else
-                    MathOperationsClassic::scale<T>(std::forward<Args>(args)...);
+                    VectorMathScalar::scale<T>(std::forward<Args>(args)...);
             }
         };
 
@@ -283,11 +283,11 @@ namespace Stalker::Mathematics {
             template<typename... Args>
             constexpr inline static void call(Args&&... args) {                
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    MathOperationsSIMD<T, Trait::SIMDArch>::template addConstant<Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
+                    VectorMathSIMD<T, Trait::SIMDArch>::template addConstant<Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
-                    MathOperationsMeta::addConstant<T, Trait::Unroll>(std::forward<Args>(args)...);
+                    VectorMathMeta::addConstant<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else
-                    MathOperationsClassic::addConstant<T>(std::forward<Args>(args)...);
+                    VectorMathScalar::addConstant<T>(std::forward<Args>(args)...);
             }
         };
 
@@ -297,11 +297,11 @@ namespace Stalker::Mathematics {
             template<typename... Args>
             constexpr inline static auto call(Args&&... args) {             
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    return MathOperationsSIMD<T, Trait::SIMDArch>::template sum<Trait::Unroll>(std::forward<Args>(args)...);
+                    return VectorMathSIMD<T, Trait::SIMDArch>::template sum<Trait::Unroll>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
-                    return MathOperationsMeta::sum<T, Trait::Unroll>(std::forward<Args>(args)...);
+                    return VectorMathMeta::sum<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else
-                    return MathOperationsClassic::sum<T>(std::forward<Args>(args)...);
+                    return VectorMathScalar::sum<T>(std::forward<Args>(args)...);
             }
         };
 
@@ -311,11 +311,11 @@ namespace Stalker::Mathematics {
             template<typename... Args>
             constexpr inline static auto call(Args&&... args) {             
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    return MathOperationsSIMD<T, Trait::SIMDArch>::template dot<Trait::Unroll>(std::forward<Args>(args)...);
+                    return VectorMathSIMD<T, Trait::SIMDArch>::template dot<Trait::Unroll>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
-                    return MathOperationsMeta::dot<T, Trait::Unroll>(std::forward<Args>(args)...);
+                    return VectorMathMeta::dot<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else
-                    return MathOperationsClassic::dot<T>(std::forward<Args>(args)...);
+                    return VectorMathScalar::dot<T>(std::forward<Args>(args)...);
             }
         };
 
