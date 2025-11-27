@@ -1,13 +1,5 @@
 #pragma once
-#if defined(STALKER_SIMD_AVX2_OK)
-#include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDAVX2.h>
-#endif
-#if defined(STALKER_SIMD_AVX512_OK)
-#include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDAVX512.h>
-#endif
-#if (!defined(STALKER_SIMD_AVX2_OK) && !defined(STALKER_SIMD_AVX512_OK))
-#include <Stalker/Core/Config/LoopUnrolling.h>
-#endif
+#include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDBase.h>
 
 namespace Stalker::Core {
 

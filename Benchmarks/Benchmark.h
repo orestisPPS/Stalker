@@ -1,6 +1,9 @@
 #pragma once
 #include <Stalker/Utility/Logs.h>
 #include <Stalker/Utility/Printers.h>
+#include <Stalker/Mathematics/Random.h>
+#include <Stalker/Memory/Allocators.h>
+
 #include <cassert>
 #include <thread>
 #include <pthread.h>

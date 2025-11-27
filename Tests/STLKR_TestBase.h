@@ -12,25 +12,28 @@
 #include <unordered_map>
 #include <filesystem>
 #include <limits.h>
+#include <cstdint>
+#include <cassert>
+#include <cstring>
 #include "TestUtility.h"
 #include <Stalker/Mathematics/Linspace.h>
 #include <Stalker/Memory/MemoryOperations.h>
+#include <Stalker/Memory/Allocators.h>
+#include <Stalker/Mathematics/Random.h>
 #include <Stalker/Utility/Logs.h>
-#include <Stalker/Threading/CPUTopology/CPU_Manager.h>
+#include <Stalker/Core/Units.h>
 
 namespace STLKR_Tests {
     using namespace Stalker::Core;
     using namespace Stalker::Mathematics;
     using namespace Stalker::Memory;
     using namespace Stalker::Utility;
-    using namespace Stalker::Threading;
 
     class STLKR_TestBase {
 
     public:
 
-        explicit STLKR_TestBase(std::string testName)
-            : _manager(CPU_Manager()), _logs(Logs(testName)), _testName(testName) 
+        explicit STLKR_TestBase(std::string testName) : _logs(Logs(testName)), _testName(testName) 
         {
             auto fullPath = std::filesystem::absolute(std::filesystem::path(__FILE__));
             auto basePath = fullPath.parent_path().parent_path();
@@ -59,7 +62,6 @@ namespace STLKR_Tests {
         }
 
     protected:
-        CPU_Manager _manager;
         Logs _logs;
         unsigned _caseCounter = 0;
         std::string _testName;

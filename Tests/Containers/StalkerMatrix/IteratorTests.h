@@ -4,7 +4,6 @@
 #include "../STLKR_TestBase.h"
 #include "../../DataStructures/Iterators/FixedStrideIteratorBase.h"  // Path to FixedStrideIterator
 #include "../../DataStructures/Iterators/LinearStrideIterator.h"  // Path to LinearStrideIterator
-#include <cmath>  // For std::abs in floating-point comparisons
 
 namespace STLKR_Tests {
 

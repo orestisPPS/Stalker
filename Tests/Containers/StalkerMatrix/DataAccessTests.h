@@ -2,7 +2,6 @@
 
 #include "../STLKR_TestBase.h"
 #include "../StalkerMatrix/StalkerMatrix.h"
-#include "../TestUtility.h"
 
 namespace STLKR_Tests {
 

@@ -9,16 +9,27 @@
 namespace Stalker::Mathematics {
 
 
-template<size_t Power>
-static inline constexpr auto power(auto base) {
-    if constexpr (Power == 0)
-        return 1;
-    else if constexpr (Power == 1) 
+template <std::size_t Power, class T>
+constexpr T power(T base) {
+    if constexpr (Power == 0) {
+        return T{1};
+    } else if constexpr (Power == 1) {
         return base;
-    else if constexpr (Power % 2 == 0)
+    } else if constexpr ((Power % 2) == 0) {
         return power<Power / 2>(base * base);
-    else
+    } else {
         return base * power<Power / 2>(base * base);
+    }
+}
+
+template <typename T, unsigned size, unsigned Power = 1>
+static constexpr inline T sumOfPower(const T* data) {
+    if constexpr (size == 0) {
+        return 0;
+    }
+    else {
+        return power<T, Power>(data[size - 1]) + sumOfPower<T, size - 1, Power>(data);
+    }
 }
 
 // Optimized Factorial (Pure Compile-Time)

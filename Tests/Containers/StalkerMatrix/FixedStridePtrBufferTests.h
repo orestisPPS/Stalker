@@ -2,8 +2,6 @@
 
 #include "../STLKR_TestBase.h"
 #include "../../DataStructures/Buffers/FixedStridePtrBuffer.h"
-#include <iostream>
-#include <cassert>
 
 namespace STLKR_Tests {
 

@@ -1,7 +1,6 @@
 #ifndef STALKER_TESTS_STALKER_TEST_RUNNER_H
 #define STALKER_TESTS_STALKER_TEST_RUNNER_H
 
-#include <iostream>
 // #include "StalkerMatrix/IteratorTests.h"
 // #include "StalkerMatrix/FixedStridePtrBufferTests.h"
 // #include "StalkerMatrix/DataAccessTests.h"
@@ -13,9 +12,6 @@
 #include "Memory/AllocatorsTests.h"
 #include "Memory/MemoryOperationsTests.h"
 #include "Mathematics/MathOperationsTests.h"
-
-#include <ostream>
-
 
 namespace STLKR_Tests {
     class StalkerTestRunner {

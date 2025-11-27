@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../STLKR_TestBase.h"
-#include "../TestUtility.h"
 #include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDAVX2.h>
 #include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDAVX512.h>
 

@@ -2,8 +2,6 @@
 
 #include "STLKR_TestBase.h"
 #include <Stalker/Mathematics/Linspace.h>
-#include "TestUtility.h"
-#include <array>
 #include <sys/sysinfo.h>
 namespace STLKR_Tests {
 

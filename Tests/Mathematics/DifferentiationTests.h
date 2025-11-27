@@ -3,7 +3,6 @@
 #include <Stalker/Mathematics/Differentiation/Derivative.h>
 #include <Stalker/Mathematics/MetaPolynomial.h>
 #include "../STLKR_TestBase.h"
-#include "../TestUtility.h"
 
 namespace STLKR_Tests {
     using namespace Stalker::Mathematics::Differentiation;
