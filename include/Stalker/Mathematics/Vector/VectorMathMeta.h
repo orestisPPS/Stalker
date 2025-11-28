@@ -13,28 +13,34 @@ using namespace Stalker::Core::Config;
         template <typename T, size_t Unroll = DefaultUnroll(), typename ResultT = T>
         static constexpr inline void add(size_t size, const T* a, const T* b, ResultT* result) {
             auto limit = size - (size % Unroll);
-            for (size_t i = 0; i < limit; i += Unroll)
-                _add<T, ResultT, false>(a + i, b + i, result + i, std::make_index_sequence<Unroll>{});
-            for (size_t i = limit; i < size; ++i)
-                result[i] = a[i] + b[i];
+            const T* totalEnd = a + size;
+            const T* end = a + limit;
+            for (; a != end; a += Unroll, b += Unroll, result += Unroll)
+                _add<T, ResultT, false>(a, b, result, std::make_index_sequence<Unroll>{});
+            for (; a != totalEnd; ++a, ++b, ++result)
+                *result = (*a) + (*b);
         }
 
         template <typename T, size_t Unroll = DefaultUnroll(), typename ResultT = T>
         static constexpr inline void add(size_t size, const T* a, const T* b, ResultT* result, T scalarA, T scalarB) {
             auto limit = size - (size % Unroll);
-            for (size_t i = 0; i < limit; i += Unroll)
-                _add<T, ResultT, true>(a + i, b + i, result + i, std::make_index_sequence<Unroll>{}, scalarA, scalarB);
-            for (size_t i = limit; i < size; ++i)
-                result[i] = (a[i] * scalarA) + (b[i] * scalarB);
+            const T* totalEnd = a + size;
+            const T* end = a + limit;
+            for (; a != end; a += Unroll, b += Unroll, result += Unroll)
+                _add<T, ResultT, true>(a, b, result, std::make_index_sequence<Unroll>{}, scalarA, scalarB);
+            for (; a != totalEnd; ++a, ++b, ++result)
+                *result = ((*a) * scalarA) + ((*b) * scalarB);
         }
 
         template <typename T, size_t Unroll = DefaultUnroll(), typename ResultT = T>
         static constexpr inline void axpy(size_t size, const T* a, const T* b, ResultT* result, T scalarA) {
             auto limit = size - (size % Unroll);
-            for (size_t i = 0; i < limit; i += Unroll)
-                _add<T, ResultT, true>(a + i, b + i, result + i, std::make_index_sequence<Unroll>{}, scalarA);
-            for (size_t i = limit; i < size; ++i)
-                result[i] = (a[i] * scalarA) + b[i];
+            const T* totalEnd = a + size;
+            const T* end = a + limit;
+            for (; a != end; a += Unroll, b += Unroll, result += Unroll)
+                _add<T, ResultT, true>(a, b, result, std::make_index_sequence<Unroll>{}, scalarA);
+            for (; a != totalEnd; ++a, ++b, ++result)
+                *result = ((*a) * scalarA) + (*b);
         }
 
 
@@ -42,93 +48,113 @@ using namespace Stalker::Core::Config;
         template <typename T, size_t Unroll = DefaultUnroll(), typename ResultT = T>
         static constexpr inline void subtract(size_t size, const T* a, const T* b, ResultT* result) {
             auto limit = size - (size % Unroll);
-            for (size_t i = 0; i < limit; i += Unroll)
-                _subtract<T, ResultT, false>(a + i, b + i, result + i, std::make_index_sequence<Unroll>{});
-            for (size_t i = limit; i < size; ++i)
-                result[i] = a[i] - b[i];
+            const T* totalEnd = a + size;
+            const T* end = a + limit;
+            for (; a != end; a += Unroll, b += Unroll, result += Unroll)
+                _subtract<T, ResultT, false>(a, b, result, std::make_index_sequence<Unroll>{});
+            for (; a != totalEnd; ++a, ++b, ++result)
+                *result = (*a) - (*b);
         }
 
         template <typename T, size_t Unroll = DefaultUnroll(), typename ResultT = T>
         static constexpr inline void subtract(size_t size, const T* a, const T* b, ResultT* result, T scalarA, T scalarB) {
             auto limit = size - (size % Unroll);
-            for (size_t i = 0; i < limit; i += Unroll)
-                _subtract<T, ResultT, true>(a + i, b + i, result + i, std::make_index_sequence<Unroll>{}, scalarA, scalarB);
-            for (size_t i = limit; i < size; ++i)
-                result[i] = (a[i] * scalarA) - (b[i] * scalarB);
+            const T* totalEnd = a + size;
+            const T* end = a + limit;
+            for (; a != end; a += Unroll, b += Unroll, result += Unroll)
+                _subtract<T, ResultT, true>(a, b, result, std::make_index_sequence<Unroll>{}, scalarA, scalarB);
+            for (; a != totalEnd; ++a, ++b, ++result)
+                *result = ((*a) * scalarA) - ((*b) * scalarB);
         }
 
         template <typename T, size_t Unroll = DefaultUnroll(), typename ResultT = T>
         static constexpr inline void multiply(size_t size, const T* a, const T* b, ResultT* result) {
             auto limit = size - (size % Unroll);
-            for (size_t i = 0; i < limit; i += Unroll)
-                _multiply<T, ResultT, false>(a + i, b + i, result + i, std::make_index_sequence<Unroll>{});
-            for (size_t i = limit; i < size; ++i)
-                result[i] = a[i] * b[i];
+            const T* totalEnd = a + size;
+            const T* end = a + limit;
+            for (; a != end; a += Unroll, b += Unroll, result += Unroll)
+                _multiply<T, ResultT, false>(a, b, result, std::make_index_sequence<Unroll>{});
+            for (; a != totalEnd; ++a, ++b, ++result)
+                *result = (*a) * (*b);
         }
 
         template <typename T, size_t Unroll = DefaultUnroll(), typename ResultT = T>
         static constexpr inline void multiply(size_t size, const T* a, const T* b, ResultT* result, T scalarA, T scalarB) {
             auto limit = size - (size % Unroll);
-            for (size_t i = 0; i < limit; i += Unroll)
-                _multiply<T, ResultT, true>(a + i, b + i, result + i, std::make_index_sequence<Unroll>{}, scalarA, scalarB);
-            for (size_t i = limit; i < size; ++i)
-                result[i] = (a[i] * scalarA) * (b[i] * scalarB);
+            const T* totalEnd = a + size;
+            const T* end = a + limit;
+            for (; a != end; a += Unroll, b += Unroll, result += Unroll)
+                _multiply<T, ResultT, true>(a, b, result, std::make_index_sequence<Unroll>{}, scalarA, scalarB);
+            for (; a != totalEnd; ++a, ++b, ++result)
+                *result = ((*a) * scalarA) * ((*b) * scalarB);
         }
         
         // Divide
         template <typename T, size_t Unroll = DefaultUnroll(), typename ResultT = T>
         static constexpr inline void divide(size_t size, const T* a, const T* b, ResultT* result) {
             auto limit = size - (size % Unroll);
-            for (size_t i = 0; i < limit; i += Unroll)
-                _divide<T, ResultT, false>(a + i, b + i, result + i, std::make_index_sequence<Unroll>{});
-            for (size_t i = limit; i < size; ++i)
-                result[i] = a[i] / b[i];
+            const T* totalEnd = a + size;
+            const T* end = a + limit;
+            for (; a != end; a += Unroll, b += Unroll, result += Unroll)
+                _divide<T, ResultT, false>(a, b, result, std::make_index_sequence<Unroll>{});
+            for (; a != totalEnd; ++a, ++b, ++result)
+                *result = (*a) / (*b);
         }
 
         template <typename T, size_t Unroll = DefaultUnroll(), typename ResultT = T>
         static constexpr inline void divide(size_t size, const T* a, const T* b, ResultT* result, T scalarA, T scalarB) {
             auto limit = size - (size % Unroll);
-            for (size_t i = 0; i < limit; i += Unroll)
-                _divide<T, ResultT, true>(a + i, b + i, result + i, std::make_index_sequence<Unroll>{}, scalarA, scalarB);
-            for (size_t i = limit; i < size; ++i)
-                result[i] = (a[i] * scalarA) / (b[i] * scalarB);
+            const T* totalEnd = a + size;
+            const T* end = a + limit;
+            for (; a != end; a += Unroll, b += Unroll, result += Unroll)
+                _divide<T, ResultT, true>(a, b, result, std::make_index_sequence<Unroll>{}, scalarA, scalarB);
+            for (; a != totalEnd; ++a, ++b, ++result)
+                *result = ((*a) * scalarA) / ((*b) * scalarB);
         }
         // Scale
         template <typename T, size_t Unroll = DefaultUnroll(), typename ResultT = T>
         static constexpr inline void scale(size_t size, const T* __restrict data, ResultT* __restrict result, T scalar) {
             auto limit = size - (size % Unroll);
-            for (size_t i = 0; i < limit; i += Unroll)
-                _scale<T, ResultT>(data + i, result + i, scalar, std::make_index_sequence<Unroll>{});
-            for (size_t i = limit; i < size; ++i)
-                result[i] = data[i] * scalar;
+            const T* totalEnd = data + size;
+            const T* end = data + limit;
+            for (; data != end; data += Unroll, result += Unroll)
+                _scale<T, ResultT>(data, result, scalar, std::make_index_sequence<Unroll>{});
+            for (; data != totalEnd; ++data, ++result)
+                *result = (*data) * scalar;
         }
 
         template <typename T, size_t Unroll = DefaultUnroll()>
         static constexpr inline void scale(size_t size, T* __restrict data, T scalar) {
             auto limit = size - (size % Unroll);
-            for (size_t i = 0; i < limit; i += Unroll)
-                _scale<T, T>(data + i, scalar, std::make_index_sequence<Unroll>{});
-            for (size_t i = limit; i < size; ++i)
-                data[i] *= scalar;
+            T* totalEnd = data + size;
+            T* end = data + limit;
+            for (; data != end; data += Unroll)
+                _scale<T, T>(data, scalar, std::make_index_sequence<Unroll>{});
+            for (; data != totalEnd; ++data)
+                *data *= scalar;
         }
 
         //needs test
         template <typename T, size_t Unroll = DefaultUnroll(), typename ResultT = T>
         static constexpr inline void addConstant(size_t size, const T* __restrict data, T* __restrict result, T constant) {
             auto limit = size - (size % Unroll);
-            for (size_t i = 0; i < limit; i += Unroll)
-                _addConstant<T, ResultT>(data + i, result + i, constant, std::make_index_sequence<Unroll>{});
-            for (size_t i = limit; i < size; ++i)
-                result[i] = data[i] + constant;
+            const T* totalEnd = data + size;
+            const T* end = data + limit;
+            for (; data != end; data += Unroll, result += Unroll)
+                _addConstant<T, ResultT>(data, result, constant, std::make_index_sequence<Unroll>{});
+            for (; data != totalEnd; ++data, ++result)
+                *result = (*data) + constant;
         }
         //needs test
         template <typename T, size_t Unroll = DefaultUnroll(), typename ResultT = T>
         static constexpr inline void addConstant(size_t size, T* __restrict data, T constant) {
             auto limit = size - (size % Unroll);
-            for (size_t i = 0; i < limit; i += Unroll)
-                _addConstant<T, ResultT>(data + i, constant, std::make_index_sequence<Unroll>{});
-            for (size_t i = limit; i < size; ++i)
-                data[i] += constant;
+            T* totalEnd = data + size;
+            T* end = data + limit;
+            for (; data != end; data += Unroll)
+                _addConstant<T, ResultT>(data, constant, std::make_index_sequence<Unroll>{});
+            for (; data != totalEnd; ++data)
+                *data += constant;
         }
 
         // Sum
@@ -136,10 +162,12 @@ using namespace Stalker::Core::Config;
         static constexpr inline T sum(size_t size, const T* __restrict data) {
             T result = 0;
             auto limit = size - (size % Unroll);
-            for (size_t i = 0; i < limit; i += Unroll)
-                _sum<T, T>(data + i, result, std::make_index_sequence<Unroll>{});
-            for (size_t i = limit; i < size; ++i)
-                result += data[i];
+            const T* totalEnd = data + size;
+            const T* end = data + limit;
+            for (; data != end; data += Unroll)
+                _sum<T, T>(data, result, std::make_index_sequence<Unroll>{});
+            for (; data != totalEnd; ++data)
+                result += *data;
             return result;
         }
         // Dot Product
@@ -147,10 +175,12 @@ using namespace Stalker::Core::Config;
         static constexpr inline T dot(size_t size, const T* a, const T* b) {
             T result = 0;
             auto limit = size - (size % Unroll);
-            for (size_t i = 0; i < limit; i += Unroll)
-                _dot<T, ResultT>(a + i, b + i, result, std::make_index_sequence<Unroll>{});
-            for (size_t i = limit; i < size; ++i)
-                result += a[i] * b[i];
+            const T* totalEnd = a + size;
+            const T* end = a + limit;
+            for (; a != end; a += Unroll, b += Unroll)
+                _dot<T, ResultT>(a, b, result, std::make_index_sequence<Unroll>{});
+            for (; a != totalEnd; ++a, ++b)
+                result += (*a) * (*b);
             return result;
         }
 

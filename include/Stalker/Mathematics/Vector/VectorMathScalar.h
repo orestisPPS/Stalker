@@ -1,5 +1,4 @@
-#ifndef MATH_OPERATIONS_H
-#define MATH_OPERATIONS_H
+#pragma once
 
 #include <cmath>
 #include <cstddef>
@@ -7,65 +6,74 @@
 namespace Stalker::Mathematics {
 
 struct VectorMathScalar {
-public:
     template <typename T, typename ResultT = T>
     static constexpr inline void add(size_t size, const T* a, const T * b, ResultT* result) {
-        for (size_t i = 0; i < size; ++i)
-            result[i] = a[i] + b[i];
+        const T* end = a + size;
+        for (; a != end; ++a, ++b, ++result)
+            *result = (*a) + (*b);
     }
 
     template <typename T, typename ResultT = T>
     static constexpr inline void add(size_t size, const T* a, const T * b, ResultT* result, T scalarA, T scalarB) {
-        for (size_t i = 0; i < size; ++i)
-            result[i] = (a[i] * scalarA) + (b[i] * scalarB);
+        const T* end = a + size;
+        for (; a != end; ++a, ++b, ++result)
+            *result = ((*a) * scalarA) + ((*b) * scalarB);
     }
 
     template <typename T, typename ResultT = T>
     static constexpr inline void axpy(size_t size, const T* a, const T * b, ResultT* result, T scalar) {
-        for (size_t i = 0; i < size; ++i)
-            result[i] = (a[i] * scalar) + b[i];
+        const T* end = a + size;
+        for (; a != end; ++a, ++b, ++result)
+            *result = ((*a) * scalar) + (*b);
     }
 
     template <typename T, typename ResultT = T>
     static constexpr inline void subtract(size_t size, const T* a, const T * b, ResultT* result) {
-        for (size_t i = 0; i < size; ++i)
-            result[i] = a[i] - b[i];
+        const T* end = a + size;
+        for (; a != end; ++a, ++b, ++result)
+            *result = (*a) - (*b);
     }
     
     template <typename T, typename ResultT = T>
     static constexpr inline void subtract(size_t size, const T* a, const T * b, ResultT* result, T scalarA, T scalarB) {
-        for (size_t i = 0; i < size; ++i)
-            result[i] = (a[i] * scalarA) - (b[i] * scalarB);
+        const T* end = a + size;
+        for (; a != end; ++a, ++b, ++result)
+            *result = ((*a) * scalarA) - ((*b) * scalarB);
     }
 
     template <typename T, typename ResultT = T>
     static constexpr inline void multiply(size_t size, const T* a, const T * b, ResultT* result) {
-        for (size_t i = 0; i < size; ++i)
-            result[i] = a[i] * b[i];
+        const T* end = a + size;
+        for (; a != end; ++a, ++b, ++result)
+            *result = (*a) * (*b);
     }
 
     template <typename T, typename ResultT = T>
     static constexpr inline void multiply(size_t size, const T* a, const T * b, ResultT* result, T scalarA, T scalarB) {
-        for (size_t i = 0; i < size; ++i)
-            result[i] = (a[i] * scalarA) * (b[i] * scalarB);
+        const T* end = a + size;
+        for (; a != end; ++a, ++b, ++result)
+            *result = ((*a) * scalarA) * ((*b) * scalarB);
     }
 
     template <typename T, typename ResultT = T>
     static constexpr inline void divide(size_t size, const T* a, const T* b, ResultT* result) {
-        for (size_t i = 0; i < size; ++i)
-            result[i] = a[i] / b[i];
+        const T* end = a + size;
+        for (; a != end; ++a, ++b, ++result)
+            *result = (*a) / (*b);
     }
 
     template <typename T, typename ResultT = T>
     static constexpr inline void divide(size_t size, const T* a, const T* b, ResultT* result, T scalarA, T scalarB) {
-        for (size_t i = 0; i < size; ++i)
-            result[i] = (a[i] * scalarA) / (b[i] * scalarB);
+        const T* end = a + size;
+        for (; a != end; ++a, ++b, ++result)
+            *result = ((*a) * scalarA) / ((*b) * scalarB);
     }
 
     template <typename T, typename ResultT = T>
     static constexpr inline void scale(size_t size, const T* data, ResultT* result, T scalar) {
-        for (size_t i = 0; i < size; ++i)
-            result[i] = data[i] * scalar;
+        const T* end = data + size;
+        for (; data != end; ++data, ++result)
+            *result = (*data) * scalar;
     }
 
     template <typename T>
@@ -76,8 +84,9 @@ public:
 
     template <typename T>
     static constexpr inline void addConstant(size_t size, const T* __restrict data, T* __restrict result, T constant) {
-        for (size_t i = 0; i < size; ++i)
-            result[i] = data[i] + constant;
+        const T* end = data + size;
+        for (; data != end; ++data, ++result)
+            *result = (*data) + constant;
     }
 
     template <typename T>
@@ -89,16 +98,18 @@ public:
     template <typename T>
     static inline T sum(size_t size, const T* __restrict data) {
         T result = T{};
-        for (size_t i = 0; i < size; ++i)
-            result += data[i];
+        const T* end = data + size;
+        for (; data != end; ++data)
+            result += *data;
         return result;
     }
     
     template <typename T, typename ResultT = T>
     static inline ResultT dot(size_t size, const T* a, const T* b) {
         ResultT result = ResultT{};
-        for (size_t i = 0; i < size; ++i)
-            result += a[i] * b[i];
+        const T* end = a + size;
+        for (; a != end; ++a, ++b)
+            result += (*a) * (*b);
         return result;
     }
 
@@ -118,8 +129,9 @@ public:
     template <typename T, typename ResultT = T>
     constexpr static inline ResultT sumOfSquares(size_t size, const T* __restrict data) {
         ResultT result = ResultT{};
-        for (size_t i = 0; i < size; ++i)
-            result += data[i] * data[i];
+        const T* end = data + size;
+        for (; data != end; ++data)
+            result += (*data) * (*data);
         return result;
     }
 
@@ -129,8 +141,9 @@ public:
         ResultT norm = std::sqrt(sumOfSquares(size, data));
         if (norm > 0) {
             norm = 1 / std::sqrt(norm);
-            for (size_t i = 0; i < size; ++i)
-                result[i] = data[i] * norm;
+            const T* end = data + size;
+            for (; data != end; ++data, ++result)
+                *result = (*data) * norm;
         }
     }
 
@@ -138,8 +151,9 @@ public:
     static constexpr inline void normalize(size_t size, T* __restrict data) {
         static_assert(std::is_floating_point<T>::value, "In-place normalize requires a floating-point type");
         T norm = 1.0 / std::sqrt(sumOfSquares(size, data));
-        for (size_t i = 0; i < size; ++i)
-            data[i] *= norm;
+        T* end = data + size;
+        for (; data != end; ++data)
+            *data *= norm;
     }
 
     template <typename T>
@@ -216,4 +230,3 @@ struct Norms {
 };
 
 } // namespace Stalker::Mathematics
-#endif // MATH_OPERATIONS_H
