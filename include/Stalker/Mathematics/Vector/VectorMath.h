@@ -20,7 +20,7 @@ namespace Stalker::Mathematics {
     using namespace Stalker::Threading;
     #endif
 
-    class MathOperations {
+    class VectorMath {
     public:
         template<typename T, typename Trait = DefaultExecutionTrait>
         constexpr inline static void add(size_t n, const T* a, const T* b, T* result){

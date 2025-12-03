@@ -11,6 +11,7 @@
 #include "Memory/AllocatorsTests.h"
 #include "Memory/MemoryOperationsTests.h"
 #include "Mathematics/MathOperationsTests.h"
+#include "Mathematics/MatrixMathTests.h"
 
 namespace STLKR_Tests {
     class StalkerTestRunner {
@@ -25,10 +26,11 @@ namespace STLKR_Tests {
             MetaMathTests<double>().runTest();
             IntegrationTests().runTest();
             DifferentiationTests().runTest();
-            // TypeTraitsSIMDTests().runTest();
+            TypeTraitsSIMDTests().runTest();
             AllocatorsTests().runTest();
             MemoryOperationsTests(2'000).runTest();
             MathOperationsTests(2'000).runTest();
+            MatrixMathTests(333003).runTest();
 
             // IteratorTests().runTest();
             // FixedStridePtrBufferTests().runTest(); //NOT HOMOGENEOUS
