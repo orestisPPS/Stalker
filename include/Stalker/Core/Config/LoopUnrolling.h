@@ -92,6 +92,7 @@
     #define STALKER_UNROLL_DEFAULT
 #endif
 
+#include <cstddef>
 namespace Stalker::Core::Config {
 
     /**

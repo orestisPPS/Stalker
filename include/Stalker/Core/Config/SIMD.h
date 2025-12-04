@@ -76,6 +76,7 @@
     #include <immintrin.h>
 #endif
 
+#include <cstddef>
 namespace Stalker::Core::Config {
 
     /**

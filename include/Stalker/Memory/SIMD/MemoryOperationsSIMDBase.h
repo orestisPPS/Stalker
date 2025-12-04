@@ -2,6 +2,7 @@
 // Created by hal9000 on 7/8/24.
 //
 #pragma once
+#include <utility>
 #include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDBase.h>
 
 namespace Stalker::Memory {
@@ -17,40 +18,40 @@ using namespace Stalker::Core;
         
     public:
 
-        template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
-        constexpr inline static void copy(size_t size, T_data* __restrict destination, const T_data* __restrict source ) {
+        template<bool IsAligned = false, size_t Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+        inline static void copy(size_t size, T_data* __restrict destination, const T_data* __restrict source ) {
             constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
             auto limit = size - (size % blockSize);
             for (size_t i = 0; i < limit; i += blockSize)
-                Child::template _copy<Policy>(source + i, destination + i, std::make_index_sequence<Unroll>{});
+                Child::template _copy<IsAligned, Policy>(source + i, destination + i, std::make_index_sequence<Unroll>{});
             for (size_t i = limit; i < size; i++)
                 destination[i] = source[i];
         }
         
-        template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
-        constexpr inline static void setValue(size_t size, T_data* __restrict data, T_data value) {
+        template<bool IsAligned = false, size_t Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+        inline static void setValue(size_t size, T_data* __restrict data, T_data value) {
             constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
             auto limit = size - (size % blockSize);
             T_simd scalarSIMD;
             broadcast(&scalarSIMD, value);
             for (size_t i = 0; i < limit; i += blockSize)
-                Child::template _setValue<Policy>(data + i, &scalarSIMD, std::make_index_sequence<Unroll>{});
+                Child::template _setValue<IsAligned, Policy>(data + i, &scalarSIMD, std::make_index_sequence<Unroll>{});
             for (size_t i = limit; i < size; i++)
                 data[i] = value;
         }
         
-        template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
-        constexpr inline static void setZero(size_t size, T_data* __restrict data) {
+        template<bool IsAligned = false, size_t Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+        inline static void setZero(size_t size, T_data* __restrict data) {
             constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
             auto limit = size - (size % blockSize);
             for (size_t i = 0; i < limit; i += blockSize)
-                Child::template _setZero<Policy>(data + i, std::make_index_sequence<Unroll>{});
+                Child::template _setZero<IsAligned, Policy>(data + i, std::make_index_sequence<Unroll>{});
             for (size_t i = limit; i < size; i++)
                 data[i] = 0;
         }
 
-        template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
-        constexpr inline static bool areEqual(size_t size, const T_data* a, const T_data *b){
+        template<bool IsAligned = false, size_t Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+        inline static bool areEqual(size_t size, const T_data* a, const T_data *b){
             constexpr unsigned blockSize = Traits::template BlockSize<DefaultUnroll()>();
             auto limit = size - (size % blockSize);
             bool result = true;
@@ -62,13 +63,27 @@ using namespace Stalker::Core;
         }
         
         template <bool IsAligned = false>
-        constexpr inline static T_simd load(const T_data* __restrict data) {
-            return Child::_load(data);
+        inline static T_simd load(const T_data* __restrict data) {
+            return Child::template _load<IsAligned>(data);
+        }
+
+        template <size_t Index, bool IsAligned = false>
+        inline static T_simd loadOffset(const T_data* __restrict data) {
+            return Child::template _load<IsAligned>(data + Index * Traits::RegisterSize());
+        }
+        template <size_t Index, bool IsAligned = false>
+        inline static T_simd load(const T_data* __restrict data) {
+            return Child::template _load<IsAligned>(data + Index * Traits::RegisterSize());
         }
         
         template<T_SIMDStore Policy = DefaultSIMDStore()>
-        constexpr inline static void store(T_data* __restrict destination, const T_simd& source) {
+        inline static void store(T_data* __restrict destination, const T_simd& source) {
             Child::template _store<Policy>(destination, source);
+        }
+
+        template<size_t Index, T_SIMDStore Policy = DefaultSIMDStore()>
+        inline static void storeOffset(T_data* __restrict destination, const T_simd& source) {
+            Child::template _store<Policy>(destination + Index * Traits::RegisterSize(), source);
         }
         
         inline static void setZeroRegister(T_simd* __restrict destination) {
@@ -76,7 +91,7 @@ using namespace Stalker::Core;
         }
 
         template<unsigned Unroll = 1>
-        constexpr inline static void broadcast(T_simd* __restrict destination, T scalar) {
+        inline static void broadcast(T_simd* __restrict destination, T scalar) {
             Child::_broadcast(destination, scalar, std::make_index_sequence<Unroll>{});
         }
 

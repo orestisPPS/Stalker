@@ -35,23 +35,23 @@ private:
             _mm512_stream_pd(destination, source);
     }
 
-    template <T_SIMDStore Policy, size_t... Is>
+    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
     static inline void _copy(const T_data* __restrict source, T_data* __restrict destination, std::index_sequence<Is...>) {
-        ((_store<Policy>(destination + _registerOffset<Is>(), _mm512_load_pd(source + _registerOffset<Is>()))), ...);
+        ((storeOffset<Is, Policy>(destination, loadOffset<Is, IsAligned>(source))), ...);
     }
 
-    template <T_SIMDStore Policy, size_t... Is>
+    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
     static inline void _setZero(T_data* __restrict destination, std::index_sequence<Is...>) {
-        ((_store<Policy>(destination + _registerOffset<Is>(), _mm512_setzero_pd())), ...);
+        ((storeOffset<Is, Policy>(destination, _mm512_setzero_pd())), ...);
     }
 
     static inline void _setZeroRegister(T_simd* __restrict destination) {
         *destination = _mm512_setzero_pd();
     }
 
-    template< T_SIMDStore Policy, size_t... Is >
+    template<bool IsAligned, T_SIMDStore Policy, size_t... Is >
     static inline void _setValue( T_data* __restrict dst, const T_simd* __restrict scalarSIMD, std::index_sequence<Is...> ){
-        ( _store<Policy>( dst + _registerOffset<Is>(), *scalarSIMD ), ... );
+        ( storeOffset<Is, Policy>( dst, *scalarSIMD ), ... );
     }
 
     template <size_t... Is>
@@ -59,7 +59,7 @@ private:
         ((destination[Is] = _mm512_set1_pd(value)), ...);
     }
 
-    template <size_t... Is>
+    template <bool IsAligned, size_t... Is>
     static inline bool _areEqual(const T_data* a, const T_data* b, std::index_sequence<Is...>) {
         bool result = true;
         ((result = result && _mm512_test_epi64_mask(
@@ -98,26 +98,26 @@ private:
         else
             _mm512_stream_ps(destination, source);
     }
-    template <T_SIMDStore Policy, size_t... Is>
+    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
     static inline void _copy(const T_data* src, T_data* dst, std::index_sequence<Is...>) {
-        ((_store<Policy>(dst + _registerOffset<Is>(), _mm512_load_ps(src + _registerOffset<Is>()))), ...);
+        ((storeOffset<Is, Policy>(dst, loadOffset<Is, IsAligned>(src))), ...);
     }
-    template <T_SIMDStore Policy, size_t... Is>
+    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
     static inline void _setZero(T_data* dst, std::index_sequence<Is...>) {
-        ((_store<Policy>(dst + _registerOffset<Is>(), _mm512_setzero_ps())), ...);
+        ((storeOffset<Is, Policy>(dst, _mm512_setzero_ps())), ...);
     }
     static inline void _setZeroRegister(T_simd* __restrict destination) {
         *destination = _mm512_setzero_ps();
     }
-    template< T_SIMDStore Policy, size_t... Is >
+    template<bool IsAligned, T_SIMDStore Policy, size_t... Is >
     static inline void _setValue( T_data* __restrict dst, const T_simd* __restrict scalarSIMD, std::index_sequence<Is...> ){
-        ( _store<Policy>( dst + _registerOffset<Is>(), *scalarSIMD ), ... );
+        ( storeOffset<Is, Policy>( dst, *scalarSIMD ), ... );
     }
     template <size_t... Is>
     static  inline void _broadcast(T_simd* __restrict destination, const T_data& value, std::index_sequence<Is...>) {
         ((destination[Is] = _mm512_set1_ps(value)), ...);
     }
-    template <size_t... Is>
+    template <bool IsAligned, size_t... Is>
     static inline bool _areEqual(const T_data* a, const T_data* b, std::index_sequence<Is...>) {
         bool result = true;
         ((result = result && _mm512_test_epi32_mask(
@@ -157,30 +157,30 @@ private:
             _mm512_stream_si512(reinterpret_cast<__m512i*>(destination), source);
     }
 
-    template <T_SIMDStore Policy, size_t... Is>
+    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
     static inline void _copy(const T_data* __restrict src, T_data* __restrict dst, std::index_sequence<Is...>) {
-        ((_store<Policy>(dst + _registerOffset<Is>(), _mm512_load_si512(reinterpret_cast<const __m512i*>(src + _registerOffset<Is>())))), ...);
+        ((storeOffset<Is, Policy>(dst, loadOffset<Is, IsAligned>(src))), ...);
     }
 
-    template <T_SIMDStore Policy, size_t... Is>
+    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
     static inline void _setZero(T_data* __restrict dst, std::index_sequence<Is...>) {
-        ((_store<Policy>(dst + _registerOffset<Is>(), _mm512_setzero_si512())), ...);
+        ((storeOffset<Is, Policy>(dst, _mm512_setzero_si512())), ...);
     }
 
     static inline void _setZeroRegister(T_simd* __restrict destination) {
         *destination = _mm512_setzero_si512();
     }
 
-    template< T_SIMDStore Policy, size_t... Is >
+    template<bool IsAligned, T_SIMDStore Policy, size_t... Is >
     static inline void _setValue( T_data* __restrict dst, const T_simd* __restrict scalarSIMD, std::index_sequence<Is...> ){
-        ( _store<Policy>( dst + _registerOffset<Is>(), *scalarSIMD ), ... );
+        ( storeOffset<Is, Policy>( dst, *scalarSIMD ), ... );
     }
     template <size_t... Is>
     static inline void _broadcast(T_simd* __restrict destination, const T_data& value, std::index_sequence<Is...>) {
         ((destination[Is] = _mm512_set1_epi32(value)), ...);
     }
 
-    template <size_t... Is>
+    template <bool IsAligned, size_t... Is>
     static inline bool _areEqual(const T_data*  a, const T_data* b, std::index_sequence<Is...>) {
         bool result = true;
         ((result = result &&
@@ -222,23 +222,23 @@ private:
             _mm512_stream_si512(reinterpret_cast<__m512i*>(destination), source);
     }
 
-    template <T_SIMDStore Policy, size_t... Is>
+    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
     static inline void _copy(const T_data* __restrict src, T_data* __restrict dst, std::index_sequence<Is...>) {
-        ((_store<Policy>(dst + _registerOffset<Is>(), _mm512_load_si512(reinterpret_cast<const __m512i*>(src + _registerOffset<Is>())))), ...);
+        ((storeOffset<Is, Policy>(dst, loadOffset<Is, IsAligned>(src))), ...);
     }
 
-    template <T_SIMDStore Policy, size_t... Is>
+    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
     static inline void _setZero(T_data* __restrict dst, std::index_sequence<Is...>) {
-        ((_store<Policy>(dst + _registerOffset<Is>(), _mm512_setzero_si512())), ...);
+        ((storeOffset<Is, Policy>(dst, _mm512_setzero_si512())), ...);
     }
 
     static inline void _setZeroRegister(T_simd* __restrict destination) {
         *destination = _mm512_setzero_si512();
     }
 
-    template< T_SIMDStore Policy, size_t... Is >
+    template<bool IsAligned, T_SIMDStore Policy, size_t... Is >
     static inline void _setValue( T_data* __restrict dst, const T_simd* __restrict scalarSIMD, std::index_sequence<Is...> ){
-        ( _store<Policy>( dst + _registerOffset<Is>(), *scalarSIMD ), ... );
+        ( storeOffset<Is, Policy>( dst, *scalarSIMD ), ... );
     }
 
     template <size_t... Is>
@@ -247,7 +247,7 @@ private:
     }
 
 
-    template <size_t... Is>
+    template <bool IsAligned, size_t... Is>
     static inline bool _areEqual(const T_data*  a, const T_data* b, std::index_sequence<Is...>) {
         bool result = true;
         ((result = result &&
@@ -285,21 +285,21 @@ private:
             _mm512_stream_si512(reinterpret_cast<__m512i*>(destination), source);
     }
 
-    template <T_SIMDStore Policy, size_t... Is>
+    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
     static inline void _copy(const T_data* __restrict src, T_data* __restrict dst, std::index_sequence<Is...>) {
-        ((_store<Policy>(dst + _registerOffset<Is>(), _mm512_load_si512(reinterpret_cast<const __m512i*>(src + _registerOffset<Is>())))), ...);
+        ((storeOffset<Is, Policy>(dst, loadOffset<Is, IsAligned>(src))), ...);
     }
 
-    template <T_SIMDStore Policy, size_t... Is>
+    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
     static inline void _setZero(T_data* __restrict dst, std::index_sequence<Is...>) {
-        ((_store<Policy>(dst + _registerOffset<Is>(), _mm512_setzero_si512())), ...);
+        ((storeOffset<Is, Policy>(dst, _mm512_setzero_si512())), ...);
     }
 
     static inline void _setZeroRegister(T_simd* __restrict destination) {
         *destination = _mm512_setzero_si512();
     }
 
-    template< T_SIMDStore Policy, size_t... Is >
+    template<bool IsAligned, T_SIMDStore Policy, size_t... Is >
     static inline void _setValue( T_data* __restrict dst, const T_simd* __restrict scalarSIMD, std::index_sequence<Is...> ){
         ( _store<Policy>( dst + _registerOffset<Is>(), *scalarSIMD ), ... );
     }
@@ -308,7 +308,7 @@ private:
         ((destination[Is] = _mm512_set1_epi16(value)), ...);
     }
 
-    template <size_t... Is>
+    template <bool IsAligned, size_t... Is>
     static inline bool _areEqual(const T_data*  a, const T_data* b, std::index_sequence<Is...>) {
         bool result = true;
         ((result = result &&

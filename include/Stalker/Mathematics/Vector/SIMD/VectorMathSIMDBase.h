@@ -26,48 +26,42 @@ struct VectorMathSIMDBase {
 public:
     static constexpr unsigned registerSize = TypeTraitsSIMD<T, Type>::RegisterSize();
     
-    template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+    template<bool IsAligned, unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
     inline static void add(size_t size, const T_data *a, const T_data  *b, T_data *result, T_data scaleA, T_data scaleB) {
         constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
         auto limit = size - (size % blockSize);
         T_simd scalarSIMD1, scalarSIMD2;
         MemoryOps::broadcast(&scalarSIMD1, scaleA);
         MemoryOps::broadcast(&scalarSIMD2, scaleB);
-        const T_data* totalEnd = a + size;
-        const T_data* end = a + limit;
-        for (; a != end; a += blockSize, b += blockSize, result += blockSize)
-            Child::template _add<Policy, true>(a, b, result, std::make_index_sequence<Unroll>{}, &scalarSIMD1, &scalarSIMD2);
-        for (; a != totalEnd; ++a, ++b, ++result)
-            *result = (*a) * scaleA + (*b) * scaleB;
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::template _add<IsAligned, Policy, true>(a + i, b + i, result + i, std::make_index_sequence<Unroll>{}, &scalarSIMD1, &scalarSIMD2);
+        for (size_t i = limit; i < size; ++i)
+            result[i] = a[i] * scaleA + b[i] * scaleB;
     }
 
-    template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+    template<bool IsAligned, unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
     inline static void add(size_t size, const T_data *a, const T_data *b, T_data *result) {
         constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
         auto limit = size - (size % blockSize);
-        const T_data* totalEnd = a + size;
-        const T_data* end = a + limit;
-        for (; a != end; a += blockSize, b += blockSize, result += blockSize)
-            Child::template _add<Policy, false>(a, b, result, std::make_index_sequence<Unroll>{});
-        for (; a != totalEnd; ++a, ++b, ++result)
-            *result = (*a) + (*b);
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::template _add<IsAligned, Policy, false>(a + i, b + i, result + i, std::make_index_sequence<Unroll>{});
+        for (size_t i = limit; i < size; ++i)
+            result[i] = a[i] + b[i];
     }
 
-    template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+    template<bool IsAligned, unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
     inline static void axpy(size_t size, const T_data *a, const T_data  *b, T_data *result, T_data scale) {
         constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
         auto limit = size - (size % blockSize);
         T_simd scalarSIMD;
         MemoryOps::broadcast(&scalarSIMD, scale);
-        const T_data* totalEnd = a + size;
-        const T_data* end = a + limit;
-        for (; a != end; a += blockSize, b += blockSize, result += blockSize)
-            Child::template _axpy<Policy>(a, b, result, std::make_index_sequence<Unroll>{}, &scalarSIMD);
-        for (; a != totalEnd; ++a, ++b, ++result)
-            *result = (*a) * scale + (*b);
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::template _axpy<IsAligned, Policy>(a + i, b + i, result + i, std::make_index_sequence<Unroll>{}, &scalarSIMD);
+        for (size_t i = limit; i < size; ++i)
+            result[i] = a[i] * scale + b[i];
     }
 
-    template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+    template<bool IsAligned, unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
     inline static void subtract(size_t size, const T_data *a, const T_data  *b, T_data *result, T_data scaleA, T_data scaleB) {
         constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
         auto limit = size - (size % blockSize);
@@ -77,140 +71,120 @@ public:
             MemoryOps::broadcast(&scalarSIMD2, -scaleB);
         else
             MemoryOps::broadcast(&scalarSIMD2, scaleB);
-        const T_data* totalEnd = a + size;
-        const T_data* end = a + limit;
-        for (; a != end; a += blockSize, b += blockSize, result += blockSize)
-            Child::template _subtract<Policy, true>(a, b, result, std::make_index_sequence<Unroll>{}, &scalarSIMD1, &scalarSIMD2);
-        for (; a != totalEnd; ++a, ++b, ++result)
-            *result = (*a) * scaleA - (*b) * scaleB;
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::template _subtract<IsAligned, Policy, true>(a + i, b + i, result + i, std::make_index_sequence<Unroll>{}, &scalarSIMD1, &scalarSIMD2);
+        for (size_t i = limit; i < size; ++i)
+            result[i] = a[i] * scaleA - b[i] * scaleB;
     }
 
-    template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+    template<bool IsAligned, unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
     inline static void subtract(size_t size, const T_data *a, const T_data *b, T_data *result) {
         constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
         auto limit = size - (size % blockSize);
-        const T_data* totalEnd = a + size;
-        const T_data* end = a + limit;
-        for (; a != end; a += blockSize, b += blockSize, result += blockSize)
-            Child::template _subtract<Policy, false>(a, b, result, std::make_index_sequence<Unroll>{});
-        for (; a != totalEnd; ++a, ++b, ++result)
-            *result = (*a) - (*b);
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::template _subtract<IsAligned, Policy, false>(a + i, b + i, result + i, std::make_index_sequence<Unroll>{});
+        for (size_t i = limit; i < size; ++i)
+            result[i] = a[i] - b[i];
     }
 
-    template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+    template<bool IsAligned, unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
     inline static void multiply(size_t size, const T_data *a, const T_data  *b, T_data *result, T_data scaleA, T_data scaleB) {
         constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
         auto limit = size - (size % blockSize);
         T_simd scalarSIMD1, scalarSIMD2;
         MemoryOps::broadcast(&scalarSIMD1, scaleA);
         MemoryOps::broadcast(&scalarSIMD2, scaleB);
-        const T_data* totalEnd = a + size;
-        const T_data* end = a + limit;
-        for (; a != end; a += blockSize, b += blockSize, result += blockSize)
-            Child::template _multiply<Policy, true>(a, b, result, std::make_index_sequence<Unroll>{}, &scalarSIMD1, &scalarSIMD2);
-        for (; a != totalEnd; ++a, ++b, ++result)
-            *result = (*a) * scaleA * (*b) * scaleB;
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::template _multiply<IsAligned, Policy, true>(a + i, b + i, result + i, std::make_index_sequence<Unroll>{}, &scalarSIMD1, &scalarSIMD2);
+        for (size_t i = limit; i < size; ++i)
+            result[i] = a[i] * scaleA * b[i] * scaleB;
     }
 
-    template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+    template<bool IsAligned, unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
     inline static void multiply(size_t size, const T_data *a, const T_data *b, T_data *result) {
         constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
         auto limit = size - (size % blockSize);
-        const T_data* totalEnd = a + size;
-        const T_data* end = a + limit;
-        for (; a != end; a += blockSize, b += blockSize, result += blockSize)
-            Child::template _multiply<Policy, false>(a, b, result, std::make_index_sequence<Unroll>{});
-        for (; a != totalEnd; ++a, ++b, ++result)
-            *result = (*a) * (*b);
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::template _multiply<IsAligned, Policy, false>(a + i, b + i, result + i, std::make_index_sequence<Unroll>{});
+        for (size_t i = limit; i < size; ++i)
+            result[i] = a[i] * b[i];
     }
 
-    template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+    template<bool IsAligned, unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
     inline static void scale(size_t size, const T_data *data, T_data *result, T scalar){
         constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
         auto limit = size - (size % blockSize);
         T_simd scalarSIMD;
         MemoryOps::broadcast(&scalarSIMD, scalar);
-        const T_data* totalEnd = data + size;
-        const T_data* end = data + limit;
-        for (; data != end; data += blockSize, result += blockSize)
-            Child::template _scale<Policy>(data, result, &scalarSIMD, std::make_index_sequence<Unroll>{});
-        for (; data != totalEnd; ++data, ++result)
-            *result = (*data) * scalar;
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::template _scale<IsAligned, Policy>(data + i, result + i, &scalarSIMD, std::make_index_sequence<Unroll>{});
+        for (size_t i = limit; i < size; ++i)
+            result[i] = data[i] * scalar;
     }
 
-    template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+    template<bool IsAligned, unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
     inline static void scale(size_t size, __restrict T_data *data, T scalar){
         constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
         auto limit = size - (size % blockSize);
         T_simd scalarSIMD;
         MemoryOps::broadcast(&scalarSIMD, scalar);
-        T_data* totalEnd = data + size;
-        T_data* end = data + limit;
-        for (; data != end; data += blockSize)
-            Child::template _scale<Policy>(data, &scalarSIMD, std::make_index_sequence<Unroll>{});
-        for (; data != totalEnd; ++data)
-            *data *= scalar;
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::template _scale<IsAligned, Policy>(data + i, &scalarSIMD, std::make_index_sequence<Unroll>{});
+        for (size_t i = limit; i < size; ++i)
+            data[i] *= scalar;
     }
 
-    template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+    template<bool IsAligned, unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
     inline static void addConstant(size_t size, const T_data *data, T_data *result, T constant) {
         constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
         auto limit = size - (size % blockSize);
         T_simd scalarSIMD;
         MemoryOps::broadcast(&scalarSIMD, constant);
-        const T_data* totalEnd = data + size;
-        const T_data* end = data + limit;
-        for (; data != end; data += blockSize, result += blockSize)
-            Child::template _addConstant<Policy>(data, result, &scalarSIMD, std::make_index_sequence<Unroll>{});
-        for (; data != totalEnd; ++data, ++result)
-            *result = (*data) + constant;
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::template _addConstant<IsAligned, Policy>(data + i, result + i, &scalarSIMD, std::make_index_sequence<Unroll>{});
+        for (size_t i = limit; i < size; ++i)
+            result[i] = data[i] + constant;
     }
 
-    template<unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+    template<bool IsAligned, unsigned Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
     inline static void addConstant(size_t size, __restrict T_data *data, T constant) {
         constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
         auto limit = size - (size % blockSize);
         T_simd scalarSIMD;
         MemoryOps::broadcast(&scalarSIMD, constant);
-        T_data* totalEnd = data + size;
-        T_data* end = data + limit;
-        for (; data != end; data += blockSize)
-            Child::template _addConstant<Policy>(data, &scalarSIMD, std::make_index_sequence<Unroll>{});
-        for (; data != totalEnd; ++data)
-            *data += constant;
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::template _addConstant<IsAligned, Policy>(data + i, &scalarSIMD, std::make_index_sequence<Unroll>{});
+        for (size_t i = limit; i < size; ++i)
+            data[i] += constant;
     }
 
-    template<unsigned Unroll = DefaultUnroll()>
+    template<bool IsAligned, unsigned Unroll = DefaultUnroll()>
     inline static T_data sum(size_t size, const T* __restrict data) {
         constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
         auto limit = size - (size % blockSize);
         T_simd accumulators[Unroll];
         for (auto& acc : accumulators) 
-        MemoryOps::setZeroRegister(&acc);
-        const T* totalEnd = data + size;
-        const T* end = data + limit;
-        for (; data != end; data += blockSize)
-            Child::_sum(data, accumulators , std::make_index_sequence<Unroll>{});
+            MemoryOps::setZeroRegister(&acc);
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::template _sum<IsAligned>(data + i, accumulators , std::make_index_sequence<Unroll>{});
         T_data result = _registerSum(accumulators, Unroll);
-        for (; data != totalEnd; ++data)
-            result += *data;
+        for (size_t i = limit; i < size; ++i)
+            result += data[i];
         return result;
     }
 
-    template<unsigned Unroll = DefaultUnroll()>
+    template<bool IsAligned, unsigned Unroll = DefaultUnroll()>
     inline static T_data dot(size_t size, const T* __restrict a, const T* __restrict b) {
         constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
         auto limit = size - (size % blockSize);
         T_simd accumulators[Unroll];
         for (auto& acc : accumulators) 
-        MemoryOps::setZeroRegister(&acc);
-        const T* totalEnd = a + size;
-        const T* end = a + limit;
-        for (; a != end; a += blockSize, b += blockSize)
-            Child::_dot(a, b, accumulators, std::make_index_sequence<Unroll>{});
+            MemoryOps::setZeroRegister(&acc);
+        for (size_t i = 0; i < limit; i += blockSize)
+            Child::template _dot<IsAligned>(a + i, b + i, accumulators, std::make_index_sequence<Unroll>{});
         T_data result = _registerSum(accumulators, Unroll);
-        for (; a != totalEnd; ++a, ++b)
-            result += (*a) * (*b);
+        for (size_t i = limit; i < size; ++i)
+            result += a[i] * b[i];
         return result;
     }
 protected:
