@@ -53,8 +53,7 @@ namespace Benchmarks {
 			auto config = SingleBenchmarkConfig{};
 			
 			auto allocator = [&]() { return createAlignedVector<T>(size); };
-			auto src = allocator();
-			Stalker::Mathematics::Random::uniform<T>(size, src.data(), 0, 100);
+			auto src = this->_createData<T>(size);
 			const auto totalBytes = 2 * size * sizeof(T);
 
 			#if defined(STALKER_SIMD_AVX2_OK)
@@ -64,7 +63,7 @@ namespace Benchmarks {
 				[&](auto& dst) {
 					MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX2, Unroll>>(size, dst.data(), src.data());
 				},
-				allocator, config, totalBytes
+				allocator, config, totalBytes, size
 			);
 			#endif
 			
@@ -75,7 +74,7 @@ namespace Benchmarks {
 					[&](auto& dst) {
 							MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX512, Unroll>>(size, dst.data(), src.data());
 					},
-					allocator, config, totalBytes
+					allocator, config, totalBytes, size
 			);
 			#endif
 
@@ -83,12 +82,12 @@ namespace Benchmarks {
 			config.name = "std::memcpy " + type;
 			_benchmarkPAPI(
 					[&](auto& dst) {
-							MemoryOperations::copy<T, ExecutionTraitClassic<true>>(size, dst.data(), src.data());
+							MemoryOperations::copy<T, ExecutionTraitScalar<true>>(size, dst.data(), src.data());
 					},
-					allocator, config, totalBytes
+					allocator, config, totalBytes, size
 			);
 
-			#if STALKER_BENCH_BLAS_AVAILABLE
+			#if STALKER_BENCH_OPENBLAS_AVAILABLE
 			config.name = "blas " + type;
 			_benchmarkPAPI(
 					[&](auto& dst) {
@@ -98,7 +97,7 @@ namespace Benchmarks {
 									cblas_dcopy(static_cast<int>(size), src.data(), 1, dst.data(), 1);
 							}
 					},
-					allocator, config, totalBytes
+					allocator, config, totalBytes, size
 			);
 			#endif
 
@@ -113,11 +112,11 @@ namespace Benchmarks {
 					Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> dstMap(dst.data(), static_cast<int>(size));
 					dstMap = eigenData; // assignment timing only
 				},
-				eigenAllocator, config, totalBytes
+				eigenAllocator, config, totalBytes, size
 			);
 			#endif
 
-			_logs.exportToJSON(_logExportPath + "/copy_t_" + type + "_s" + std::to_string(size) + "_" + _getSizeType(size) + "_u" + std::to_string(Unroll));
+			_logs.exportToJSON(_logExportPath + "/copy_t_" + type + "_s" + std::to_string(size) + "_" + std::to_string(size) + "_u" + std::to_string(Unroll));
 			_logs.clear();
 		}
 
@@ -143,7 +142,7 @@ namespace Benchmarks {
 				[&](auto& dst) {
 					MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX2, Unroll>>(size, dst.data(), value);
 				},
-					allocator, config, totalBytes
+					allocator, config, totalBytes, size
 				);
 				#endif
 				
@@ -154,7 +153,7 @@ namespace Benchmarks {
 					[&](auto& dst) {
 							MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX512, Unroll>>(size, dst.data(), value);
 					},
-					allocator, config, totalBytes
+					allocator, config, totalBytes, size
 			);
 			#endif
 
@@ -162,9 +161,9 @@ namespace Benchmarks {
 			config.name = "std::fill " + type;
 			_benchmarkPAPI(
 					[&](auto& dst) {
-							MemoryOperations::setValue<T, ExecutionTraitClassic<true>>(size, dst.data(), value);
+							MemoryOperations::setValue<T, ExecutionTraitScalar<true>>(size, dst.data(), value);
 					},
-					allocator, config, totalBytes
+					allocator, config, totalBytes, size
 			);
 
 			#if STALKER_BENCH_EIGEN_AVAILABLE
@@ -178,11 +177,11 @@ namespace Benchmarks {
 					Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> dstMap(dst.data(), static_cast<int>(size));
 					dstMap.setConstant(value);
 				},
-				eigenAllocator, config, totalBytes
+				eigenAllocator, config, totalBytes, size
 			);
 			#endif
 
-			_logs.exportToJSON(_logExportPath + "/set_value_t_" + type + "_s" + std::to_string(size) + "_" + _getSizeType(size) + "_u" + std::to_string(Unroll));
+			_logs.exportToJSON(_logExportPath + "/set_value_t_" + type + "_s" + std::to_string(size) + "_" + std::to_string(size) + "_u" + std::to_string(Unroll));
 			_logs.clear();
 		}
 	};

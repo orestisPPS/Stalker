@@ -56,14 +56,13 @@ class MetricSetResult:
 # ---------------------------- Single-run Plotter ----------------------------
 
 class BenchmarkPlotter:
-    def __init__(self, data: Dict[str, Any], out_dir: str, dpi: int = 140, run_label: str = "", err: str = "std", err_scale: float = 1.0, log_y: bool = False):
+    def __init__(self, data: Dict[str, Any], out_dir: str, dpi: int = 140, run_label: str = "", err: str = "std", err_scale: float = 1.0):
         self.data = data
         self.out_dir = out_dir
         self.dpi = dpi
         self.run_label = run_label
         self.err = err  # 'std' | 'stderr' | 'none'
         self.err_scale = err_scale
-        self.log_y = log_y
         os.makedirs(self.out_dir, exist_ok=True)
 
         self.parameters = self._extractParameters()
@@ -97,6 +96,10 @@ class BenchmarkPlotter:
         legacy_plots = self.data.get("_measurementSetsPlot", {}) or {}
         clean_sets: Dict[str, Dict[str, List[float]]] = {}
         for metric, methods in sets.items():
+            # Normalize metric name: gbps -> GB/s
+            if "gbps" in metric.lower():
+                metric = metric.replace("gbps", "GB/s").replace("Gbps", "GB/s")
+            
             # Optional set-level plot flag inside the set object (keys: _plot or plot)
             if isinstance(methods, dict):
                 set_plot_flag = True
@@ -228,136 +231,26 @@ class BenchmarkPlotter:
             for method, values in methods.items():
                 msr.method_stats[method] = self._computeStats(values)
             results.append(msr)
-        sw_res = MetricSetResult(metric_name="Stopwatches")
+        sw_res = MetricSetResult(metric_name="Time")
         for method, values in self.stopwatches.items():
             sw_res.method_stats[method] = self._computeStats(values)
         return results, sw_res
-
-    # ---------- Formatting ----------
-    def _parametersText(self) -> str:
-        if not self.parameters:
-            return "No parameters provided"
-        lines = [f"{k}: {self.parameters[k]}" for k in sorted(self.parameters.keys())]
-        return "\n".join(lines)
 
     @staticmethod
     def _sanitizeFileName(name: str) -> str:
         return "".join(ch if ch.isalnum() or ch in (" ", "_", "-") else "_" for ch in name).replace(" ", "_")
 
-    # ---------- Plotting ----------
-    def _plotMetricSet(self, result: MetricSetResult) -> str:
-        methods = list(result.method_stats.keys())
-        medians = [result.method_stats[m].median for m in methods]
-        # stds not needed directly here; error bars handled in bar constructor via yerr
-
-        fig = plt.figure(figsize=(8, 4.5), dpi=self.dpi)
-        ax = fig.add_subplot(111)
-
-        # Determine error bars according to mode
-        if self.err == "none":
-            yerr = None
-        elif self.err == "stderr":
-            # standard error = std / sqrt(n)
-            n_list = [max(1, int(result.method_stats[m].count)) for m in methods]
-            yerr = [ (result.method_stats[m].std / max(1.0, math.sqrt(float(n)))) * self.err_scale for m, n in zip(methods, n_list) ]
-        else:  # 'std'
-            yerr = [ result.method_stats[m].std * self.err_scale for m in methods ]
-
-        x = np.arange(len(methods))
-        ax.bar(x, medians, yerr=yerr, capsize=4)
-        ax.set_xticks(x, methods, rotation=20, ha="right")
-        title = result.metric_name if not self.run_label else f"{result.metric_name} — {self.run_label}"
-        ax.set_title(title)
-        ax.set_ylabel("Median ± Std")
-        ax.grid(True, axis="y", linestyle=":", linewidth=0.8)
-        # Finer y-axis ticks and minor grid
-        try:
-            ax.yaxis.set_major_locator(mticker.MaxNLocator(nbins=10, min_n_ticks=6))
-            if self.log_y:
-                # For log scale, enable minor ticks automatically
-                ax.minorticks_on()
-            else:
-                ax.yaxis.set_minor_locator(mticker.AutoMinorLocator(2))
-            ax.grid(True, axis='y', which='minor', linestyle=':', linewidth=0.5, alpha=0.5)
-        except Exception:
-            pass
-        if self.log_y:
-            try:
-                ax.set_yscale('log')
-            except Exception:
-                pass
-        # Keep only built-in errorbar indicators (capsize on yerr). Custom overlays removed.
-
-        # Parameters box
-        ax.text(
-            1.02, 0.5, self._parametersText(),
-            transform=ax.transAxes,
-            va="center", ha="left", fontsize=9,
-            bbox=dict(boxstyle="round", facecolor="white", alpha=0.8, edgecolor="lightgray"),
-        )
-
-        plt.tight_layout()
-        fname = f"{self._sanitizeFileName(result.metric_name)}.png"
-        fpath = os.path.join(self.out_dir, fname)
-        fig.savefig(fpath, bbox_inches="tight")
-        plt.close(fig)
-        return fpath
-
-    def _plotStopwatches(self, sw_result: MetricSetResult) -> str:
-        sw_result = MetricSetResult(metric_name="Stopwatches (timer ticks)", method_stats=sw_result.method_stats)
-        return self._plotMetricSet(sw_result)
-
-    # ---------- Public API ----------
-    def plotAll(self) -> Dict[str, Any]:
-        metric_results, sw_result = self._computeAllStats()
-
-        # Summary table
-        records = []
-        for res in metric_results + ([sw_result] if sw_result.method_stats else []):
-            for method, stats in res.method_stats.items():
-                records.append({
-                    "Run": self.run_label or "run",
-                    "Metric": res.metric_name,
-                    "Method": method,
-                    "N": stats.count,
-                    "Median": stats.median,
-                    "Mean": stats.mean,
-                    "Std": stats.std,
-                    "Min": stats.min,
-                    "Max": stats.max,
-                })
-        cols = ["Run", "Metric", "Method", "N", "Median", "Mean", "Std", "Min", "Max"]
-        if len(records) == 0:
-            # No metrics found for this JSON; create an empty DataFrame
-            self.summary_df = pd.DataFrame(columns=cols)
-            summary_csv = os.path.join(self.out_dir, "summary_stats.csv")
-            # Write empty CSV with header for consistency
-            self.summary_df.to_csv(summary_csv, index=False)
-        else:
-            self.summary_df = pd.DataFrame.from_records(records)
-            self.summary_df = self.summary_df.set_index(["Run", "Metric", "Method"]).sort_index()
-            summary_csv = os.path.join(self.out_dir, "summary_stats.csv")
-            self.summary_df.to_csv(summary_csv)
-
-        outputs = {"plots": [], "summary_csv": summary_csv}
-        for res in metric_results:
-            outputs["plots"].append(self._plotMetricSet(res))
-        if sw_result.method_stats:
-            outputs["plots"].append(self._plotStopwatches(sw_result))
-        return outputs
-
 
 # ---------------------------- Multi-run Orchestrator ----------------------------
 
 class MultiBenchmarkPlotter:
-    def __init__(self, input_dir: str, out_dir: str = "plots", dpi: int = 140, show: bool = False, err: str = "std", err_scale: float = 1.0, log_y: bool = False):
+    def __init__(self, input_dir: str, out_dir: str = "plots", dpi: int = 140, show: bool = False, err: str = "std", err_scale: float = 1.0):
         self.input_dir = input_dir
         self.out_dir = out_dir
         self.dpi = dpi
         self.show = show
         self.err = err
         self.err_scale = err_scale
-        self.log_y = log_y
         os.makedirs(self.out_dir, exist_ok=True)
         # Aggregated raw values across all files, honoring plot flags
         # Shape: { metric_name: { method_name: [values...] } }
@@ -456,7 +349,7 @@ class MultiBenchmarkPlotter:
 
     # Simplified: removed unused helpers _collectAllMetrics and _availableMethodsForMetric
 
-    def _plotMedianByMethod(self, combined_df: pd.DataFrame, metric: str, out_dir: str, quiet: bool = False) -> str:
+    def _plotMedianByMethod(self, combined_df: pd.DataFrame, metric: str, out_dir: str, quiet: bool = False, custom_filename: str = None) -> str:
         # combined_df has per-run rows with columns: Run, Metric, Method, Median
         df_m = combined_df[combined_df["Metric"] == metric].copy()
         if df_m.empty:
@@ -574,22 +467,23 @@ class MultiBenchmarkPlotter:
         ax.set_xticks(x, methods, rotation=20, ha="right")
         ax.set_title(f"{metric}")
         ax.set_ylabel(metric)
-        ax.grid(True, axis="y", linestyle=":", linewidth=0.8)
+        
+        # Force scientific notation
+        try:
+            ax.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+        except Exception:
+            pass
+
+        # Grid consistency
+        ax.grid(True, which='major', axis='y', linestyle='-', linewidth=0.8, alpha=0.8)
+        ax.grid(True, which='minor', axis='y', linestyle=':', linewidth=0.5, alpha=0.5)
+
         # Finer y-axis ticks and minor grid
         try:
             ax.yaxis.set_major_locator(mticker.MaxNLocator(nbins=10, min_n_ticks=6))
-            if self.log_y:
-                ax.minorticks_on()
-            else:
-                ax.yaxis.set_minor_locator(mticker.AutoMinorLocator(2))
-            ax.grid(True, axis='y', which='minor', linestyle=':', linewidth=0.5, alpha=0.5)
+            ax.yaxis.set_minor_locator(mticker.AutoMinorLocator(2))
         except Exception:
             pass
-        if self.log_y:
-            try:
-                ax.set_yscale('log')
-            except Exception:
-                pass
         ax.legend(fontsize=9, loc="best")
 
         # Build a scientific comparison subplot to the right
@@ -718,7 +612,7 @@ class MultiBenchmarkPlotter:
                 pass
 
         plt.tight_layout()
-        fname = f"{BenchmarkPlotter._sanitizeFileName(metric)}.png"
+        fname = custom_filename if custom_filename else f"{BenchmarkPlotter._sanitizeFileName(metric)}.png"
         fpath = os.path.join(out_dir, fname)
         fig.savefig(fpath, bbox_inches="tight")
         if self.show:
@@ -760,6 +654,12 @@ class MultiBenchmarkPlotter:
         # Helper: process a single JSON file path, update state and return a DataFrame of records or None
         def process_one(path: str):
             run_label = self._labelFromFilename(path)
+            # Strip timestamp suffix if present (e.g. _23122025_004108_...)
+            # Regex: look for _DDMMYYYY_HHMMSS...
+            import re
+            # Matches _DDMMYYYY_HHMMSS_... at end of string
+            run_label_clean = re.sub(r'_\d{8}_\d{6}_.*$', '', run_label)
+            
             data = self._loadJson(path)
             # benchmark JSON check
             def _is_benchmark_json(data: Dict[str, Any]) -> bool:
@@ -781,11 +681,8 @@ class MultiBenchmarkPlotter:
 
             # Parse run metadata
             meta = self._parse_run_label(run_label)
-            # Prepare per-run output directory
-            per_run_dir = os.path.join(self.out_dir, run_label)
-            os.makedirs(per_run_dir, exist_ok=True)
             # Build per-run stats
-            plotter = BenchmarkPlotter(data, out_dir=self.out_dir, dpi=self.dpi, run_label=run_label, err=self.err, err_scale=self.err_scale, log_y=self.log_y)
+            plotter = BenchmarkPlotter(data, out_dir=self.out_dir, dpi=self.dpi, run_label=run_label, err=self.err, err_scale=self.err_scale)
             # Fallback populate meta from JSON parameters if missing
             try:
                 params = plotter.parameters or {}
@@ -805,8 +702,8 @@ class MultiBenchmarkPlotter:
                             pass
             except Exception:
                 pass
-            # Store run meta and parameters
-            self._run_meta[run_label] = meta
+            # Store run meta and parameters (using clean label handled later)
+            # self._run_meta[run_label] = meta  <-- Moved to end of function using clean label
             if not self._first_run_parameters and isinstance(plotter.parameters, dict):
                 self._first_run_parameters = dict(plotter.parameters)
             # Merge compareOver maps
@@ -816,7 +713,7 @@ class MultiBenchmarkPlotter:
                     if meth not in tgt:
                         tgt[meth] = list(lst)
             if getattr(plotter, '_cmp_sw_extracted', None):
-                tgt_sw = self._compare_over.setdefault("Stopwatches", {})
+                tgt_sw = self._compare_over.setdefault("Time", {})
                 for meth, lst in (plotter._cmp_sw_extracted or {}).items():
                     if meth not in tgt_sw:
                         tgt_sw[meth] = list(lst)
@@ -831,11 +728,11 @@ class MultiBenchmarkPlotter:
                         if m not in lst:
                             lst.append(m)
             if plotter.stopwatches:
-                if "Stopwatches" not in self._metric_order:
-                    self._metric_order.append("Stopwatches")
+                if "Time" not in self._metric_order:
+                    self._metric_order.append("Time")
                 sw_methods = list(plotter.stopwatches.keys())
                 if sw_methods:
-                    lst = self._method_order.setdefault("Stopwatches", [])
+                    lst = self._method_order.setdefault("Time", [])
                     for m in sw_methods:
                         if m not in lst:
                             lst.append(m)
@@ -848,7 +745,7 @@ class MultiBenchmarkPlotter:
                     lst = tgt.setdefault(method, [])
                     lst.extend([float(x) for x in vals])
             if plotter.stopwatches:
-                tgt_sw = self._agg_values.setdefault("Stopwatches", {})
+                tgt_sw = self._agg_values.setdefault("Time", {})
                 for method, vals in (plotter.stopwatches or {}).items():
                     if not isinstance(vals, (list, tuple)):
                         continue
@@ -860,7 +757,7 @@ class MultiBenchmarkPlotter:
             for res in metric_results + ([sw_result] if sw_result.method_stats else []):
                 for method, stats in res.method_stats.items():
                     records.append({
-                        "Run": run_label,
+                        "Run": run_label_clean, # Use clean label for aggregation
                         "Metric": res.metric_name,
                         "Method": method,
                         "N": stats.count,
@@ -873,30 +770,12 @@ class MultiBenchmarkPlotter:
             if not records:
                 empty_runs.append(f"{run_label} ← {path}")
                 return None
-            # Per-run plots with this run's parameters and raw-only yerr
-            try:
-                per_df = pd.DataFrame.from_records(records)
-                old_params = dict(self._first_run_parameters)
-                self._first_run_parameters = dict(plotter.parameters or {})
-                old_agg = self._agg_values
-                try:
-                    temp_agg: Dict[str, Dict[str, List[float]]] = {}
-                    for met_name, methods in (plotter.measurement_sets or {}).items():
-                        temp_agg[met_name] = {m: list(vals) for m, vals in (methods or {}).items() if isinstance(vals, (list, tuple))}
-                    if plotter.stopwatches:
-                        temp_agg["Stopwatches"] = {m: list(vals) for m, vals in (plotter.stopwatches or {}).items() if isinstance(vals, (list, tuple))}
-                    self._agg_values = temp_agg
-                    present_metrics = sorted(per_df["Metric"].unique().tolist())
-                    for met in present_metrics:
-                        try:
-                            self._plotMedianByMethod(per_df, met, per_run_dir, quiet=True)
-                        except Exception:
-                            pass
-                finally:
-                    self._agg_values = old_agg
-                    self._first_run_parameters = old_params
-            except Exception:
-                pass
+            
+            # Store metadata using the clean label as key
+            self._run_meta[run_label_clean] = meta
+            
+            # Per-run plots are now disabled in favor of aggregated size-based plots
+            # We return the records to be aggregated later
             return pd.DataFrame.from_records(records)
 
         # Use a proper Rich progress bar with in-place updates; no printing inside the loop
@@ -991,26 +870,25 @@ class MultiBenchmarkPlotter:
             agg_csv = os.path.join(self.out_dir, "ALL_runs_summary_stats.csv")
             agg_df.to_csv(agg_csv, index=False)
 
-    # Aggregated median across runs per metric
-        if not agg_df.empty:
-            present = set(agg_df["Metric"].unique().tolist())
-            if self._metric_order:
-                metrics = [mt for mt in self._metric_order if mt in present]
-            else:
-                metrics = list(dict.fromkeys(agg_df["Metric"].tolist()))
-        else:
-            metrics = []
-        for metric in metrics:
-            # Skip metrics that didn't produce any data (e.g., _plot=false)
-            if metric not in self._agg_values or not self._agg_values.get(metric):
-                continue
-            plot_path = self._plotMedianByMethod(agg_df, metric, self.out_dir)
-            if plot_path:
-                combined_plots.append(plot_path)
+    # Aggregated median across runs per metric - DISABLED as requested
+    #    if not agg_df.empty:
+    #        present = set(agg_df["Metric"].unique().tolist())
+    #        if self._metric_order:
+    #            metrics = [mt for mt in self._metric_order if mt in present]
+    #        else:
+    #            metrics = list(dict.fromkeys(agg_df["Metric"].tolist()))
+    #    else:
+    #        metrics = []
+    #    for metric in metrics:
+    #        # Skip metrics that didn't produce any data (e.g., _plot=false)
+    #        if metric not in self._agg_values or not self._agg_values.get(metric):
+    #            continue
+    #        plot_path = self._plotMedianByMethod(agg_df, metric, self.out_dir)
+    #        if plot_path:
+    #            combined_plots.append(plot_path)
 
-        # Build scaling plots per operation and per metric: now partitioned by dtype and sizeType,
-        # with all unrolls for Stalker and only one curve for other families.
-        self._scaling_plots = []
+        # Build grouped bar plots per (Operation, Size, DType)
+        # This replaces the individual per-run plots with a single plot comparing all unrolls/methods for a specific size.
         if not agg_df.empty and self._run_meta:
             # Attach Size, Operation, Unroll, DType, SizeType to agg_df rows
             def _meta_col(run, key):
@@ -1022,13 +900,120 @@ class MultiBenchmarkPlotter:
             agg_df["Unroll"] = agg_df["Run"].map(lambda r: _meta_col(r, "unroll"))
             agg_df["DType"] = agg_df["Run"].map(lambda r: _meta_col(r, "dtype"))
             agg_df["SizeType"] = agg_df["Run"].map(lambda r: _meta_col(r, "sizeType"))
-            agg_df = agg_df[pd.notna(agg_df["Size"]) & pd.notna(agg_df["Operation"])].copy()
+            
+            # Filter valid rows
+            valid_df = agg_df[pd.notna(agg_df["Size"]) & pd.notna(agg_df["Operation"])].copy()
+            
+            if not valid_df.empty:
+                # 1. Grouped Bar Plots (Operation + Size + DType)
+                # Iterate over unique combinations of Operation, Size, DType
+                unique_groups = valid_df[["Operation", "Size", "DType"]].drop_duplicates()
+                
+                for _, group_row in unique_groups.iterrows():
+                    op = group_row["Operation"]
+                    sz = group_row["Size"]
+                    dt = group_row["DType"]
+                    
+                    # Filter data for this specific chart
+                    chart_df = valid_df[
+                        (valid_df["Operation"] == op) & 
+                        (valid_df["Size"] == sz) & 
+                        (valid_df["DType"] == dt)
+                    ].copy()
+                    
+                    if chart_df.empty:
+                        continue
+
+                    # Deduplication and Labeling Logic
+                    def _get_canonical_method(row):
+                        m = (row["Method"] or "").strip()
+                        u = row["Unroll"]
+                        m_lower = m.lower()
+                        
+                        # External libraries: ignore unroll, merge all
+                        if m_lower.startswith("blas") or m_lower.startswith("eigen") or m_lower.startswith("std"):
+                            return m # Just the method name
+                        
+                        # Stalker: keep unroll
+                        if u is not None and not pd.isna(u):
+                            return f"{m} (u{int(u)})"
+                        return m
+
+                    chart_df["CanonicalMethod"] = chart_df.apply(_get_canonical_method, axis=1)
+                    
+                    # Group by CanonicalMethod to merge duplicates (e.g. blas u1, blas u4 -> blas)
+                    # We take the median of medians
+                    grouped_chart = chart_df.groupby(["Metric", "CanonicalMethod"]).agg({
+                        "Median": "median",
+                        "Std": "mean" # Approximate error propagation
+                    }).reset_index()
+
+                    # Color mapping
+                    def _get_color(method_label):
+                        m = method_label.lower()
+                        if "stalker" in m: return "#FFC300" # Van Gogh Orange
+                        if "eigen" in m: return "#274690" # Ultramarine Blue
+                        if "blas" in m: return "#D1495B" # Reddish
+                        if "std" in m: return "#4C9A2A" # Green
+                        return "#6C757D" # Gray
+                    
+                    # Iterate over metrics available for this slice
+                    for metric in grouped_chart["Metric"].unique():
+                        m_df = grouped_chart[grouped_chart["Metric"] == metric].copy()
+                        if m_df.empty:
+                            continue
+                            
+                        # Prepare output directory: OUT_DIR/Operation/Metric/
+                        safe_met = BenchmarkPlotter._sanitizeFileName(metric)
+                        safe_op = BenchmarkPlotter._sanitizeFileName(op)
+                        target_dir = os.path.join(self.out_dir, safe_op, safe_met)
+                        os.makedirs(target_dir, exist_ok=True)
+                        
+                        # Filename: Size_DType.png
+                        fname = f"Size{int(sz)}_{dt}.png"
+                        
+                        # Plotting
+                        m_df = m_df.sort_values("CanonicalMethod")
+                        
+                        fig, ax = plt.subplots(figsize=(8, 8), dpi=self.dpi) # Square plot
+                        
+                        methods = m_df["CanonicalMethod"].tolist()
+                        medians = m_df["Median"].tolist()
+                        yerrs = m_df["Std"].tolist() if self.err == "std" else None
+                        colors = [_get_color(m) for m in methods]
+                        
+                        x_pos = np.arange(len(methods))
+                        bars = ax.bar(x_pos, medians, yerr=yerrs, capsize=4, alpha=0.9, color=colors)
+                        
+                        ax.set_xticks(x_pos)
+                        ax.set_xticklabels(methods, rotation=45, ha="right")
+                        ax.set_title(f"{op} (Size={int(sz)}, {dt}) — {metric}")
+                        ax.set_ylabel(metric)
+                        ax.grid(True, axis='y', linestyle='--', alpha=0.7)
+                        
+                        # Add value labels on top of bars
+                        for bar in bars:
+                            height = bar.get_height()
+                            ax.annotate(f'{height:.2e}',
+                                        xy=(bar.get_x() + bar.get_width() / 2, height),
+                                        xytext=(0, 3),  # 3 points vertical offset
+                                        textcoords="offset points",
+                                        ha='center', va='bottom', fontsize=8, rotation=0)
+
+                        plt.tight_layout()
+                        fpath = os.path.join(target_dir, fname)
+                        fig.savefig(fpath)
+                        plt.close(fig)
+
+            # 2. Scaling Plots (Line charts across sizes)
+            agg_df = valid_df # Use the prepared valid_df for scaling plots too
             if not agg_df.empty:
                 for op in sorted(agg_df["Operation"].dropna().unique().tolist()):
                     op_base_df = agg_df[agg_df["Operation"] == op]
                     if op_base_df.empty:
                         continue
-                    op_out = os.path.join(self.out_dir, f"scaling_{op}")
+                    safe_op = BenchmarkPlotter._sanitizeFileName(op)
+                    op_out = os.path.join(self.out_dir, safe_op, "scaling")
                     os.makedirs(op_out, exist_ok=True)
                     for dtype in sorted([x for x in op_base_df["DType"].dropna().unique().tolist()]):
                         dtype_df = op_base_df[op_base_df["DType"] == dtype]
@@ -1036,15 +1021,11 @@ class MultiBenchmarkPlotter:
                             continue
                         present_groups = set([str(x) for x in dtype_df["SizeType"].dropna().unique().tolist()])
                         groups_to_render: List[str] = []
-                        if present_groups - {"ND"}:
-                            if "S" in present_groups:
-                                groups_to_render.append("S")
-                            if "L" in present_groups:
-                                groups_to_render.append("L")
-                        elif "ND" in present_groups:
-                            groups_to_render = ["ND"]
+                        # Only render the combined "All sizes" (ND) plot
+                        groups_to_render = ["ND"]
                         for grp in groups_to_render:
-                            grp_df = dtype_df[dtype_df["SizeType"] == grp]
+                            # For the 'ND' (All sizes) plot combine across all SizeType entries
+                            grp_df = dtype_df.copy()
                             if grp_df.empty:
                                 continue
                             for metric in sorted(grp_df["Metric"].unique().tolist()):
@@ -1058,9 +1039,9 @@ class MultiBenchmarkPlotter:
                                 family_marker = {
                                     'avx2': 'x',
                                     'avx512': 'o',
-                                    'std': 's',
-                                    'blas': '^',
-                                    'eigen': 'D',
+                                    'std': '^',
+                                    'blas': '<',
+                                    'eigen': '>',
                                     'other': 'v',
                                 }
 
@@ -1088,59 +1069,105 @@ class MultiBenchmarkPlotter:
                                         for u in sorted(unrolls, key=lambda x: (x is None, x if x is not None else -1)):
                                             datasets.append((method, u))
                                     else:
-                                        pick = None
-                                        if 1 in unrolls:
-                                            pick = 1
+                                        # For non-SIMD, we merge all unrolls into one dataset
+                                        datasets.append((method, 'ALL'))
+                                
+                                # Generate plots: Linear-Linear, Log-Linear (Log X)
+                                plot_configs = [
+                                    ("LinLin", False, False),
+                                    ("LogLin", True, False)
+                                ]
+                                for scale_label, use_log_x, use_log_y in plot_configs:
+                                    fig, ax = plt.subplots(figsize=(8.0, 8.0), dpi=self.dpi)
+                                    for idx, (method, unroll) in enumerate(datasets):
+                                        if unroll == 'ALL':
+                                            ddf = mdf[mdf["Method"] == method]
+                                            lbl_unroll = "merged"
+                                        elif unroll is None or (isinstance(unroll, float) and math.isnan(unroll)):
+                                            ddf = mdf[(mdf["Method"] == method) & (mdf["Unroll"].isna())]
+                                            lbl_unroll = "?"
                                         else:
-                                            nums = [u for u in unrolls if isinstance(u, (int, float))]
-                                            if nums:
-                                                pick = int(sorted(nums)[0])
-                                        datasets.append((method, pick))
-                                fig, ax = plt.subplots(figsize=(8.8, 5.2), dpi=self.dpi)
-                                for idx, (method, unroll) in enumerate(datasets):
-                                    if unroll is None or (isinstance(unroll, float) and math.isnan(unroll)):
-                                        ddf = mdf[(mdf["Method"] == method) & (mdf["Unroll"].isna())]
-                                    else:
-                                        ddf = mdf[(mdf["Method"] == method) & (mdf["Unroll"] == unroll)]
-                                    if pd.isna(ddf).all().any():
-                                        ddf = ddf.dropna()
-                                    by_size = ddf.groupby("Size")["Median"].median().sort_index()
-                                    sizes = by_size.index.to_list()
-                                    values = by_size.values.tolist()
+                                            ddf = mdf[(mdf["Method"] == method) & (mdf["Unroll"] == unroll)]
+                                            lbl_unroll = f"u{unroll}"
+                                        
+                                        # Robust dropna: only drop if Median or Size is missing
+                                        ddf = ddf.dropna(subset=["Median", "Size"])
+                                        
+                                        if ddf.empty:
+                                            continue
 
-                                    fam = _family_from_method(method)
-                                    mrk = family_marker.get(fam, family_marker['other'])
-                                    if fam in ("avx2", "avx512"):
-                                        lbl = f"{method} (u{unroll if unroll is not None else '?'})"
+                                        by_size = ddf.groupby("Size")["Median"].median().sort_index()
+                                        sizes = by_size.index.to_list()
+                                        values = by_size.values.tolist()
+
+                                        fam = _family_from_method(method)
+                                        mrk = family_marker.get(fam, family_marker['other'])
+                                        
+                                        if fam in ("avx2", "avx512"):
+                                            lbl = f"{method} ({lbl_unroll})"
+                                        else:
+                                            lbl = f"{method}"
+                                            
+                                        # Reduce marker density
+                                        npoints = len(sizes)
+                                        try:
+                                            # Increase marker frequency (target ~12 markers per line)
+                                            me = max(1, int(math.ceil(float(npoints) / 24)))
+                                        except Exception:
+                                            me = None
+                                            
+                                        ax.plot(
+                                            sizes,
+                                            values,
+                                            marker=mrk,
+                                            linewidth=0.8,
+                                            markersize=5.0,
+                                            markeredgewidth=0.8,
+                                            markerfacecolor='none',
+                                            markevery=me,
+                                            label=lbl,
+                                        )
+                                    title_dtype = {"d": "double", "f": "float"}.get(dtype, str(dtype))
+                                    grp_name = "All"
+                                    ax.set_title(f"{op} — {metric} vs Size — {title_dtype} — {scale_label}")
+                                    ax.set_xlabel("Size")
+                                    ax.set_ylabel(metric)
+                                    
+                                    # Force scientific notation only for linear Y
+                                    if not use_log_y:
+                                        try:
+                                            ax.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+                                        except Exception:
+                                            pass
+
+                                    # Grid consistency
+                                    ax.grid(True, which='major', linestyle='-', linewidth=0.8, alpha=0.8)
+                                    ax.grid(True, which='minor', linestyle=':', linewidth=0.5, alpha=0.5)
+
+                                    if use_log_x:
+                                        try:
+                                            ax.set_xscale('log')
+                                        except Exception:
+                                            pass
                                     else:
-                                        lbl = f"{method}"
-                                    ax.plot(
-                                        sizes,
-                                        values,
-                                        marker=mrk,
-                                        linewidth=0.9,
-                                        markersize=5.0,
-                                        markerfacecolor='none',
-                                        markeredgewidth=1.0,
-                                        label=lbl,
-                                    )
-                                title_dtype = {"d": "double", "f": "float"}.get(dtype, str(dtype))
-                                grp_name = {"S": "Small", "L": "Large", "ND": "All"}.get(grp, grp)
-                                ax.set_title(f"{op} — {metric} vs Size — {title_dtype} — {grp_name}")
-                                ax.set_xlabel("Size")
-                                ax.set_ylabel(metric)
-                                ax.grid(True, which='both', axis='both', linestyle=':', linewidth=0.8, alpha=0.9)
-                                try:
-                                    ax.xaxis.set_major_locator(mticker.MaxNLocator(nbins=8, min_n_ticks=4, integer=True))
-                                except Exception:
-                                    pass
-                                ax.legend(fontsize=9, loc='best', frameon=True)
-                                plt.tight_layout()
-                                fname = f"{op}_{BenchmarkPlotter._sanitizeFileName(metric)}_{title_dtype}_{grp}_scaling.png"
-                                fpath = os.path.join(op_out, fname)
-                                fig.savefig(fpath, bbox_inches="tight")
-                                plt.close(fig)
-                                self._scaling_plots.append(fpath)
+                                        try:
+                                            ax.xaxis.set_major_locator(mticker.MaxNLocator(nbins=8, min_n_ticks=4, integer=True))
+                                        except Exception:
+                                            pass
+
+                                    if use_log_y:
+                                        try:
+                                            ax.set_yscale('log')
+                                        except Exception:
+                                            pass
+
+                                    ax.legend(fontsize=9, loc='best', frameon=True)
+                                    plt.tight_layout()
+                                    fname = f"{op}_{BenchmarkPlotter._sanitizeFileName(metric)}_{title_dtype}_{scale_label}_scaling.png"
+                                    fpath = os.path.join(op_out, fname)
+                                    fig.savefig(fpath, bbox_inches="tight")
+                                    plt.close(fig)
+                                    self._scaling_plots.append(fpath)
 
         # Write diffs CSV if any
         diffs_csv = None
@@ -1174,7 +1201,6 @@ def main():
     parser.add_argument("--show", action="store_true", help="Display plots after saving")
     parser.add_argument("--err", choices=["std", "stderr", "none"], default="std", help="Error bar mode: standard deviation (std), standard error (stderr), or none")
     parser.add_argument("--err-scale", type=float, default=1.0, help="Scale factor applied to error bars (e.g., 0.5 to shrink, 2.0 to grow)")
-    parser.add_argument("--log-y", action="store_true", help="Use logarithmic y-axis")
     args = parser.parse_args()
 
     # Create base output directory: use --out if provided, else the input_dir
@@ -1184,7 +1210,7 @@ def main():
     out_dir = os.path.join(base_out, timestamp)
     os.makedirs(out_dir, exist_ok=True)
 
-    mbp = MultiBenchmarkPlotter(input_dir=args.input_dir, out_dir=out_dir, dpi=args.dpi, show=args.show, err=args.err, err_scale=args.err_scale, log_y=args.log_y)
+    mbp = MultiBenchmarkPlotter(input_dir=args.input_dir, out_dir=out_dir, dpi=args.dpi, show=args.show, err=args.err, err_scale=args.err_scale)
     results = mbp.plotDirectory()
 
     if _RICH_AVAILABLE:
@@ -1207,7 +1233,6 @@ def main():
             out_tbl.add_row("All-diffs CSV", results["all_runs_diffs_csv"])
         out_tbl.add_row("Error mode", getattr(mbp, 'err', 'std'))
         out_tbl.add_row("Error scale", f"{getattr(mbp, 'err_scale', 1.0)}")
-        out_tbl.add_row("Log Y", "yes" if getattr(mbp, 'log_y', False) else "no")
         _console.print(out_tbl)
 
         if results["combined_plots"]:

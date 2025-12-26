@@ -74,6 +74,16 @@ namespace fs = std::filesystem;
             }
         }
 
+        template<typename T>
+        Stalker::Memory::AlignedVector<T> _createData(size_t size) {
+            if (Benchmarks::Seed != 0) {
+                Stalker::Mathematics::Random::setSeed(static_cast<unsigned int>(Benchmarks::Seed));
+            }
+            auto data = Stalker::Memory::createAlignedVector<T>(size);
+            Stalker::Mathematics::Random::uniform<T>(size, data.data(), static_cast<T>(Benchmarks::DataRangeMin), static_cast<T>(Benchmarks::DataRangeMax));
+            return data;
+        }
+
         #if defined(STALKER_BENCH_PAPI_AVAILABLE) && STALKER_BENCH_PAPI_AVAILABLE
 
         struct PAPILogsConfig{
@@ -82,28 +92,35 @@ namespace fs = std::filesystem;
                 bool plot;
             };
             std::unordered_map<std::string, PAPILog> measurements {
-                {"GBps", {true, true}},
-                {"FLOPS", {true, true}},
+                {"GB/s", {true, true}},
+                {"GFLOPS", {true, true}},
                 {"IPC", {true, true}},
-                {"AI [FP_Ops/bytes]", {true, false}},
-                {"FP_Ops", {true, false}},
+                {"CPE", {true, true}},
+                {"AI [FLOPs/bytes]", {true, false}},
+                {"FLOPs", {true, false}},
                 {"Instructions", {true, true}},
                 {"Cycles", {true, true}},
-                {"L2_Misses", {true, true}}
+                {"L2_Misses", {true, true}},
+                {"MPKI", {true, true}},
+                {"Miss/Element", {true, true}}
             };
         };
 
         
         struct Metrics {
             double    timeSec{0.0};              ///< Wall-clock time (s)
-            double    flops{0.0};               ///< FLOP/s
-            double    gbps{0.0};                 ///< GB/s
-            double    ipc{0.0};                  ///< Instructions per cycle
+            long long floatingPointOps{0};       ///< PAPI_FP_OPS (or hint)
+            long long instructions{0};           ///< PAPI_TOT_INS
+            long long cycles{0};                 ///< PAPI_TOT_CYC
+            long long cacheMissesL2{0};          ///< PAPI_L2_DCM
+
+            double    gflops{0.0};               ///< GFLOP/s [FLOPs/s/1E9]
+            double    gbps{0.0};                 ///< GB/s [Bytes/s/1E9]
+            double    ipc{0.0};                  ///< Instructions per cycle [total instructions / total cycles]
             double    arithmeticIntensity{0.0};  ///< FLOPs per byte
-            long long floatingPointOps{0};    ///< PAPI_FP_OPS (or hint)
-            long long instructions{0};        ///< PAPI_TOT_INS
-            long long cycles{0};              ///< PAPI_TOT_CYC
-            long long cacheMissesL2{0};       ///< PAPI_L2_DCM
+            double    cacheMissesPerElement{0};  ///< L2 Misses per element
+            double    MPKI{0};                   ///< L2 Misses per 1000 Instructions
+
 
             void printMetrics() const {
                 using namespace Stalker::Utility;
@@ -115,33 +132,36 @@ namespace fs = std::filesystem;
                     print(oss.str());
                 };
                 printField("Time (s):", timeSec);
-                printField("FLOPS:", flops);
-                printField("GBPS:", gbps);
+                printField("Cycles:", static_cast<double>(cycles));
+                printField("GFLOPS:", gflops);
+                printField("GB/s:", gbps);
                 printField("IPC:", ipc);
                 printField("AI:", arithmeticIntensity);
                 printField("FLOPs:", static_cast<double>(floatingPointOps));
                 printField("Instructions:", static_cast<double>(instructions));
-                printField("Cycles:", static_cast<double>(cycles));
                 printField("L2 Misses:", static_cast<double>(cacheMissesL2));
+                printField("MPKI:", MPKI);
+                printField("Miss/Element:", cacheMissesPerElement);
             }
         };
 
 
 
         // bytesTotal: total bytes touched (e.g., vector copy: 2*N*sizeof(T))
-        // flopsHint : known FLOPs (optional); if 0, uses PAPI_FP_OPS if available
         // IF IT FAILS CHECK YOUR PARANOIA LEVELS WITH: cat /proc/sys/kernel/perf_event_paranoid
         // You might need to set it to 1 to enable some system counters: sudo sysctl -w kernel.perf_event_paranoid=1
         template<typename TestFuncT, typename AllocFuncT>
         void _benchmarkPAPI(TestFuncT&& func,
                             AllocFuncT&& allocFunc,
                             const SingleBenchmarkConfig& config,
-                            std::size_t bytesTotal = 0) {
+                            size_t bytesTotal, size_t vectorSize) {
+
             for (size_t i = 0; i < config.warmupIterations; ++i) {
                 print("  Warmup Iteration " + std::to_string(i+1) + "/" + std::to_string(config.warmupIterations), T_Color::GANDALF_GRAY);
                 auto result = allocFunc();
                 func(result);
             }
+
             for (size_t i = 0; i < config.iterations; ++i) {
                 printSubtitle(config.name + " Iteration " + std::to_string(i+1) + "/" + std::to_string(config.iterations), T_Color::BUTIAS_ORANGE);
                 auto timer = Timer();
@@ -173,54 +193,55 @@ namespace fs = std::filesystem;
                 func(result);
                 timer.stop();
 
-                metrics.timeSec = timer.durationValue();
-                if (bytesTotal > 0)
-                metrics.gbps   = double(bytesTotal) / metrics.timeSec / 1e9;
-
                 if (papiOk && eventSet != PAPI_NULL) {
                     vals.assign(events.size(), 0);
-                    if (!events.empty()) PAPI_stop(eventSet, vals.data());
+                    if (!events.empty())
+                        PAPI_stop(eventSet, vals.data());
                     PAPI_cleanup_eventset(eventSet);
                     PAPI_destroy_eventset(&eventSet);
 
+                    metrics.timeSec = timer.durationValue();
                     for (size_t i = 0; i < events.size(); ++i) {
                         switch (events[i]) {
                             case PAPI_FP_OPS:
-                                metrics.floatingPointOps = vals[i];
-                                break;
-                                case PAPI_TOT_INS:
-                                metrics.instructions  = vals[i];
-                                break;
-                                case PAPI_TOT_CYC:
-                                metrics.cycles = vals[i];
-                                break;
-                                case PAPI_L2_DCM:  
-                                metrics.cacheMissesL2 = vals[i];
-                                break;
-                            }
+                            metrics.floatingPointOps = vals[i];
+                            break;
+                            case PAPI_TOT_INS:
+                            metrics.instructions  = vals[i];
+                            break;
+                            case PAPI_TOT_CYC:
+                            metrics.cycles = vals[i];
+                            break;
+                            case PAPI_L2_DCM:  
+                            metrics.cacheMissesL2 = vals[i];
+                            break;
                         }
+                    }
                 }
-
-                metrics.flops = metrics.floatingPointOps / metrics.timeSec;
-                metrics.ipc = double(metrics.instructions) / double(metrics.cycles);
-                
-                
-                if (bytesTotal > 0 && metrics.floatingPointOps)
-                    metrics.arithmeticIntensity = double(metrics.floatingPointOps) / double(bytesTotal);
                 auto testName = config.name;
                 auto& stopwatch = _logs.getOrCreateStopwatch(testName);
                 stopwatch.registerTimer(timer);
                 stopwatch.getTags() = config.compareOver;
-                _logs.addMeasurementToSet("GBps", testName, metrics.gbps, config.compareOver);
-                _logs.addMeasurementToSet("FP_Ops", testName, metrics.floatingPointOps, config.compareOver);
-                _logs.addMeasurementToSet("FLOPS", testName, metrics.flops, config.compareOver);
-                _logs.addMeasurementToSet("IPC", testName, metrics.ipc, config.compareOver);
-                _logs.addMeasurementToSet("AI [FP_Ops/bytes]", testName, metrics.arithmeticIntensity, config.compareOver);
+
+                metrics.gflops                = metrics.floatingPointOps / metrics.timeSec / 1E9;
+                metrics.gbps                  = double(bytesTotal) / (metrics.timeSec * 1E9);
+                metrics.ipc                   = double(metrics.instructions) / double(metrics.cycles);
+                metrics.arithmeticIntensity   = double(metrics.floatingPointOps) / double(bytesTotal);
+                metrics.cacheMissesPerElement = double(metrics.cacheMissesL2) / double(vectorSize);
+                metrics.MPKI                  = (double(metrics.cacheMissesL2) / double(metrics.instructions)) * 1000.0;
+            
+                _logs.addMeasurementToSet("FLOPs", testName, metrics.floatingPointOps, config.compareOver);
                 _logs.addMeasurementToSet("Instructions", testName, metrics.instructions, config.compareOver);
                 _logs.addMeasurementToSet("Cycles", testName, metrics.cycles, config.compareOver);
                 _logs.addMeasurementToSet("L2_Misses", testName, metrics.cacheMissesL2, config.compareOver);
+                _logs.addMeasurementToSet("GFLOPS", testName, metrics.gflops, config.compareOver);
+                _logs.addMeasurementToSet("GB/s", testName, metrics.gbps, config.compareOver);
+                _logs.addMeasurementToSet("IPC", testName, metrics.ipc, config.compareOver);
+                _logs.addMeasurementToSet("AI [FLOPs/bytes]", testName, metrics.arithmeticIntensity, config.compareOver);
+                _logs.addMeasurementToSet("MPKI", testName, metrics.MPKI, config.compareOver);
+                _logs.addMeasurementToSet("Miss/Element", testName, metrics.cacheMissesPerElement, config.compareOver);
                 if (config.verbose) metrics.printMetrics();
-            }
+            }   
         }
         #endif
 
@@ -240,11 +261,11 @@ namespace fs = std::filesystem;
                 else
                     throw std::runtime_error("PAPI measurement for key '" + key + "' not configured.");
             };
-            addIfMeasured("GBps");
-            addIfMeasured("FP_Ops");
-            addIfMeasured("FLOPS");
+            addIfMeasured("GB/s");
+            addIfMeasured("FLOPs");
+            addIfMeasured("GFLOPS");
             addIfMeasured("IPC");
-            addIfMeasured("AI [FP_Ops/bytes]");
+            addIfMeasured("AI [FLOPs/bytes]");
             addIfMeasured("Instructions");
             addIfMeasured("Cycles");
             addIfMeasured("L2_Misses");
@@ -280,15 +301,6 @@ namespace fs = std::filesystem;
             return false;
         }
 
-        std::string _getSizeType(size_t size) const {
-            if (SizesSmall.size() == 0 && SizesLarge.size() == 0)
-                return "ND";
-            if (SizesSmall.size() > 0 && std::find(SizesSmall.begin(), SizesSmall.end(), size) != SizesSmall.end())
-                return "S";
-            if (SizesLarge.size() > 0 && std::find(SizesLarge.begin(), SizesLarge.end(), size) != SizesLarge.end())
-                return "L";
-            return "ND";
-        }
     public:
 
         void run() {
@@ -329,8 +341,6 @@ namespace fs = std::filesystem;
                         printInfo("Suite affinity set to core " + std::to_string(Benchmarks::SlaveThreadId));
                     }
                 }
-
-                // Your original body
                 auto timer = Timer();
                 timer.start();
                 for (size_t sIndex = 0; sIndex < Benchmarks::Sizes.size(); ++sIndex) {
@@ -341,9 +351,7 @@ namespace fs = std::filesystem;
                     #undef CALL_UNROLL
                 }
                 timer.stop();
-                printTitle("Benchmark Suite '" + _name + "' completed in " +
-                        std::to_string(timer.durationValue(TimeUnit::minutes)) +
-                        " minutes.", "=");
+                printTitle("Benchmark Suite '" + _name + "' completed in " + std::to_string(timer.durationValue(TimeUnit::minutes)) + " minutes.", "=");
             };
 
             std::thread t(suiteBody);

@@ -61,11 +61,6 @@ using namespace Stalker::Core;
                 result = result && (a[i] == b[i]);
             return result;
         }
-        
-        template <bool IsAligned = false>
-        inline static T_simd load(const T_data* __restrict data) {
-            return Child::template _load<IsAligned>(data);
-        }
 
         template <size_t Index, bool IsAligned = false>
         inline static T_simd loadOffset(const T_data* __restrict data) {

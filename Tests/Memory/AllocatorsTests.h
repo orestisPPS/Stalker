@@ -69,7 +69,7 @@ public:
         
         /* raw */
         {
-            auto* p = createAlignedRaw<double, 32>(12);
+            auto* p = createAlignedPtr<double, 32>(12);
             bool ok = TU::compareValues(isAligned(p, 32), true, "Raw ptr");
             AlignedAllocator<double, 32>::deallocate(p);
             (void)ok;
@@ -77,7 +77,7 @@ public:
 
         /* unique_ptr */
         {
-            auto up = createAlignedUnique<int, 64>(33);
+            auto up = createAlignedUniquePtr<int, 64>(33);
             bool ok = TU::compareValues(isAligned(up.get(), 64), true, "Unique ptr");
             up.reset();          // implicit dealloc
             (void)ok;
@@ -85,7 +85,7 @@ public:
 
         /* shared_ptr */
         {
-            auto sp = createAlignedShared<float, 32>(25);
+            auto sp = createAlignedSharedPtr<float, 32>(25);
             bool ok = TU::compareValues(isAligned(sp.get(), 32), true, "Shared ptr");
             sp.reset();
             (void)ok;

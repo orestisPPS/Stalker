@@ -269,12 +269,10 @@ class Logs {
     // Export current logs to JSON next to CSV functionality.
     // Follows identical initialization, naming conventions and filename scheme as exportToCSV.
     // New API: directory path + base filename (without extension)
-    // precision: numeric precision for floating-point in JSON (default 4)
+    // precision: numeric precision for floating-point in JSON (default 7)
     // unit: time unit for timers/stopwatches values (default seconds)
-    void exportToJSON(const std::string& directoryPath,
-                      const std::string& baseFileName,
-                      int precision = 8,
-                      TimeUnit unit = TimeUnit::seconds) {
+    void exportToJSON(const std::string& directoryPath, const std::string& baseFileName, int precision = 7, TimeUnit unit = TimeUnit::seconds) {
+        
         std::filesystem::path dir(directoryPath);
         if (!dir.empty() && !std::filesystem::exists(dir)) {
             if (!std::filesystem::create_directories(dir)) {
@@ -298,7 +296,7 @@ class Logs {
         }
 
     if (precision < 0) precision = 0;
-    if (precision > 15) precision = 15; // clamp to reasonable JSON precision
+    if (precision > 20) precision = 20; // clamp to reasonable JSON precision
     file << std::scientific << std::setprecision(precision);
 
         // JSON header
@@ -415,7 +413,7 @@ class Logs {
     // Backward-compatible wrapper: accept a full prefix path (directory + base prefix, no extension)
     // Allows optional precision and time unit overrides.
     void exportToJSON(const std::string& fullFilePathStr,
-                      int precision = 4,
+                      int precision = 17,
                       TimeUnit unit = TimeUnit::seconds) {
         std::filesystem::path p(fullFilePathStr);
         if (p.has_filename()) {

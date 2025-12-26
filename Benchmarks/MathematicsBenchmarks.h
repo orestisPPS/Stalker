@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Benchmark.h"
-#include <Stalker/Mathematics/Operations/MathOperations.h>
+#include <Stalker/Mathematics/Vector/VectorMath.h>
 #include <cblas.h>
 #include <Eigen/Dense>
 
@@ -61,21 +61,24 @@ namespace Benchmarks {
 		const std::string type = typeid(T).name();
 		auto config = SingleBenchmarkConfig{};
 		
-		auto allocator = [&]() { return createAlignedVector<T>(size); };
-
-		auto a = allocator();
         T scalar = static_cast<T>(3.141592653);
-        Stalker::Mathematics::Random::uniform<T>(size, a.data(), 0, 100);
+		auto a = this->_createData<T>(size);
 		const auto totalBytes = 1 * size * sizeof(T);
 
-		config.compareOver = { "blas " + type};
+		auto allocator = [&]() { 
+			auto res = createAlignedVector<T>(size);
+			memcpy(res.data(), a.data(), size * sizeof(T));
+			return res;
+		};
+
+		config.compareOver = {"eigen " + type, "blas " + type};
 		#if defined(STALKER_SIMD_AVX2_OK)
 		config.name = "stalker avx2 " + type;
 		_benchmarkPAPI(
-			[&](auto& dst) {
-				MathOperations::scale<T, ExecutionTraitSIMD<T_SIMD::AVX2, Unroll>>(size, a.data(), dst.data(), scalar);
+			[&](auto& dst) { 
+				VectorMath::scale<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, Unroll>>(size, dst.data(), scalar);
 			},
-			allocator, config, totalBytes
+			allocator, config, totalBytes, size
 		);
 		#endif
 
@@ -83,13 +86,27 @@ namespace Benchmarks {
 		config.name = "stalker avx512 " + type;
 		_benchmarkPAPI(
 			[&](auto& dst) {
-				MathOperations::scale<T, ExecutionTraitSIMD<T_SIMD::AVX512, Unroll>>(size, a.data(), dst.data(), scalar);
+				VectorMath::scale<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, Unroll>>(size, dst.data(), scalar);
 			},
-			allocator, config, totalBytes
+			allocator, config, totalBytes, size
 		);
 		#endif
-		
+
 		config.compareOver = {};
+
+		#if STALKER_BENCH_EIGEN_AVAILABLE
+		{
+			config.name = "eigen " + type;
+			_benchmarkPAPI(
+				[&](auto& dst) {
+					Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> ed(dst.data(), static_cast<int>(size));
+					ed.noalias() = scalar * ed;
+				},
+				allocator, config, totalBytes, size
+			);
+		}
+		#endif
+		#if STALKER_BENCH_OPENBLAS_AVAILABLE
 		config.name = "blas " + type;
 		_benchmarkPAPI(
 			[&](auto& dst) {
@@ -99,9 +116,10 @@ namespace Benchmarks {
 					cblas_dscal(static_cast<int>(size), scalar, dst.data(), 1);
 				}
 			},
-			allocator, config, totalBytes
+			allocator, config, totalBytes, size
 		);
-		_logs.exportToJSON(_logExportPath + "/scale_t_" + type + "_s" + std::to_string(size) + "_" + _getSizeType(size) + "_u" + std::to_string(Unroll));
+		#endif
+		_logs.exportToJSON(_logExportPath + "/scale_t_" + type + "_s" + std::to_string(size) + "_" + std::to_string(size) + "_u" + std::to_string(Unroll));
 		_logs.clear();
 	}
 
@@ -118,62 +136,64 @@ namespace Benchmarks {
 		
 		auto allocator = [&]() { return T{}; };
 
-		auto a = createAlignedVector<T>(size);
-		auto b = createAlignedVector<T>(size);
-		Stalker::Mathematics::Random::uniform<T>(size, a.data(), 0, 10);
-		Stalker::Mathematics::Random::uniform<T>(size, b.data(), 0, 10);
+		auto a = this->_createData<T>(size);
+		auto b = this->_createData<T>(size);
 		const auto totalBytes = 2 * size * sizeof(T);
 
 		
 		#if defined(STALKER_SIMD_AVX2_OK)
 		config.name = "stalker avx2 " + type;
-		config.compareOver = { "eigen " + type };
+		config.compareOver = { "eigen " + type, "blas " + type };
 		_benchmarkPAPI(
 			[&](auto& dst) {
-				dst = MathOperations::dot<T, ExecutionTraitSIMD<T_SIMD::AVX2, Unroll>>(size, a.data(), b.data());
+				dst = VectorMath::dot<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, Unroll>>(size, a.data(), b.data());
+				std::cout << dst << std::endl;
 			},
-			allocator, config, totalBytes
+			allocator, config, totalBytes, size
 		);
 		#endif
 
 		#if defined(STALKER_SIMD_AVX512_OK)
 		config.name = "stalker avx512 " + type;
-		config.compareOver = { "eigen " + type };
 		_benchmarkPAPI(
 			[&](auto& dst) {
-				dst = MathOperations::dot<T, ExecutionTraitSIMD<T_SIMD::AVX512, Unroll>>(size, a.data(), b.data());
+				dst = VectorMath::dot<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, Unroll>>(size, a.data(), b.data());
+				std::cout << dst << std::endl;
 			},
-			allocator, config, totalBytes
+			allocator, config, totalBytes, size
 		);
 		#endif
+		
+		config.compareOver = { };
 
 		#if defined(STALKER_BENCH_EIGEN_AVAILABLE)
 		Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> ea(a.data(), static_cast<int>(size));
 		Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> eb(b.data(), static_cast<int>(size));
 		config.name = "eigen " + type;
-		config.compareOver.clear();
 		_benchmarkPAPI(
 			[&](auto& dst) {
 				dst = ea.dot(eb);
+				std::cout << dst << std::endl;
 			},
-			allocator, config, totalBytes
+			allocator, config, totalBytes, size
 		);
 		#endif
 
-		#if STALKER_BENCH_BLAS_AVAILABLE
-		// config.name = "blas " + type;
-		// _benchmarkPAPI(
-		// 	[&](auto& dst) {
-		// 		if constexpr (std::is_same_v<T, float>) {
-		// 			dst = cblas_sdot(static_cast<int>(size), a.data(), 1, b.data(), 1);
-		// 		} else if constexpr (std::is_same_v<T, double>) {
-		// 			dst = cblas_ddot(static_cast<int>(size), a.data(), 1, b.data(), 1);
-		// 		}
-		// 	},
-		// 	allocator, config, totalBytes
-		// );
+		#if STALKER_BENCH_OPENBLAS_AVAILABLE
+		config.name = "blas " + type;
+		_benchmarkPAPI(
+			[&](auto& dst) {
+				if constexpr (std::is_same_v<T, float>) {
+					dst = cblas_sdot(static_cast<int>(size), a.data(), 1, b.data(), 1);
+				} else if constexpr (std::is_same_v<T, double>) {
+					dst = cblas_ddot(static_cast<int>(size), a.data(), 1, b.data(), 1);
+				}
+				std::cout << dst << std::endl;
+			},
+			allocator, config, totalBytes, size
+		);
 		#endif
-		_logs.exportToJSON(_logExportPath + "/dot_t_" + type + "_s" + std::to_string(size) + "_" + _getSizeType(size) + "_u" + std::to_string(Unroll));
+		_logs.exportToJSON(_logExportPath + "/dot_t_" + type + "_s" + std::to_string(size) + "_" + std::to_string(size) + "_u" + std::to_string(Unroll));
 		_logs.clear();
 	}
 
@@ -190,11 +210,9 @@ namespace Benchmarks {
 		
 		auto allocator = [&]() { return createAlignedVector<T>(size); };
 
-		auto x = allocator();
-		auto y = allocator();
+		auto x = this->_createData<T>(size);
+		auto y = this->_createData<T>(size);
 		T a = static_cast<T>(3.141592653);
-		Stalker::Mathematics::Random::uniform<T>(size, x.data(), 0, 10);
-		Stalker::Mathematics::Random::uniform<T>(size, y.data(), 0, 10);
 		const auto totalBytes = 3 * size * sizeof(T) ;
 
 			
@@ -203,9 +221,9 @@ namespace Benchmarks {
 		config.compareOver = { "eigen " + type, "blas " + type };
 		_benchmarkPAPI(
 			[&](auto& dst) {
-				MathOperations::axpy<T, ExecutionTraitSIMD<T_SIMD::AVX2, Unroll>>(size, x.data(), y.data(), dst.data(), a);
+				VectorMath::axpy<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, Unroll>>(size, x.data(), y.data(), dst.data(), a);
 			},
-			allocator, config, totalBytes
+			allocator, config, totalBytes, size
 		);
 		#endif
 		#if defined(STALKER_SIMD_AVX512_OK)
@@ -213,27 +231,27 @@ namespace Benchmarks {
 		config.compareOver = { "eigen " + type, "blas " + type };
 		_benchmarkPAPI(
 			[&](auto& dst) {
-				MathOperations::axpy<T, ExecutionTraitSIMD<T_SIMD::AVX512, Unroll>>(size, x.data(), y.data(), dst.data(), a);
+				VectorMath::axpy<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, Unroll>>(size, x.data(), y.data(), dst.data(), a);
 			},
-			allocator, config, totalBytes
+			allocator, config, totalBytes, size
 		);
 		#endif
 
 		#if STALKER_BENCH_EIGEN_AVAILABLE
 		Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> ex(x.data(), static_cast<int>(size));
 		Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> ey(y.data(), static_cast<int>(size));
-		auto eigenAllocator = [&]() { return Eigen::Matrix<T, Eigen::Dynamic, 1>(); };
 		config.name = "eigen " + type;
 		config.compareOver.clear();
 		_benchmarkPAPI(
 			[&](auto& dst) {
-				dst = a * ex + ey; // full vector result
+				Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> ed(dst.data(), static_cast<int>(size));
+				ed.noalias() = a * ex + ey;
 			},
-			eigenAllocator, config, totalBytes
+			allocator, config, totalBytes, size
 		);
 		#endif
 
-		#if STALKER_BENCH_BLAS_AVAILABLE
+		#if STALKER_BENCH_OPENBLAS_AVAILABLE
 		config.name = "blas " + type;
 		_benchmarkPAPI(
 			[&](auto& dst) {
@@ -244,11 +262,11 @@ namespace Benchmarks {
 					cblas_daxpy(static_cast<int>(size), a, x.data(), 1, dst.data(), 1);
 				}
 			},
-			allocator, config, totalBytes
+			allocator, config, totalBytes, size
 		);
 		#endif
 
-		_logs.exportToJSON(_logExportPath + "/axpy_t_" + type + "_s" + std::to_string(size) + "_" + _getSizeType(size) + "_u" + std::to_string(Unroll));
+		_logs.exportToJSON(_logExportPath + "/axpy_t_" + type + "_s" + std::to_string(size) + "_" + std::to_string(size) + "_u" + std::to_string(Unroll));
 		_logs.clear();
 	}
 
@@ -263,10 +281,9 @@ namespace Benchmarks {
 		const std::string type = typeid(T).name();
 		auto config = SingleBenchmarkConfig{};
 		
-		auto allocator = [&]() { return T{}; };
+		auto allocator = [&]() { return T{}; }; 
 
-		auto a = createAlignedVector<T>(size);
-        Stalker::Mathematics::Random::uniform<T>(size, a.data(), 0, 10);
+		auto a = this->_createData<T>(size);
 		const auto totalBytes = 1 * size * sizeof(T);
 
 		config.compareOver = { "std::accumulate " + type, "eigen " + type };
@@ -274,10 +291,9 @@ namespace Benchmarks {
 		config.name = "stalker avx2 " + type;
 		_benchmarkPAPI(
 			[&](auto& dst) {
-				dst = MathOperations::sum<T, ExecutionTraitSIMD<T_SIMD::AVX2, Unroll>>(size, a.data());
-				std::cout << dst << std::endl;
+				dst = VectorMath::sum<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, Unroll>>(size, a.data());
 			},
-			allocator, config, totalBytes
+			allocator, config, totalBytes, size
 		);
 		#endif
 		
@@ -286,10 +302,9 @@ namespace Benchmarks {
 		config.compareOver = { "std::accumulate " + type, "eigen " + type };
 		_benchmarkPAPI(
 			[&](auto& dst) {
-				dst = MathOperations::sum<T, ExecutionTraitSIMD<T_SIMD::AVX512, Unroll>>(size, a.data());
-				std::cout << dst << std::endl;
+				dst = VectorMath::sum<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, Unroll>>(size, a.data());
 			},
-			allocator, config, totalBytes
+			allocator, config, totalBytes, size
 		);
 		#endif
 
@@ -299,9 +314,8 @@ namespace Benchmarks {
 		_benchmarkPAPI(
 			[&](auto& dst) {
 				dst = std::accumulate(a.begin(), a.end(), static_cast<T>(0));
-				std::cout << dst << std::endl;
 			},
-			allocator, config, totalBytes
+			allocator, config, totalBytes, size
 		);
 		#if STALKER_BENCH_EIGEN_AVAILABLE
 		{
@@ -310,14 +324,13 @@ namespace Benchmarks {
 			_benchmarkPAPI(
 				[&](auto& dst) {
 					dst = ea.sum();
-					std::cout << dst << std::endl;
 				},
-				allocator, config, totalBytes
+				allocator, config, totalBytes, size
 			);
 		}
 		#endif
 
-		_logs.exportToJSON(_logExportPath + "/sum_t_" + type + "_s" + std::to_string(size) + "_" + _getSizeType(size) + "_u" + std::to_string(Unroll));
+		_logs.exportToJSON(_logExportPath + "/sum_t_" + type + "_s" + std::to_string(size) + "_" + std::to_string(size) + "_u" + std::to_string(Unroll));
 		_logs.clear();
 	}
 

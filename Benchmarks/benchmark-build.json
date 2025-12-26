@@ -1,21 +1,37 @@
 {
   "help": {
+    "iterations"              : "Number of measurement loops per size/setup. Higher = more stable median.",
+    "warmup_iterations"       : "Loops run before measurement to warm up instruction/data caches.",
+    "slave_thread_id"         : "CPU core index to pin the benchmark thread to. Isolates noise.",
+    "data_types"              : "C++ types to benchmark. Supported: 'float', 'double'.",
+    "sizes"                   : "Explicit list of vector sizes. If set, overrides size_region.",
+    "size_region"             : "[min, max] range for automatic logarithmic size sampling.",
+    "unroll_factors"          : "Template unroll factors to compile. e.g. [1, 2, 4].",
+    "operations_math"         : "Math ops to bench. e.g. 'dot', 'axpy', 'scale', 'sum'.",
+    "operations_memory"       : "Memory ops to bench. e.g. 'copy', 'setValue'.",
+    "data_range_min"          : "Minimum value for random data generation.",
+    "data_range_max"          : "Maximum value for random data generation.",
+    "seed"                    : "Random seed for reproducibility.",
+    "enable_eigen"            : "Compare against Eigen library (if found).",
+    "enable_openblas"         : "Compare against OpenBLAS (if found).",
+    "enable_papi"             : "Collect hardware counters (FLOPS, L2 misses, etc) via PAPI."
   },
   
-  "iterations"              : 10,
+  "iterations"              : 20,
   "warmup_iterations"       : 2,
   "slave_thread_id"         : 3,
-  "data_types"              : ["double", "float"],
+  "data_types"              : ["double"],
   "sizes"                   : [],
-  "size_range"              : [256, 2000000000],
-  "size_samples_small"      : 30,
-  "size_samples_large"      : 30,
+  "size_region"             : [256, 2000000000],
 
-  "unroll_factors"          : [1, 2, 4],
+  "unroll_factors"          : [1, 4],
+
   "operations_math"         : ["dot", "axpy"],
   "operations_memory"       : ["copy"],
 
-  "papiDir": "/home/hal10000/code/papi/src/install",
+  "data_range_min"          : 0,
+  "data_range_max"          : 10,
+  "seed"                    : 0,
 
   "enable_eigen"            : true,
   "enable_openblas"         : true,

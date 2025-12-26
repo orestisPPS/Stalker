@@ -152,35 +152,6 @@ endforeach()
 # Export a normalized combined list for downstream header generation
 set(STALKER_BENCH_VECTOR_SIZES "${_all_sizes}")
 
-# Derive or accept small/large partitions for header diagnostics
-set(_sizes_small)
-set(_sizes_large)
-if(DEFINED STALKER_BENCH_VECTOR_SIZES_SMALL AND NOT STALKER_BENCH_VECTOR_SIZES_SMALL STREQUAL "")
-  list(APPEND _sizes_small ${STALKER_BENCH_VECTOR_SIZES_SMALL})
-endif()
-if(DEFINED STALKER_BENCH_VECTOR_SIZES_LARGE AND NOT STALKER_BENCH_VECTOR_SIZES_LARGE STREQUAL "")
-  list(APPEND _sizes_large ${STALKER_BENCH_VECTOR_SIZES_LARGE})
-endif()
-
-if(_sizes_small STREQUAL "" AND _sizes_large STREQUAL "")
-  # Fallback: split around arithmetic midpoint
-  list(GET _all_sizes 0 _sz_first)
-  list(GET _all_sizes -1 _sz_last)
-  math(EXPR _mid "(${_sz_first} + ${_sz_last}) / 2")
-  foreach(sz IN LISTS _all_sizes)
-    if(sz LESS_EQUAL ${_mid})
-      list(APPEND _sizes_small ${sz})
-    else()
-      list(APPEND _sizes_large ${sz})
-    endif()
-  endforeach()
-endif()
-
-string(REPLACE ";" ", " _bench_sizes_small_csv "${_sizes_small}")
-string(REPLACE ";" ", " _bench_sizes_large_csv "${_sizes_large}")
-list(LENGTH _sizes_small _bench_sizes_small_len)
-list(LENGTH _sizes_large _bench_sizes_large_len)
-
 # Rough memory footprint validation (max element size heuristic)
 set(_type_size_max 0)
 foreach(t IN LISTS STALKER_BENCH_TYPES)
@@ -304,6 +275,20 @@ string(REPLACE ";" "\", \"" _bench_mathops_csv_quoted "${_bench_mathops_csv_quot
 set(_bench_mathops_csv_quoted "\"${_bench_mathops_csv_quoted}\"")
 
 list(LENGTH STALKER_BENCH_MATHOPS _bench_mathops_len)
+
+# ----- Data Range & Seed -----
+if(NOT DEFINED STALKER_BENCH_DATA_RANGE_MIN)
+  set(STALKER_BENCH_DATA_RANGE_MIN 0)
+endif()
+if(NOT DEFINED STALKER_BENCH_DATA_RANGE_MAX)
+  set(STALKER_BENCH_DATA_RANGE_MAX 100)
+endif()
+if(NOT DEFINED STALKER_BENCH_SEED)
+  set(STALKER_BENCH_SEED 123456)
+endif()
+set(_bench_data_range_min "${STALKER_BENCH_DATA_RANGE_MIN}")
+set(_bench_data_range_max "${STALKER_BENCH_DATA_RANGE_MAX}")
+set(_bench_seed "${STALKER_BENCH_SEED}")
 
 # ---- Per-operation compile definitions for selective compilation/gating ----
 foreach(memop IN LISTS STALKER_BENCH_MEMOPS)

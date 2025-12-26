@@ -87,232 +87,125 @@ class BenchmarkConfig:
     def __init__(self, root_dir):
         self.path = os.path.join(root_dir, "Benchmarks", "benchmark-build.json")
         self.raw = _safe_json_load(self.path) or {}
-        # debug snapshot of last sampling
-        self._dbg = {
-            "mode": None,
-            "lo": None,
-            "mid": None,
-            "hi": None,
-            "ns": None,
-            "nl": None,
-        }
 
-    @staticmethod
-    def _clamp_range_pair(r):
-        try:
-            if not isinstance(r, list) or len(r) != 2:
-                return None
-            a = int(r[0])
-            b = int(r[1])
-            lo, hi = (a, b) if a <= b else (b, a)
-            if lo <= 0 or hi <= 0:
-                return None
-            return [lo, hi]
-        except Exception:
-            return None
 
-    @staticmethod
-    def _next_pow2(x: int) -> int:
-        if x <= 1:
-            return 1
-        return 1 << ((x - 1).bit_length())
 
-    @staticmethod
-    def _prev_pow2(x: int) -> int:
-        if x <= 1:
-            return 1
-        return 1 << (x.bit_length() - 1)
 
-    @staticmethod
-    def _gen_small_range(lo: int, hi: int):
-        # Cover powers of two within [lo, hi] plus a 1.5x point between each to probe misalignment/cache lines
-        sizes = set()
-        sizes.add(lo)
-        sizes.add(hi)
-        # Start from previous power of two of lo to ensure we include boundary near lo
-        p = BenchmarkConfig._prev_pow2(lo)
-        while p <= hi:
-            if lo <= p <= hi:
-                sizes.add(p)
-                mid = int(p + p // 2)  # 1.5x
-                if lo <= mid <= hi:
-                    sizes.add(mid)
-            p <<= 1
-        return sorted(sizes)
-
-    @staticmethod
-    def _gen_large_range(lo: int, hi: int):
-        # Use doubling steps and insert 1.5x between to capture bandwidth plateaus
-        sizes = set()
-        sizes.add(lo)
-        sizes.add(hi)
-        s = lo
-        # Limit iterations to avoid runaway if hi is huge
-        for _ in range(64):
-            if s > hi:
-                break
-            sizes.add(int(s))
-            mid = int(s * 3 // 2)
-            if lo <= mid <= hi:
-                sizes.add(mid)
-            s *= 2
-        # Ensure a modest count; trim if extremely dense
-        out = sorted(sizes)
-        if len(out) > 32:
-            # Keep roughly every other element to cap the list length
-            out = out[::2]
-        return out
-
-    @staticmethod
-    def _gen_range(lo: int, hi: int):
-        # Generic sampler across a single range: combine pow2 + 1.5x points
-        if hi < lo:
-            lo, hi = hi, lo
-        small = BenchmarkConfig._gen_small_range(lo, hi)
-        # If the span is large (more than ~10x), enrich with doubling steps too
-        if hi >= lo * 10:
-            large = BenchmarkConfig._gen_large_range(lo, hi)
-            merged = sorted(set(small).union(large))
-            return merged
-        return small
-
-    def _compute_sizes_lists(self):
-        # 1) Use size_range + sample counts when provided
+    def _compute_sizes(self):
+        # 1) Use explicit sizes if provided
         raw = self.raw
-        has_range_key = ("size_range" in raw)
-        r_all = self._clamp_range_pair(raw.get("size_range"))
-        sizes_small: list[int] = []
-        sizes_large: list[int] = []
-        sizes_combined: list[int] = []
+        explicit = raw.get("sizes")
+        if isinstance(explicit, list) and explicit:
+            try:
+                # Filter out zeros and ensure unique integers
+                return sorted(list(set(int(x) for x in explicit if int(x) > 0)))
+            except Exception:
+                pass 
 
-        def _logspace_int_exact(l: int, h: int, n: int) -> list[int]:
-            """Return exactly n monotonically increasing integers between l and h inclusive
-            using logarithmic spacing. Guarantees:
-            - length == n (when n>=1)
-            - first == l, last == h (when n>=2)
-            - strictly increasing (no duplicates)
-            """
-            if n <= 0 or l > h:
-                return []
-            if n == 1 or l == h:
-                return [l]
-            # Work in log domain but enforce strict monotonic integers with room for tail
-            L = math.log(max(l, 1))
-            H = math.log(max(h, 1))
-            out: list[int] = [l]
-            prev = l
-            for i in range(1, n - 1):
-                t = i / (n - 1)
-                raw = math.exp(L + t * (H - L))
-                v = int(raw + 0.5)  # round to nearest
-                # ensure we keep room to place remaining (including h)
-                max_allowed = h - (n - 1 - i)
-                v = max(prev + 1, min(v, max_allowed))
-                out.append(v)
-                prev = v
-            out.append(h)
-            return out
-
-        if has_range_key:
-            if not r_all:
-                raise StalkerBuildConfigError("Invalid 'size_range' provided in Benchmarks/benchmark-build.json")
-            # valid size_range path
-            lo, hi = r_all
+        # 2) Use size_region (HPC Scientific Sampling)
+        region = raw.get("size_region")
+        
+        if isinstance(region, list) and len(region) == 2:
+            lo, hi = int(region[0]), int(region[1])
             if lo > hi:
                 lo, hi = hi, lo
-            # geometric midpoint separates small/large regimes
-            try:
-                mid = int(round(math.exp((math.log(lo) + math.log(hi)) / 2)))
-            except Exception:
-                mid = (lo + hi) // 2
-            mid = max(lo, min(mid, hi))
+            
+            sizes = set()
+            
+            # Start p at the smallest power of 2 <= lo, or minimal safe SIMD size (64)
+            p = 64 
+            while p < lo:
+                p <<= 1
+            # Backtrack one step to catch the '1.5x' of the previous octave if it falls in range
+            if p > 64: p >>= 1 
 
-            ns = int(raw.get("size_samples_small", 16) or 16)
-            nl = int(raw.get("size_samples_large", 16) or 16)
-            if mid == hi:
-                # Degenerate: put all samples in small; large empty
-                sizes_small = _logspace_int_exact(lo, hi, ns)
-                sizes_large = []
-            else:
-                sizes_small = _logspace_int_exact(lo, mid, ns)
-                # Large should start at mid+1 to avoid mid duplication when possible
-                lg_start = mid + 1
-                if lg_start > hi:  # no room
-                    sizes_large = []
-                else:
-                    sizes_large = _logspace_int_exact(lg_start, hi, nl)
-            # Combined is concatenation (already unique except potential overlap if degenerate)
-            sizes_combined = sorted(set(sizes_small + sizes_large))
-            # record debug with actual list lengths
-            self._dbg.update({"mode": "range", "lo": lo, "mid": mid, "hi": hi, "ns": len(sizes_small), "nl": len(sizes_large)})
-        else:
-            # 2) Without size_range, fallback to explicit sizes and derive visibles
-            explicit = raw.get("sizes") or raw.get("vector_sizes")
-            if isinstance(explicit, list) and explicit:
-                try:
-                    sizes_combined = sorted(set(int(x) for x in explicit if int(x) > 0))
-                    lo, hi = (sizes_combined[0], sizes_combined[-1]) if sizes_combined else (0, 0)
-                    if lo and hi:
-                        sizes_small = self._gen_small_range(lo, (lo + hi) // 2)
-                        sizes_large = self._gen_large_range((lo + hi) // 2, hi)
-                        self._dbg.update({"mode": "explicit", "lo": lo, "mid": (lo + hi)//2, "hi": hi, "ns": len(sizes_small), "nl": len(sizes_large)})
-                except Exception:
-                    sizes_combined = []
-            else:
-                raise StalkerBuildConfigError("No 'size_range' or explicit 'sizes' provided in Benchmarks/benchmark-build.json")
+            while p <= hi:
+                # A. The Base: 2^N (Standard alignment)
+                # Example: 1024, 2048, 4096...
+                if p >= lo:
+                    sizes.add(p)
+                
+                # B. Intermediate points: 1.25, 1.5, 1.75 * 2^N
+                # Increases resolution to detect cache cliffs better
+                q1 = p + (p >> 2)       # 1.25x
+                mid = p + (p >> 1)      # 1.50x
+                q3 = mid + (p >> 2)     # 1.75x
+                
+                for val in (q1, mid, q3):
+                    if lo <= val <= hi:
+                        sizes.add(val)
 
-        return sizes_small, sizes_large, sizes_combined
+                # C. The Scientific Anti-Alias: 2^N + CacheLine (64 Bytes)
+                # We shift by exactly one Cache Line.
+                # This breaks the "Set Associativity" stride without breaking SIMD alignment.
+                # Note: 64 bytes = 16 floats (AVX512) or 8 doubles (AVX512)
+                anti_alias = p + 64 
+                if lo <= anti_alias <= hi and anti_alias != mid:
+                    sizes.add(anti_alias)
+                
+                p <<= 1
+            
+            # Always ensure the strict boundaries are included (optional, but good for graphs)
+            sizes.add(lo)
+            sizes.add(hi)
+
+            # Important: Filter out anything smaller than vector width if needed
+            # and sort for the runner.
+            return sorted([s for s in sizes if s >= lo and s <= hi])
+        
+        raise Exception("No valid 'sizes' or 'size_region' found.")
 
     def to_cmake_args(self):
         args = []
-        # Synthesize sizes according to range rules
-        sizes_small, sizes_large, sizes_combined = self._compute_sizes_lists()
-        if sizes_small:
-            s_small_str = _list_to_cmake(sizes_small, lambda x: str(int(x)))
-            if s_small_str:
-                args.append(f"-DSTALKER_BENCH_VECTOR_SIZES_SMALL={s_small_str}")
-        if sizes_large:
-            s_large_str = _list_to_cmake(sizes_large, lambda x: str(int(x)))
-            if s_large_str:
-                args.append(f"-DSTALKER_BENCH_VECTOR_SIZES_LARGE={s_large_str}")
-        # Always pass combined as well for backward compatibility with older CMake
+        # Synthesize sizes
+        sizes_combined = self._compute_sizes()
+        
         if sizes_combined:
-            s_comb_str = _list_to_cmake(sizes_combined, lambda x: str(int(x)))
-            if s_comb_str:
-                args.append(f"-DSTALKER_BENCH_VECTOR_SIZES={s_comb_str}")
-        types = _list_to_cmake(self.raw.get("data_types", []))
-        if types: args.append(f"-DSTALKER_BENCH_TYPES={types}")
-        unrolls = _list_to_cmake(self.raw.get("unroll_factors", []), lambda x: str(int(x)))
-        if unrolls: args.append(f"-DSTALKER_BENCH_UNROLLS={unrolls}")
-        memops = _list_to_cmake(self.raw.get("operations_memory", []))
-        if memops: args.append(f"-DSTALKER_BENCH_MEMOPS={memops}")
-        mathops = _list_to_cmake(self.raw.get("operations_math", []))
-        if mathops: args.append(f"-DSTALKER_BENCH_MATHOPS={mathops}")
-        iters = self.raw.get("iterations")
-        if isinstance(iters, int) and iters > 0:
-            args.append(f"-DSTALKER_BENCH_ITERATIONS={iters}")
-        warm = self.raw.get("warmup_iterations")
-        if isinstance(warm, int) and warm >= 0:
-            args.append(f"-DSTALKER_BENCH_WARMUP_ITERATIONS={warm}")
-        def _onoff(k):
-            return 'ON' if bool(self.raw.get(k, False)) else 'OFF'
-        if 'enable_eigen' in self.raw:
-            args.append(f"-DSTALKER_BENCH_EIGEN_ENABLE={_onoff('enable_eigen')}")
-        if 'enable_openblas' in self.raw:
-            args.append(f"-DSTALKER_BENCH_OPENBLAS_ENABLE={_onoff('enable_openblas')}")
-        if 'enable_papi' in self.raw:
-            args.append(f"-DSTALKER_BENCH_PAPI_ENABLE={_onoff('enable_papi')}")
-        # Optional: slave thread id for affinity pinning
-        slave_id = self.raw.get("slave_thread_id")
-        try:
-            if slave_id is not None:
-                sid = int(slave_id)
-                if sid < 0:
-                    raise ValueError("slave_thread_id must be >= 0")
-                args.append(f"-DSTALKER_BENCH_SLAVE_THREAD_ID={sid}")
-        except Exception:
-            raise StalkerBuildConfigError("Invalid 'slave_thread_id' in Benchmarks/benchmark-build.json (must be non-negative integer)")
+            val = ";".join(str(x) for x in sizes_combined)
+            args.append(f"-DSTALKER_BENCH_VECTOR_SIZES={val}")
+        
+        # Pass other fields
+        raw = self.raw
+        if "data_types" in raw:
+            args.append(f"-DSTALKER_BENCH_TYPES={_list_to_cmake(raw['data_types'])}")
+        if "unroll_factors" in raw:
+            args.append(f"-DSTALKER_BENCH_UNROLLS={_list_to_cmake(raw['unroll_factors'])}")
+        if "iterations" in raw:
+            args.append(f"-DSTALKER_BENCH_ITERATIONS={raw['iterations']}")
+        if "warmup_iterations" in raw:
+            args.append(f"-DSTALKER_BENCH_WARMUP_ITERATIONS={raw['warmup_iterations']}")
+        if "operations_memory" in raw:
+            args.append(f"-DSTALKER_BENCH_MEMOPS={_list_to_cmake(raw['operations_memory'])}")
+        if "operations_math" in raw:
+            args.append(f"-DSTALKER_BENCH_MATHOPS={_list_to_cmake(raw['operations_math'])}")
+        if "slave_thread_id" in raw:
+            args.append(f"-DSTALKER_BENCH_SLAVE_THREAD_ID={raw['slave_thread_id']}")
+        if "data_range_min" in raw:
+            args.append(f"-DSTALKER_BENCH_DATA_RANGE_MIN={raw['data_range_min']}")
+        if "data_range_max" in raw:
+            args.append(f"-DSTALKER_BENCH_DATA_RANGE_MAX={raw['data_range_max']}")
+        if "seed" in raw:
+            args.append(f"-DSTALKER_BENCH_SEED={raw['seed']}")
+        
+        # Feature flags
+        if raw.get("enable_eigen"):
+            args.append("-DSTALKER_BENCH_EIGEN_ENABLE=ON")
+        else:
+            args.append("-DSTALKER_BENCH_EIGEN_ENABLE=OFF")
+            
+        if raw.get("enable_openblas"):
+            args.append("-DSTALKER_BENCH_OPENBLAS_ENABLE=ON")
+        else:
+            args.append("-DSTALKER_BENCH_OPENBLAS_ENABLE=OFF")
+            
+        if raw.get("enable_papi"):
+            args.append("-DSTALKER_BENCH_PAPI_ENABLE=ON")
+        else:
+            args.append("-DSTALKER_BENCH_PAPI_ENABLE=OFF")
+
         return args
+
+
 
 class StalkerBuildConfig:
     SIMD_OPTIONS = {"avx2", "avx512", "esp-dsp", "auto", "none"}
@@ -338,8 +231,6 @@ class StalkerBuildConfig:
         ("build_profile", "Build profile"),
         # Benchmark details (if enabled)
         ("bench_vector_sizes", "Benchmark vector sizes"),
-        ("bench_vector_sizes_small", "Benchmark sizes (small range)"),
-        ("bench_vector_sizes_large", "Benchmark sizes (large range)"),
         ("bench_types", "Benchmark data types"),
         ("bench_unrolls", "Benchmark unroll factors"),
         ("bench_memops", "Benchmark memory ops"),
@@ -513,9 +404,9 @@ class StalkerBuildConfig:
         bench_loader = BenchmarkConfig(project_root)
         # Precompute sizes for summary
         try:
-            sizes_small, sizes_large, sizes_combined = bench_loader._compute_sizes_lists()
+            sizes_combined = bench_loader._compute_sizes()
         except Exception:
-            sizes_small, sizes_large, sizes_combined = [], [], []
+            sizes_combined = []
         bench_cfg = bench_loader.to_cmake_args()
         if not bench_cfg:
             console.print(f"[vg-warn]No benchmark args generated. Missing or empty JSON at {bench_loader.path}[/vg-warn]")
@@ -525,9 +416,6 @@ class StalkerBuildConfig:
         raw = bench_loader.raw or {}
         # Prefer showing computed combined sizes; fallback to legacy keys
         self.bench_vector_sizes = ";".join(str(v) for v in (sizes_combined or raw.get("sizes") or raw.get("vector_sizes") or [])) or "N/A"
-        # Also expose small/large breakdown if present
-        self.bench_vector_sizes_small = ";".join(str(v) for v in sizes_small) if sizes_small else ""
-        self.bench_vector_sizes_large = ";".join(str(v) for v in sizes_large) if sizes_large else ""
         self.bench_types = ";".join(raw.get("data_types", [])) or "N/A"
         self.bench_unrolls = ";".join(str(v) for v in raw.get("unroll_factors", [])) or "N/A"
         self.bench_memops = ";".join(raw.get("operations_memory", [])) or "N/A"
