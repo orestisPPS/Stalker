@@ -24,25 +24,32 @@ namespace Benchmarks {
 	protected:
 		friend class Benchmark<MemoryBenchmarks>;
 
-		template<size_t Unroll>
-		void _run(size_t size) {
+		void execute() {
 			for (size_t memOpIndex = 0; memOpIndex < Benchmarks::MemOpNames.size(); ++memOpIndex) {
 				const auto& memOpName = Benchmarks::MemOpNames[memOpIndex];
-				if (memOpName == "copy") {
-					#define CALL(T) this->_testCopy<T, Unroll>(size);
-					BENCH_FOR_EACH_TYPE(CALL)   
-					#undef CALL
-				}
-				else if (memOpName == "setValue") {
-					#define CALL(T) this->_testSetValue<T, Unroll>(size);
-					BENCH_FOR_EACH_TYPE(CALL)   
-					#undef CALL
-				}
+                #define PROCESS_TYPE(T) \
+                    for (size_t size : Benchmarks::Sizes) { \
+                        if (memOpName == "copy") { \
+                            auto src = this->_createData<T>(size); \
+                            this->_forEachUnroll([&](auto unroll) { \
+                                constexpr size_t U = decltype(unroll)::value; \
+                                this->_testCopy<T, U>(size, src); \
+                            }); \
+                        } \
+                        else if (memOpName == "setValue") { \
+                            this->_forEachUnroll([&](auto unroll) { \
+                                constexpr size_t U = decltype(unroll)::value; \
+                                this->_testSetValue<T, U>(size); \
+                            }); \
+                        } \
+                    }
+                BENCH_FOR_EACH_TYPE(PROCESS_TYPE)
+                #undef PROCESS_TYPE
 			}
 		}
 	
 		template<typename T, size_t Unroll>
-		void _testCopy(size_t size) {
+		void _testCopy(size_t size, const std::vector<T, Stalker::Memory::AlignedAllocator<T, DefaultAlignment()>>& src) {
 
 			printTitle(std::string("Operation: Copy | Type: ") + typeid(T).name() + " | Unroll: " + std::to_string(Unroll) + " | Size: " + std::to_string(size), "-", T_Color::TOXIC_GREEN);
 			
@@ -53,7 +60,7 @@ namespace Benchmarks {
 			auto config = SingleBenchmarkConfig{};
 			
 			auto allocator = [&]() { return createAlignedVector<T>(size); };
-			auto src = this->_createData<T>(size);
+			// auto src = this->_createData<T>(size); // Hoisted
 			const auto totalBytes = 2 * size * sizeof(T);
 
 			#if defined(STALKER_SIMD_AVX2_OK)

@@ -4,6 +4,11 @@
 #include <Stalker/Mathematics/Random.h>
 #include <Stalker/Memory/Allocators.h>
 
+#include <array>
+#include <vector>
+#include <algorithm>
+#include <numeric>
+#include <cstring>
 #include <cassert>
 #include <thread>
 #include <pthread.h>
@@ -74,8 +79,18 @@ namespace fs = std::filesystem;
             }
         }
 
+        template<typename Func, std::size_t... Is>
+        void _forEachUnrollImpl(Func&& func, std::index_sequence<Is...>) {
+            (func(std::integral_constant<std::size_t, Benchmarks::Unrolls[Is]>{}), ...);
+        }
+
+        template<typename Func>
+        void _forEachUnroll(Func&& func) {
+            _forEachUnrollImpl(std::forward<Func>(func), std::make_index_sequence<Benchmarks::UnrollCount>{});
+        }
+
         template<typename T>
-        Stalker::Memory::AlignedVector<T> _createData(size_t size) {
+        std::vector<T, Stalker::Memory::AlignedAllocator<T, Stalker::Core::Config::DefaultAlignment()>> _createData(size_t size) {
             if (Benchmarks::Seed != 0) {
                 Stalker::Mathematics::Random::setSeed(static_cast<unsigned int>(Benchmarks::Seed));
             }
@@ -343,13 +358,9 @@ namespace fs = std::filesystem;
                 }
                 auto timer = Timer();
                 timer.start();
-                for (size_t sIndex = 0; sIndex < Benchmarks::Sizes.size(); ++sIndex) {
-                    size_t size = Benchmarks::Sizes[sIndex];
-                    auto papiConfig = PAPILogsConfig{};
-                    #define CALL_UNROLL(U) static_cast<Child*>(this)->template _run<U>(size);
-                    BENCH_FOR_EACH_UNROLL(CALL_UNROLL)
-                    #undef CALL_UNROLL
-                }
+                
+                static_cast<Child*>(this)->execute();
+
                 timer.stop();
                 printTitle("Benchmark Suite '" + _name + "' completed in " + std::to_string(timer.durationValue(TimeUnit::minutes)) + " minutes.", "=");
             };

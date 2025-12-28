@@ -5,53 +5,61 @@
 #include <cblas.h>
 #include <Eigen/Dense>
 
-#include <array>
-#include <vector>
-#include <algorithm>
-#include <numeric>
-#include <cstring>
-
 namespace Benchmarks {
 
 	using namespace Stalker::Mathematics;
 	using namespace Stalker::Utility;
 	using namespace Stalker::Core::Config;
 
-	class MathematicsBenchmarks : public Benchmark<MathematicsBenchmarks> {
+	class VectorMathBenchmarks : public Benchmark<VectorMathBenchmarks> {
 	public:
-		MathematicsBenchmarks(const std::string& logExportPath) : Benchmark("Mathematical Operations", logExportPath) {}
+		VectorMathBenchmarks(const std::string& logExportPath) : Benchmark("Mathematical Operations", logExportPath) {}
 	protected:
-		friend class Benchmark<MathematicsBenchmarks>;
+		friend class Benchmark<VectorMathBenchmarks>;
 
-		template<size_t Unroll>
-		void _run(size_t size) {
-			for (size_t memOpIndex = 0; memOpIndex < Benchmarks::MathOpNames.size(); ++memOpIndex) {
-				const auto& memOpName = Benchmarks::MathOpNames[memOpIndex];
-				if (memOpName == "scale") {
-					#define CALL(T) this->_testScale<T, Unroll>(size);
-					BENCH_FOR_EACH_TYPE(CALL)   
-					#undef CALL
-				}
-				else if (memOpName == "dot") {
-					#define CALL(T) this->_testDot<T, Unroll>(size);
-					BENCH_FOR_EACH_TYPE(CALL)   
-					#undef CALL
-				}
-				else if (memOpName == "axpy") {
-					#define CALL(T) this->_testAxpy<T, Unroll>(size);
-					BENCH_FOR_EACH_TYPE(CALL)   
-					#undef CALL
-				}
-				else if (memOpName == "sum") {
-					#define CALL(T) this->_testSum<T, Unroll>(size);
-					BENCH_FOR_EACH_TYPE(CALL)   
-					#undef CALL
-				}
+		void execute() {
+			for (size_t mathOpIndex = 0; mathOpIndex < Benchmarks::MathOpNames.size(); ++mathOpIndex) {
+				const auto& mathOpName = Benchmarks::MathOpNames[mathOpIndex];
+                #define PROCESS_TYPE(T) \
+                    for (size_t size : Benchmarks::Sizes) { \
+                        if (mathOpName == "scale") { \
+                            auto a = this->_createData<T>(size); \
+                            this->_forEachUnroll([&](auto unroll) { \
+                                constexpr size_t U = decltype(unroll)::value; \
+                                this->_testScale<T, U>(size, a); \
+                            }); \
+                        } \
+                        else if (mathOpName == "dot") { \
+                            auto a = this->_createData<T>(size); \
+                            auto b = this->_createData<T>(size); \
+                            this->_forEachUnroll([&](auto unroll) { \
+                                constexpr size_t U = decltype(unroll)::value; \
+                                this->_testDot<T, U>(size, a, b); \
+                            }); \
+                        } \
+                        else if (mathOpName == "axpy") { \
+                            auto x = this->_createData<T>(size); \
+                            auto y = this->_createData<T>(size); \
+                            this->_forEachUnroll([&](auto unroll) { \
+                                constexpr size_t U = decltype(unroll)::value; \
+                                this->_testAxpy<T, U>(size, x, y); \
+                            }); \
+                        } \
+                        else if (mathOpName == "sum") { \
+                            auto a = this->_createData<T>(size); \
+                            this->_forEachUnroll([&](auto unroll) { \
+                                constexpr size_t U = decltype(unroll)::value; \
+                                this->_testSum<T, U>(size, a); \
+                            }); \
+                        } \
+                    }
+                BENCH_FOR_EACH_TYPE(PROCESS_TYPE)
+                #undef PROCESS_TYPE
 			}
 		}
 	
 	template<typename T, size_t Unroll>
-	void _testScale(size_t size) {
+	void _testScale(size_t size, const std::vector<T, Stalker::Memory::AlignedAllocator<T, DefaultAlignment()>>& a) {
 
 		printTitle(std::string("Operation: Scale | Type: ") + typeid(T).name() + " | Unroll: " + std::to_string(Unroll) + " | Size: " + std::to_string(size), "-", T_Color::TOXIC_GREEN);
 
@@ -62,7 +70,6 @@ namespace Benchmarks {
 		auto config = SingleBenchmarkConfig{};
 		
         T scalar = static_cast<T>(3.141592653);
-		auto a = this->_createData<T>(size);
 		const auto totalBytes = 1 * size * sizeof(T);
 
 		auto allocator = [&]() { 
@@ -99,7 +106,7 @@ namespace Benchmarks {
 			config.name = "eigen " + type;
 			_benchmarkPAPI(
 				[&](auto& dst) {
-					Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> ed(dst.data(), static_cast<int>(size));
+					Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> ed(dst.data(), size);
 					ed.noalias() = scalar * ed;
 				},
 				allocator, config, totalBytes, size
@@ -107,24 +114,26 @@ namespace Benchmarks {
 		}
 		#endif
 		#if STALKER_BENCH_OPENBLAS_AVAILABLE
-		config.name = "blas " + type;
-		_benchmarkPAPI(
-			[&](auto& dst) {
-				if constexpr (std::is_same_v<T, float>) {
-					cblas_sscal(static_cast<int>(size), scalar, dst.data(), 1);
-				} else if constexpr (std::is_same_v<T, double>) {
-					cblas_dscal(static_cast<int>(size), scalar, dst.data(), 1);
-				}
-			},
-			allocator, config, totalBytes, size
-		);
+		if (size <= 2147483647) {
+			config.name = "blas " + type;
+			_benchmarkPAPI(
+				[&](auto& dst) {
+					if constexpr (std::is_same_v<T, float>) {
+						cblas_sscal(static_cast<int>(size), scalar, dst.data(), 1);
+					} else if constexpr (std::is_same_v<T, double>) {
+						cblas_dscal(static_cast<int>(size), scalar, dst.data(), 1);
+					}
+				},
+				allocator, config, totalBytes, size
+			);
+		}
 		#endif
 		_logs.exportToJSON(_logExportPath + "/scale_t_" + type + "_s" + std::to_string(size) + "_" + std::to_string(size) + "_u" + std::to_string(Unroll));
 		_logs.clear();
 	}
 
 	template<typename T, size_t Unroll>
-	void _testDot(size_t size) {
+	void _testDot(size_t size, const std::vector<T, Stalker::Memory::AlignedAllocator<T, DefaultAlignment()>>& a, const std::vector<T, Stalker::Memory::AlignedAllocator<T, DefaultAlignment()>>& b) {
 
 		printTitle(std::string("Operation: Dot | Type: ") + typeid(T).name() + " | Unroll: " + std::to_string(Unroll) + " | Size: " + std::to_string(size), "-", T_Color::TOXIC_GREEN);
 
@@ -136,8 +145,6 @@ namespace Benchmarks {
 		
 		auto allocator = [&]() { return T{}; };
 
-		auto a = this->_createData<T>(size);
-		auto b = this->_createData<T>(size);
 		const auto totalBytes = 2 * size * sizeof(T);
 
 		
@@ -167,8 +174,8 @@ namespace Benchmarks {
 		config.compareOver = { };
 
 		#if defined(STALKER_BENCH_EIGEN_AVAILABLE)
-		Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> ea(a.data(), static_cast<int>(size));
-		Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> eb(b.data(), static_cast<int>(size));
+		Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> ea(a.data(), size);
+		Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> eb(b.data(), size);
 		config.name = "eigen " + type;
 		_benchmarkPAPI(
 			[&](auto& dst) {
@@ -180,25 +187,27 @@ namespace Benchmarks {
 		#endif
 
 		#if STALKER_BENCH_OPENBLAS_AVAILABLE
-		config.name = "blas " + type;
-		_benchmarkPAPI(
-			[&](auto& dst) {
-				if constexpr (std::is_same_v<T, float>) {
-					dst = cblas_sdot(static_cast<int>(size), a.data(), 1, b.data(), 1);
-				} else if constexpr (std::is_same_v<T, double>) {
-					dst = cblas_ddot(static_cast<int>(size), a.data(), 1, b.data(), 1);
-				}
-				std::cout << dst << std::endl;
-			},
-			allocator, config, totalBytes, size
-		);
+		if (size <= 2147483647) {
+			config.name = "blas " + type;
+			_benchmarkPAPI(
+				[&](auto& dst) {
+					if constexpr (std::is_same_v<T, float>) {
+						dst = cblas_sdot(static_cast<int>(size), a.data(), 1, b.data(), 1);
+					} else if constexpr (std::is_same_v<T, double>) {
+						dst = cblas_ddot(static_cast<int>(size), a.data(), 1, b.data(), 1);
+					}
+					std::cout << dst << std::endl;
+				},
+				allocator, config, totalBytes, size
+			);
+		}
 		#endif
 		_logs.exportToJSON(_logExportPath + "/dot_t_" + type + "_s" + std::to_string(size) + "_" + std::to_string(size) + "_u" + std::to_string(Unroll));
 		_logs.clear();
 	}
 
 	template<typename T, size_t Unroll>
-	void _testAxpy(size_t size) {
+	void _testAxpy(size_t size, const std::vector<T, Stalker::Memory::AlignedAllocator<T, DefaultAlignment()>>& x, const std::vector<T, Stalker::Memory::AlignedAllocator<T, DefaultAlignment()>>& y) {
 
 		printTitle(std::string("Operation: AXPY | Type: ") + typeid(T).name() + " | Unroll: " + std::to_string(Unroll) + " | Size: " + std::to_string(size), "-", T_Color::TOXIC_GREEN);
 
@@ -210,8 +219,6 @@ namespace Benchmarks {
 		
 		auto allocator = [&]() { return createAlignedVector<T>(size); };
 
-		auto x = this->_createData<T>(size);
-		auto y = this->_createData<T>(size);
 		T a = static_cast<T>(3.141592653);
 		const auto totalBytes = 3 * size * sizeof(T) ;
 
@@ -238,13 +245,13 @@ namespace Benchmarks {
 		#endif
 
 		#if STALKER_BENCH_EIGEN_AVAILABLE
-		Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> ex(x.data(), static_cast<int>(size));
-		Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> ey(y.data(), static_cast<int>(size));
+		Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> ex(x.data(), size);
+		Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> ey(y.data(), size);
 		config.name = "eigen " + type;
 		config.compareOver.clear();
 		_benchmarkPAPI(
 			[&](auto& dst) {
-				Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> ed(dst.data(), static_cast<int>(size));
+				Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> ed(dst.data(), size);
 				ed.noalias() = a * ex + ey;
 			},
 			allocator, config, totalBytes, size
@@ -252,18 +259,20 @@ namespace Benchmarks {
 		#endif
 
 		#if STALKER_BENCH_OPENBLAS_AVAILABLE
-		config.name = "blas " + type;
-		_benchmarkPAPI(
-			[&](auto& dst) {
-				std::memcpy(dst.data(), y.data(), size * sizeof(T));
-				if constexpr (std::is_same_v<T, float>) {
-					cblas_saxpy(static_cast<int>(size), a, x.data(), 1, dst.data(), 1);
-				} else if constexpr (std::is_same_v<T, double>) {
-					cblas_daxpy(static_cast<int>(size), a, x.data(), 1, dst.data(), 1);
-				}
-			},
-			allocator, config, totalBytes, size
-		);
+		if (size <= 2147483647) {
+			config.name = "blas " + type;
+			_benchmarkPAPI(
+				[&](auto& dst) {
+					std::memcpy(dst.data(), y.data(), size * sizeof(T));
+					if constexpr (std::is_same_v<T, float>) {
+						cblas_saxpy(static_cast<int>(size), a, x.data(), 1, dst.data(), 1);
+					} else if constexpr (std::is_same_v<T, double>) {
+						cblas_daxpy(static_cast<int>(size), a, x.data(), 1, dst.data(), 1);
+					}
+				},
+				allocator, config, totalBytes, size
+			);
+		}
 		#endif
 
 		_logs.exportToJSON(_logExportPath + "/axpy_t_" + type + "_s" + std::to_string(size) + "_" + std::to_string(size) + "_u" + std::to_string(Unroll));
@@ -271,7 +280,7 @@ namespace Benchmarks {
 	}
 
 	template<typename T, size_t Unroll>
-	void _testSum(size_t size) {
+	void _testSum(size_t size, const std::vector<T, Stalker::Memory::AlignedAllocator<T, DefaultAlignment()>>& a) {
 
 		printTitle(std::string("Operation: Sum | Type: ") + typeid(T).name() + " | Unroll: " + std::to_string(Unroll) + " | Size: " + std::to_string(size), "-", T_Color::TOXIC_GREEN);
 
@@ -283,7 +292,6 @@ namespace Benchmarks {
 		
 		auto allocator = [&]() { return T{}; }; 
 
-		auto a = this->_createData<T>(size);
 		const auto totalBytes = 1 * size * sizeof(T);
 
 		config.compareOver = { "std::accumulate " + type, "eigen " + type };
@@ -319,7 +327,7 @@ namespace Benchmarks {
 		);
 		#if STALKER_BENCH_EIGEN_AVAILABLE
 		{
-			Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> ea(a.data(), static_cast<int>(size));
+			Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> ea(a.data(), size);
 			config.name = "eigen " + type;
 			_benchmarkPAPI(
 				[&](auto& dst) {
