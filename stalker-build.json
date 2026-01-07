@@ -4,6 +4,7 @@
 
     "simd_enable": "Set to true to enable SIMD optimizations (vectorization). Set to false to disable.",
     "simd_default_instructions": "Which SIMD instruction set to use. Options: 'avx2', 'avx512', 'esp-dsp', 'none'. Default is 'avx2' if SIMD is enabled.",
+    "simd_store_type": "SIMD store policy: 'cache' (temporal) or 'stream' (non-temporal). Default is 'stream'.",
 
     "unroll_factor": "Factor by which to unroll loops. Higher values may improve performance but increase binary size. Too high values can lead to cache mess.",
     "threading_enable": "Enable Stalker parallel execution layer (multi-threaded ops).",
@@ -35,6 +36,7 @@
 
   "simd_enable"                  : true,
   "simd_default_instructions"    : "avx512",
+  "simd_store_type"              : "stream",
 
   "unroll_factor"                : 1,
 

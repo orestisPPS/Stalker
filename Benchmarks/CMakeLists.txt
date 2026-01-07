@@ -140,9 +140,7 @@ foreach(sz IN LISTS _all_sizes)
   if(sz STREQUAL "0")
     message(FATAL_ERROR "Vector sizes: size must be > 0 (got 0)")
   endif()
-  if(sz GREATER 4294967295)
-    message(FATAL_ERROR "Vector sizes: size '${sz}' exceeds 32-bit element count sanity limit")
-  endif()
+  # Removed 32-bit limit check to allow >4GB allocations (e.g. 64GB RAM tests)
   if(";${_seen_sizes};" MATCHES ";${sz};")
     message(FATAL_ERROR "Vector sizes: duplicate size '${sz}'")
   endif()
@@ -151,6 +149,18 @@ endforeach()
 
 # Export a normalized combined list for downstream header generation
 set(STALKER_BENCH_VECTOR_SIZES "${_all_sizes}")
+
+# ----- Matrix sizes -----
+if(NOT DEFINED STALKER_BENCH_MATRIX_SIZES OR STALKER_BENCH_MATRIX_SIZES STREQUAL "")
+  set(STALKER_BENCH_MATRIX_SIZES "0") 
+endif()
+
+set(_all_matrix_sizes ${STALKER_BENCH_MATRIX_SIZES})
+list(REMOVE_DUPLICATES _all_matrix_sizes)
+list(SORT _all_matrix_sizes COMPARE NATURAL)
+
+string(REPLACE ";" ", " _bench_matrix_sizes_csv "${_all_matrix_sizes}")
+list(LENGTH _all_matrix_sizes _bench_matrix_sizes_len)
 
 # Rough memory footprint validation (max element size heuristic)
 set(_type_size_max 0)
@@ -208,6 +218,22 @@ endforeach()
 set(_bench_unrolls_macro "")
 foreach(u IN LISTS STALKER_BENCH_UNROLLS)
   set(_bench_unrolls_macro "${_bench_unrolls_macro} X(${u})")
+endforeach()
+
+# ----- Store Policies -----
+if(NOT DEFINED STALKER_BENCH_STORE_POLICIES OR STALKER_BENCH_STORE_POLICIES STREQUAL "")
+  set(STALKER_BENCH_STORE_POLICIES "cache") # Default
+endif()
+
+set(_bench_store_policies_macro "")
+foreach(sp IN LISTS STALKER_BENCH_STORE_POLICIES)
+  if(sp STREQUAL "stream")
+    set(_bench_store_policies_macro "${_bench_store_policies_macro} X(Stalker::Core::Config::T_SIMDStore::Streamed)")
+  elseif(sp STREQUAL "cache")
+    set(_bench_store_policies_macro "${_bench_store_policies_macro} X(Stalker::Core::Config::T_SIMDStore::Cached)")
+  else()
+    message(FATAL_ERROR "Unknown store policy: '${sp}'. Supported: 'stream', 'cache'")
+  endif()
 endforeach()
 
 # ----- iterations -----
@@ -276,6 +302,24 @@ set(_bench_mathops_csv_quoted "\"${_bench_mathops_csv_quoted}\"")
 
 list(LENGTH STALKER_BENCH_MATHOPS _bench_mathops_len)
 
+# ----- Matrix Operations -----
+if(NOT DEFINED STALKER_BENCH_MATRIXOPS)
+  set(STALKER_BENCH_MATRIXOPS "")
+endif()
+set(_seen_matrixops "")
+foreach(mo IN LISTS STALKER_BENCH_MATRIXOPS)
+  if(";${_seen_matrixops};" MATCHES ";${mo};")
+    message(FATAL_ERROR "STALKER_BENCH_MATRIXOPS: duplicate entry '${mo}'")
+  endif()
+  set(_seen_matrixops "${_seen_matrixops};${mo}")
+endforeach()
+
+set(_bench_matrixops_csv_quoted "${STALKER_BENCH_MATRIXOPS}")
+string(REPLACE ";" "\", \"" _bench_matrixops_csv_quoted "${_bench_matrixops_csv_quoted}")
+set(_bench_matrixops_csv_quoted "\"${_bench_matrixops_csv_quoted}\"")
+
+list(LENGTH STALKER_BENCH_MATRIXOPS _bench_matrixops_len)
+
 # ----- Data Range & Seed -----
 if(NOT DEFINED STALKER_BENCH_DATA_RANGE_MIN)
   set(STALKER_BENCH_DATA_RANGE_MIN 0)
@@ -301,6 +345,12 @@ foreach(mathop IN LISTS STALKER_BENCH_MATHOPS)
   if(NOT mathop STREQUAL "")
     string(TOUPPER ${mathop} mathop_upper)
     target_compile_definitions(Benchmarks PRIVATE STALKER_BENCH_MATHOP_${mathop_upper}=1)
+  endif()
+endforeach()
+foreach(matrixop IN LISTS STALKER_BENCH_MATRIXOPS)
+  if(NOT matrixop STREQUAL "")
+    string(TOUPPER ${matrixop} matrixop_upper)
+    target_compile_definitions(Benchmarks PRIVATE STALKER_BENCH_MATRIXOP_${matrixop_upper}=1)
   endif()
 endforeach()
 

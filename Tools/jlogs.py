@@ -275,20 +275,29 @@ class MultiBenchmarkPlotter:
         """Parse labels in the general form operation_type_unroll_size.
         Robust to variants like ..._u<digits> and ..._s<digits>.
         Returns dict with keys: operation (str), type (str|None), unroll (int|None), size (int|None),
-        dtype (str|None in {"d","f"}), sizeType (str|None in {"S","L","ND"}).
+        dtype (str|None in {"d","f"}), sizeType (str|None in {"S","L","ND"}), storePolicy (str|None).
         """
         tokens = run_label.split("_") if run_label else []
         if not tokens:
-            return {"operation": None, "type": None, "unroll": None, "size": None, "dtype": None, "sizeType": None}
-        operation = tokens[0]
+            return {"operation": None, "type": None, "unroll": None, "size": None, "dtype": None, "sizeType": None, "storePolicy": None}
+        
+        # Detect multi-word operations (e.g. set_value, set_zero)
+        if len(tokens) > 1 and tokens[0] == "set" and tokens[1] in ("value", "zero"):
+            operation = f"{tokens[0]}_{tokens[1]}"
+            start_idx = 2
+        else:
+            operation = tokens[0]
+            start_idx = 1
+
         type_tokens: List[str] = []
         unroll = None
         size = None
         dtype = None  # 'd' or 'f'
         size_type = None  # 'S' | 'L' | 'ND'
+        store_policy = None # 'stream' | 'cache'
         prev_tok = None
         # Prefer tokens with explicit markers first
-        for tok in tokens[1:]:
+        for tok in tokens[start_idx:]:
             low = tok.lower()
             if (low.startswith("u") and low[1:].isdigit()) or low.startswith("unroll"):
                 # u<digits> or unroll<digits>
@@ -309,6 +318,10 @@ class MultiBenchmarkPlotter:
             if tok in ("S", "L", "s", "l"):
                 size_type = tok.upper()
                 continue
+            # Store policy
+            if low in ("stream", "cache"):
+                store_policy = low
+                continue
             # DType immediately after a 't' token: expect 'd' or 'f'
             if prev_tok and prev_tok.lower() == 't':
                 if low in ("d", "double"):
@@ -328,7 +341,7 @@ class MultiBenchmarkPlotter:
         # Default sizeType to ND if not explicitly set
         if size_type is None:
             size_type = "ND"
-        return {"operation": operation, "type": type_str, "unroll": unroll, "size": size, "dtype": dtype, "sizeType": size_type}
+        return {"operation": operation, "type": type_str, "unroll": unroll, "size": size, "dtype": dtype, "sizeType": size_type, "storePolicy": store_policy}
 
     @staticmethod
     def _findJsonFiles(directory: str) -> List[str]:
@@ -784,14 +797,13 @@ class MultiBenchmarkPlotter:
             try:
                 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeElapsedColumn, TimeRemainingColumn
                 progress = Progress(
-                    SpinnerColumn(style="cyan"),
-                    TextColumn("[progress.description]{task.description}"),
-                    BarColumn(bar_width=None),
+                    SpinnerColumn(style="bold magenta"),
+                    TextColumn("[bold blue]{task.description}"),
+                    BarColumn(bar_width=40, style="dim", complete_style="green"),
                     TaskProgressColumn(),
                     TextColumn("•"),
-                    TimeElapsedColumn(),
-                    TextColumn("•"),
                     TimeRemainingColumn(),
+                    TextColumn("[dim cyan]{task.fields[filename]}"),
                     transient=False,
                 )
             except Exception:
@@ -800,10 +812,14 @@ class MultiBenchmarkPlotter:
         if use_progress:
             try:
                 with progress as prog:
-                    task_id = prog.add_task("Parsing JSON files", total=len(json_files))
+                    task_id = prog.add_task("Processing Logs", total=len(json_files), filename="Initializing...")
                     for path in json_files:
+                        fname = os.path.basename(path)
+                        # Truncate if too long
+                        if len(fname) > 50:
+                            fname = fname[:47] + "..."
                         try:
-                            prog.update(task_id, description=f"Parsing: {os.path.basename(path)}")
+                            prog.update(task_id, filename=fname)
                         except Exception:
                             pass
                         df = process_one(path)
@@ -900,6 +916,35 @@ class MultiBenchmarkPlotter:
             agg_df["Unroll"] = agg_df["Run"].map(lambda r: _meta_col(r, "unroll"))
             agg_df["DType"] = agg_df["Run"].map(lambda r: _meta_col(r, "dtype"))
             agg_df["SizeType"] = agg_df["Run"].map(lambda r: _meta_col(r, "sizeType"))
+            agg_df["StorePolicy"] = agg_df["Run"].map(lambda r: _meta_col(r, "storePolicy"))
+
+            # Refine metadata from Method names (e.g. stalker_avx2_u1_d)
+            import re
+            # Regex to capture: name, optional unroll (u\d+), optional policy (stream|cache), optional dtype ([df]) at end
+            # Examples: stalker_avx2_u1_d, stalker_avx2_u1_stream_d, baseline_d, std_f
+            pat = re.compile(r'^(?P<base>.*?)_(?:u(?P<unroll>\d+)_)?(?:(?P<policy>stream|cache)_)?(?P<dtype>[df])$')
+            
+            def _refine_row(row):
+                m = row["Method"]
+                match = pat.match(m)
+                if match:
+                    g = match.groupdict()
+                    # Update Unroll if present in method name
+                    if g["unroll"]:
+                        row["Unroll"] = int(g["unroll"])
+                    # Update StorePolicy if present in method name
+                    if g["policy"]:
+                        row["StorePolicy"] = g["policy"]
+                    # Update DType if present in method name
+                    if g["dtype"]:
+                        row["DType"] = g["dtype"]
+                    # Clean up Method name
+                    base = g["base"]
+                    # Replace underscores with spaces for better display
+                    row["Method"] = base.replace("_", " ")
+                return row
+
+            agg_df = agg_df.apply(_refine_row, axis=1)
             
             # Filter valid rows
             valid_df = agg_df[pd.notna(agg_df["Size"]) & pd.notna(agg_df["Operation"])].copy()
@@ -928,16 +973,23 @@ class MultiBenchmarkPlotter:
                     def _get_canonical_method(row):
                         m = (row["Method"] or "").strip()
                         u = row["Unroll"]
+                        p = row["StorePolicy"]
                         m_lower = m.lower()
                         
                         # External libraries: ignore unroll, merge all
                         if m_lower.startswith("blas") or m_lower.startswith("eigen") or m_lower.startswith("std"):
                             return m # Just the method name
                         
-                        # Stalker: keep unroll
+                        # Stalker: keep unroll and policy
+                        parts = [m]
                         if u is not None and not pd.isna(u):
-                            return f"{m} (u{int(u)})"
-                        return m
+                            parts.append(f"u{int(u)}")
+                        if p is not None and not pd.isna(p):
+                            parts.append(p)
+                        
+                        if len(parts) > 1:
+                            return f"{parts[0]} ({', '.join(parts[1:])})"
+                        return parts[0]
 
                     chart_df["CanonicalMethod"] = chart_df.apply(_get_canonical_method, axis=1)
                     
@@ -1032,8 +1084,8 @@ class MultiBenchmarkPlotter:
                                 mdf = grp_df[grp_df["Metric"] == metric]
                                 if mdf.empty:
                                     continue
-                                # Candidate datasets by (method, unroll)
-                                all_pairs = sorted(set((row["Method"], row["Unroll"]) for _, row in mdf[["Method", "Unroll"]].drop_duplicates().iterrows()), key=lambda x: (str(x[0]), x[1] if x[1] is not None else -1))
+                                # Candidate datasets by (method, unroll, policy)
+                                all_pairs = sorted(set((row["Method"], row["Unroll"], row["StorePolicy"]) for _, row in mdf[["Method", "Unroll", "StorePolicy"]].drop_duplicates().iterrows()), key=lambda x: (str(x[0]), x[1] if x[1] is not None else -1, str(x[2]) if pd.notna(x[2]) else ""))
                                 if not all_pairs:
                                     continue
                                 family_marker = {
@@ -1051,7 +1103,7 @@ class MultiBenchmarkPlotter:
                                         return 'avx2'
                                     if s.startswith('stalker avx512'):
                                         return 'avx512'
-                                    if s.startswith('std::'):
+                                    if s.startswith('std'):
                                         return 'std'
                                     if s.startswith('blas'):
                                         return 'blas'
@@ -1059,18 +1111,19 @@ class MultiBenchmarkPlotter:
                                         return 'eigen'
                                     return 'other'
 
-                                datasets: List[Tuple[str, Any]] = []
-                                unrolls_by_method: Dict[str, List[Any]] = {}
-                                for method, unroll in all_pairs:
-                                    unrolls_by_method.setdefault(method, []).append(unroll)
-                                for method, unrolls in unrolls_by_method.items():
+                                datasets: List[Tuple[str, Any, Any]] = []
+                                variants_by_method: Dict[str, List[Tuple[Any, Any]]] = {}
+                                for method, unroll, policy in all_pairs:
+                                    variants_by_method.setdefault(method, []).append((unroll, policy))
+                                
+                                for method, variants in variants_by_method.items():
                                     fam = _family_from_method(method)
                                     if fam in ("avx2", "avx512"):
-                                        for u in sorted(unrolls, key=lambda x: (x is None, x if x is not None else -1)):
-                                            datasets.append((method, u))
+                                        for u, p in sorted(variants, key=lambda x: (x[0] is None, x[0] if x[0] is not None else -1, str(x[1]) if pd.notna(x[1]) else "")):
+                                            datasets.append((method, u, p))
                                     else:
-                                        # For non-SIMD, we merge all unrolls into one dataset
-                                        datasets.append((method, 'ALL'))
+                                        # For non-SIMD, we merge all variants into one dataset
+                                        datasets.append((method, 'ALL', None))
                                 
                                 # Generate plots: Linear-Linear, Log-Linear (Log X)
                                 plot_configs = [
@@ -1079,7 +1132,7 @@ class MultiBenchmarkPlotter:
                                 ]
                                 for scale_label, use_log_x, use_log_y in plot_configs:
                                     fig, ax = plt.subplots(figsize=(8.0, 8.0), dpi=self.dpi)
-                                    for idx, (method, unroll) in enumerate(datasets):
+                                    for idx, (method, unroll, policy) in enumerate(datasets):
                                         if unroll == 'ALL':
                                             ddf = mdf[mdf["Method"] == method]
                                             lbl_unroll = "merged"
@@ -1089,6 +1142,13 @@ class MultiBenchmarkPlotter:
                                         else:
                                             ddf = mdf[(mdf["Method"] == method) & (mdf["Unroll"] == unroll)]
                                             lbl_unroll = f"u{unroll}"
+                                        
+                                        # Filter by policy if applicable
+                                        if unroll != 'ALL':
+                                            if pd.notna(policy):
+                                                ddf = ddf[ddf["StorePolicy"] == policy]
+                                            else:
+                                                ddf = ddf[ddf["StorePolicy"].isna()]
                                         
                                         # Robust dropna: only drop if Median or Size is missing
                                         ddf = ddf.dropna(subset=["Median", "Size"])
@@ -1105,6 +1165,8 @@ class MultiBenchmarkPlotter:
                                         
                                         if fam in ("avx2", "avx512"):
                                             lbl = f"{method} ({lbl_unroll})"
+                                            if pd.notna(policy):
+                                                lbl += f" {policy}"
                                         else:
                                             lbl = f"{method}"
                                             
@@ -1129,14 +1191,37 @@ class MultiBenchmarkPlotter:
                                         )
                                     title_dtype = {"d": "double", "f": "float"}.get(dtype, str(dtype))
                                     grp_name = "All"
-                                    ax.set_title(f"{op} — {metric} vs Size — {title_dtype} — {scale_label}")
-                                    ax.set_xlabel("Size")
-                                    ax.set_ylabel(metric)
+                                    # Title removed as requested
+                                    # ax.set_title(f"{op} — {metric} vs Size — {title_dtype} — {scale_label}")
+                                    
+                                    # Increased axis label size (bold removed)
+                                    ax.set_xlabel("Size", fontsize=12)
+                                    ax.set_ylabel(metric, fontsize=12)
+
+                                    # Info box with metadata
+                                    info_text = (
+                                        f"Operation: {op}\n"
+                                        f"Data Type: {title_dtype}\n"
+                                    )
+                                    # Place text box in top-right corner
+                                    ax.text(0.98, 0.98, info_text, transform=ax.transAxes,
+                                            fontsize=10, verticalalignment='top', horizontalalignment='right',
+                                            bbox=dict(boxstyle='round', facecolor='white', alpha=0.9, edgecolor='#CCCCCC'))
                                     
                                     # Force scientific notation only for linear Y
                                     if not use_log_y:
                                         try:
-                                            ax.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+                                            # User request: "dont use exponential if the number is small"
+                                            # scilimits=(-3, 4) means scientific notation only outside [1e-3, 1e4]
+                                            ax.ticklabel_format(axis='y', style='sci', scilimits=(-3, 4))
+                                        except Exception:
+                                            pass
+                                        
+                                        # User request: "more ticks in the y axis"
+                                        try:
+                                            # Increase number of bins for Y axis
+                                            ax.yaxis.set_major_locator(mticker.MaxNLocator(nbins=20, steps=[1, 2, 2.5, 5, 10]))
+                                            ax.yaxis.set_minor_locator(mticker.AutoMinorLocator())
                                         except Exception:
                                             pass
 
@@ -1161,7 +1246,8 @@ class MultiBenchmarkPlotter:
                                         except Exception:
                                             pass
 
-                                    ax.legend(fontsize=9, loc='best', frameon=True)
+                                    # Legend below the info box on the right
+                                    ax.legend(fontsize=9, loc='upper right', bbox_to_anchor=(0.99, 0.90), frameon=True)
                                     plt.tight_layout()
                                     fname = f"{op}_{BenchmarkPlotter._sanitizeFileName(metric)}_{title_dtype}_{scale_label}_scaling.png"
                                     fpath = os.path.join(op_out, fname)

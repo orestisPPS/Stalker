@@ -39,8 +39,8 @@ It is a personal playground and learning space that offers easy to use experimen
     - [Option A — Installed package (recommended)](#option-a--installed-package-recommended)
     - [Option B — Subdirectory configuration](#option-b--subdirectory-configuration)
   - [Examples](#examples)
-    - [Example 1: Vectorized and unrolled copy of 32-bit aligned std::vector with AVX2 instructions and streamed store](#example-1-vectorized-and-unrolled-copy-of-32-bit-aligned-stdvector-with-avx2-instructions-and-streamed-store)
-    - [Example 2: Partially unrolled dot product of with default alignment.](#example-2-partially-unrolled-dot-product-with-default-alignment)
+    - [Example 1: Vectorized and unrolled copy of 32-bit alignened std::vector with AVX2 instructions and streamed store.](#example-1-vectorized-and-unrolled-copy-of-32-bit-alignened-stdvector-with-avx2-instructions-and-streamed-store)
+    - [Example 2: Partially unrolled dot product of with default alignment.](#example-2-partially-unrolled-dot-product-of-with-default-alignment)
     - [Example 3: Fully unrolled compile-time sum](#example-3-fully-unrolled-compile-time-sum)
   - [Performance \& Benchmarks](#performance--benchmarks)
     - [Performance](#performance)
@@ -53,7 +53,7 @@ It is a personal playground and learning space that offers easy to use experimen
 
 ### Design
 
-- **SIMD** (Single Instruction, Multiple Data): Direct hardware-level parallelism using 256-bit (AVX2) and 512-bit (AVX-512) vector registers. Enables concurrent arithmetic on multiple elements per instruction. Instruction set extensions and store policies (cached/streamed stores) can be configured in compile-time. Supported data types: `double`, `float`, `int`, `unsigned int`, `short`.  
+- **SIMD** (Single Instruction, Multiple Data): Direct hardware-level parallelism using 256-bit (AVX2) and 512-bit (AVX-512) vector registers. Enables concurrent arithmetic on multiple elements per instruction. Instruction set extensions, store policies (cached/streamed stores) and load policies (aligned/not-aligned loads) can be configured in compile-time. Supported data types: `double`, `float`, `int`, `unsigned int`, `short`.  
 - **Template Metaprogramming**: Metaprogramming techniques and templating (CRTP, template specialization, `std::index_sequence`, etc.) enable zero-overhead compile-time dispatching and static polymorphism (no vtable lookups) with type safe, almost branchless code. Users can enable and configure compile-time unrolling for fully unrolled small loops and large loops with reduced check overhead and perform arithmetic operations exclusively with the compiler.
 - **Hardware Concurrency**: Dual multithreading backend support for operations on contiguous memory blocks:
   - `std::thread` Cross-platform, simple but only number of threads can be configured.
@@ -72,10 +72,16 @@ It is a personal playground and learning space that offers easy to use experimen
 
 ### Mathematics
 All operations marked with [constexpr] can be evaluated at compile-time.
-- **Operations**: `add`, `axpy`, `subtract`, `multiply`, `divide`, `scale`, `addConstant`, `dot`
+- **VectorMath**: `add`, `axpy`, `subtract`, `multiply`, `divide`, `scale`, `addConstant`, `dot`
   - Sequential and parallel variants
   - Weighted and unweighted variants [where applicable]
   - Vectorized with AVX2 and AVX512 instruction sets (with / without unroll) [except for divide]
+  - Loops (with / without unroll)
+- **MatrixMath**: `add`, `subtract`, `multiply`, `scale`, `addConstant`, `dot`, `matrixVectorMultiply`, `vectorMatrixMultiply`
+  - Support for full, row and column major matrices and subblocks.
+  - Vectorized with AVX2 and AVX512 instruction sets (with / without unroll)
+  - Sequential and parallel variants
+  - Weighted and unweighted variants [where applicable]
   - Loops (with / without unroll)
 - **Differentiation [constexpr]**: Numerical calculation of 1st and 2nd order derivatives (Finite Difference Method). Forward, backward and central FD schemes with error order up to $\Delta x^6$.
 - **Integration [constexpr]**: Numerical integration algorithms: Trapezoidal, Simpson1, Simpson2.
@@ -297,7 +303,6 @@ Almost all operations can be performed with one of three backends (SIMD, Unrolle
 ### Example 1: Vectorized and unrolled copy of 32-bit alignened std::vector with AVX2 instructions and streamed store.
 
   ```cpp
-  #include <Stalker/Core/Traits/ExecutionTraits.h>
   #include <Stalker/Memory/MemoryOperations.h>
   #include <Stalker/Memory/Allocators.h>
   #include <Stalker/Mathematics/Random.h>
@@ -331,26 +336,25 @@ Almost all operations can be performed with one of three backends (SIMD, Unrolle
 
   ```cpp
 
-  #include <Stalker/Core/Traits/ExecutionTraits.h>
-  #include <Stalker/Mathematics/Operations/MathOperations.h>
+  #include <Stalker/Mathematics/Vector/VectorMath.h>
   #include <Stalker/Memory/Allocators.h>
   #include <Stalker/Mathematics/Random.h>
 
   int main() {
       
-      using UnrolledTrait = Stalker::Core::ExecutionTraitUnrolled<8>;
+      using Trait = Stalker::Core::ExecutionTraitUnrolled<8>;
 
   //Create 2 raw pointers with default alignment and fill with random numbers [0, 10].
       size_t size = 20;
 
-      auto a =  Stalker::Memory::createAlignedRaw<double>(size);
+      auto a =  Stalker::MemorcreateAlignedPtrRaw<double>(size);
       Stalker::Mathematics::Random::uniform<double>(size, a, 0, 10);
-      auto b =  Stalker::Memory::createAlignedRaw<double>(size);
+      auto b =  Stalker::MemorcreateAlignedPtrRaw<double>(size);
       Stalker::Mathematics::Random::uniform<double>(size, b, 0, 10);
 
-      //Call dot from MathOperations API.
+      //Call dot from VectorMath API.
       //2 unrolled blocks with size 8 will be calculated in 2 loops and the tail (4 elements) will be handled by a c-style loop.
-      auto res = Stalker::Mathematics::MathOperations::dot<double, UnrolledTrait>(size, a, b);
+      auto res = Stalker::Mathematics::VectorMath::dot<double, Trait>(size, a, b);
 
       delete a;
       delete b;
@@ -363,21 +367,20 @@ Almost all operations can be performed with one of three backends (SIMD, Unrolle
 
   ```cpp
 
-  #include <Stalker/Core/Traits/ExecutionTraits.h>
-  #include <Stalker/Mathematics/Operations/MathOperations.h>
+  #include <Stalker/Mathematics/Vector/VectorMath.h>
   #include <array>
 
   int main() {
       
       constexpr auto Size = 5;
-      using UnrolledTrait = Stalker::Core::ExecutionTraitUnrolled<Size>;
+      using Trait = Stalker::Core::ExecutionTraitUnrolled<Size>;
 
       //Create 1 std::array<double, 5> of size 5.
       constexpr auto array = std::array<double, Size> {1, 1, 1, 1, 1};
 
-      //Call sum from MathOperations API
+      //Call sum from VectorMath API
       //Everything is calculated by the compiler!
-      constexpr auto res = Stalker::Mathematics::MathOperations::sum<double, UnrolledTrait>(Size, array.data());
+      constexpr auto res = Stalker::Mathematics::VectorMath::sum<double, Trait>(Size, array.data());
       
       //This will not build if the result is not 5;
       static_assert(res == 5);

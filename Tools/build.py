@@ -91,10 +91,25 @@ class BenchmarkConfig:
 
 
 
-    def _compute_sizes(self):
+    def _parse_ram(self, ram_str):
+        if not ram_str: return 2 * 1024**3 
+        ram_str = str(ram_str).upper().strip()
+        if ram_str.endswith("GB"):
+            return int(float(ram_str[:-2]) * 1024**3)
+        if ram_str.endswith("MB"):
+            return int(float(ram_str[:-2]) * 1024**2)
+        if ram_str.endswith("KB"):
+            return int(float(ram_str[:-2]) * 1024)
+        try:
+            return int(ram_str)
+        except:
+            return 2 * 1024**3
+
+    def _compute_sizes(self, is_matrix=False):
         # 1) Use explicit sizes if provided
         raw = self.raw
-        explicit = raw.get("sizes")
+        key = "sizes_matrix" if is_matrix else "sizes_vector"
+        explicit = raw.get(key)
         if isinstance(explicit, list) and explicit:
             try:
                 # Filter out zeros and ensure unique integers
@@ -103,21 +118,48 @@ class BenchmarkConfig:
                 pass 
 
         # 2) Use size_region (HPC Scientific Sampling)
-        region = raw.get("size_region")
+        region_key = "size_region_matrix" if is_matrix else "size_region_vector"
+        region = raw.get(region_key)
         
+        # Fallback for matrix: derive from vector region
+        if is_matrix and not region:
+            vec_region = raw.get("size_region_vector")
+            if vec_region and len(vec_region) == 2:
+                # Sqrt of vector sizes for matrix dimensions
+                region = [int(vec_region[0]**0.5), int(vec_region[1]**0.5)]
+
         if isinstance(region, list) and len(region) == 2:
             lo, hi = int(region[0]), int(region[1])
             if lo > hi:
                 lo, hi = hi, lo
             
+            # Cap by RAM
+            limit_bytes = self._parse_ram(raw.get("available_ram", "2GB"))
+            # Max elements: RAM/8 (assuming double precision)
+            max_elems = limit_bytes // 8
+            
+            if is_matrix:
+                # For matrix, size is N, so N*N elements. N <= sqrt(max_elems)
+                max_dim = int(max_elems**0.5)
+                # BLAS limitation: dimensions must fit in int (2^31 - 1)
+                if max_dim > 2147483647: max_dim = 2147483647
+                if hi > max_dim: hi = max_dim
+            else:
+                # Hard cap at 2B to prevent index overflows (BLAS uses int)
+                if hi > 2000000000: hi = 2000000000
+                if hi > max_elems: hi = max_elems
+
+            if lo > hi: return [] # Region invalid after capping
+
             sizes = set()
             
             # Start p at the smallest power of 2 <= lo, or minimal safe SIMD size (64)
-            p = 64 
+            # For matrix, 64 is a bit large for start if lo is small, but ok.
+            p = 64 if not is_matrix else 8
             while p < lo:
                 p <<= 1
             # Backtrack one step to catch the '1.5x' of the previous octave if it falls in range
-            if p > 64: p >>= 1 
+            if p > (64 if not is_matrix else 8): p >>= 1 
 
             while p <= hi:
                 # A. The Base: 2^N (Standard alignment)
@@ -139,7 +181,10 @@ class BenchmarkConfig:
                 # We shift by exactly one Cache Line.
                 # This breaks the "Set Associativity" stride without breaking SIMD alignment.
                 # Note: 64 bytes = 16 floats (AVX512) or 8 doubles (AVX512)
-                anti_alias = p + 64 
+                # For matrix, adding 64 to N might be too much if N is small, but for large N it's fine.
+                # Actually for matrix, anti-aliasing stride is usually done via padding, not changing N.
+                # But changing N slightly also avoids power-of-2 conflicts.
+                anti_alias = p + (64 if not is_matrix else 8)
                 if lo <= anti_alias <= hi and anti_alias != mid:
                     sizes.add(anti_alias)
                 
@@ -153,16 +198,21 @@ class BenchmarkConfig:
             # and sort for the runner.
             return sorted([s for s in sizes if s >= lo and s <= hi])
         
-        raise Exception("No valid 'sizes' or 'size_region' found.")
+        if is_matrix: return [] # Optional
+        raise Exception("No valid 'sizes_vector'/'sizes_matrix' or 'size_region_vector'/'size_region_matrix' found.")
 
     def to_cmake_args(self):
         args = []
         # Synthesize sizes
-        sizes_combined = self._compute_sizes()
-        
+        sizes_combined = self._compute_sizes(is_matrix=False)
         if sizes_combined:
             val = ";".join(str(x) for x in sizes_combined)
             args.append(f"-DSTALKER_BENCH_VECTOR_SIZES={val}")
+            
+        matrix_sizes = self._compute_sizes(is_matrix=True)
+        if matrix_sizes:
+            val = ";".join(str(x) for x in matrix_sizes)
+            args.append(f"-DSTALKER_BENCH_MATRIX_SIZES={val}")
         
         # Pass other fields
         raw = self.raw
@@ -170,14 +220,18 @@ class BenchmarkConfig:
             args.append(f"-DSTALKER_BENCH_TYPES={_list_to_cmake(raw['data_types'])}")
         if "unroll_factors" in raw:
             args.append(f"-DSTALKER_BENCH_UNROLLS={_list_to_cmake(raw['unroll_factors'])}")
+        if "store_policies" in raw:
+            args.append(f"-DSTALKER_BENCH_STORE_POLICIES={_list_to_cmake(raw['store_policies'])}")
         if "iterations" in raw:
             args.append(f"-DSTALKER_BENCH_ITERATIONS={raw['iterations']}")
         if "warmup_iterations" in raw:
             args.append(f"-DSTALKER_BENCH_WARMUP_ITERATIONS={raw['warmup_iterations']}")
         if "operations_memory" in raw:
             args.append(f"-DSTALKER_BENCH_MEMOPS={_list_to_cmake(raw['operations_memory'])}")
-        if "operations_math" in raw:
-            args.append(f"-DSTALKER_BENCH_MATHOPS={_list_to_cmake(raw['operations_math'])}")
+        if "operations_vector" in raw:
+            args.append(f"-DSTALKER_BENCH_MATHOPS={_list_to_cmake(raw['operations_vector'])}")
+        if "operations_matrix" in raw:
+            args.append(f"-DSTALKER_BENCH_MATRIXOPS={_list_to_cmake(raw['operations_matrix'])}")
         if "slave_thread_id" in raw:
             args.append(f"-DSTALKER_BENCH_SLAVE_THREAD_ID={raw['slave_thread_id']}")
         if "data_range_min" in raw:
@@ -220,6 +274,7 @@ class StalkerBuildConfig:
         ("build_benchmarks", "Build benchmarks"),
         ("simd_enable", "Enable SIMD"),
         ("simd_default_instructions", "SIMD instruction set"),
+        ("simd_store_type", "SIMD store type"),
         ("alignment", "Memory alignment"),
         ("unroll_factor", "Loop unroll factor"),
         ("threading_enable", "Enable threading"),
@@ -231,10 +286,12 @@ class StalkerBuildConfig:
         ("build_profile", "Build profile"),
         # Benchmark details (if enabled)
         ("bench_vector_sizes", "Benchmark vector sizes"),
+        ("bench_matrix_sizes", "Benchmark matrix sizes"),
         ("bench_types", "Benchmark data types"),
         ("bench_unrolls", "Benchmark unroll factors"),
         ("bench_memops", "Benchmark memory ops"),
-        ("bench_mathops", "Benchmark math ops"),
+        ("bench_vectorops", "Benchmark vector ops"),
+        ("bench_matrixops", "Benchmark matrix ops"),
         ("bench_iterations", "Benchmark iterations"),
         ("bench_warmup_iterations", "Benchmark warmup iters"),
         ("bench_enable_eigen", "Bench Eigen enable"),
@@ -321,6 +378,9 @@ class StalkerBuildConfig:
         self.simd_default_instructions = self._parseConfigArgument("simd_default_instructions", "auto", str).lower()
         if self.simd_default_instructions not in self.SIMD_OPTIONS:
             raise StalkerBuildConfigError(f"Invalid simd_default_instructions '{self.simd_default_instructions}'. Valid: {', '.join(self.SIMD_OPTIONS)}")
+        self.simd_store_type = self._parseConfigArgument("simd_store_type", "stream", str).lower()
+        if self.simd_store_type not in ["cache", "stream"]:
+            raise StalkerBuildConfigError(f"Invalid simd_store_type '{self.simd_store_type}'. Valid: cache, stream")
 
     def _parse_alignment(self):
         # Only allow positive, power-of-2 values. If -1 (not set), leave unset.
@@ -376,6 +436,7 @@ class StalkerBuildConfig:
         if self.simd_enable:
             self._cmake_args.append("-DSTALKER_SIMD_ENABLE=ON" if self.simd_default_instructions != 'none' else "-DSTALKER_SIMD_ENABLE=OFF")
             self._cmake_args.append(f"-DSTALKER_SIMD_INSTRUCTION_SET={self.simd_default_instructions}")
+            self._cmake_args.append(f"-DSTALKER_SIMD_STORE_POLICY={self.simd_store_type}")
         else:
             self._cmake_args.append("-DSTALKER_SIMD_ENABLE=OFF")
         self._cmake_args.append(f"-DSTALKER_ALIGNMENT={self.alignment}")
@@ -419,7 +480,8 @@ class StalkerBuildConfig:
         self.bench_types = ";".join(raw.get("data_types", [])) or "N/A"
         self.bench_unrolls = ";".join(str(v) for v in raw.get("unroll_factors", [])) or "N/A"
         self.bench_memops = ";".join(raw.get("operations_memory", [])) or "N/A"
-        self.bench_mathops = ";".join(raw.get("operations_math", [])) or "N/A"
+        self.bench_vectorops = ";".join(raw.get("operations_vector", [])) or "N/A"
+        self.bench_matrixops = ";".join(raw.get("operations_matrix", [])) or "N/A"
         self.bench_iterations = raw.get("iterations", "N/A")
         self.bench_warmup_iterations = raw.get("warmup_iterations", "N/A")
         self.bench_enable_eigen = raw.get("enable_eigen", False)

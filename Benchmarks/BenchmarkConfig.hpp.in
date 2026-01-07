@@ -9,6 +9,10 @@ namespace Benchmarks {
 inline constexpr std::array<std::size_t, @_bench_sizes_len@> Sizes = { @_bench_sizes_csv@ };
 inline constexpr std::size_t SizeCount = Sizes.size();
 
+// matrix sizes
+inline constexpr std::array<std::size_t, @_bench_matrix_sizes_len@> MatrixSizes = { @_bench_matrix_sizes_csv@ };
+inline constexpr std::size_t MatrixSizeCount = MatrixSizes.size();
+
 // unrolls
 inline constexpr std::array<std::size_t, @_bench_unrolls_len@> Unrolls = { @_bench_unrolls_csv@ };
 inline constexpr std::size_t UnrollCount = Unrolls.size();
@@ -31,8 +35,11 @@ inline constexpr std::array<std::string_view, @_bench_memops_len@>
 inline constexpr std::array<std::string_view, @_bench_mathops_len@>
     MathOpNames = { @_bench_mathops_csv_quoted@ };
 
+inline constexpr std::array<std::string_view, @_bench_matrixops_len@>
+    MatrixOpNames = { @_bench_matrixops_csv_quoted@ };
+
 } // namespace Benchmarks
 
 // global macro (macros are not namespaced)
 #define BENCH_FOR_EACH_TYPE(X) @_bench_types_macro@
-#define BENCH_FOR_EACH_UNROLL(X) @_bench_unrolls_macro@
+#define BENCH_FOR_EACH_STORE_POLICY(X) @_bench_store_policies_macro@

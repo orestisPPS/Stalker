@@ -3,6 +3,7 @@
 #include <Stalker/Utility/Printers.h>
 #include <Stalker/Mathematics/Random.h>
 #include <Stalker/Memory/Allocators.h>
+#include <Stalker/Core/Config/SIMD.h>
 
 #include <array>
 #include <vector>
@@ -14,6 +15,7 @@
 #include <pthread.h>
 #include <sched.h>
 #include <cstdlib>
+#include <sstream>
 #include "BenchmarkConfig.hpp"   // from ${CMAKE_CURRENT_BINARY_DIR}
 
 #if defined(STALKER_BENCH_PAPI_AVAILABLE) && STALKER_BENCH_PAPI_AVAILABLE
@@ -21,9 +23,19 @@
 #endif
 #if defined(STALKER_BENCH_OPENBLAS_AVAILABLE) && STALKER_BENCH_OPENBLAS_AVAILABLE
 #include <cblas.h>
-extern "C" {
-    void openblas_set_num_threads(int);
+#include <dlfcn.h>
+// Use a runtime lookup to avoid requiring a visible definition at analysis time
+static inline void try_set_openblas_threads(int n) {
+    // Attempt to resolve the symbol in the current process; no-op if not present.
+    void* handle = dlopen(nullptr, RTLD_LAZY);
+    if (!handle) return;
+    using Fn = void(*)(int);
+    Fn fn = reinterpret_cast<Fn>(dlsym(handle, "openblas_set_num_threads"));
+    if (fn) fn(n);
+    dlclose(handle);
 }
+#else
+static inline void try_set_openblas_threads(int) { (void)0; }
 #endif
 #if defined(STALKER_BENCH_EIGEN_AVAILABLE) && STALKER_BENCH_EIGEN_AVAILABLE
 #include <Eigen/Core>
@@ -37,6 +49,20 @@ namespace Benchmarks {
 using namespace Stalker::Utility;
 using namespace Stalker::Core;
 namespace fs = std::filesystem;
+
+    /**
+     * Prevent the compiler from optimizing away the given value.
+     *
+     * Acts as an optimization barrier by using inline volatile assembly so
+     * the value is considered used without being modified.
+     *
+     * @tparam Tp Type of the value.
+     * @param value Constant reference to the value to preserve.
+     */
+    template <class Tp>
+    inline __attribute__((always_inline)) void doNotOptimize(Tp const& value) {
+        asm volatile("" : : "r,m"(value) : "memory");
+    }
 
 #if defined(STALKER_BENCH_PAPI_AVAILABLE) && (STALKER_BENCH_PAPI_AVAILABLE)
 
@@ -87,6 +113,13 @@ namespace fs = std::filesystem;
         template<typename Func>
         void _forEachUnroll(Func&& func) {
             _forEachUnrollImpl(std::forward<Func>(func), std::make_index_sequence<Benchmarks::UnrollCount>{});
+        }
+
+        template<typename Func>
+        void _forEachStorePolicy(Func&& func) {
+            #define CALL_FUNC(Policy) func(std::integral_constant<Stalker::Core::Config::T_SIMDStore, Policy>{});
+            BENCH_FOR_EACH_STORE_POLICY(CALL_FUNC)
+            #undef CALL_FUNC
         }
 
         template<typename T>
@@ -174,7 +207,12 @@ namespace fs = std::filesystem;
             for (size_t i = 0; i < config.warmupIterations; ++i) {
                 print("  Warmup Iteration " + std::to_string(i+1) + "/" + std::to_string(config.warmupIterations), T_Color::GANDALF_GRAY);
                 auto result = allocFunc();
-                func(result);
+                if constexpr (std::is_void_v<decltype(func(result))>) {
+                    func(result);
+                } else {
+                    doNotOptimize(func(result));
+                }
+                doNotOptimize(result);
             }
 
             for (size_t i = 0; i < config.iterations; ++i) {
@@ -205,8 +243,13 @@ namespace fs = std::filesystem;
                     printInfo(std::string("Executing function (affinity core ") + std::to_string(Benchmarks::SlaveThreadId) + ")...");
                 }
                 timer.start();
-                func(result);
+                if constexpr (std::is_void_v<decltype(func(result))>) {
+                    func(result);
+                } else {
+                    doNotOptimize(func(result));
+                }
                 timer.stop();
+                doNotOptimize(result);
 
                 if (papiOk && eventSet != PAPI_NULL) {
                     vals.assign(events.size(), 0);
@@ -260,13 +303,11 @@ namespace fs = std::filesystem;
         }
         #endif
 
-        void _clearAndResetLogs(size_t size, size_t unroll, const PAPILogsConfig& papiConfig) {
-           _logs.clear();
-           std::ostringstream ss;
+        void _prepareLogs(size_t size, const PAPILogsConfig& papiConfig) {
+            std::ostringstream ss;
             ss << std::scientific << std::setprecision(3) << static_cast<double>(size);
             _logs.addParameter("Size", ss.str());
             ss.str(""); ss.clear();
-            _logs.addParameter("Unroll", std::to_string(unroll));
 
             #if defined(STALKER_BENCH_PAPI_AVAILABLE) && (STALKER_BENCH_PAPI_AVAILABLE)
             auto addIfMeasured = [&](const std::string& key) {
@@ -330,7 +371,7 @@ namespace fs = std::filesystem;
                         printInfo(std::string("Set env: OPENBLAS_NUM_THREADS=") + nthStr);
                     }
                     #if defined(STALKER_BENCH_OPENBLAS_AVAILABLE) && STALKER_BENCH_OPENBLAS_AVAILABLE
-                    if (nth > 0) openblas_set_num_threads(nth);
+                    if (nth > 0) try_set_openblas_threads(nth);
                     #endif
                     #if defined(STALKER_BENCH_EIGEN_AVAILABLE) && STALKER_BENCH_EIGEN_AVAILABLE
                     // Eigen's default is single-threaded for plain vectorization; for parallel modules, set global threads

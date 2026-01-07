@@ -132,16 +132,16 @@ class Logs {
         auto it = std::find_if(_measurementSets.begin(), _measurementSets.end(),
             [&](const MeasurementSet& m) { return m.name == setName; });
 
+        if (it != _measurementSets.end()) {
+            // Set already exists, just update plot preference if needed, but don't wipe data
+            it->plot = plot;
+            return;
+        }
+
         MeasurementSet newSet;
         newSet.name = setName;
         newSet.plot = plot;
-
-        if (it != _measurementSets.end()) {
-            printWarning("Measurement set '" + setName + "' already exists. Overwriting its value.");
-            *it = std::move(newSet);
-        } else {
-            _measurementSets.push_back(std::move(newSet));
-        }
+        _measurementSets.push_back(std::move(newSet));
     }
 
     template<typename T>
