@@ -179,6 +179,60 @@ namespace Stalker::Core::Config {
     };
 
     /**
+     * @enum T_PrefetchHints
+     * @brief Specifies locality hints for data prefetching operations.
+     *
+     * SIMD prefetch hints guide the CPU cache controller on which cache level
+     * to populate with the requested data. This optimization can significantly
+     * reduce memory latency and prevent cache pollution (evicting useful data)
+     * during large streaming operations.
+     *
+     * These hints map directly to intrinsics like _mm_prefetch.
+     */
+    enum class T_PrefetchHints {
+        /**
+         * @brief Temporal data: keep in all cache levels (L1, L2, L3).
+         *
+         * Indicates that the data will be accessed soon and reused. The data
+         * is brought into all cache levels effective for the architecture.
+         *
+         * Maps to: _MM_HINT_T0
+         */
+        HintT0, 
+
+        /**
+         * @brief Temporal data: keep in L2 and higher (L2, L3).
+         *
+         * Indicates that the data will be accessed, but not immediately, or
+         * that L1 space should be preserved for other critical data.
+         *
+         * Maps to: _MM_HINT_T1
+         */
+        HintT1,
+
+        /**
+         * @brief Temporal data: keep in L3 and higher.
+         *
+         * Indicates that the data valid but can be served from the Last Level Cache (LLC).
+         * Useful to avoid polluting the faster, smaller L1/L2 caches.
+         *
+         * Maps to: _MM_HINT_T2
+         */
+        HintT2,
+
+        /**
+         * @brief Non-temporal data: minimize cache pollution (NTA).
+         *
+         * "Non-Temporal Aligned". Fetches data into a non-temporal structure
+         * (or L1) with the expectation that it will be used once and then
+         * discarded. Prevents evicting useful data from caches.
+         *
+         * Maps to: _MM_HINT_NTA
+         */
+        HintNTA
+    };
+
+    /**
      * @brief Returns true if any SIMD instruction set is enabled at compile time.
      * @return true if SIMD is available; false otherwise.
      */

@@ -4,7 +4,7 @@
 
 ## Overview
 
-STAΛKER is a high-performance, header-only, C++ 17 linear algebra library. It combines data-level (SIMD) and thread-level concurrency with modern template metaprogramming techniques to obtain excellent performance and linear scaling, especially in memory-bound data operations. It can perform similarly or orders of magnitude better than `STL`, `OpenBLAS`, and `Eigen` across a broad range of vector operations and sizes. Users are free to tune and experiment with almost every aspect of the performance optimizations, from compile-time, according to their needs and hardware.
+STAΛKER is a high-performance, header-only, C++ 17 linear algebra library. It combines data-level (SIMD) and thread-level concurrency with modern template metaprogramming techniques to obtain excellent performance and scaling, especially in memory-bound data operations. It can perform similarly or significantly better than `STL`, `OpenBLAS`, and `Eigen` across a broad range of operations and sizes. Users are free to tune and experiment with almost every aspect of the performance optimizations, from compile-time, according to their needs and hardware.
 
 ## Motivation
 
@@ -42,9 +42,7 @@ It is a personal playground and learning space that offers easy to use experimen
     - [Example 1: Vectorized and unrolled copy of 32-bit alignened std::vector with AVX2 instructions and streamed store.](#example-1-vectorized-and-unrolled-copy-of-32-bit-alignened-stdvector-with-avx2-instructions-and-streamed-store)
     - [Example 2: Partially unrolled dot product of with default alignment.](#example-2-partially-unrolled-dot-product-of-with-default-alignment)
     - [Example 3: Fully unrolled compile-time sum](#example-3-fully-unrolled-compile-time-sum)
-  - [Performance \& Benchmarks](#performance--benchmarks)
-    - [Performance](#performance)
-    - [Benchmarks](#benchmarks)
+  - [Performance](#performance)
   - [License](#license)
 
 ---
@@ -61,7 +59,7 @@ It is a personal playground and learning space that offers easy to use experimen
     >Parallel operations due to their nature (thread creation & launching, safety checks, synchronization) increase branching and overhead. Of course compile-time evaluations cannot be performed.
 
 ### Memory
-- `MemoryOperations API`: `copy`, `setValue`, `setZero`, `areEqual`:
+- `MemoryOperations API`: `copy`, `setValue`, `setZero`:
   - Sequential and parallel variants
   - Vectorized with AVX2 and AVX512 instruction sets (with / without unroll)
   - Loops (with / without unroll)
@@ -129,8 +127,7 @@ All operations marked with [constexpr] can be evaluated at compile-time.
 ### Configure & Build (CMake)
 
 This project uses CMake as its primary build system and the recommended tool for configuration and integration.
-It offers a lot of performance tuning and almost all of it can be performed from configure or compile time. Data operations are configured with templated execution traits. Their default values are set by cmake configuration but they
-can be overridden.
+It offers a lot of performance tuning and almost all of it can be performed from configure or compile time. Data operations are configured with templated execution traits. Their default values are set by cmake configuration but they can be overridden.
 
 ### CMake Options
 The following CMake cache variables are available to configure the library:
@@ -156,6 +153,8 @@ The following CMake cache variables are available to configure the library:
 | `STALKER_SIMD_ENABLE`          | Enable SIMD vectorization                                           | `ON`     |
 | `STALKER_SIMD_INSTRUCTION_SET` | SIMD ISA: `auto`, `avx2`, `avx512`, `none` (auto prefers AVX2)      | `auto`   |
 | `STALKER_SIMD_STORE_POLICY`    | SIMD store policy: `stream` (non-temporal) or `cache`               | `stream` |
+| `STALKER_SIMD_PREFETCH_LINES`  | Cache lines to prefetch ahead (0=disable)                           | `1`      |
+| `STALKER_SIMD_PREFETCH_HINT`   | Prefetch hint: `HintT0`, `HintT1`, `HintT2`, `HintNTA`              | `HintT0` |
 
 #### Threading
 
@@ -166,7 +165,7 @@ The following CMake cache variables are available to configure the library:
 | `STALKER_THREADING_NUM_THREADS`        | Thread count (`0` = auto-detect)                                        | `0`     |
 | `STALKER_THREADING_STD_ENABLE`         | Use `std::thread` backend                                               | `ON`    |
 | `STALKER_THREADING_POSIX_ENABLE`       | Use `pthread` backend (Linux/POSIX only)                                | `OFF`   |
-| `STALKER_THREADING_POSIX_SMT_ENABLE`   | Enable hyperthreading (only with `pthread` backend on Linux)            | `OFF`   |
+| `STALKER_THREADING_POSIX_SMT_ENABLE`   | Enable Simultaneous Multithreading (only with `pthread` backend on Linux)            | `OFF`   |
 
 #### Build Profiles
 
@@ -310,10 +309,11 @@ Almost all operations can be performed with one of three backends (SIMD, Unrolle
   int main() {
       
       //Create a SIMD execution trait SIMD Instruction Set, Unroll Factor and SIMD Store Policy
+      constexpr bool IsAligned = true;
       constexpr Stalker::Core::Config::T_SIMD      Instructions = Stalker::Core::Config::T_SIMD::AVX2;
       constexpr Stalker::Core::Config::T_SIMDStore StorePolicy  = Stalker::Core::Config::T_SIMDStore::Streamed;
       constexpr size_t Unroll = 2;
-      using SimdTrait = Stalker::Core::ExecutionTraitSIMD<Instructions, Unroll, StorePolicy>;
+      using SimdTrait = Stalker::Core::ExecutionTraitSIMD<IsAligned, Instructions, Unroll, StorePolicy>;
 
       //Create 2 std::vector<double> aligned at 32 bits and fill source with random numbers [0, 10].
       size_t size = 20;
@@ -389,15 +389,10 @@ Almost all operations can be performed with one of three backends (SIMD, Unrolle
   }
   ```
 
-## Performance & Benchmarks
+## Performance
 
-### Performance
-The library focuses on memory bandwidth efficiency and minimizing control overhead. Vector operations are implemented with selectable execution traits (classic loops, unrolled metaprogrammed loops, and SIMD paths) to let you match workload characteristics to hardware.
-
-### Benchmarks
-
-
+For detailed performance results and benchmark instructions visit `Benchmarks/README.MD`.
 
 ## License
 
-This library is released under the MIT License. See the `LICENSE` file for details.
+To be decided....

@@ -92,7 +92,7 @@ namespace Stalker::Memory {
             constexpr inline static void call(Args&&... args) {
                 
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    MemoryOperationsSIMD<T, Trait::SIMDArch>::template copy<Trait::IsAligned, Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
+                    MemoryOperationsSIMD<T, Trait::SIMDArch>::template copy<Trait>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
                     MemoryOperationsMeta::copy<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Scalar)
@@ -108,7 +108,7 @@ namespace Stalker::Memory {
             constexpr inline static void call(Args&&... args) {
                 
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    MemoryOperationsSIMD<T, Trait::SIMDArch>::template setValue<Trait::IsAligned, Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
+                    MemoryOperationsSIMD<T, Trait::SIMDArch>::template setValue<Trait>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
                     MemoryOperationsMeta::setValue<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Scalar)
@@ -124,7 +124,7 @@ namespace Stalker::Memory {
             constexpr inline static void call(Args&&... args) {
                 
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    MemoryOperationsSIMD<T, Trait::SIMDArch>::template setZero<Trait::IsAligned, Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
+                    MemoryOperationsSIMD<T, Trait::SIMDArch>::template setZero<Trait>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
                     MemoryOperationsMeta::setZero<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Scalar)

@@ -111,22 +111,22 @@ namespace STLKR_Tests {
         #if defined(STALKER_SIMD_AVX2_OK)
         {
             auto resSIMDAligned = createAlignedVector<T>(_size);
-             VectorMath::add<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, 1>>(_size, a.data(), b.data(), resSIMDAligned.data());
+             VectorMath::add<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, DefaultSIMDStore(), 1>>(_size, a.data(), b.data(), resSIMDAligned.data());
             TestUtility::compareVectors<T>(resSIMDAligned.data(), expected.data(), _size, "SIMD AVX2 Aligned", _tolerance);
 
             auto resSIMDUnaligned = createAlignedVector<T>(_size);
-             VectorMath::add<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, 1>>(_size, a.data(), b.data(), resSIMDUnaligned.data());
+             VectorMath::add<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, DefaultSIMDStore(), 1>>(_size, a.data(), b.data(), resSIMDUnaligned.data());
             TestUtility::compareVectors<T>(resSIMDUnaligned.data(), expected.data(), _size, "SIMD AVX2 Unaligned", _tolerance);
         }
         #endif
         #if defined(STALKER_SIMD_AVX512_OK)
         {
             auto resSIMDAligned = createAlignedVector<T>(_size);
-             VectorMath::add<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, 1>>(_size, a.data(), b.data(), resSIMDAligned.data());
+             VectorMath::add<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, DefaultSIMDStore(), 1>>(_size, a.data(), b.data(), resSIMDAligned.data());
             TestUtility::compareVectors<T>(resSIMDAligned.data(), expected.data(), _size, "SIMD AVX512 Aligned", _tolerance);
 
             auto resSIMDUnaligned = createAlignedVector<T>(_size);
-             VectorMath::add<T, ExecutionTraitSIMD<T_SIMD::AVX512, false, 1>>(_size, a.data(), b.data(), resSIMDUnaligned.data());
+             VectorMath::add<T, ExecutionTraitSIMD<T_SIMD::AVX512, false, DefaultSIMDStore(), 1>>(_size, a.data(), b.data(), resSIMDUnaligned.data());
             TestUtility::compareVectors<T>(resSIMDUnaligned.data(), expected.data(), _size, "SIMD AVX512 Unaligned", _tolerance);
         }
         #endif
@@ -146,22 +146,22 @@ namespace STLKR_Tests {
         #if defined(STALKER_SIMD_AVX2_OK)
         {
             auto resScaledSIMDAligned = createAlignedVector<T>(_size);
-             VectorMath::add<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, 1>>(_size, a.data(), b.data(), resScaledSIMDAligned.data(), scalarA, scalarB);
+             VectorMath::add<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, DefaultSIMDStore(), 1>>(_size, a.data(), b.data(), resScaledSIMDAligned.data(), scalarA, scalarB);
             TestUtility::compareVectors<T>(resScaledSIMDAligned.data(), expectedScaled.data(), _size, "SIMD AVX2 Scaled Aligned", _tolerance);
 
             auto resScaledSIMDUnaligned = createAlignedVector<T>(_size);
-             VectorMath::add<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, 1>>(_size, a.data(), b.data(), resScaledSIMDUnaligned.data(), scalarA, scalarB);
+             VectorMath::add<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, DefaultSIMDStore(), 1>>(_size, a.data(), b.data(), resScaledSIMDUnaligned.data(), scalarA, scalarB);
             TestUtility::compareVectors<T>(resScaledSIMDUnaligned.data(), expectedScaled.data(), _size, "SIMD AVX2 Scaled Unaligned", _tolerance);
         }
         #endif
         #if defined(STALKER_SIMD_AVX512_OK)
         {
             auto resScaledSIMDAligned = createAlignedVector<T>(_size);
-             VectorMath::add<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, 2>>(_size, a.data(), b.data(), resScaledSIMDAligned.data(), scalarA, scalarB);
+             VectorMath::add<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, DefaultSIMDStore(), 2>>(_size, a.data(), b.data(), resScaledSIMDAligned.data(), scalarA, scalarB);
             TestUtility::compareVectors<T>(resScaledSIMDAligned.data(), expectedScaled.data(), _size, "SIMD AVX512 Scaled Aligned", _tolerance);
 
             auto resScaledSIMDUnaligned = createAlignedVector<T>(_size);
-             VectorMath::add<T, ExecutionTraitSIMD<T_SIMD::AVX512, false, 2>>(_size, a.data(), b.data(), resScaledSIMDUnaligned.data(), scalarA, scalarB);
+             VectorMath::add<T, ExecutionTraitSIMD<T_SIMD::AVX512, false, DefaultSIMDStore(), 2>>(_size, a.data(), b.data(), resScaledSIMDUnaligned.data(), scalarA, scalarB);
             TestUtility::compareVectors<T>(resScaledSIMDUnaligned.data(), expectedScaled.data(), _size, "SIMD AVX512 Scaled Unaligned", _tolerance);
         }
         #endif
@@ -204,11 +204,11 @@ namespace STLKR_Tests {
         #if defined(STALKER_SIMD_AVX512_OK)
         {
             auto resSIMD2Threaded = createAlignedVector<T>(_size);
-             VectorMath::add<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, true, 1>>(ThreadTrait, _size, a.data(), b.data(), resSIMD2Threaded.data());
+             VectorMath::add<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, true, DefaultSIMDStore(), 1>>(ThreadTrait, _size, a.data(), b.data(), resSIMD2Threaded.data());
             TestUtility::compareVectors<T>(resSIMD2Threaded.data(), expected.data(), _size, "SIMD AVX512 Threaded Aligned", _tolerance);
 
             auto resSIMD2ThreadedUnaligned = createAlignedVector<T>(_size);
-             VectorMath::add<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, false, 1>>(ThreadTrait, _size, a.data(), b.data(), resSIMD2ThreadedUnaligned.data());
+             VectorMath::add<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, false, DefaultSIMDStore(), 1>>(ThreadTrait, _size, a.data(), b.data(), resSIMD2ThreadedUnaligned.data());
             TestUtility::compareVectors<T>(resSIMD2ThreadedUnaligned.data(), expected.data(), _size, "SIMD AVX512 Threaded Unaligned", _tolerance);
         }
         #endif
@@ -282,11 +282,11 @@ namespace STLKR_Tests {
         #if defined(STALKER_SIMD_AVX2_OK)
         {
             auto resSIMDAligned = createAlignedVector<T>(_size);
-             VectorMath::axpy<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, 1>>(_size, a.data(), b.data(), resSIMDAligned.data(), scalarA);
+             VectorMath::axpy<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, DefaultSIMDStore(), 1>>(_size, a.data(), b.data(), resSIMDAligned.data(), scalarA);
             TestUtility::compareVectors<T>(resSIMDAligned.data(), expected.data(), _size, "SIMD AVX2 Aligned", _tolerance);
 
             auto resSIMDUnaligned = createAlignedVector<T>(_size);
-             VectorMath::axpy<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, 1>>(_size, a.data(), b.data(), resSIMDUnaligned.data(), scalarA);
+             VectorMath::axpy<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, DefaultSIMDStore(), 1>>(_size, a.data(), b.data(), resSIMDUnaligned.data(), scalarA);
             TestUtility::compareVectors<T>(resSIMDUnaligned.data(), expected.data(), _size, "SIMD AVX2 Unaligned", _tolerance);
         }
         #endif
@@ -294,11 +294,11 @@ namespace STLKR_Tests {
         #if defined(STALKER_SIMD_AVX512_OK)
         {
             auto resSIMDAligned = createAlignedVector<T>(_size);
-             VectorMath::axpy<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, 1>>(_size, a.data(), b.data(), resSIMDAligned.data(), scalarA);
+             VectorMath::axpy<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, DefaultSIMDStore(), 1>>(_size, a.data(), b.data(), resSIMDAligned.data(), scalarA);
             TestUtility::compareVectors<T>(resSIMDAligned.data(), expected.data(), _size, "SIMD AVX512 Aligned", _tolerance);
 
             auto resSIMDUnaligned = createAlignedVector<T>(_size);
-             VectorMath::axpy<T, ExecutionTraitSIMD<T_SIMD::AVX512, false, 1>>(_size, a.data(), b.data(), resSIMDUnaligned.data(), scalarA);
+             VectorMath::axpy<T, ExecutionTraitSIMD<T_SIMD::AVX512, false, DefaultSIMDStore(), 1>>(_size, a.data(), b.data(), resSIMDUnaligned.data(), scalarA);
             TestUtility::compareVectors<T>(resSIMDUnaligned.data(), expected.data(), _size, "SIMD AVX512 Unaligned", _tolerance);
         }
         #endif
@@ -324,11 +324,11 @@ namespace STLKR_Tests {
         #if defined(STALKER_SIMD_AVX2_OK)
         {
             auto resSIMD1 = createAlignedVector<T>(_size);
-             VectorMath::axpy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, true, 1>>(ThreadTrait, _size, a.data(), b.data(), resSIMD1.data(), scalarA);
+             VectorMath::axpy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, true, DefaultSIMDStore(), 1>>(ThreadTrait, _size, a.data(), b.data(), resSIMD1.data(), scalarA);
             TestUtility::compareVectors<T>(resSIMD1.data(), expected.data(), _size, "SIMD AVX2 Threaded Aligned (" + nThreadsStr + " threads)", _tolerance);
 
             auto resSIMD1Unaligned = createAlignedVector<T>(_size);
-             VectorMath::axpy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, false, 1>>(ThreadTrait, _size, a.data(), b.data(), resSIMD1Unaligned.data(), scalarA);
+             VectorMath::axpy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, false, DefaultSIMDStore(), 1>>(ThreadTrait, _size, a.data(), b.data(), resSIMD1Unaligned.data(), scalarA);
             TestUtility::compareVectors<T>(resSIMD1Unaligned.data(), expected.data(), _size, "SIMD AVX2 Threaded Unaligned (" + nThreadsStr + " threads)", _tolerance);
         }
         #endif
@@ -336,11 +336,11 @@ namespace STLKR_Tests {
         #if defined(STALKER_SIMD_AVX512_OK)
         {
             auto resSIMD2 = createAlignedVector<T>(_size);
-             VectorMath::axpy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, true, 1>>(ThreadTrait, _size, a.data(), b.data(), resSIMD2.data(), scalarA);
+             VectorMath::axpy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, true, DefaultSIMDStore(), 1>>(ThreadTrait, _size, a.data(), b.data(), resSIMD2.data(), scalarA);
             TestUtility::compareVectors<T>(resSIMD2.data(), expected.data(), _size, "SIMD AVX512 Threaded Aligned (" + nThreadsStr + " threads)", _tolerance);
 
             auto resSIMD2Unaligned = createAlignedVector<T>(_size);
-             VectorMath::axpy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, false, 1>>(ThreadTrait, _size, a.data(), b.data(), resSIMD2Unaligned.data(), scalarA);
+             VectorMath::axpy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, false, DefaultSIMDStore(), 1>>(ThreadTrait, _size, a.data(), b.data(), resSIMD2Unaligned.data(), scalarA);
             TestUtility::compareVectors<T>(resSIMD2Unaligned.data(), expected.data(), _size, "SIMD AVX512 Threaded Unaligned (" + nThreadsStr + " threads)", _tolerance);
         }
         #endif

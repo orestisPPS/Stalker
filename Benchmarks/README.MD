@@ -11,12 +11,12 @@ All benchmark parameters are defined in `benchmark-build.json`.
 1.  **Configuration & Parameterization**:
 
     * **Vector/Matrix Sizes**:
-      *   **Automatic Sampling (`size_region_matrix`, `size_region_vector`)**: Generates a logarithmic sequence within `[min, max]` including powers of two ($2^N$), intermediate octaves, and anti-aliased offsets ($2^N + \delta$) to expose cache associativity conflicts.
+      *   **Automatic Sampling (`size_region_matrix`, `size_region_vector`)**: Generates a logarithmic sequence within `[min, max]` including powers of two ($2^N$), intermediate octaves, and anti-aliased offsets ($2^N + \delta$).
       *   **Explicit Definition (`sizes_*`)**: Overrides sampling with a manual list of sizes for targeted profiling.
 
       *   **`available_ram`**: Defines the physical memory ceiling to clamp automatic sampling, though explicit sizes (`sizes_*`) bypass this safety limit.
 
-    *   **Operations**: Benchmarks cover Memory (Copy, SetValue), Vector (Dot, Axpy, Scale, Sum), and Matrix (Gemv) operations.
+    *   **Operations**: Benchmarks cover Memory (Copy, SetValue, Setzero), Vector (Dot, Axpy, Scale, Sum), and Matrix (Gemv) operations.
     
     *   **SIMD Parameters**: Multiple loop unrolling factors and cached/streamed stores can be tested via `unroll_factors` and `store_policies`. 
 
@@ -90,15 +90,15 @@ The benchmarking workflow is automated via Python scripts to ensure environment 
             ```json
             {
                 // Experimental Control
-                "iterations": 20,              // Statistical stability: N samples per data point
-                "warmup_iterations": 2,        // Cache priming: Eliminates cold-start artifacts
-                "slave_thread_id": 0,          // Core affinity: Pins thread to specific core to avoid context switching
-                "seed": 0,                     // Determinism: Fixed seed for reproducible data generation
+                "iterations": 20,              // N samples per data point
+                "warmup_iterations": 2,        // Cache priming and cold-start artifacts elimination
+                "slave_thread_id": 0,          // Pins thread to specific core to avoid context switching
+                "seed": 0,                     // Fixed seed for reproducible data generation
 
                 // Variable Space
-                "data_types": ["double"],      // Precision: 'float' (32-bit) or 'double' (64-bit)
+                "data_types": ["double"],      // 'float' (32-bit) or 'double' (64-bit)
                 "unroll_factors": [1, 4],      // List of unroll factors
-                "store_policies": ["stream", "cache"],   // Memory Semantics: "cache" (temporal) vs "stream" (non-temporal/NT)
+                "store_policies": ["stream", "cache"],   // "cache" (temporal) vs "stream" (non-temporal/NT)
 
                 // Problem Domain
                 "size_region_vector": [256, 2e9],   // Logarithmic sampling range for vector ops
@@ -137,6 +137,8 @@ The benchmarking workflow is automated via Python scripts to ensure environment 
         ```bash
         sudo cpupower frequency-set -c 0 -g performance
         ```
+    *   **(Optional) Max Fan Speed**:
+        If possible, set system fans to maximum speed to avoid thermal throttling during prolonged benchmarking runs and/or warm environments.
 
 2.  **Execution**:
     Run the benchmark binary.

@@ -38,6 +38,7 @@ Makefile
 
 # Log and temp files
 logs/
+data/
 temp/
 *.log
 *.tmp
@@ -53,7 +54,7 @@ temp/
 *.jpg
 *.jpeg
 *.png
-
+*.html
 stalker-venv/
 
 .continue/

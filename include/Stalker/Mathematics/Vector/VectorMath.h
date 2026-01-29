@@ -212,7 +212,7 @@ namespace Stalker::Mathematics {
             template<typename... Args>
             constexpr inline static void call(Args&&... args) {
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    VectorMathSIMD<T, Trait::SIMDArch>::template add<Trait::IsAligned, Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
+                    VectorMathSIMD<T, Trait::SIMDArch>::template add<Trait>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
                     VectorMathMeta::add<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else
@@ -226,7 +226,7 @@ namespace Stalker::Mathematics {
             template<typename... Args>
             constexpr inline static void call(Args&&... args) {
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    VectorMathSIMD<T, Trait::SIMDArch>::template axpy<Trait::IsAligned, Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
+                    VectorMathSIMD<T, Trait::SIMDArch>::template axpy<Trait>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
                     VectorMathMeta::axpy<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else
@@ -240,7 +240,7 @@ namespace Stalker::Mathematics {
             template<typename... Args>
             constexpr inline static void call(Args&&... args) { 
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    VectorMathSIMD<T, Trait::SIMDArch>::template subtract<Trait::IsAligned, Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
+                    VectorMathSIMD<T, Trait::SIMDArch>::template subtract<Trait>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
                     VectorMathMeta::subtract<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else
@@ -255,7 +255,7 @@ namespace Stalker::Mathematics {
             constexpr inline static void call(Args&&... args) {
 
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    VectorMathSIMD<T, Trait::SIMDArch>::template multiply<Trait::IsAligned, Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
+                    VectorMathSIMD<T, Trait::SIMDArch>::template multiply<Trait>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
                     VectorMathMeta::multiply<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else
@@ -269,7 +269,7 @@ namespace Stalker::Mathematics {
             template<typename... Args>
             constexpr inline static void call(Args&&... args) {
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    VectorMathSIMD<T, Trait::SIMDArch>::template scale<Trait::IsAligned, Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
+                    VectorMathSIMD<T, Trait::SIMDArch>::template scale<Trait>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
                     VectorMathMeta::scale<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else
@@ -283,7 +283,7 @@ namespace Stalker::Mathematics {
             template<typename... Args>
             constexpr inline static void call(Args&&... args) {                
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    VectorMathSIMD<T, Trait::SIMDArch>::template addConstant<Trait::IsAligned, Trait::Unroll, Trait::StorePolicy>(std::forward<Args>(args)...);
+                    VectorMathSIMD<T, Trait::SIMDArch>::template addConstant<Trait>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
                     VectorMathMeta::addConstant<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else
@@ -297,7 +297,7 @@ namespace Stalker::Mathematics {
             template<typename... Args>
             constexpr inline static auto call(Args&&... args) {             
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    return VectorMathSIMD<T, Trait::SIMDArch>::template sum<Trait::IsAligned, Trait::Unroll>(std::forward<Args>(args)...);
+                    return VectorMathSIMD<T, Trait::SIMDArch>::template sum<Trait>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
                     return VectorMathMeta::sum<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else
@@ -311,7 +311,7 @@ namespace Stalker::Mathematics {
             template<typename... Args>
             constexpr inline static auto call(Args&&... args) {             
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    return VectorMathSIMD<T, Trait::SIMDArch>::template dot<Trait::IsAligned, Trait::Unroll>(std::forward<Args>(args)...);
+                    return VectorMathSIMD<T, Trait::SIMDArch>::template dot<Trait>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
                     return VectorMathMeta::dot<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else

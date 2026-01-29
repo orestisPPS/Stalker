@@ -69,28 +69,28 @@ namespace STLKR_Tests {
             {
                 name = {"SIMD_AVX2_Aligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, DefaultUnroll(), T_SIMDStore::Cached>>(_size, result.get(), data.get());
+                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, T_SIMDStore::Cached, DefaultUnroll()>>(_size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"SIMD_AVX2_Unaligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, DefaultUnroll(), T_SIMDStore::Cached>>(_size, result.get(), data.get());
+                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, T_SIMDStore::Cached, DefaultUnroll()>>(_size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"SIMD_AVX2_Aligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get(), data.get());
+                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, T_SIMDStore::Streamed, DefaultUnroll()>>(_size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"SIMD_AVX2_Unaligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get(), data.get());
+                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, T_SIMDStore::Streamed, DefaultUnroll()>>(_size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
             #endif
@@ -99,28 +99,28 @@ namespace STLKR_Tests {
             {
                 name = {"SIMD_AVX512_Aligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, DefaultUnroll(), T_SIMDStore::Cached>>(_size, result.get(), data.get());
+                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, T_SIMDStore::Cached, DefaultUnroll()>>(_size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"SIMD_AVX512_Unaligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX512, false, DefaultUnroll(), T_SIMDStore::Cached>>(_size, result.get(), data.get());
+                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX512, false, T_SIMDStore::Cached, DefaultUnroll()>>(_size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"SIMD_AVX512_Aligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get(), data.get());
+                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, T_SIMDStore::Streamed, DefaultUnroll()>>(_size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"SIMD_AVX512_Unaligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX512, false, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get(), data.get());
+                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX512, false, T_SIMDStore::Streamed, DefaultUnroll()>>(_size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
             #endif
@@ -158,28 +158,28 @@ namespace STLKR_Tests {
             {
                 name = {"Parallel_SIMD_AVX2_Aligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, true, DefaultUnroll(), T_SIMDStore::Cached>>(threadTrait, _size, result.get(), data.get());
+                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, true, T_SIMDStore::Cached, DefaultUnroll()>>(threadTrait, _size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"Parallel_SIMD_AVX2_Unaligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, false, DefaultUnroll(), T_SIMDStore::Cached>>(threadTrait, _size, result.get(), data.get());
+                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, false, T_SIMDStore::Cached, DefaultUnroll()>>(threadTrait, _size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"Parallel_SIMD_AVX2_Aligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, true, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get(), data.get());
+                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, true, T_SIMDStore::Streamed, DefaultUnroll()>>(threadTrait, _size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"Parallel_SIMD_AVX2_Unaligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, false, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get(), data.get());
+                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, false, T_SIMDStore::Streamed, DefaultUnroll()>>(threadTrait, _size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
             #endif
@@ -188,28 +188,28 @@ namespace STLKR_Tests {
             {
                 name = {"Parallel_SIMD_AVX512_Aligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, true, DefaultUnroll(), T_SIMDStore::Cached>>(threadTrait, _size, result.get(), data.get());
+                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, true, T_SIMDStore::Cached, DefaultUnroll()>>(threadTrait, _size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"Parallel_SIMD_AVX512_Unaligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, false, DefaultUnroll(), T_SIMDStore::Cached>>(threadTrait, _size, result.get(), data.get());
+                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, false, T_SIMDStore::Cached, DefaultUnroll()>>(threadTrait, _size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"Parallel_SIMD_AVX512_Aligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, true, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get(), data.get());
+                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, true, T_SIMDStore::Streamed, DefaultUnroll()>>(threadTrait, _size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"Parallel_SIMD_AVX512_Unaligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, false, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get(), data.get());
+                MemoryOperations::copy<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, false, T_SIMDStore::Streamed, DefaultUnroll()>>(threadTrait, _size, result.get(), data.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
             #endif
@@ -256,28 +256,28 @@ namespace STLKR_Tests {
             {
                 name = {"SIMD_AVX2_Aligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, DefaultUnroll(), T_SIMDStore::Cached>>(_size, result.get(), value);
+                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, T_SIMDStore::Cached, DefaultUnroll()>>(_size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"SIMD_AVX2_Unaligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, DefaultUnroll(), T_SIMDStore::Cached>>(_size, result.get(), value);
+                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, T_SIMDStore::Cached, DefaultUnroll()>>(_size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"SIMD_AVX2_Aligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get(), value);
+                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, T_SIMDStore::Streamed, DefaultUnroll()>>(_size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"SIMD_AVX2_Unaligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get(), value);
+                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, T_SIMDStore::Streamed, DefaultUnroll()>>(_size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
             #endif
@@ -286,28 +286,28 @@ namespace STLKR_Tests {
             {
                 name = {"SIMD_AVX512_Aligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, DefaultUnroll(), T_SIMDStore::Cached>>(_size, result.get(), value);
+                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, T_SIMDStore::Cached, DefaultUnroll()>>(_size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"SIMD_AVX512_Unaligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX512, false, DefaultUnroll(), T_SIMDStore::Cached>>(_size, result.get(), value);
+                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX512, false, T_SIMDStore::Cached, DefaultUnroll()>>(_size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"SIMD_AVX512_Aligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get(), value);
+                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, T_SIMDStore::Streamed, DefaultUnroll()>>(_size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"SIMD_AVX512_Unaligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX512, false, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get(), value);
+                MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX512, false, T_SIMDStore::Streamed, DefaultUnroll()>>(_size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
             #endif
@@ -345,28 +345,28 @@ namespace STLKR_Tests {
             {
                 name = {"Parallel_SIMD_AVX2_Aligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, true, DefaultUnroll(), T_SIMDStore::Cached>>(threadTrait, _size, result.get(), value);
+                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, true, T_SIMDStore::Cached, DefaultUnroll()>>(threadTrait, _size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"Parallel_SIMD_AVX2_Unaligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, false, DefaultUnroll(), T_SIMDStore::Cached>>(threadTrait, _size, result.get(), value);
+                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, false, T_SIMDStore::Cached, DefaultUnroll()>>(threadTrait, _size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"Parallel_SIMD_AVX2_Aligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, true, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get(), value);
+                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, true, T_SIMDStore::Streamed, DefaultUnroll()>>(threadTrait, _size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"Parallel_SIMD_AVX2_Unaligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, false, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get(), value);
+                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, false, T_SIMDStore::Streamed, DefaultUnroll()>>(threadTrait, _size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
             #endif
@@ -375,28 +375,28 @@ namespace STLKR_Tests {
             {
                 name = {"Parallel_SIMD_AVX512_Aligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, true, DefaultUnroll(), T_SIMDStore::Cached>>(threadTrait, _size, result.get(), value);
+                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, true, T_SIMDStore::Cached, DefaultUnroll()>>(threadTrait, _size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"Parallel_SIMD_AVX512_Unaligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, false, DefaultUnroll(), T_SIMDStore::Cached>>(threadTrait, _size, result.get(), value);
+                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, false, T_SIMDStore::Cached, DefaultUnroll()>>(threadTrait, _size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"Parallel_SIMD_AVX512_Aligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, true, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get(), value);
+                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, true, T_SIMDStore::Streamed, DefaultUnroll()>>(threadTrait, _size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"Parallel_SIMD_AVX512_Unaligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, false, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get(), value);
+                MemoryOperations::setValue<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, false, T_SIMDStore::Streamed, DefaultUnroll()>>(threadTrait, _size, result.get(), value);
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
             #endif
@@ -442,28 +442,28 @@ namespace STLKR_Tests {
             {
                 name = {"SIMD_AVX2_Aligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, DefaultUnroll(), T_SIMDStore::Cached>>(_size, result.get());
+                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, T_SIMDStore::Cached, DefaultUnroll()>>(_size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"SIMD_AVX2_Unaligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, DefaultUnroll(), T_SIMDStore::Cached>>(_size, result.get());
+                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, T_SIMDStore::Cached, DefaultUnroll()>>(_size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"SIMD_AVX2_Aligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get());
+                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, T_SIMDStore::Streamed, DefaultUnroll()>>(_size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"SIMD_AVX2_Unaligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get());
+                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, T_SIMDStore::Streamed, DefaultUnroll()>>(_size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
             #endif
@@ -472,28 +472,28 @@ namespace STLKR_Tests {
             {
                 name = {"SIMD_AVX512_Aligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, DefaultUnroll(), T_SIMDStore::Cached>>(_size, result.get());
+                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, T_SIMDStore::Cached, DefaultUnroll()>>(_size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"SIMD_AVX512_Unaligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX512, false, DefaultUnroll(), T_SIMDStore::Cached>>(_size, result.get());
+                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX512, false, T_SIMDStore::Cached, DefaultUnroll()>>(_size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"SIMD_AVX512_Aligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get());
+                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, T_SIMDStore::Streamed, DefaultUnroll()>>(_size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"SIMD_AVX512_Unaligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX512, false, DefaultUnroll(), T_SIMDStore::Streamed>>(_size, result.get());
+                MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX512, false, T_SIMDStore::Streamed, DefaultUnroll()>>(_size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
             #endif
@@ -531,28 +531,28 @@ namespace STLKR_Tests {
             {
                 name = {"ParallelSIMD_AVX2_Aligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, true, DefaultUnroll(), T_SIMDStore::Cached>>(threadTrait, _size, result.get());
+                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, true, T_SIMDStore::Cached, DefaultUnroll()>>(threadTrait, _size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"ParallelSIMD_AVX2_Unaligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, false, DefaultUnroll(), T_SIMDStore::Cached>>(threadTrait, _size, result.get());
+                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, false, T_SIMDStore::Cached, DefaultUnroll()>>(threadTrait, _size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"ParallelSIMD_AVX2_Aligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, true, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get());
+                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, true, T_SIMDStore::Streamed, DefaultUnroll()>>(threadTrait, _size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"ParallelSIMD_AVX2_Unaligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, false, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get());
+                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX2, false, T_SIMDStore::Streamed, DefaultUnroll()>>(threadTrait, _size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
             #endif
@@ -561,28 +561,28 @@ namespace STLKR_Tests {
             {
                 name = {"ParallelSIMD_AVX512_Aligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, true, DefaultUnroll(), T_SIMDStore::Cached>>(threadTrait, _size, result.get());
+                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, true, T_SIMDStore::Cached, DefaultUnroll()>>(threadTrait, _size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"ParallelSIMD_AVX512_Unaligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, false, DefaultUnroll(), T_SIMDStore::Cached>>(threadTrait, _size, result.get());
+                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, false, T_SIMDStore::Cached, DefaultUnroll()>>(threadTrait, _size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"ParallelSIMD_AVX512_Aligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, true, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get());
+                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, true, T_SIMDStore::Streamed, DefaultUnroll()>>(threadTrait, _size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
 
             {
                 name = {"ParallelSIMD_AVX512_Unaligned_Streamed"};
                 auto result = createAlignedUniquePtr<T>(_size);
-                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, false, DefaultUnroll(), T_SIMDStore::Streamed>>(threadTrait, _size, result.get());
+                MemoryOperations::setZero<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, false, T_SIMDStore::Streamed, DefaultUnroll()>>(threadTrait, _size, result.get());
                 TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
             }
             #endif

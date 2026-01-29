@@ -18,6 +18,11 @@ set_property(CACHE STALKER_SIMD_INSTRUCTION_SET PROPERTY STRINGS auto avx2 avx51
 set(STALKER_SIMD_STORE_POLICY "stream" CACHE STRING "SIMD store policy: stream (non-temporal) or cache (temporal)." FORCE)
 set_property(CACHE STALKER_SIMD_STORE_POLICY PROPERTY STRINGS stream cache)
 
+# Prefetch
+set(STALKER_SIMD_PREFETCH_LINES 1 CACHE STRING "Number of cache lines to prefetch ahead (0 to disable)." FORCE)
+set(STALKER_SIMD_PREFETCH_HINT "HintT0" CACHE STRING "Prefetch locality hint (HintT0, HintT1, HintT2, HintNTA)." FORCE)
+set_property(CACHE STALKER_SIMD_PREFETCH_HINT PROPERTY STRINGS HintT0 HintT1 HintT2 HintNTA)
+
 # Capability result (populated by detection;)
 set(STALKER_SIMD_AVX2_OK OFF CACHE BOOL "Detected AVX2 capability (compiler + intrinsic). Read-only." FORCE)
 set(STALKER_SIMD_AVX512_OK OFF CACHE BOOL "Detected AVX512 capability (compiler + intrinsic). Read-only." FORCE)

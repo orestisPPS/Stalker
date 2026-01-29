@@ -18,8 +18,8 @@ struct TypeTraitsSIMDBase {
     }
 
     template<size_t Unroll = DefaultUnroll()>
-    static constexpr unsigned inline CacheLinesProcessed() { 
-        return (Unroll * Child::_RegisterSize) / ElementsPerCacheLine(); 
+    static constexpr unsigned inline CacheLinesPerBlock() { 
+        return (Unroll * Child::_RegisterSize + ElementsPerCacheLine() - 1) / ElementsPerCacheLine(); 
     }
 
     template<size_t Unroll = DefaultUnroll()>
@@ -28,6 +28,6 @@ struct TypeTraitsSIMDBase {
     }
 };
 
-    template<typename T, T_SIMD simdType> struct TypeTraitsSIMD;
+template<typename T, T_SIMD simdType> struct TypeTraitsSIMD;
 
 } // namespace Stalker::Core

@@ -97,7 +97,8 @@ namespace Benchmarks {
 			config.name = "stalker_avx2_u" + std::to_string(Unroll) + policyStr + "_" + type ;
 			_benchmarkPAPI(
 				[&](auto& dst) {
-					MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, Unroll, Policy>>(size, dst.data(), src.data());
+					using Trait = ExecutionTraitSIMD<T_SIMD::AVX2, true, Policy, Unroll>;
+					MemoryOperations::copy<T, Trait>(size, dst.data(), src.data());
 				},
 				allocator, config, totalBytes, size
 			);
@@ -107,7 +108,8 @@ namespace Benchmarks {
 			config.name = "stalker_avx512_u" + std::to_string(Unroll) + policyStr + "_" + type ;
 			_benchmarkPAPI(
 				[&](auto& dst) {
-						MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, Unroll, Policy>>(size, dst.data(), src.data());
+					using Trait = ExecutionTraitSIMD<T_SIMD::AVX512, true, Policy, Unroll>;
+					MemoryOperations::copy<T, Trait>(size, dst.data(), src.data());
 				},
 				allocator, config, totalBytes, size
 			);
@@ -184,7 +186,8 @@ namespace Benchmarks {
 			config.name = "stalker_avx2_u" + std::to_string(Unroll) + policyStr + "_" + type ;
 			_benchmarkPAPI(
 				[&](auto& dst) {
-					MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, Unroll, Policy>>(size, dst.data(), value);
+					using Trait = ExecutionTraitSIMD<T_SIMD::AVX2, true, Policy, Unroll>;
+					MemoryOperations::setValue<T, Trait>(size, dst.data(), value);
 				},
 					allocator, config, totalBytes, size
 				);
@@ -194,7 +197,8 @@ namespace Benchmarks {
 			config.name = "stalker_avx512_u" + std::to_string(Unroll) + policyStr + "_" + type ;
 			_benchmarkPAPI(
 				[&](auto& dst) {
-						MemoryOperations::setValue<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, Unroll, Policy>>(size, dst.data(), value);
+					using Trait = ExecutionTraitSIMD<T_SIMD::AVX512, true, Policy, Unroll>;
+					MemoryOperations::setValue<T, Trait>(size, dst.data(), value);
 				},
 				allocator, config, totalBytes, size
 			);
@@ -256,7 +260,8 @@ namespace Benchmarks {
 			config.name = "stalker_avx2_u" + std::to_string(Unroll) + policyStr + "_" + type ;
 			_benchmarkPAPI(
 				[&](auto& dst) {
-					MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, Unroll, Policy>>(size, dst.data());
+					using Trait = ExecutionTraitSIMD<T_SIMD::AVX2, true, Policy, Unroll>;
+					MemoryOperations::setZero<T, Trait>(size, dst.data());
 				},
 					allocator, config, totalBytes, size
 				);
@@ -266,7 +271,8 @@ namespace Benchmarks {
 			config.name = "stalker_avx512_u" + std::to_string(Unroll) + policyStr + "_" + type ;
 			_benchmarkPAPI(
 				[&](auto& dst) {
-					MemoryOperations::setZero<T, ExecutionTraitSIMD<T_SIMD::AVX512, true, Unroll, Policy>>(size, dst.data());
+					using Trait = ExecutionTraitSIMD<T_SIMD::AVX512, true, Policy, Unroll>;
+					MemoryOperations::setZero<T, Trait>(size, dst.data());
 				},
 				allocator, config, totalBytes, size
 			);

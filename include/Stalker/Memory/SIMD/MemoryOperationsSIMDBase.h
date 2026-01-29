@@ -2,8 +2,9 @@
 // Created by hal9000 on 7/8/24.
 //
 #pragma once
-#include <utility>
 #include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDBase.h>
+#include <Stalker/Core/Traits/ExecutionTraits.h>
+#include <Stalker/Memory/Prefetcher.h>
 
 namespace Stalker::Memory {
 
@@ -18,45 +19,49 @@ using namespace Stalker::Core;
         
     public:
 
-        template<bool IsAligned = false, size_t Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+        template<typename ExecTrait>
         inline static void copy(size_t size, T_data* __restrict destination, const T_data* __restrict source ) {
-            constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
+            constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
             auto limit = size - (size % blockSize);
-            for (size_t i = 0; i < limit; i += blockSize)
-                Child::template _copy<IsAligned, Policy>(source + i, destination + i, std::make_index_sequence<Unroll>{});
+            for (size_t i = 0; i < limit; i += blockSize) {
+                if constexpr (ExecTrait::PrefetchLines > 0) {
+                    Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(destination + i + blockSize);
+                }
+                Child::template _copy<ExecTrait::IsAligned, ExecTrait::StorePolicy>(source + i, destination + i, std::make_index_sequence<ExecTrait::Unroll>{});
+            }
             for (size_t i = limit; i < size; i++)
                 destination[i] = source[i];
         }
         
-        template<bool IsAligned = false, size_t Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+        template<typename ExecTrait>
         inline static void setValue(size_t size, T_data* __restrict data, T_data value) {
-            constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
+            constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
             auto limit = size - (size % blockSize);
             T_simd scalarSIMD;
             broadcast(&scalarSIMD, value);
             for (size_t i = 0; i < limit; i += blockSize)
-                Child::template _setValue<IsAligned, Policy>(data + i, &scalarSIMD, std::make_index_sequence<Unroll>{});
+                Child::template _setValue<ExecTrait::IsAligned, ExecTrait::StorePolicy>(data + i, &scalarSIMD, std::make_index_sequence<ExecTrait::Unroll>{});
             for (size_t i = limit; i < size; i++)
                 data[i] = value;
         }
         
-        template<bool IsAligned = false, size_t Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+        template<typename ExecTrait>
         inline static void setZero(size_t size, T_data* __restrict data) {
-            constexpr unsigned blockSize = Traits::template BlockSize<Unroll>();
+            constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
             auto limit = size - (size % blockSize);
             for (size_t i = 0; i < limit; i += blockSize)
-                Child::template _setZero<IsAligned, Policy>(data + i, std::make_index_sequence<Unroll>{});
+                Child::template _setZero<ExecTrait::IsAligned, ExecTrait::StorePolicy>(data + i, std::make_index_sequence<ExecTrait::Unroll>{});
             for (size_t i = limit; i < size; i++)
                 data[i] = 0;
         }
 
-        template<bool IsAligned = false, size_t Unroll = DefaultUnroll(), T_SIMDStore Policy = DefaultSIMDStore()>
+        template<typename ExecTrait>
         inline static bool areEqual(size_t size, const T_data* a, const T_data *b){
             constexpr unsigned blockSize = Traits::template BlockSize<DefaultUnroll()>();
             auto limit = size - (size % blockSize);
             bool result = true;
             for (size_t i = 0; i < limit; i += blockSize)
-                result = result && Child::template_areEqual(a + i, b + i, std::make_index_sequence<DefaultUnroll()>{});
+                result = result && Child::template _areEqual(a + i, b + i, std::make_index_sequence<DefaultUnroll()>{});
             for (size_t i = limit; i < size; i++)
                 result = result && (a[i] == b[i]);
             return result;

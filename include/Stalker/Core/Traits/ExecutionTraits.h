@@ -60,20 +60,23 @@ namespace Stalker::Core {
         }
     };
 
-    template<T_SIMD       SIMDT        = DefaultSIMDType(),
-             bool         Aligned      = false,
-             size_t       UnrollFactor = DefaultUnroll(),
-             T_SIMDStore  SIMDStoreT   = DefaultSIMDStore() >
-    struct ExecutionTraitSIMD : public ExecutionTrait<ExecutionTraitSIMD<SIMDT, Aligned, UnrollFactor, SIMDStoreT>> {
-        static constexpr bool        IsAligned   = Aligned;
-        static constexpr size_t      Unroll      = UnrollFactor;
-        static constexpr T_SIMD      SIMDArch    = SIMDT;  
-        static constexpr T_SIMDStore StorePolicy = SIMDStoreT;
+    template<T_SIMD          SIMDT            = DefaultSIMDType(),
+             bool            Aligned          = false,
+             T_SIMDStore     SIMDStoreT       = DefaultSIMDStore(),
+             size_t          UnrollFactor     = DefaultUnroll(),
+             size_t          PrefetchD        = DefaultPrefetchLines(),
+             T_PrefetchHints PrefetchH        = DefaultPrefetchHint()>
+    struct ExecutionTraitSIMD : public ExecutionTrait<ExecutionTraitSIMD<SIMDT, Aligned, SIMDStoreT, UnrollFactor, PrefetchD, PrefetchH>> {
+        static constexpr T_SIMD          SIMDArch         = SIMDT;  
+        static constexpr bool            IsAligned        = Aligned;
+        static constexpr T_SIMDStore     StorePolicy      = SIMDStoreT;
+        static constexpr size_t          Unroll           = UnrollFactor;
+        static constexpr size_t          PrefetchLines    = PrefetchD;
+        static constexpr T_PrefetchHints PrefetchHint     = PrefetchH;
 
     protected:
 
-        friend ExecutionTrait<ExecutionTraitSIMD<SIMDT, IsAligned, UnrollFactor, SIMDStoreT>>;
-
+        friend ExecutionTrait<ExecutionTraitSIMD<SIMDT, Aligned, SIMDStoreT, UnrollFactor, PrefetchD, PrefetchH>>;
         static constexpr T_ExecTrait _Type() {
             return T_ExecTrait::SIMD;
         }
