@@ -191,6 +191,11 @@ namespace Stalker::Core::Config {
      */
     enum class T_PrefetchHints {
         /**
+         * @brief No prefetching.
+         */
+        HintNone,
+
+        /**
          * @brief Temporal data: keep in all cache levels (L1, L2, L3).
          *
          * Indicates that the data will be accessed soon and reused. The data
@@ -336,6 +341,18 @@ namespace Stalker::Core::Config {
             return T_SIMDStore::Streamed;
         #else
             return T_SIMDStore::Streamed;
+        #endif
+    }
+
+    /**
+     * @brief Returns the default prefetch locality hint.
+     * @return T_PrefetchHints enum value.
+     */
+    inline constexpr T_PrefetchHints DefaultPrefetchHint() {
+        #if defined(STALKER_SIMD_PREFETCH_HINT)
+            return T_PrefetchHints::STALKER_SIMD_PREFETCH_HINT;
+        #else
+            return T_PrefetchHints::HintNone;
         #endif
     }
 } // namespace Stalker::Core::Config

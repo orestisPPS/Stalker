@@ -24,8 +24,8 @@ using namespace Stalker::Core;
             constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
             auto limit = size - (size % blockSize);
             for (size_t i = 0; i < limit; i += blockSize) {
-                if constexpr (ExecTrait::PrefetchLines > 0) {
-                    Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(destination + i + blockSize);
+                if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
+                    Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(destination + i + blockSize);
                 }
                 Child::template _copy<ExecTrait::IsAligned, ExecTrait::StorePolicy>(source + i, destination + i, std::make_index_sequence<ExecTrait::Unroll>{});
             }

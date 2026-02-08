@@ -382,12 +382,8 @@ class StalkerBuildConfig:
         if self.simd_store_type not in ["cache", "stream"]:
             raise StalkerBuildConfigError(f"Invalid simd_store_type '{self.simd_store_type}'. Valid: cache, stream")
 
-        self.simd_prefetch_lines = int(self.raw.get("simd_prefetch_lines", 1))
-        if self.simd_prefetch_lines < 0:
-            raise StalkerBuildConfigError(f"Invalid simd_prefetch_lines '{self.simd_prefetch_lines}'. Must be >= 0")
-
-        self.simd_prefetch_hint = self.raw.get("simd_prefetch_hint", "HintT0")
-        valid_hints = ["HintT0", "HintT1", "HintT2", "HintNTA"]
+        self.simd_prefetch_hint = self.raw.get("simd_prefetch_hint", "HintNone")
+        valid_hints = ["HintNone", "HintT0", "HintT1", "HintT2", "HintNTA"]
         if self.simd_prefetch_hint not in valid_hints:
             raise StalkerBuildConfigError(f"Invalid simd_prefetch_hint '{self.simd_prefetch_hint}'. Valid: {', '.join(valid_hints)}")
 
@@ -446,7 +442,6 @@ class StalkerBuildConfig:
             self._cmake_args.append("-DSTALKER_SIMD_ENABLE=ON" if self.simd_default_instructions != 'none' else "-DSTALKER_SIMD_ENABLE=OFF")
             self._cmake_args.append(f"-DSTALKER_SIMD_INSTRUCTION_SET={self.simd_default_instructions}")
             self._cmake_args.append(f"-DSTALKER_SIMD_STORE_POLICY={self.simd_store_type}")
-            self._cmake_args.append(f"-DSTALKER_SIMD_PREFETCH_LINES={self.simd_prefetch_lines}")
             self._cmake_args.append(f"-DSTALKER_SIMD_PREFETCH_HINT={self.simd_prefetch_hint}")
         else:
             self._cmake_args.append("-DSTALKER_SIMD_ENABLE=OFF")

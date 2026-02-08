@@ -74,6 +74,13 @@ namespace STLKR_Tests {
             }
 
             {
+                name = {"SIMD_AVX2_Aligned_Cached_PrefetchT0"};
+                auto result = createAlignedUniquePtr<T>(_size);
+                MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX2, true, T_SIMDStore::Cached, DefaultUnroll(), T_PrefetchHints::HintT0>>(_size, result.get(), data.get());
+                TestUtility::compareVectors<T>(result.get(), data.get(), _size, name);
+            }
+
+            {
                 name = {"SIMD_AVX2_Unaligned_Cached"};
                 auto result = createAlignedUniquePtr<T>(_size);
                 MemoryOperations::copy<T, ExecutionTraitSIMD<T_SIMD::AVX2, false, T_SIMDStore::Cached, DefaultUnroll()>>(_size, result.get(), data.get());

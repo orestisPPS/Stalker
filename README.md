@@ -4,7 +4,7 @@
 
 ## Overview
 
-STAΛKER is a high-performance, header-only, C++ 17 linear algebra library. It combines data-level (SIMD) and thread-level concurrency with modern template metaprogramming techniques to obtain excellent performance and scaling, especially in memory-bound data operations. It can perform similarly or significantly better than `STL`, `OpenBLAS`, and `Eigen` across a broad range of operations and sizes. Users are free to tune and experiment with almost every aspect of the performance optimizations, from compile-time, according to their needs and hardware.
+STAΛKER is a high-performance, header-only, C++ 17 linear algebra library. It combines data-level (SIMD) and thread-level concurrency with modern template metaprogramming techniques to obtain excellent performance, especially in memory-bound data operations. It can perform similarly or significantly better than `STL`, `OpenBLAS`, and `Eigen` across a broad range of operations and sizes. Users are free to tune and experiment with almost every aspect of the performance optimizations, from compile-time, according to their needs and hardware.
 
 ## Motivation
 
@@ -51,7 +51,7 @@ It is a personal playground and learning space that offers easy to use experimen
 
 ### Design
 
-- **SIMD** (Single Instruction, Multiple Data): Direct hardware-level parallelism using 256-bit (AVX2) and 512-bit (AVX-512) vector registers. Enables concurrent arithmetic on multiple elements per instruction. Instruction set extensions, store policies (cached/streamed stores) and load policies (aligned/not-aligned loads) can be configured in compile-time. Supported data types: `double`, `float`, `int`, `unsigned int`, `short`.  
+- **SIMD** (Single Instruction, Multiple Data): Direct hardware-level parallelism using 256-bit (AVX2) and 512-bit (AVX-512) vector registers. Enables concurrent arithmetic on multiple elements per instruction. Instruction set extensions, store policies (cached/streamed stores), load policies (aligned/not-aligned loads) and prefetch hint can be configured in compile-time. Supported data types: `double`, `float`, `int`, `unsigned int`, `short`.  
 - **Template Metaprogramming**: Metaprogramming techniques and templating (CRTP, template specialization, `std::index_sequence`, etc.) enable zero-overhead compile-time dispatching and static polymorphism (no vtable lookups) with type safe, almost branchless code. Users can enable and configure compile-time unrolling for fully unrolled small loops and large loops with reduced check overhead and perform arithmetic operations exclusively with the compiler.
 - **Hardware Concurrency**: Dual multithreading backend support for operations on contiguous memory blocks:
   - `std::thread` Cross-platform, simple but only number of threads can be configured.
@@ -153,8 +153,7 @@ The following CMake cache variables are available to configure the library:
 | `STALKER_SIMD_ENABLE`          | Enable SIMD vectorization                                           | `ON`     |
 | `STALKER_SIMD_INSTRUCTION_SET` | SIMD ISA: `auto`, `avx2`, `avx512`, `none` (auto prefers AVX2)      | `auto`   |
 | `STALKER_SIMD_STORE_POLICY`    | SIMD store policy: `stream` (non-temporal) or `cache`               | `stream` |
-| `STALKER_SIMD_PREFETCH_LINES`  | Cache lines to prefetch ahead (0=disable)                           | `1`      |
-| `STALKER_SIMD_PREFETCH_HINT`   | Prefetch hint: `HintT0`, `HintT1`, `HintT2`, `HintNTA`              | `HintT0` |
+| `STALKER_SIMD_PREFETCH_HINT`   | Prefetch hint: `HintNone`,`HintT0`, `HintT1`, `HintT2`, `HintNTA`              | `HintNone` |
 
 #### Threading
 
@@ -189,7 +188,7 @@ MSVC equivalents map similarly (`/Od /Zi`, `/O2 /DNDEBUG`, `perf` adds `/Ox /GL 
 #### Example Configuration: Performance focused release build
 - Loop unrolling factor = 2
 - 64-byte bound allocations (alignment = 64)
-- SIMD is enabled and configured to use AVX2 instructions. Data will be streamed to memory after the operation.
+- SIMD is enabled and configured to use AVX2 instructions with aggressive (L1, L2) prefetching. Data will be streamed to memory after the operation.
 - Multithreading is enabled and the thread backend uses `pthread`. Jobs will be distributed among 4 threads which belong to the same 2 physical core units since SMT is enabled.
 
   ```bash
@@ -199,6 +198,7 @@ MSVC equivalents map similarly (`/Od /Zi`, `/O2 /DNDEBUG`, `perf` adds `/Ox /GL 
   -DSTALKER_UNROLL_FACTOR=2 \
   -DSTALKER_SIMD_ENABLE=ON \
   -DSTALKER_SIMD_INSTRUCTION_SET=avx2 \
+  -DSTALKER_SIMD_PREFETCH_HINT=HintT0 \
   -DSTALKER_SIMD_STORE_POLICY=stream \
   -DSTALKER_THREADING_ENABLE=ON \
   -DSTALKER_THREADING_NUM_THREADS=4 \
@@ -312,8 +312,9 @@ Almost all operations can be performed with one of three backends (SIMD, Unrolle
       constexpr bool IsAligned = true;
       constexpr Stalker::Core::Config::T_SIMD      Instructions = Stalker::Core::Config::T_SIMD::AVX2;
       constexpr Stalker::Core::Config::T_SIMDStore StorePolicy  = Stalker::Core::Config::T_SIMDStore::Streamed;
+      constexpr Stalker::Core::Config::T_PrefetchHints PrefetchHint = Stalker::Core::Config::T_PrefetchHints::HintT0;
       constexpr size_t Unroll = 2;
-      using SimdTrait = Stalker::Core::ExecutionTraitSIMD<IsAligned, Instructions, Unroll, StorePolicy>;
+      using SimdTrait = Stalker::Core::ExecutionTraitSIMD<Instructions, IsAligned, StorePolicy, Unroll, PrefetchHint>;
 
       //Create 2 std::vector<double> aligned at 32 bits and fill source with random numbers [0, 10].
       size_t size = 20;

@@ -33,9 +33,9 @@ public:
         MemoryOps::broadcast(&scalarSIMD1, scaleA);
         MemoryOps::broadcast(&scalarSIMD2, scaleB);
         for (size_t i = 0; i < limit; i += blockSize){
-            if constexpr (ExecTrait::PrefetchLines > 0) {
-                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(a + i + blockSize);
-                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(b + i + blockSize);
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
+                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(a + i + blockSize);
+                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(b + i + blockSize);
             }
             Child::template _add<ExecTrait::IsAligned, ExecTrait::StorePolicy, true>(a + i, b + i, result + i, std::make_index_sequence<ExecTrait::Unroll>{}, &scalarSIMD1, &scalarSIMD2);
         }
@@ -48,9 +48,9 @@ public:
         constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
         auto limit = size - (size % blockSize);
         for (size_t i = 0; i < limit; i += blockSize) {
-            if constexpr (ExecTrait::PrefetchLines > 0) {
-                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(a + i + blockSize);
-                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(b + i + blockSize);
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
+                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(a + i + blockSize);
+                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(b + i + blockSize);
             }
             Child::template _add<ExecTrait::IsAligned, ExecTrait::StorePolicy, false>(a + i, b + i, result + i, std::make_index_sequence<ExecTrait::Unroll>{});
         }
@@ -65,9 +65,9 @@ public:
         T_simd scalarSIMD;
         MemoryOps::broadcast(&scalarSIMD, scale);
         for (size_t i = 0; i < limit; i += blockSize){
-            if constexpr (ExecTrait::PrefetchLines > 0) {
-                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(a + i + blockSize);
-                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(b + i + blockSize);
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
+                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(a + i + blockSize);
+                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(b + i + blockSize);
             }
             Child::template _axpy<ExecTrait::IsAligned, ExecTrait::StorePolicy>(a + i, b + i, result + i, std::make_index_sequence<ExecTrait::Unroll>{}, &scalarSIMD);
         }
@@ -86,9 +86,9 @@ public:
         else
             MemoryOps::broadcast(&scalarSIMD2, scaleB);
         for (size_t i = 0; i < limit; i += blockSize) {
-            if constexpr (ExecTrait::PrefetchLines > 0) {
-                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(a + i + blockSize);
-                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(b + i + blockSize);
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
+                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(a + i + blockSize);
+                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(b + i + blockSize);
             }
             Child::template _subtract<ExecTrait::IsAligned, ExecTrait::StorePolicy, true>(a + i, b + i, result + i, std::make_index_sequence<ExecTrait::Unroll>{}, &scalarSIMD1, &scalarSIMD2);
         }
@@ -101,9 +101,9 @@ public:
         constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
         auto limit = size - (size % blockSize);
         for (size_t i = 0; i < limit; i += blockSize) {
-            if constexpr (ExecTrait::PrefetchLines > 0) {
-                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(a + i + blockSize);
-                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(b + i + blockSize);
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
+                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(a + i + blockSize);
+                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(b + i + blockSize);
             }
             Child::template _subtract<ExecTrait::IsAligned, ExecTrait::StorePolicy, false>(a + i, b + i, result + i, std::make_index_sequence<ExecTrait::Unroll>{});
         }
@@ -119,9 +119,9 @@ public:
         MemoryOps::broadcast(&scalarSIMD1, scaleA);
         MemoryOps::broadcast(&scalarSIMD2, scaleB);
         for (size_t i = 0; i < limit; i += blockSize) {
-            if constexpr (ExecTrait::PrefetchLines > 0) {
-                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(a + i + blockSize);
-                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(b + i + blockSize);
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
+                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(a + i + blockSize);
+                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(b + i + blockSize);
             }
             Child::template _multiply<ExecTrait::IsAligned, ExecTrait::StorePolicy, true>(a + i, b + i, result + i, std::make_index_sequence<ExecTrait::Unroll>{}, &scalarSIMD1, &scalarSIMD2);
         }
@@ -134,9 +134,9 @@ public:
         constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
         auto limit = size - (size % blockSize);
         for (size_t i = 0; i < limit; i += blockSize) {
-            if constexpr (ExecTrait::PrefetchLines > 0) {
-                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(a + i + blockSize);
-                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(b + i + blockSize);
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
+                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(a + i + blockSize);
+                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(b + i + blockSize);
             }
             Child::template _multiply<ExecTrait::IsAligned, ExecTrait::StorePolicy, false>(a + i, b + i, result + i, std::make_index_sequence<ExecTrait::Unroll>{});
         }
@@ -151,8 +151,8 @@ public:
         T_simd scalarSIMD;
         MemoryOps::broadcast(&scalarSIMD, scalar);
         for (size_t i = 0; i < limit; i += blockSize) {
-            if constexpr (ExecTrait::PrefetchLines > 0)
-                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(data + i + blockSize);
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone)
+                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(data + i + blockSize);
             Child::template _scale<ExecTrait::IsAligned, ExecTrait::StorePolicy>(data + i, result + i, &scalarSIMD, std::make_index_sequence<ExecTrait::Unroll>{});
         }
         for (size_t i = limit; i < size; ++i)
@@ -166,8 +166,8 @@ public:
         T_simd scalarSIMD;
         MemoryOps::broadcast(&scalarSIMD, scalar);
         for (size_t i = 0; i < limit; i += blockSize) {
-            if constexpr (ExecTrait::PrefetchLines > 0)
-                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(data + i + blockSize);
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone)
+                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(data + i + blockSize);
             Child::template _scale<ExecTrait::IsAligned, ExecTrait::StorePolicy>(data + i, &scalarSIMD, std::make_index_sequence<ExecTrait::Unroll>{});
         }
         for (size_t i = limit; i < size; ++i)
@@ -181,8 +181,8 @@ public:
         T_simd scalarSIMD;
         MemoryOps::broadcast(&scalarSIMD, constant);
         for (size_t i = 0; i < limit; i += blockSize) {
-            if constexpr (ExecTrait::PrefetchLines > 0)
-                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(data + i + blockSize);
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone)
+                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(data + i + blockSize);
             Child::template _addConstant<ExecTrait::IsAligned, ExecTrait::StorePolicy>(data + i, result + i, &scalarSIMD, std::make_index_sequence<ExecTrait::Unroll>{});
         }
         for (size_t i = limit; i < size; ++i)
@@ -196,8 +196,8 @@ public:
         T_simd scalarSIMD;
         MemoryOps::broadcast(&scalarSIMD, constant);
         for (size_t i = 0; i < limit; i += blockSize) {
-            if constexpr (ExecTrait::PrefetchLines > 0)
-                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(data + i + blockSize);
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone)
+                Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(data + i + blockSize);
             Child::template _addConstant<ExecTrait::IsAligned, ExecTrait::StorePolicy>(data + i, &scalarSIMD, std::make_index_sequence<ExecTrait::Unroll>{});
         }
         for (size_t i = limit; i < size; ++i)
@@ -212,8 +212,8 @@ public:
         for (auto& acc : accumulators) 
             MemoryOps::setZeroRegister(&acc);
         for (size_t i = 0; i < limit; i += blockSize) {
-            if constexpr (ExecTrait::PrefetchLines > 0)
-                Prefetcher::prefetch<T, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(data + i + blockSize);
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone)
+                Prefetcher::prefetch<T, ExecTrait::PrefetchHint, 1>(data + i + blockSize);
             Child::template _sum<ExecTrait::IsAligned>(data + i, accumulators , std::make_index_sequence<ExecTrait::Unroll>{});
         }
         T_data result = _registerSum(accumulators, ExecTrait::Unroll);
@@ -230,9 +230,9 @@ public:
         for (auto& acc : accumulators) 
             MemoryOps::setZeroRegister(&acc);
         for (size_t i = 0; i < limit; i += blockSize) {
-            if constexpr (ExecTrait::PrefetchLines > 0) {
-                Prefetcher::prefetch<T, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(a + i + blockSize);
-                Prefetcher::prefetch<T, ExecTrait::PrefetchHint, ExecTrait::PrefetchLines>(b + i + blockSize);
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
+                Prefetcher::prefetch<T, ExecTrait::PrefetchHint, 1>(a + i + blockSize);
+                Prefetcher::prefetch<T, ExecTrait::PrefetchHint, 1>(b + i + blockSize);
             }
             Child::template _dot<ExecTrait::IsAligned>(a + i, b + i, accumulators, std::make_index_sequence<ExecTrait::Unroll>{});
         }
