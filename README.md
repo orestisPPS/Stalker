@@ -396,4 +396,14 @@ For detailed performance results and benchmark instructions visit `Benchmarks/RE
 
 ## License
 
-To be decided....
+This project is licensed under the Apache License, Version 2.0. See the [LICENCE.md](LICENCE.md) file for details.
+
+### Third-party Dependencies
+The core library (`Stalker/Core`, `Memory`, `Mathematics`) is header-only and standard C++17 compliant with **no external dependencies**.
+
+The **Benchmarks** module optionally links against:
+- **Eigen** (MPL2)
+- **OpenBLAS** (BSD-3-Clause)
+- **PAPI** (BSD-Style)
+
+These are only required for building the benchmark executable and are not part of the library distribution.
