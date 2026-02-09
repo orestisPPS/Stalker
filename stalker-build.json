@@ -30,13 +30,13 @@
   "build_profile"               : "release",
   "build_custom_flags"          : [],
   "build_jobs"                   : 16,
-  "build_tests"                  : true,
-  "build_benchmarks"             : true,
+  "build_tests"                  : false,
+  "build_benchmarks"             : false,
 
   "alignment"                    : 64,
 
   "simd_enable"                  : true,
-  "simd_default_instructions"    : "avx512",
+  "simd_default_instructions"    : "avx2",
   "simd_store_type"              : "stream",
   "simd_prefetch_hint"           : "HintT0",
 

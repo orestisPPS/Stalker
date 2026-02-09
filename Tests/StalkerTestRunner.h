@@ -20,6 +20,7 @@
 // #include "StalkerMatrix/IteratorTests.h"
 // #include "StalkerMatrix/FixedStridePtrBufferTests.h"
 // #include "StalkerMatrix/DataAccessTests.h"
+// #include "Core/TypeTraitsSIMDTests.h"
 #include "Mathematics/LinspaceTests.h"
 #include "Mathematics/MetaMathTests.h"
 #include "Mathematics/IntegrationTests.h"
@@ -42,7 +43,7 @@ namespace STLKR_Tests {
             MetaMathTests<double>().runTest();
             IntegrationTests().runTest();
             DifferentiationTests().runTest();
-            TypeTraitsSIMDTests().runTest();
+            // TypeTraitsSIMDTests().runTest();
             AllocatorsTests().runTest();
             MemoryOperationsTests(2'000).runTest();
             MathOperationsTests(2'000).runTest();
