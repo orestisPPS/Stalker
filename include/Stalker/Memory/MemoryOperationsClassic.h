@@ -39,6 +39,20 @@ namespace Stalker::Memory {
         }
 
         template <typename T, bool UseSTD = true>
+        inline static void swap(size_t size, T* __restrict data1, T* __restrict data2) noexcept {
+            if constexpr (UseSTD && std::is_trivially_copyable<T>::value) {
+                std::swap_ranges(data1, data1 + size, data2);
+            } else {
+                T temp;
+                for (size_t i = 0; i < size; ++i) {
+                    temp = data1[i];
+                    data1[i] = data2[i];
+                    data2[i] = temp;
+                }
+            }
+        }
+
+        template <typename T, bool UseSTD = true>
         inline static void setValue(size_t size, T* __restrict data, T value) noexcept(std::is_nothrow_copy_assignable<T>::value) {
             if constexpr (UseSTD) {
                 std::fill(data, data + size, value);

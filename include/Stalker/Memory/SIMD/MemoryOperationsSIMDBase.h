@@ -48,6 +48,21 @@ using namespace Stalker::Core;
             for (size_t i = limit; i < size; i++)
                 destination[i] = source[i];
         }
+
+        template<typename ExecTrait>
+        inline static void swap(size_t size, T_data* __restrict data1, T_data* __restrict data2) {
+            constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
+            auto limit = size - (size % blockSize);
+            for (size_t i = 0; i < limit; i += blockSize) {
+                if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
+                    Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(data1 + i + blockSize);
+                    Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(data2 + i + blockSize);
+                }
+                _swap<ExecTrait::IsAligned, ExecTrait::StorePolicy>(data1 + i, data2 + i, std::make_index_sequence<ExecTrait::Unroll>{});
+            }
+            for (size_t i = limit; i < size; i++)
+                std::swap(data1[i], data2[i]);
+        }
         
         template<typename ExecTrait>
         inline static void setValue(size_t size, T_data* __restrict data, T_data value) {
@@ -115,6 +130,13 @@ using namespace Stalker::Core;
 
         template <size_t Index>
         static constexpr inline size_t _registerOffset() { return Index * Traits::RegisterSize(); }
+
+        template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
+        static inline void _swap(T_data* __restrict data1, T_data* __restrict data2, std::index_sequence<Is...>) {
+            const T_simd tmp1[] = { loadOffset<Is, IsAligned>(data1)... };
+            ((storeOffset<Is, Policy>(data1, loadOffset<Is, IsAligned>(data2))), ...);
+            ((storeOffset<Is, Policy>(data2, tmp1[Is])), ...);
+        }
         
     };
 

@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <utility>
 #include <Stalker/Core/Config/LoopUnrolling.h>
 
 namespace Stalker::Memory {
@@ -32,6 +33,15 @@ using namespace Stalker::Core::Config;
                 _copy<T>(destination + i, source + i, std::make_index_sequence<Unroll>{});
             for (size_t i = limit; i < size; ++i)
                 destination[i] = source[i];
+        }
+        
+        template <typename T, size_t Unroll = DefaultUnroll()>
+        static constexpr inline void swap(size_t size, T* __restrict data1, T* __restrict data2)  {
+            auto limit = size - (size % Unroll);
+            for (size_t i = 0; i < limit; i += Unroll)
+                _swap<T>(data1 + i, data2 + i, std::make_index_sequence<Unroll>{});
+            for (size_t i = limit; i < size; ++i)
+                std::swap(data1[i], data2[i]);
         }
 
         template <typename T, size_t Unroll = DefaultUnroll()>
@@ -53,6 +63,14 @@ using namespace Stalker::Core::Config;
         static constexpr inline void _copy(T* __restrict destination, const T* __restrict source, std::index_sequence<Indices...>) {
             ((destination[Indices] = source[Indices]), ...);
 
+        }
+
+        template <typename T, size_t... Indices>
+        static constexpr inline void _swap(T* __restrict data1, T* __restrict data2, std::index_sequence<Indices...>) {
+            T temp[sizeof...(Indices)];
+            ((temp[Indices] = data1[Indices]), ...);
+            ((data1[Indices] = data2[Indices]), ...);
+            ((data2[Indices] = temp[Indices]), ...);
         }
 
         template <typename T, size_t... Indices>

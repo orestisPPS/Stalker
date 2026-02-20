@@ -47,6 +47,11 @@ namespace Stalker::Memory {
         }
 
         template<typename T, typename Trait = DefaultExecutionTrait>
+        constexpr inline static void swap(size_t size, T* __restrict data1, T* __restrict data2){
+            OperationExecutor<T_Operation::Swap, Trait, T>::call(size, data1, data2);
+        }
+
+        template<typename T, typename Trait = DefaultExecutionTrait>
         constexpr inline static void setValue(size_t size, T* __restrict data, T value){
             OperationExecutor<T_Operation::SetValue, Trait, T>::call(size, data, value);
         }
@@ -63,6 +68,13 @@ namespace Stalker::Memory {
             threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Binary>;
             Launcher::call(threadTrait, OperationExecutor<T_Operation::Copy, Trait, T>(), n, destination, source);
+        }
+
+        template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
+        constexpr inline static void swap(ThreadTrait& threadTrait, size_t n, T* data1, T* data2) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
+            using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::BinaryMutable>;
+            Launcher::call(threadTrait, OperationExecutor<T_Operation::Swap, Trait, T>(), n, data1, data2);
         }
 
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
@@ -85,6 +97,7 @@ namespace Stalker::Memory {
 
         enum class T_Operation {
             Copy,
+            Swap,
             SetValue,
             SetZero,        
         };
@@ -113,6 +126,22 @@ namespace Stalker::Memory {
                     MemoryOperationsMeta::copy<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Scalar)
                     MemoryOperationsClassic::copy<T, Trait::IsSTD>(std::forward<Args>(args)...);
+            }
+        };
+
+        template<typename Trait, typename T>
+        struct OperationExecutor<T_Operation::Swap, Trait, T>
+            : public OperationExecutorBase<OperationExecutor<T_Operation::Swap, Trait, T>, T_Operation::Swap, Trait, T> {
+
+            template<typename... Args>
+            constexpr inline static void call(Args&&... args) {
+                
+                if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
+                    MemoryOperationsSIMD<T, Trait::SIMDArch>::template swap<Trait>(std::forward<Args>(args)...);
+                else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
+                    MemoryOperationsMeta::swap<T, Trait::Unroll>(std::forward<Args>(args)...);
+                else if constexpr (Trait::Type == T_ExecTrait::Scalar)
+                    MemoryOperationsClassic::swap<T, Trait::IsSTD>(std::forward<Args>(args)...);
             }
         };
 

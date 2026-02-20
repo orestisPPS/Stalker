@@ -32,6 +32,7 @@ namespace Stalker::Threading {
         UnaryReduced,
         Binary,
         BinaryReduced,
+        BinaryMutable,
     };
 
     template <typename T, typename ThreadTrait, T_ThreadOperation OpT, typename Child>
@@ -107,6 +108,22 @@ namespace Stalker::Threading {
 
         template<typename JobT, typename... Args>
         inline static void _call(JobT&& job, size_t size, size_t start, T* a, const T* b, Args&&... args) {
+            job.call(size, a + start, b + start, std::forward<Args>(args)...);
+        }
+    };
+
+    template<typename T, typename ThreadTrait>
+    struct Launcher<T, ThreadTrait, T_ThreadOperation::BinaryMutable>
+        : public LauncherBase<T, ThreadTrait, T_ThreadOperation::BinaryMutable, Launcher<T, ThreadTrait, T_ThreadOperation::BinaryMutable>> {
+        
+        using Base = LauncherBase<T, ThreadTrait, T_ThreadOperation::BinaryMutable, Launcher<T, ThreadTrait, T_ThreadOperation::BinaryMutable>>;
+
+    protected:
+
+        friend Base;
+
+        template<typename JobT, typename... Args>
+        inline static void _call(JobT&& job, size_t size, size_t start, T* a, T* b, Args&&... args) {
             job.call(size, a + start, b + start, std::forward<Args>(args)...);
         }
     };
