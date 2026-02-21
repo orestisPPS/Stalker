@@ -35,14 +35,14 @@
 
   "operations_vector"       : ["axpy", "dot", "scale", "sum"],
   "operations_matrix"       : ["gemv"],
-  "operations_memory"       : ["copy", "setValue", "setZero"],
+  "operations_memory"       : ["copy"],
 
   "data_range_min"          : 0,
   "data_range_max"          : 10,
   "seed"                    : 0,
 
-  "enable_eigen"            : true,
-  "enable_openblas"         : true,
+  "enable_eigen"            : false,
+  "enable_openblas"         : false,
   "enable_papi"             : true
 }
 

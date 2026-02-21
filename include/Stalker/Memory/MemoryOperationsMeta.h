@@ -52,11 +52,6 @@ using namespace Stalker::Core::Config;
             for (size_t i = limit; i < size; ++i)
                 data[i] = value;
         }
-        
-        template <typename T, size_t Unroll = DefaultUnroll()>
-        static constexpr inline void setZero(size_t size, T* __restrict data)  {
-            setValue<T, Unroll>(size, data, static_cast<T>(0));
-        }
        
     private:
         template <typename T, size_t... Indices>

@@ -44,6 +44,7 @@ It is a personal playground and learning space that offers easy to use experimen
     - [Example 3: Fully unrolled compile-time sum](#example-3-fully-unrolled-compile-time-sum)
   - [Performance](#performance)
   - [License](#license)
+    - [Third-party Dependencies](#third-party-dependencies)
 
 ---
 
@@ -59,7 +60,7 @@ It is a personal playground and learning space that offers easy to use experimen
     >Parallel operations due to their nature (thread creation & launching, safety checks, synchronization) increase branching and overhead. Of course compile-time evaluations cannot be performed.
 
 ### Memory
-- `MemoryOperations API`: `copy`, `setValue`, `setZero`:
+- `MemoryOperations API`: `copy`, `setValue`, `swap`:
   - Sequential and parallel variants
   - Vectorized with AVX2 and AVX512 instruction sets (with / without unroll)
   - Loops (with / without unroll)

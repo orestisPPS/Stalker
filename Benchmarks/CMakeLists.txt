@@ -268,7 +268,7 @@ set(_bench_warmup     "${STALKER_BENCH_WARMUP_ITERATIONS}")
 
 # ----- Memory Operations -----
 if(NOT DEFINED STALKER_BENCH_MEMOPS OR STALKER_BENCH_MEMOPS STREQUAL "")
-  message(FATAL_ERROR "STALKER_BENCH_MEMOPS must be set (e.g. -DSTALKER_BENCH_MEMOPS=copy;setZero)")
+  message(FATAL_ERROR "STALKER_BENCH_MEMOPS must be set (e.g. -DSTALKER_BENCH_MEMOPS=copy;setvalue;swap)")
 endif()
 set(_seen_memops "")
 foreach(mo IN LISTS STALKER_BENCH_MEMOPS)

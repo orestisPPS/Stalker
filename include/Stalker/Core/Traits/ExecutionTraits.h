@@ -125,14 +125,5 @@ namespace Stalker::Core {
         static_assert(!(Type == T_ExecTrait::SIMD && SIMDArch == T_SIMD::None),
                     "STALKER_SIMD_ENABLE is ON but no SIMD instruction set is active!");
     };
-
-        
-
     
-
-
-
-
-
-
 } // namespace Stalker::Core::ExecutionPolicies

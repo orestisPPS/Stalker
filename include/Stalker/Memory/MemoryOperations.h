@@ -55,11 +55,6 @@ namespace Stalker::Memory {
         constexpr inline static void setValue(size_t size, T* __restrict data, T value){
             OperationExecutor<T_Operation::SetValue, Trait, T>::call(size, data, value);
         }
-        
-        template<typename T, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void setZero(size_t size, T* __restrict data){
-            OperationExecutor<T_Operation::SetZero, Trait, T>::call(size, data);
-        }
 
         #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
 
@@ -83,13 +78,6 @@ namespace Stalker::Memory {
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Unary>;
             Launcher::call(threadTrait, OperationExecutor<T_Operation::SetValue, Trait, T>(), size, data, value);
         }
-        
-        template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void setZero(ThreadTrait& threadTrait, size_t size, T* data) {
-            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
-            using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Unary>;
-            Launcher::call(threadTrait, OperationExecutor<T_Operation::SetZero, Trait, T>(), size, data);
-        }
 
         #endif
         
@@ -99,7 +87,6 @@ namespace Stalker::Memory {
             Copy,
             Swap,
             SetValue,
-            SetZero,        
         };
 
         template<typename Child, T_Operation OperationT, typename Trait, typename T>
@@ -158,22 +145,6 @@ namespace Stalker::Memory {
                     MemoryOperationsMeta::setValue<T, Trait::Unroll>(std::forward<Args>(args)...);
                 else if constexpr (Trait::Type == T_ExecTrait::Scalar)
                     MemoryOperationsClassic::setValue<T, Trait::IsSTD>(std::forward<Args>(args)...);
-            }
-        };
-
-        template<typename Trait, typename T>
-        struct OperationExecutor<T_Operation::SetZero, Trait, T>
-            : public OperationExecutorBase<OperationExecutor<T_Operation::SetZero, Trait, T>, T_Operation::SetZero, Trait, T> {
-
-            template<typename... Args>
-            constexpr inline static void call(Args&&... args) {
-                
-                if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
-                    MemoryOperationsSIMD<T, Trait::SIMDArch>::template setZero<Trait>(std::forward<Args>(args)...);
-                else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
-                    MemoryOperationsMeta::setZero<T, Trait::Unroll>(std::forward<Args>(args)...);
-                else if constexpr (Trait::Type == T_ExecTrait::Scalar)
-                    MemoryOperationsClassic::setZero<T, Trait::IsSTD>(std::forward<Args>(args)...);
             }
         };
     };

@@ -130,7 +130,7 @@ namespace Stalker::Mathematics {
                     y[i] = VectorMath::dot<T, Trait>(nCols, A + i * strideA, x);
                 }
             } else {
-                MemoryOperations::setZero<T, Trait>(nRows, y);
+                MemoryOperations::setValue<T, Trait>(nRows, y, T(0));
                 for (size_t j = 0; j < nCols; ++j) {
                     VectorMath::axpy<T, Trait>(nRows, A + j * strideA, y, y, x[j]);
                 }
@@ -145,7 +145,7 @@ namespace Stalker::Mathematics {
                 }
             } else {
                 if (beta == T(0)) {
-                    MemoryOperations::setZero<T, Trait>(nRows, y);
+                    MemoryOperations::SetValue<T, Trait>(nRows, y, T(0));
                 } else if (beta != T(1)) {
                     VectorMath::scale<T, Trait>(nRows, y, beta);
                 }
@@ -158,7 +158,7 @@ namespace Stalker::Mathematics {
         template <typename T, bool RowMajor, typename Trait = DefaultExecutionTrait>
         static constexpr inline void vectorMatrixMultiply(size_t nRows, size_t nCols, const T* x, const T* A, T* y, size_t strideA) {
             if constexpr (RowMajor) {
-                MemoryOperations::setZero<T, Trait>(nCols, y);
+                MemoryOperations::SetValue<T, Trait>(nCols, y, T(0));
                 const T* endA = A + nRows * strideA;
                 for (; A != endA; A += strideA, ++x) {
                     VectorMath::axpy<T, Trait>(nCols, A, y, y, *x);

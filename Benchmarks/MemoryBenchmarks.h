@@ -19,6 +19,8 @@
 #include "Benchmark.h"
 #include <Stalker/Memory/Allocators.h>
 #include <Stalker/Memory/MemoryOperations.h>
+#include <Stalker/Memory/SIMD/MemoryOperationsSIMDAVX2.h>
+#include <Stalker/Memory/SIMD/MemoryOperationsSIMDAVX512.h>
 #include <Stalker/Mathematics/Random.h>
 #include <Stalker/Utility/Logs.h>
 #include <cblas.h>
@@ -74,20 +76,20 @@ namespace Benchmarks {
 							this->_logs.exportToJSON(this->_logExportPath + "/set_value_t_" + typeid(T).name() + "_s" + std::to_string(size)); \
 							this->_logs.clear(); \
                         } \
-                        else if (memOpName == "setZero") { \
-                            auto papiConfig = PAPILogsConfig{}; \
-                            this->_prepareLogs(size, papiConfig); \
-                            this->_forEachStorePolicy([&](auto policy) { \
-                                constexpr T_SIMDStore Policy = decltype(policy)::value; \
-                                this->_forEachUnroll([&](auto unroll) { \
-                                    constexpr size_t U = decltype(unroll)::value; \
-                                    this->_testSetZeroStalker<T, U, Policy>(size); \
-                                }); \
-                            }); \
-							this->_testSetZeroBenchmarks<T>(size); \
-							this->_logs.exportToJSON(this->_logExportPath + "/set_zero_t_" + typeid(T).name() + "_s" + std::to_string(size)); \
+						else if (memOpName == "swap") { \
+							auto papiConfig = PAPILogsConfig{}; \
+							this->_prepareLogs(size, papiConfig); \
+							this->_forEachStorePolicy([&](auto policy) { \
+								constexpr T_SIMDStore Policy = decltype(policy)::value; \
+								this->_forEachUnroll([&](auto unroll) { \
+									constexpr size_t U = decltype(unroll)::value; \
+									this->_testSwapStalker<T, U, Policy>(size); \
+								}); \
+							}); \
+							this->_testSwapBenchmarks<T>(size); \
+							this->_logs.exportToJSON(this->_logExportPath + "/swap_t_" + typeid(T).name() + "_s" + std::to_string(size)); \
 							this->_logs.clear(); \
-                        } \
+						} \
                     }
                 BENCH_FOR_EACH_TYPE(PROCESS_TYPE)
                 #undef PROCESS_TYPE
@@ -257,38 +259,44 @@ namespace Benchmarks {
 			);
 			#endif
 		}
+
 		template<typename T, size_t Unroll, T_SIMDStore Policy>
-		void _testSetZeroStalker(size_t size) {
+		void _testSwapStalker(size_t size) {
 
 			const std::string policyTitle = (Policy == T_SIMDStore::Streamed) ? "Streamed" : "Cached";
-			printTitle(std::string("Operation: SetZero (Stalker) | Type: ") + typeid(T).name() + " | Unroll: " + std::to_string(Unroll) + " | Store: " + policyTitle + " | Size: " + std::to_string(size), "-", T_Color::TOXIC_GREEN);
+			printTitle(std::string("Operation: Swap (Stalker) | Type: ") + typeid(T).name() + " | Unroll: " + std::to_string(Unroll) + " | Store: " + policyTitle + " | Size: " + std::to_string(size), "-", T_Color::TOXIC_GREEN);
 			
 			const std::string type = typeid(T).name();
-            const std::string policyStr = (Policy == T_SIMDStore::Streamed) ? "_stream" : "_cache";
+			const std::string policyStr = (Policy == T_SIMDStore::Streamed) ? "_stream" : "_cache";
 			auto config = SingleBenchmarkConfig{};
 			
-			auto allocator = [&]() { return createAlignedVector<T>(size); };
-			const auto totalBytes = 1 * size * sizeof(T);
+			auto allocator = [&]() { 
+				auto v1 = createAlignedVector<T>(size);
+				auto v2 = createAlignedVector<T>(size);
+				return std::make_pair(std::move(v1), std::move(v2));
+			};
 
-			config.compareOver = { "std::memset " + type, "eigen " + type };
+			const auto totalBytes = 4 * size * sizeof(T);
+
+			config.compareOver = { "std::swap_ranges " + type, "blas " + type, "eigen " + type };
 
 			#if defined(STALKER_SIMD_AVX2_OK)
 			config.name = "stalker_avx2_u" + std::to_string(Unroll) + policyStr + "_" + type ;
 			_benchmarkPAPI(
-				[&](auto& dst) {
+				[&](auto& data) {
 					using Trait = ExecutionTraitSIMD<T_SIMD::AVX2, true, Policy, Unroll>;
-					MemoryOperations::setZero<T, Trait>(size, dst.data());
+					MemoryOperations::swap<T, Trait>(size, data.first.data(), data.second.data());
 				},
-					allocator, config, totalBytes, size
-				);
-				#endif
-				
+				allocator, config, totalBytes, size
+			);
+			#endif
+			
 			#if defined(STALKER_SIMD_AVX512_OK)
 			config.name = "stalker_avx512_u" + std::to_string(Unroll) + policyStr + "_" + type ;
 			_benchmarkPAPI(
-				[&](auto& dst) {
+				[&](auto& data) {
 					using Trait = ExecutionTraitSIMD<T_SIMD::AVX512, true, Policy, Unroll>;
-					MemoryOperations::setZero<T, Trait>(size, dst.data());
+					MemoryOperations::swap<T, Trait>(size, data.first.data(), data.second.data());
 				},
 				allocator, config, totalBytes, size
 			);
@@ -296,36 +304,53 @@ namespace Benchmarks {
 		}
 
 		template<typename T>
-		void _testSetZeroBenchmarks(size_t size) {
+		void _testSwapBenchmarks(size_t size) {
 
-			printTitle(std::string("Operation: SetZero (Benchmarks) | Type: ") + typeid(T).name() + " | Size: " + std::to_string(size), "-", T_Color::TOXIC_GREEN);
+			printTitle(std::string("Operation: Swap (Benchmarks) | Type: ") + typeid(T).name() + " | Size: " + std::to_string(size), "-", T_Color::TOXIC_GREEN);
 			
 			const std::string type = typeid(T).name();
 			auto config = SingleBenchmarkConfig{};
 			
-			auto allocator = [&]() { return createAlignedVector<T>(size); };
-			const auto totalBytes = 1 * size * sizeof(T);
+			auto allocator = [&]() { 
+				auto v1 = createAlignedVector<T>(size);
+				auto v2 = createAlignedVector<T>(size);
+				return std::make_pair(std::move(v1), std::move(v2));
+			};
+
+			const auto totalBytes = 4 * size * sizeof(T);
 
 			config.compareOver = {};
-			config.name = "std::memset " + type;
+			config.name = "std::swap_ranges " + type;
 			_benchmarkPAPI(
-				[&](auto& dst) {
-						std::memset(dst.data(), 0, size * sizeof(T));
+				[&](auto& data) {
+						std::swap_ranges(data.first.begin(), data.first.end(), data.second.begin());
 				},
 				allocator, config, totalBytes, size
 			);
 
+			#if STALKER_BENCH_OPENBLAS_AVAILABLE
+			config.name = "blas " + type;
+			_benchmarkPAPI(
+				[&](auto& data) {
+					if constexpr (std::is_same_v<T, float>) {
+							cblas_sswap(static_cast<int>(size), data.first.data(), 1, data.second.data(), 1);
+					} else if constexpr (std::is_same_v<T, double>) {
+							cblas_dswap(static_cast<int>(size), data.first.data(), 1, data.second.data(), 1);
+					}
+				},
+				allocator, config, totalBytes, size
+			);
+			#endif
+
 			#if STALKER_BENCH_EIGEN_AVAILABLE
-
-			auto eigenAllocator = [&]() { return createAlignedVector<T>(size); };
-
 			config.name = "eigen " + type;
 			_benchmarkPAPI(
-				[&](auto& dst) {
-					Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>, Eigen::Aligned> dstMap(dst.data(), static_cast<int>(size));
-					dstMap.setZero();
+				[&](auto& data) {
+					Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>, Eigen::Aligned> map1(data.first.data(), static_cast<int>(size));
+					Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>, Eigen::Aligned> map2(data.second.data(), static_cast<int>(size));
+					map1.swap(map2);
 				},
-				eigenAllocator, config, totalBytes, size
+				allocator, config, totalBytes, size
 			);
 			#endif
 		}

@@ -43,7 +43,7 @@ using namespace Stalker::Core;
                 if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
                     Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(destination + i + blockSize);
                 }
-                Child::template _copy<ExecTrait::IsAligned, ExecTrait::StorePolicy>(source + i, destination + i, std::make_index_sequence<ExecTrait::Unroll>{});
+                _copy<ExecTrait::IsAligned, ExecTrait::StorePolicy>(source + i, destination + i, std::make_index_sequence<ExecTrait::Unroll>{});
             }
             for (size_t i = limit; i < size; i++)
                 destination[i] = source[i];
@@ -69,21 +69,11 @@ using namespace Stalker::Core;
             constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
             auto limit = size - (size % blockSize);
             T_simd scalarSIMD;
-            broadcast(&scalarSIMD, value);
+            Child::template _broadcast(&scalarSIMD, value, std::make_index_sequence<1>{});
             for (size_t i = 0; i < limit; i += blockSize)
-                Child::template _setValue<ExecTrait::IsAligned, ExecTrait::StorePolicy>(data + i, &scalarSIMD, std::make_index_sequence<ExecTrait::Unroll>{});
+                _setValue<ExecTrait::IsAligned, ExecTrait::StorePolicy>(data + i, scalarSIMD, std::make_index_sequence<ExecTrait::Unroll>{});
             for (size_t i = limit; i < size; i++)
                 data[i] = value;
-        }
-        
-        template<typename ExecTrait>
-        inline static void setZero(size_t size, T_data* __restrict data) {
-            constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
-            auto limit = size - (size % blockSize);
-            for (size_t i = 0; i < limit; i += blockSize)
-                Child::template _setZero<ExecTrait::IsAligned, ExecTrait::StorePolicy>(data + i, std::make_index_sequence<ExecTrait::Unroll>{});
-            for (size_t i = limit; i < size; i++)
-                data[i] = 0;
         }
 
         template<typename ExecTrait>
@@ -132,10 +122,22 @@ using namespace Stalker::Core;
         static constexpr inline size_t _registerOffset() { return Index * Traits::RegisterSize(); }
 
         template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
+        static inline void _copy(const T_data* __restrict source, T_data* __restrict destination, std::index_sequence<Is...>) {
+            const T_simd tmp[] = { loadOffset<Is, IsAligned>(source)... };
+            ((storeOffset<Is, Policy>(destination, tmp[Is])), ...);
+        }
+
+        template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
         static inline void _swap(T_data* __restrict data1, T_data* __restrict data2, std::index_sequence<Is...>) {
             const T_simd tmp1[] = { loadOffset<Is, IsAligned>(data1)... };
-            ((storeOffset<Is, Policy>(data1, loadOffset<Is, IsAligned>(data2))), ...);
+            const T_simd tmp2[] = { loadOffset<Is, IsAligned>(data2)... };
+            ((storeOffset<Is, Policy>(data1, tmp2[Is])), ...);
             ((storeOffset<Is, Policy>(data2, tmp1[Is])), ...);
+        }
+
+        template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
+        static inline void _setValue(T_data* __restrict data, const T_simd& scalarSIMD, std::index_sequence<Is...>) {
+            (storeOffset<Is, Policy>(data, scalarSIMD), ... );
         }
         
     };

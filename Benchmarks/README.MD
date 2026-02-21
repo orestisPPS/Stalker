@@ -16,7 +16,7 @@ All benchmark parameters are defined in `benchmark-build.json`.
 
       *   **`available_ram`**: Defines the physical memory ceiling to clamp automatic sampling, though explicit sizes (`sizes_*`) bypass this safety limit.
 
-    *   **Operations**: Benchmarks cover Memory (Copy, SetValue, Setzero), Vector (Dot, Axpy, Scale, Sum), and Matrix (Gemv) operations.
+    *   **Operations**: Benchmarks cover Memory (Copy, SetValue, Swap), Vector (Dot, Axpy, Scale, Sum), and Matrix (Gemv) operations.
     
     *   **SIMD Parameters**: Multiple loop unrolling factors and cached/streamed stores can be tested via `unroll_factors` and `store_policies`. 
 
@@ -108,7 +108,7 @@ The benchmarking workflow is automated via Python scripts to ensure environment 
                 // Operations
                 "operations_vector" : ["axpy", "dot", "scale", "sum"],  // Vector math kernels
                 "operations_matrix" : ["gemv"],                         // Matrix math kernels
-                "operations_memory" : ["copy", "setValue", "setZero"],  // Vector memory kernels
+                "operations_memory" : ["copy", "setValue", "swap"],  // Vector memory kernels
 
                 // Baselines
                 "enable_eigen": true,          // Comparative baseline: Eigen3

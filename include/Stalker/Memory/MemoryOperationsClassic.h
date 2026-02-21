@@ -63,16 +63,6 @@ namespace Stalker::Memory {
         }
 
         template <typename T, bool UseSTD = true>
-        inline static void setZero(size_t size, T* __restrict data) noexcept {
-            if constexpr (UseSTD) {
-                std::memset(data, 0, size * sizeof(T));
-            } else {
-                for (size_t i = 0; i < size; ++i)
-                    data[i] = T{};
-            }
-        }
-
-        template <typename T, bool UseSTD = true>
         inline static bool areEqual(size_t size, const T* a, const T* b) noexcept(noexcept(std::declval<const T&>() == std::declval<const T&>())) {
             if constexpr (UseSTD) {
                 return std::equal(a, a + size, b);

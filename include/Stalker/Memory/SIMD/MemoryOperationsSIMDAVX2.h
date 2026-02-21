@@ -50,23 +50,8 @@ private:
             _mm256_stream_pd(destination, source);
     }
 
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _copy(const T_data* __restrict source, T_data* __restrict destination, std::index_sequence<Is...>) {
-        ((storeOffset<Is, Policy>(destination, loadOffset<Is, IsAligned>(source))), ...);
-    }
-
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _setZero(T_data* __restrict destination, std::index_sequence<Is...>) {
-        ((storeOffset<Is, Policy>(destination, _mm256_setzero_pd())), ...);
-    }
-
     static inline void _setZeroRegister(T_simd* __restrict destination) {
         *destination = _mm256_setzero_pd();
-    }
-
-    template<bool IsAligned, T_SIMDStore Policy, size_t... Is >
-    static inline void _setValue( T_data* __restrict dst, const T_simd* __restrict scalarSIMD, std::index_sequence<Is...> ){
-        ( storeOffset<Is, Policy>( dst, *scalarSIMD ), ... );
     }
 
     template <size_t... Is>
@@ -112,21 +97,10 @@ private:
             _mm256_stream_ps(destination, source);
     }   
     
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _copy(const T_data* __restrict source, T_data* __restrict destination, std::index_sequence<Is...>) {
-        ((storeOffset<Is, Policy>(destination, loadOffset<Is, IsAligned>(source))), ...);
-    }
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _setZero(T_data* __restrict destination, std::index_sequence<Is...>) {
-        ((storeOffset<Is, Policy>(destination, _mm256_setzero_ps())), ...);
-    }
     static inline void _setZeroRegister(T_simd* __restrict destination) {
         *destination = _mm256_setzero_ps();
     }
-    template<bool IsAligned, T_SIMDStore Policy, size_t... Is >
-    static inline void _setValue( T_data* __restrict destination, const T_simd* __restrict scalarSIMD, std::index_sequence<Is...> ){
-        ( storeOffset<Is, Policy>( destination, *scalarSIMD ), ... );
-    }
+
     template <size_t... Is>
     static  inline void _broadcast(T_simd* __restrict destination, const T_data& value, std::index_sequence<Is...>) {
         ((destination[Is] = _mm256_set1_ps(value)), ...);
@@ -169,23 +143,8 @@ private:
             _mm256_stream_si256(reinterpret_cast<__m256i*>(destination), source);
     }
 
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _copy(const T_data* __restrict src, T_data* __restrict dst, std::index_sequence<Is...>) {
-        ((storeOffset<Is, Policy>(dst, loadOffset<Is, IsAligned>(src))), ...);
-    }
-
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _setZero(T_data* __restrict dst, std::index_sequence<Is...>) {
-        ((storeOffset<Is, Policy>(dst, _mm256_setzero_si256())), ...);
-    }
-
     static inline void _setZeroRegister(T_simd* __restrict destination) {
         *destination = _mm256_setzero_si256();
-    }
-
-    template<bool IsAligned, T_SIMDStore Policy, size_t... Is >
-    static inline void _setValue( T_data* __restrict dst, const T_simd* __restrict scalarSIMD, std::index_sequence<Is...> ){
-        ( storeOffset<Is, Policy>( dst, *scalarSIMD ), ... );
     }
     
     template <size_t... Is>
@@ -235,23 +194,8 @@ private:
             _mm256_stream_si256(reinterpret_cast<__m256i*>(destination), source);
     }
 
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _copy(const T_data* __restrict src, T_data* __restrict dst, std::index_sequence<Is...>) {
-        ((storeOffset<Is, Policy>(dst, loadOffset<Is, IsAligned>(src))), ...);
-    }
-
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _setZero(T_data* __restrict dst, std::index_sequence<Is...>) {
-        ((storeOffset<Is, Policy>(dst, _mm256_setzero_si256())), ...);
-    }
-
     static inline void _setZeroRegister(T_simd* __restrict destination) {
         *destination = _mm256_setzero_si256();
-    }
-
-    template<bool IsAligned,  T_SIMDStore Policy, size_t... Is >
-    static inline void _setValue( T_data* __restrict dst, const T_simd* __restrict scalarSIMD, std::index_sequence<Is...> ){
-        ( storeOffset<Is, Policy>( dst, *scalarSIMD ), ... );
     }
 
     template <size_t... Is>
@@ -301,23 +245,8 @@ private:
             _mm256_stream_si256(reinterpret_cast<__m256i*>(destination), source);
     }
 
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _copy(const T_data* __restrict src, T_data* __restrict dst, std::index_sequence<Is...>) {
-        ((storeOffset<Is, Policy>(dst, loadOffset<Is, IsAligned>(src))), ...);
-    }
-
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _setZero(T_data* __restrict dst, std::index_sequence<Is...>) {
-        ((storeOffset<Is, Policy>(dst, _mm256_setzero_si256())), ...);
-    }
-
     static inline void _setZeroRegister(T_simd* __restrict destination) {
         *destination = _mm256_setzero_si256();
-    }
-
-    template<bool IsAligned,  T_SIMDStore Policy, size_t... Is >
-    static inline void _setValue( T_data* __restrict dst, const T_simd* __restrict scalarSIMD, std::index_sequence<Is...> ){
-        ( storeOffset<Is, Policy>( dst, *scalarSIMD ), ... );
     }
 
     template <size_t... Is>
