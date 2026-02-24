@@ -31,6 +31,7 @@ namespace Stalker::Core
     private:
         friend Base;
         static constexpr unsigned _RegisterSize = 4;  // 256 bits / 64 bits per double
+        static constexpr unsigned _NumRegisters = 16; // ymm0 - ymm15
     };
 
     // AVX2 Specialization for floats
@@ -43,6 +44,7 @@ namespace Stalker::Core
     private:
         friend Base;
         static constexpr unsigned _RegisterSize = 8;  // 256 bits / 32 bits per float
+        static constexpr unsigned _NumRegisters = 16; // ymm0 - ymm15
     };
 
     // AVX2 Specialization for ints
@@ -55,6 +57,7 @@ namespace Stalker::Core
     private:
         friend Base;
         static constexpr unsigned _RegisterSize = 8;  // 256 bits / 32 bits per int
+        static constexpr unsigned _NumRegisters = 16; // ymm0 - ymm15
     };
 
     // AVX2 Specialization for shorts
@@ -67,6 +70,7 @@ namespace Stalker::Core
     private:
         friend Base;
         static constexpr unsigned _RegisterSize = 16; // 256 bits / 16 bits per short
+        static constexpr unsigned _NumRegisters = 16; // ymm0 - ymm15
     };
 
     // AVX2 Specialization for unsigned ints
@@ -79,5 +83,6 @@ namespace Stalker::Core
     private:
         friend Base;
         static constexpr unsigned _RegisterSize = 8;  // 256 bits / 32 bits per unsigned int
+        static constexpr unsigned _NumRegisters = 16; // ymm0 - ymm15
     };
 }

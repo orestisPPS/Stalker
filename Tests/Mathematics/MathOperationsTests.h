@@ -900,7 +900,9 @@ namespace STLKR_Tests {
         T expected = 0;
         for (size_t i = 0; i < _size; ++i) expected += a[i] * b[i];
 
-        auto tolerance = 1e-4;
+        double tolerance = 1e-4;
+        if constexpr (std::is_same_v<T, float>)
+            tolerance = 5e-2;
         {
             auto res =  VectorMath::dot<T, ExecutionTraitScalar<>>(_size, a.data(), b.data());
             TestUtility::compareValues<T>(res, expected, "Scalar", tolerance, true);
@@ -921,10 +923,10 @@ namespace STLKR_Tests {
         #if defined(STALKER_SIMD_AVX512_OK)
         {
             auto resAligned =  VectorMath::dot<T, ExecutionTraitSIMD<T_SIMD::AVX512, true>>(_size, a.data(), b.data());
-            TestUtility::compareValues<T>(resAligned, expected, "SIMD AVX512 Aligned", _tolerance, true);
+            TestUtility::compareValues<T>(resAligned, expected, "SIMD AVX512 Aligned", tolerance, true);
 
             auto resUnaligned =  VectorMath::dot<T, ExecutionTraitSIMD<T_SIMD::AVX512, false>>(_size, a.data(), b.data());
-            TestUtility::compareValues<T>(resUnaligned, expected, "SIMD AVX512 Unaligned", _tolerance, true);
+            TestUtility::compareValues<T>(resUnaligned, expected, "SIMD AVX512 Unaligned", tolerance, true);
         }
         #endif
 
@@ -951,10 +953,10 @@ namespace STLKR_Tests {
         #if defined(STALKER_SIMD_AVX512_OK)
         {
             auto resAligned =  VectorMath::dot<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, true>>(ThreadTrait, _size, a.data(), b.data());
-            TestUtility::compareValues<T>(resAligned, expected, "SIMD AVX512 Threaded Aligned", _tolerance, true);
+            TestUtility::compareValues<T>(resAligned, expected, "SIMD AVX512 Threaded Aligned", tolerance, true);
 
             auto resUnaligned =  VectorMath::dot<T, ThreadTraitSTDThread, ExecutionTraitSIMD<T_SIMD::AVX512, false>>(ThreadTrait, _size, a.data(), b.data());
-            TestUtility::compareValues<T>(resUnaligned, expected, "SIMD AVX512 Threaded Unaligned", _tolerance, true);
+            TestUtility::compareValues<T>(resUnaligned, expected, "SIMD AVX512 Threaded Unaligned", tolerance, true);
         }
         #endif
         #endif

@@ -31,6 +31,7 @@
 #include <cstdint>
 #include <cassert>
 #include <cstring>
+#include <type_traits>
 #include "TestUtility.h"
 #include <Stalker/Mathematics/Linspace.h>
 #include <Stalker/Memory/MemoryOperations.h>

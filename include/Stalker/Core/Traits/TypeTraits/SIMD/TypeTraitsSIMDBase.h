@@ -19,6 +19,7 @@
 #include <Stalker/Core/Config/LoopUnrolling.h>
 #include <Stalker/Core/Config/Platform.h>
 #include <Stalker/Core/Config/SIMD.h>
+#include <Stalker/Core/Config/Compiler.h>
 
 namespace Stalker::Core {
 

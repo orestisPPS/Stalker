@@ -27,16 +27,16 @@ namespace Stalker::Memory {
         template<typename T, T_PrefetchHints Hint, size_t Unroll>
         inline static void prefetch(const T* ptr) {
             if constexpr (Hint == T_PrefetchHints::HintT0) {
-                _prefetchT0(ptr, std::make_index_sequence<Unroll>{});
+                _prefetchT0(ptr, UnrollIndexSequence<Unroll>{});
             }
             else if constexpr (Hint == T_PrefetchHints::HintT1) {
-                _prefetchT1(ptr, std::make_index_sequence<Unroll>{});
+                _prefetchT1(ptr, UnrollIndexSequence<Unroll>{});
             }
             else if constexpr (Hint == T_PrefetchHints::HintT2) {
-                _prefetchT2(ptr,  std::make_index_sequence<Unroll>{});
+                _prefetchT2(ptr,  UnrollIndexSequence<Unroll>{});
             }
             else if constexpr (Hint == T_PrefetchHints::HintNTA) {
-                _prefetchNTA(ptr,  std::make_index_sequence<Unroll>{});
+                _prefetchNTA(ptr,  UnrollIndexSequence<Unroll>{});
             }
         }
     

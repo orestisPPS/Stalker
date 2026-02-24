@@ -20,6 +20,7 @@
 #include <cstring>
 #include <algorithm>
 #include <type_traits>
+#include <Stalker/Core/Config/Compiler.h>
 
 namespace Stalker::Memory {
 
@@ -28,7 +29,7 @@ namespace Stalker::Memory {
 
 
         template <typename T, bool UseSTD = true>
-        inline static void copy(size_t size, T* __restrict destination, const T* __restrict source) noexcept {
+        STALKER_FORCE_INLINE constexpr static void copy(size_t size, T* STALKER_RESTRICT destination, const T* STALKER_RESTRICT source) noexcept {
             if constexpr (UseSTD) {
                 static_assert(std::is_trivially_copyable<T>::value, "memcpy requires trivially copyable T");
                 std::memcpy(destination, source, size * sizeof(T));
@@ -39,7 +40,7 @@ namespace Stalker::Memory {
         }
 
         template <typename T, bool UseSTD = true>
-        inline static void swap(size_t size, T* __restrict data1, T* __restrict data2) noexcept {
+        STALKER_FORCE_INLINE constexpr static void swap(size_t size, T* STALKER_RESTRICT data1, T* STALKER_RESTRICT data2) noexcept {
             if constexpr (UseSTD && std::is_trivially_copyable<T>::value) {
                 std::swap_ranges(data1, data1 + size, data2);
             } else {
@@ -53,7 +54,7 @@ namespace Stalker::Memory {
         }
 
         template <typename T, bool UseSTD = true>
-        inline static void setValue(size_t size, T* __restrict data, T value) noexcept(std::is_nothrow_copy_assignable<T>::value) {
+        STALKER_FORCE_INLINE constexpr static void setValue(size_t size, T* STALKER_RESTRICT data, T value) noexcept(std::is_nothrow_copy_assignable<T>::value) {
             if constexpr (UseSTD) {
                 std::fill(data, data + size, value);
             } else {
@@ -63,7 +64,7 @@ namespace Stalker::Memory {
         }
 
         template <typename T, bool UseSTD = true>
-        inline static bool areEqual(size_t size, const T* a, const T* b) noexcept(noexcept(std::declval<const T&>() == std::declval<const T&>())) {
+        STALKER_FORCE_INLINE constexpr static bool areEqual(size_t size, const T* a, const T* b) noexcept(noexcept(std::declval<const T&>() == std::declval<const T&>())) {
             if constexpr (UseSTD) {
                 return std::equal(a, a + size, b);
             } else {

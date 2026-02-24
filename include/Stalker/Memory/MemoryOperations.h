@@ -16,8 +16,7 @@
 
 #pragma once
 
-#include <Stalker/Core/Traits/ExecutionTraits.h>
-#include <Stalker/Memory/MemoryOperationsClassic.h>
+#include <Stalker/Memory/MemoryOperationsScalar.h>
 #include <Stalker/Memory/MemoryOperationsMeta.h>
 #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
 #include <Stalker/Threading/ThreadOperations.h>
@@ -42,38 +41,38 @@ namespace Stalker::Memory {
     public:
     
         template<typename T, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void copy(size_t size, T* __restrict destination, const T* __restrict source){
+        STALKER_FORCE_INLINE constexpr static void copy(size_t size, T* STALKER_RESTRICT destination, const T* STALKER_RESTRICT source){
             OperationExecutor<T_Operation::Copy, Trait, T>::call(size, destination, source);
         }
 
         template<typename T, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void swap(size_t size, T* __restrict data1, T* __restrict data2){
+        STALKER_FORCE_INLINE constexpr static void swap(size_t size, T* STALKER_RESTRICT data1, T* STALKER_RESTRICT data2){
             OperationExecutor<T_Operation::Swap, Trait, T>::call(size, data1, data2);
         }
 
         template<typename T, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void setValue(size_t size, T* __restrict data, T value){
+        STALKER_FORCE_INLINE constexpr static void setValue(size_t size, T* STALKER_RESTRICT data, T value){
             OperationExecutor<T_Operation::SetValue, Trait, T>::call(size, data, value);
         }
 
         #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
 
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void copy(ThreadTrait& threadTrait, size_t n, T* destination, const T* source) {
+        STALKER_FORCE_INLINE static void copy(ThreadTrait& threadTrait, size_t n, T* destination, const T* source) {
             threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Binary>;
             Launcher::call(threadTrait, OperationExecutor<T_Operation::Copy, Trait, T>(), n, destination, source);
         }
 
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void swap(ThreadTrait& threadTrait, size_t n, T* data1, T* data2) {
+        STALKER_FORCE_INLINE static void swap(ThreadTrait& threadTrait, size_t n, T* data1, T* data2) {
             threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::BinaryMutable>;
             Launcher::call(threadTrait, OperationExecutor<T_Operation::Swap, Trait, T>(), n, data1, data2);
         }
 
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
-        constexpr inline static void setValue(ThreadTrait& threadTrait, size_t size, T* data, T value) {
+        STALKER_FORCE_INLINE static void setValue(ThreadTrait& threadTrait, size_t size, T* data, T value) {
             threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::Unary>;
             Launcher::call(threadTrait, OperationExecutor<T_Operation::SetValue, Trait, T>(), size, data, value);
@@ -93,7 +92,7 @@ namespace Stalker::Memory {
         struct OperationExecutorBase {
 
             template<typename... Args>
-            constexpr inline static auto call(Args&&... args) {
+            STALKER_FORCE_INLINE constexpr static auto call(Args&&... args) {
                 Child::call(std::forward<Args>(args)...);
             }
         };
@@ -105,7 +104,7 @@ namespace Stalker::Memory {
             : public OperationExecutorBase<OperationExecutor<T_Operation::Copy, Trait, T>, T_Operation::Copy, Trait, T> {
 
             template<typename... Args>
-            constexpr inline static void call(Args&&... args) {
+            STALKER_FORCE_INLINE constexpr static void call(Args&&... args) {
                 
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
                     MemoryOperationsSIMD<T, Trait::SIMDArch>::template copy<Trait>(std::forward<Args>(args)...);
@@ -121,7 +120,7 @@ namespace Stalker::Memory {
             : public OperationExecutorBase<OperationExecutor<T_Operation::Swap, Trait, T>, T_Operation::Swap, Trait, T> {
 
             template<typename... Args>
-            constexpr inline static void call(Args&&... args) {
+            STALKER_FORCE_INLINE constexpr static void call(Args&&... args) {
                 
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
                     MemoryOperationsSIMD<T, Trait::SIMDArch>::template swap<Trait>(std::forward<Args>(args)...);
@@ -137,7 +136,7 @@ namespace Stalker::Memory {
             : public OperationExecutorBase<OperationExecutor<T_Operation::SetValue, Trait, T>, T_Operation::SetValue, Trait, T> {
 
             template<typename... Args>
-            constexpr inline static void call(Args&&... args) {
+            STALKER_FORCE_INLINE constexpr static void call(Args&&... args) {
                 
                 if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
                     MemoryOperationsSIMD<T, Trait::SIMDArch>::template setValue<Trait>(std::forward<Args>(args)...);

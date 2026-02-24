@@ -55,14 +55,18 @@
 #if defined(_MSC_VER)
     #define STALKER_MSVC 1
     #define STALKER_FORCE_INLINE __forceinline
+    #define STALKER_RESTRICT __restrict
 #elif defined(__clang__)
     #define STALKER_CLANG 1
-    #define STALKER_FORCE_INLINE __attribute__((always_inline)) inline
+    #define STALKER_FORCE_INLINE __attribute__((always_inline))
+    #define STALKER_RESTRICT __restrict__
 #elif defined(__GNUC__)
     #define STALKER_GCC 1
-    #define STALKER_FORCE_INLINE __attribute__((always_inline)) inline
+    #define STALKER_FORCE_INLINE __attribute__((always_inline))
+    #define STALKER_RESTRICT __restrict__
 #else
     #warning "STALKER: Unknown compiler—force-inline falls back to 'inline'. Some features may be limited."
     #define STALKER_UNKNOWN_COMPILER 1
     #define STALKER_FORCE_INLINE inline
+    #define STALKER_RESTRICT
 #endif

@@ -121,4 +121,7 @@ namespace Stalker::Core::Config {
 
     static_assert(STALKER_UNROLL_FACTOR >= 1, "STALKER_UNROLL_FACTOR must be >= 1");
 
+    template <size_t T>
+    using UnrollIndexSequence = std::make_index_sequence<T>;
+
 } // namespace Stalker::Core::Config

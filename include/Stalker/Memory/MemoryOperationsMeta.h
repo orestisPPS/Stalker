@@ -27,41 +27,41 @@ using namespace Stalker::Core::Config;
     public:
 
         template <typename T, size_t Unroll = DefaultUnroll()>
-        static constexpr inline void copy(size_t size, T* __restrict destination, const T* __restrict source )  {
+        STALKER_FORCE_INLINE constexpr static void copy(size_t size, T* STALKER_RESTRICT destination, const T* STALKER_RESTRICT source )  {
             auto limit = size - (size % Unroll);
             for (size_t i = 0; i < limit; i += Unroll)
-                _copy<T>(destination + i, source + i, std::make_index_sequence<Unroll>{});
+                _copy<T>(destination + i, source + i, UnrollIndexSequence<Unroll>{});
             for (size_t i = limit; i < size; ++i)
                 destination[i] = source[i];
         }
         
         template <typename T, size_t Unroll = DefaultUnroll()>
-        static constexpr inline void swap(size_t size, T* __restrict data1, T* __restrict data2)  {
+        STALKER_FORCE_INLINE constexpr static void swap(size_t size, T* STALKER_RESTRICT data1, T* STALKER_RESTRICT data2)  {
             auto limit = size - (size % Unroll);
             for (size_t i = 0; i < limit; i += Unroll)
-                _swap<T>(data1 + i, data2 + i, std::make_index_sequence<Unroll>{});
+                _swap<T>(data1 + i, data2 + i, UnrollIndexSequence<Unroll>{});
             for (size_t i = limit; i < size; ++i)
                 std::swap(data1[i], data2[i]);
         }
 
         template <typename T, size_t Unroll = DefaultUnroll()>
-        static constexpr inline void setValue(size_t size, T* __restrict data, T value)  {
+        STALKER_FORCE_INLINE constexpr static void setValue(size_t size, T* STALKER_RESTRICT data, T value)  {
             auto limit = size - (size % Unroll);
             for (size_t i = 0; i < limit; i += Unroll)
-                _setValue<T>(data  + i, value, std::make_index_sequence<Unroll>{});
+                _setValue<T>(data  + i, value, UnrollIndexSequence<Unroll>{});
             for (size_t i = limit; i < size; ++i)
                 data[i] = value;
         }
        
     private:
         template <typename T, size_t... Indices>
-        static constexpr inline void _copy(T* __restrict destination, const T* __restrict source, std::index_sequence<Indices...>) {
+        STALKER_FORCE_INLINE constexpr static void _copy(T* STALKER_RESTRICT destination, const T* STALKER_RESTRICT source, std::index_sequence<Indices...>) {
             ((destination[Indices] = source[Indices]), ...);
 
         }
 
         template <typename T, size_t... Indices>
-        static constexpr inline void _swap(T* __restrict data1, T* __restrict data2, std::index_sequence<Indices...>) {
+        STALKER_FORCE_INLINE constexpr static void _swap(T* STALKER_RESTRICT data1, T* STALKER_RESTRICT data2, std::index_sequence<Indices...>) {
             T temp[sizeof...(Indices)];
             ((temp[Indices] = data1[Indices]), ...);
             ((data1[Indices] = data2[Indices]), ...);
@@ -69,7 +69,7 @@ using namespace Stalker::Core::Config;
         }
 
         template <typename T, size_t... Indices>
-        static constexpr inline void _setValue(T* __restrict data, T value, std::index_sequence<Indices...>) {
+        STALKER_FORCE_INLINE constexpr static void _setValue(T* STALKER_RESTRICT data, T value, std::index_sequence<Indices...>) {
             ((data[Indices] = value), ...);
         }
     };

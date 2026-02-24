@@ -23,96 +23,96 @@ namespace Stalker::Mathematics {
 
 struct VectorMathScalar {
     template <typename T, typename ResultT = T>
-    static constexpr inline void add(size_t size, const T* a, const T * b, ResultT* result) {
+    STALKER_FORCE_INLINE constexpr static void add(size_t size, const T* a, const T * b, ResultT* result) {
         const T* end = a + size;
         for (; a != end; ++a, ++b, ++result)
             *result = (*a) + (*b);
     }
 
     template <typename T, typename ResultT = T>
-    static constexpr inline void add(size_t size, const T* a, const T * b, ResultT* result, T scalarA, T scalarB) {
+    STALKER_FORCE_INLINE constexpr static void add(size_t size, const T* a, const T * b, ResultT* result, T scalarA, T scalarB) {
         const T* end = a + size;
         for (; a != end; ++a, ++b, ++result)
             *result = ((*a) * scalarA) + ((*b) * scalarB);
     }
 
     template <typename T, typename ResultT = T>
-    static constexpr inline void axpy(size_t size, const T* a, const T * b, ResultT* result, T scalar) {
+    STALKER_FORCE_INLINE constexpr static void axpy(size_t size, const T* a, const T * b, ResultT* result, T scalar) {
         const T* end = a + size;
         for (; a != end; ++a, ++b, ++result)
             *result = ((*a) * scalar) + (*b);
     }
 
     template <typename T, typename ResultT = T>
-    static constexpr inline void subtract(size_t size, const T* a, const T * b, ResultT* result) {
+    STALKER_FORCE_INLINE constexpr static void subtract(size_t size, const T* a, const T * b, ResultT* result) {
         const T* end = a + size;
         for (; a != end; ++a, ++b, ++result)
             *result = (*a) - (*b);
     }
     
     template <typename T, typename ResultT = T>
-    static constexpr inline void subtract(size_t size, const T* a, const T * b, ResultT* result, T scalarA, T scalarB) {
+    STALKER_FORCE_INLINE constexpr static void subtract(size_t size, const T* a, const T * b, ResultT* result, T scalarA, T scalarB) {
         const T* end = a + size;
         for (; a != end; ++a, ++b, ++result)
             *result = ((*a) * scalarA) - ((*b) * scalarB);
     }
 
     template <typename T, typename ResultT = T>
-    static constexpr inline void multiply(size_t size, const T* a, const T * b, ResultT* result) {
+    STALKER_FORCE_INLINE constexpr static void multiply(size_t size, const T* a, const T * b, ResultT* result) {
         const T* end = a + size;
         for (; a != end; ++a, ++b, ++result)
             *result = (*a) * (*b);
     }
 
     template <typename T, typename ResultT = T>
-    static constexpr inline void multiply(size_t size, const T* a, const T * b, ResultT* result, T scalarA, T scalarB) {
+    STALKER_FORCE_INLINE constexpr static void multiply(size_t size, const T* a, const T * b, ResultT* result, T scalarA, T scalarB) {
         const T* end = a + size;
         for (; a != end; ++a, ++b, ++result)
             *result = ((*a) * scalarA) * ((*b) * scalarB);
     }
 
     template <typename T, typename ResultT = T>
-    static constexpr inline void divide(size_t size, const T* a, const T* b, ResultT* result) {
+    STALKER_FORCE_INLINE constexpr static void divide(size_t size, const T* a, const T* b, ResultT* result) {
         const T* end = a + size;
         for (; a != end; ++a, ++b, ++result)
             *result = (*a) / (*b);
     }
 
     template <typename T, typename ResultT = T>
-    static constexpr inline void divide(size_t size, const T* a, const T* b, ResultT* result, T scalarA, T scalarB) {
+    STALKER_FORCE_INLINE constexpr static void divide(size_t size, const T* a, const T* b, ResultT* result, T scalarA, T scalarB) {
         const T* end = a + size;
         for (; a != end; ++a, ++b, ++result)
             *result = ((*a) * scalarA) / ((*b) * scalarB);
     }
 
     template <typename T, typename ResultT = T>
-    static constexpr inline void scale(size_t size, const T* data, ResultT* result, T scalar) {
+    STALKER_FORCE_INLINE constexpr static void scale(size_t size, const T* data, ResultT* result, T scalar) {
         const T* end = data + size;
         for (; data != end; ++data, ++result)
             *result = (*data) * scalar;
     }
 
     template <typename T>
-    static constexpr inline void scale(size_t size, T* __restrict data, T scalar) {
+    STALKER_FORCE_INLINE constexpr static void scale(size_t size, T* STALKER_RESTRICT data, T scalar) {
         for (size_t i = 0; i < size; ++i)
             data[i] *= scalar;
     }
 
     template <typename T>
-    static constexpr inline void addConstant(size_t size, const T* __restrict data, T* __restrict result, T constant) {
+    STALKER_FORCE_INLINE constexpr static void addConstant(size_t size, const T* STALKER_RESTRICT data, T* STALKER_RESTRICT result, T constant) {
         const T* end = data + size;
         for (; data != end; ++data, ++result)
             *result = (*data) + constant;
     }
 
     template <typename T>
-    static inline void addConstant(size_t size, __restrict T* data, T constant) {
+    STALKER_FORCE_INLINE constexpr static void addConstant(size_t size, STALKER_RESTRICT T* data, T constant) {
         for (size_t i = 0; i < size; ++i)
             data[i] += constant;
     }
 
     template <typename T>
-    static inline T sum(size_t size, const T* __restrict data) {
+    STALKER_FORCE_INLINE constexpr static T sum(size_t size, const T* STALKER_RESTRICT data) {
         T result = T{};
         const T* end = data + size;
         for (; data != end; ++data)
@@ -121,7 +121,7 @@ struct VectorMathScalar {
     }
     
     template <typename T, typename ResultT = T>
-    static inline ResultT dot(size_t size, const T* a, const T* b) {
+    STALKER_FORCE_INLINE constexpr static ResultT dot(size_t size, const T* a, const T* b) {
         ResultT result = ResultT{};
         const T* end = a + size;
         for (; a != end; ++a, ++b)
@@ -130,20 +130,20 @@ struct VectorMathScalar {
     }
 
     template <typename T, typename ResultT = T>
-    constexpr static inline ResultT cross2D(size_t, const T* a, const T* b) {
+    STALKER_FORCE_INLINE constexpr static ResultT cross2D(size_t, const T* a, const T* b) {
         return a[0] * b[1] - a[1] * b[0];
     }
 
     // 3D cross product returns a 3‐component vector
     template <typename T, typename ResultT = T>
-    static constexpr inline void cross3D(size_t, const T* a, const T* b, ResultT* result) {
+    STALKER_FORCE_INLINE constexpr static void cross3D(size_t, const T* a, const T* b, ResultT* result) {
         result[0] = a[1] * b[2] - a[2] * b[1];
         result[1] = a[2] * b[0] - a[0] * b[2];
         result[2] = a[0] * b[1] - a[1] * b[0];
     }
 
     template <typename T, typename ResultT = T>
-    constexpr static inline ResultT sumOfSquares(size_t size, const T* __restrict data) {
+    STALKER_FORCE_INLINE constexpr static ResultT sumOfSquares(size_t size, const T* STALKER_RESTRICT data) {
         ResultT result = ResultT{};
         const T* end = data + size;
         for (; data != end; ++data)
@@ -152,7 +152,7 @@ struct VectorMathScalar {
     }
 
     template <typename T, typename ResultT = T>
-    static constexpr inline void normalize(size_t size, const T* __restrict data, ResultT* __restrict result) {
+    STALKER_FORCE_INLINE constexpr static void normalize(size_t size, const T* STALKER_RESTRICT data, ResultT* STALKER_RESTRICT result) {
         static_assert(std::is_floating_point<ResultT>::value, "Normalization result must be a floating-point type");
         ResultT norm = std::sqrt(sumOfSquares(size, data));
         if (norm > 0) {
@@ -164,7 +164,7 @@ struct VectorMathScalar {
     }
 
     template <typename T>
-    static constexpr inline void normalize(size_t size, T* __restrict data) {
+    STALKER_FORCE_INLINE constexpr static void normalize(size_t size, T* STALKER_RESTRICT data) {
         static_assert(std::is_floating_point<T>::value, "In-place normalize requires a floating-point type");
         T norm = 1.0 / std::sqrt(sumOfSquares(size, data));
         T* end = data + size;
@@ -173,7 +173,7 @@ struct VectorMathScalar {
     }
 
     template <typename T>
-    static inline T max(size_t size, const T* __restrict data) {
+   STALKER_FORCE_INLINE constexpr static T max(size_t size, const T* STALKER_RESTRICT data) {
         T max = data[0];
         for (size_t i = 1; i < size; ++i) {
             if (data[i] > max)
@@ -183,7 +183,7 @@ struct VectorMathScalar {
     }
 
     template <typename T>
-    static inline size_t maxIndex(size_t size, const T* __restrict data) {
+    STALKER_FORCE_INLINE constexpr static size_t maxIndex(size_t size, const T* STALKER_RESTRICT data) {
         T maxValue = data[0];
         size_t maxIdx = 0;
         for (size_t i = 1; i < size; ++i) {
@@ -196,7 +196,7 @@ struct VectorMathScalar {
     }
 
     template <typename T>
-    static inline T min(size_t size, const T* __restrict data) {
+    STALKER_FORCE_INLINE constexpr static T min(size_t size, const T* STALKER_RESTRICT data) {
         T min = data[0];
         for (size_t i = 1; i < size; ++i) {
             if (data[i] < min)
@@ -206,7 +206,7 @@ struct VectorMathScalar {
     }
 
     template <typename T>
-    static inline size_t minIndex(size_t size, const T* __restrict data) {
+    STALKER_FORCE_INLINE constexpr static size_t minIndex(size_t size, const T* STALKER_RESTRICT data) {
         T minValue = data[0];
         size_t minIdx = 0;
         for (size_t i = 1; i < size; ++i) {
@@ -221,7 +221,7 @@ struct VectorMathScalar {
 
 struct Norms {
     template <typename T, typename ResultT = T>
-    static inline ResultT L1(size_t size, const T* __restrict data) {
+    STALKER_FORCE_INLINE constexpr static ResultT L1(size_t size, const T* STALKER_RESTRICT data) {
         static_assert(std::is_floating_point<ResultT>::value, "L1 norm result must be a floating-point type");
         T result = 0;
         for (size_t i = 0; i < size; ++i)
@@ -230,13 +230,13 @@ struct Norms {
     }
 
     template <typename T, typename ResultT = T>
-    static inline ResultT L2(size_t size, const T* __restrict data) {
+    STALKER_FORCE_INLINE constexpr static ResultT L2(size_t size, const T* STALKER_RESTRICT data) {
         static_assert(std::is_floating_point<ResultT>::value, "L2 norm result must be a floating-point type");
         return std::sqrt(VectorMathScalar::sumOfSquares<T, ResultT>(size, data));
     }
-
+    
     template <typename T, typename ResultT = T>
-    static inline ResultT Linf(size_t size, const T* __restrict data) {
+    STALKER_FORCE_INLINE constexpr static ResultT Linf(size_t size, const T* STALKER_RESTRICT data) {
         static_assert(std::is_floating_point<ResultT>::value, "Linf norm result must be a floating-point type");
         ResultT maxVal = std::abs(data[0]);
         for (size_t i = 1; i < size; ++i)

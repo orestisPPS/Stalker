@@ -25,11 +25,11 @@ namespace Stalker::Core
         : TypeTraitsSIMDBase<double, T_SIMD::AVX512, TypeTraitsSIMD<double, T_SIMD::AVX512>> {
         using Base = TypeTraitsSIMDBase<double, T_SIMD::AVX512, TypeTraitsSIMD<double, T_SIMD::AVX512>>;
         using typeSIMD     = __m512d;
-        using typeSIMDHalf = __m256d;
         using typeData     = double;
     private:
         friend Base;
         static constexpr unsigned _RegisterSize = 8;  // 512 bits / 64 bits per double
+        static constexpr unsigned _NumRegisters = 32; // zmm0 - zmm31
     };
 
     // AVX512 Specialization for floats
@@ -37,11 +37,11 @@ namespace Stalker::Core
     struct TypeTraitsSIMD<float, T_SIMD::AVX512> : TypeTraitsSIMDBase<float, T_SIMD::AVX512, TypeTraitsSIMD<float, T_SIMD::AVX512>> {
         using Base = TypeTraitsSIMDBase<float, T_SIMD::AVX512, TypeTraitsSIMD<float, T_SIMD::AVX512>>;
         using typeSIMD     = __m512;
-        using typeSIMDHalf = __m256;
         using typeData     = float;
     private:
         friend Base;
         static constexpr unsigned _RegisterSize = 16;  // 512 bits / 32 bits per float
+        static constexpr unsigned _NumRegisters = 32; // zmm0 - zmm31
     };
 
     // AVX512 Specialization for ints
@@ -49,11 +49,11 @@ namespace Stalker::Core
     struct TypeTraitsSIMD<int, T_SIMD::AVX512> : TypeTraitsSIMDBase<int, T_SIMD::AVX512, TypeTraitsSIMD<int, T_SIMD::AVX512>> {
         using Base = TypeTraitsSIMDBase<int, T_SIMD::AVX512, TypeTraitsSIMD<int, T_SIMD::AVX512>>;
         using typeSIMD     = __m512i;
-        using typeSIMDHalf = __m256i;
         using typeData     = int;
     private:
         friend Base;
         static constexpr unsigned _RegisterSize = 16;  // 512 bits / 32 bits per int
+        static constexpr unsigned _NumRegisters = 32; // zmm0 - zmm31
     };
 
     // AVX512 Specialization for shorts
@@ -61,11 +61,11 @@ namespace Stalker::Core
     struct TypeTraitsSIMD<short, T_SIMD::AVX512> : TypeTraitsSIMDBase<short, T_SIMD::AVX512, TypeTraitsSIMD<short, T_SIMD::AVX512>> {
         using Base = TypeTraitsSIMDBase<short, T_SIMD::AVX512, TypeTraitsSIMD<short, T_SIMD::AVX512>>;
         using typeSIMD     = __m512i;
-        using typeSIMDHalf = __m256i;
         using typeData     = short;
     private:
         friend Base;
         static constexpr unsigned _RegisterSize = 32; // 512 bits / 16 bits per short
+        static constexpr unsigned _NumRegisters = 32; // zmm0 - zmm31
     };
 
     // AVX512 Specialization for unsigned ints
@@ -73,10 +73,10 @@ namespace Stalker::Core
     struct TypeTraitsSIMD<unsigned, T_SIMD::AVX512> : TypeTraitsSIMDBase<unsigned, T_SIMD::AVX512, TypeTraitsSIMD<unsigned, T_SIMD::AVX512>> {
         using Base = TypeTraitsSIMDBase<unsigned, T_SIMD::AVX512, TypeTraitsSIMD<unsigned, T_SIMD::AVX512>>;
         using typeSIMD     = __m512i;
-        using typeSIMDHalf = __m256i;
         using typeData     = unsigned;
     private:
         friend Base;
         static constexpr unsigned _RegisterSize = 16;  // 512 bits / 32 bits per unsigned int
+        static constexpr unsigned _NumRegisters = 32; // zmm0 - zmm31
     };
 }
