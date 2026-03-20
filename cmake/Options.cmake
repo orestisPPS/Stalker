@@ -17,6 +17,8 @@ set(STALKER_SIMD_INSTRUCTION_SET "auto" CACHE STRING "Requested default SIMD ISA
 set_property(CACHE STALKER_SIMD_INSTRUCTION_SET PROPERTY STRINGS auto avx2 avx512 esp-dsp none)
 set(STALKER_SIMD_STORE_POLICY "stream" CACHE STRING "SIMD store policy: stream (non-temporal) or cache (temporal)." FORCE)
 set_property(CACHE STALKER_SIMD_STORE_POLICY PROPERTY STRINGS stream cache)
+set(STALKER_SIMD_ILP_POLICY "interleaved" CACHE STRING "SIMD ILP policy: interleaved (load-store) or grouped (load-load-store-store)." FORCE)
+set_property(CACHE STALKER_SIMD_ILP_POLICY PROPERTY STRINGS interleaved grouped)
 
 # Prefetch
 set(STALKER_SIMD_PREFETCH_HINT "HintNone" CACHE STRING "Prefetch locality hint (HintNone, HintT0, HintT1, HintT2, HintNTA)." FORCE)

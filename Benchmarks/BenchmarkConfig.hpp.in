@@ -43,3 +43,4 @@ inline constexpr std::array<std::string_view, @_bench_matrixops_len@>
 // global macro (macros are not namespaced)
 #define BENCH_FOR_EACH_TYPE(X) @_bench_types_macro@
 #define BENCH_FOR_EACH_STORE_POLICY(X) @_bench_store_policies_macro@
+#define BENCH_FOR_EACH_ILP_POLICY(X) @_bench_ilp_policies_macro@

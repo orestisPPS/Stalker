@@ -36,7 +36,7 @@ private:
     friend Base;
     
     template <bool IsAligned = false>
-    static inline T_simd _load(const T_data* __restrict source) {
+    static STALKER_FORCE_INLINE T_simd _load(const T_data* STALKER_RESTRICT source) {
         if constexpr (IsAligned)
             return _mm512_load_pd(source);
         else
@@ -44,24 +44,24 @@ private:
     }
 
     template <T_SIMDStore Policy>
-    static inline void _store(T_data* __restrict destination, const T_simd& source) {
+    static STALKER_FORCE_INLINE void _store(T_data* STALKER_RESTRICT destination, const T_simd& source) {
         if constexpr (Policy == T_SIMDStore::Cached)
             _mm512_store_pd(destination, source);
         else
             _mm512_stream_pd(destination, source);
     }
 
-    static inline void _setZeroRegister(T_simd* __restrict destination) {
+    static STALKER_FORCE_INLINE void _setZeroRegister(T_simd* STALKER_RESTRICT destination) {
         *destination = _mm512_setzero_pd();
     }
 
     template <size_t... Is>
-    static inline void _broadcast(T_simd* __restrict destination, const T_data& value, std::index_sequence<Is...>) {
+    static STALKER_FORCE_INLINE void _broadcast(T_simd* STALKER_RESTRICT destination, const T_data& value, std::index_sequence<Is...>) {
         ((destination[Is] = _mm512_set1_pd(value)), ...);
     }
 
     template <bool IsAligned, size_t... Is>
-    static inline bool _areEqual(const T_data* a, const T_data* b, std::index_sequence<Is...>) {
+    static STALKER_FORCE_INLINE bool _areEqual(const T_data* a, const T_data* b, std::index_sequence<Is...>) {
         bool result = true;
         ((result = result && _mm512_test_epi64_mask(
             _mm512_castpd_si512(_mm512_load_pd(a + _registerOffset<Is>())),
@@ -85,7 +85,7 @@ private:
     friend Base;
 
     template <bool IsAligned = false>
-    static inline T_simd _load(const T_data* __restrict source) {
+    static STALKER_FORCE_INLINE T_simd _load(const T_data* STALKER_RESTRICT source) {
         if constexpr (IsAligned)
             return _mm512_load_ps(source);
         else
@@ -93,24 +93,24 @@ private:
     }
 
     template <T_SIMDStore Policy>
-    static inline void _store(T_data* __restrict destination, const T_simd& source) {
+    static STALKER_FORCE_INLINE void _store(T_data* STALKER_RESTRICT destination, const T_simd& source) {
         if constexpr (Policy == T_SIMDStore::Cached)
             _mm512_store_ps(destination, source);
         else
             _mm512_stream_ps(destination, source);
     }
 
-    static inline void _setZeroRegister(T_simd* __restrict destination) {
+    static STALKER_FORCE_INLINE void _setZeroRegister(T_simd* STALKER_RESTRICT destination) {
         *destination = _mm512_setzero_ps();
     }
 
     template <size_t... Is>
-    static  inline void _broadcast(T_simd* __restrict destination, const T_data& value, std::index_sequence<Is...>) {
+    static  STALKER_FORCE_INLINE void _broadcast(T_simd* STALKER_RESTRICT destination, const T_data& value, std::index_sequence<Is...>) {
         ((destination[Is] = _mm512_set1_ps(value)), ...);
     }
 
     template <bool IsAligned, size_t... Is>
-    static inline bool _areEqual(const T_data* a, const T_data* b, std::index_sequence<Is...>) {
+    static STALKER_FORCE_INLINE bool _areEqual(const T_data* a, const T_data* b, std::index_sequence<Is...>) {
         bool result = true;
         ((result = result && _mm512_test_epi32_mask(
             _mm512_castps_si512(_mm512_load_ps(a + _registerOffset<Is>())),
@@ -134,7 +134,7 @@ private:
     friend Base;
 
     template <bool IsAligned = false>
-    static inline T_simd _load(const T_data* __restrict source) {
+    static STALKER_FORCE_INLINE T_simd _load(const T_data* STALKER_RESTRICT source) {
         if constexpr (IsAligned)
             return _mm512_load_si512(reinterpret_cast<const __m512i*>(source));
         else
@@ -142,24 +142,24 @@ private:
     }
 
     template <T_SIMDStore Policy>
-    static inline void _store(T_data* __restrict destination, const T_simd& source) {
+    static STALKER_FORCE_INLINE void _store(T_data* STALKER_RESTRICT destination, const T_simd& source) {
         if constexpr (Policy == T_SIMDStore::Cached)
             _mm512_store_si512(reinterpret_cast<__m512i*>(destination), source);
         else
             _mm512_stream_si512(reinterpret_cast<__m512i*>(destination), source);
     }
 
-    static inline void _setZeroRegister(T_simd* __restrict destination) {
+    static STALKER_FORCE_INLINE void _setZeroRegister(T_simd* STALKER_RESTRICT destination) {
         *destination = _mm512_setzero_si512();
     }
 
     template <size_t... Is>
-    static inline void _broadcast(T_simd* __restrict destination, const T_data& value, std::index_sequence<Is...>) {
+    static STALKER_FORCE_INLINE void _broadcast(T_simd* STALKER_RESTRICT destination, const T_data& value, std::index_sequence<Is...>) {
         ((destination[Is] = _mm512_set1_epi32(value)), ...);
     }
 
     template <bool IsAligned, size_t... Is>
-    static inline bool _areEqual(const T_data*  a, const T_data* b, std::index_sequence<Is...>) {
+    static STALKER_FORCE_INLINE bool _areEqual(const T_data*  a, const T_data* b, std::index_sequence<Is...>) {
         bool result = true;
         ((result = result &&
             _mm512_test_epi32_mask(
@@ -185,7 +185,7 @@ private:
     friend Base;
 
     template <bool IsAligned = false>
-    static inline T_simd _load(const T_data* __restrict source) {
+    static STALKER_FORCE_INLINE T_simd _load(const T_data* STALKER_RESTRICT source) {
         if constexpr (IsAligned)
             return _mm512_load_si512(reinterpret_cast<const __m512i*>(source));
         else
@@ -193,25 +193,25 @@ private:
     }
 
     template <T_SIMDStore Policy>
-    static inline void _store(T_data* __restrict destination, const T_simd& source) {
+    static STALKER_FORCE_INLINE void _store(T_data* STALKER_RESTRICT destination, const T_simd& source) {
         if constexpr (Policy == T_SIMDStore::Cached)
             _mm512_store_si512(reinterpret_cast<__m512i*>(destination), source);
         else
             _mm512_stream_si512(reinterpret_cast<__m512i*>(destination), source);
     }
 
-    static inline void _setZeroRegister(T_simd* __restrict destination) {
+    static STALKER_FORCE_INLINE void _setZeroRegister(T_simd* STALKER_RESTRICT destination) {
         *destination = _mm512_setzero_si512();
     }
 
     template <size_t... Is>
-    static inline void _broadcast(T_simd* __restrict destination, const T_data& value, std::index_sequence<Is...>) {
+    static STALKER_FORCE_INLINE void _broadcast(T_simd* STALKER_RESTRICT destination, const T_data& value, std::index_sequence<Is...>) {
         ((destination[Is] = _mm512_set1_epi32(value)), ...);
     }
 
 
     template <bool IsAligned, size_t... Is>
-    static inline bool _areEqual(const T_data*  a, const T_data* b, std::index_sequence<Is...>) {
+    static STALKER_FORCE_INLINE bool _areEqual(const T_data*  a, const T_data* b, std::index_sequence<Is...>) {
         bool result = true;
         ((result = result &&
             _mm512_test_epi32_mask(
@@ -233,7 +233,7 @@ private:
     friend Base;
 
     template <bool IsAligned = false>
-    static inline T_simd _load(const T_data* __restrict source) {
+    static STALKER_FORCE_INLINE T_simd _load(const T_data* STALKER_RESTRICT source) {
         if constexpr (IsAligned)
             return _mm512_load_si512(reinterpret_cast<const __m512i*>(source));
         else
@@ -241,24 +241,24 @@ private:
     }
 
     template <T_SIMDStore Policy>
-    static inline void _store(T_data* __restrict destination, const T_simd& source) {
+    static STALKER_FORCE_INLINE void _store(T_data* STALKER_RESTRICT destination, const T_simd& source) {
         if constexpr (Policy == T_SIMDStore::Cached)
             _mm512_store_si512(reinterpret_cast<__m512i*>(destination), source);
         else
             _mm512_stream_si512(reinterpret_cast<__m512i*>(destination), source);
     }
 
-    static inline void _setZeroRegister(T_simd* __restrict destination) {
+    static STALKER_FORCE_INLINE void _setZeroRegister(T_simd* STALKER_RESTRICT destination) {
         *destination = _mm512_setzero_si512();
     }
 
     template <size_t... Is>
-    static inline void _broadcast(T_simd* __restrict destination, const T_data& value, std::index_sequence<Is...>) {
+    static STALKER_FORCE_INLINE void _broadcast(T_simd* STALKER_RESTRICT destination, const T_data& value, std::index_sequence<Is...>) {
         ((destination[Is] = _mm512_set1_epi16(value)), ...);
     }
 
     template <bool IsAligned, size_t... Is>
-    static inline bool _areEqual(const T_data*  a, const T_data* b, std::index_sequence<Is...>) {
+    static STALKER_FORCE_INLINE bool _areEqual(const T_data*  a, const T_data* b, std::index_sequence<Is...>) {
         bool result = true;
         ((result = result &&
             _mm512_test_epi16_mask(

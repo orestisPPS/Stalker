@@ -21,6 +21,7 @@
 
 namespace Stalker::Memory {
     
+    using namespace Stalker::Core::Config;
 
     struct Prefetcher{
 

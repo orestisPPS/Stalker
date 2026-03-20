@@ -236,6 +236,22 @@ foreach(sp IN LISTS STALKER_BENCH_STORE_POLICIES)
   endif()
 endforeach()
 
+# ----- ILP Policies -----
+if(NOT DEFINED STALKER_BENCH_ILP_POLICIES OR STALKER_BENCH_ILP_POLICIES STREQUAL "")
+  set(STALKER_BENCH_ILP_POLICIES "interleaved") # Default
+endif()
+
+set(_bench_ilp_policies_macro "")
+foreach(ip IN LISTS STALKER_BENCH_ILP_POLICIES)
+  if(ip STREQUAL "interleaved")
+    set(_bench_ilp_policies_macro "${_bench_ilp_policies_macro} X(Stalker::Core::Config::T_ILPPolicy::Interleaved)")
+  elseif(ip STREQUAL "grouped")
+    set(_bench_ilp_policies_macro "${_bench_ilp_policies_macro} X(Stalker::Core::Config::T_ILPPolicy::Grouped)")
+  else()
+    message(FATAL_ERROR "Unknown ILP policy: '${ip}'. Supported: 'interleaved', 'grouped'")
+  endif()
+endforeach()
+
 # ----- iterations -----
 if(NOT DEFINED STALKER_BENCH_ITERATIONS OR STALKER_BENCH_ITERATIONS STREQUAL "")
   message(FATAL_ERROR "STALKER_BENCH_ITERATIONS must be set (e.g. -DSTALKER_BENCH_ITERATIONS=10)")

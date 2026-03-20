@@ -9,6 +9,8 @@
     "size_region_vector"      : "[min, max] range for automatic logarithmic size sampling (Vector).",
     "size_region_matrix"      : "[min, max] range for matrix dimension sampling (Matrix).",
     "unroll_factors"          : "Template unroll factors to compile. e.g. [1, 2, 4].",
+    "store_policies"          : "SIMD store policies to benchmark. e.g. ['stream', 'cache'].",
+    "ilp_policies"            : "SIMD ILP policies to benchmark. e.g. ['interleaved', 'grouped'].",
     "operations_vector"       : "Vector ops to bench. e.g. 'dot', 'axpy', 'scale', 'sum'.",
     "operations_matrix"       : "Matrix ops to bench. e.g. 'gemv'.",
     "operations_memory"       : "Memory ops to bench. e.g. 'copy', 'setValue'.",
@@ -32,6 +34,7 @@
 
   "unroll_factors"          : [1, 4],
   "store_policies"          : ["stream", "cache"],
+  "ilp_policies"            : ["interleaved", "grouped"],
 
   "operations_vector"       : ["axpy", "dot", "scale", "sum"],
   "operations_matrix"       : ["gemv"],

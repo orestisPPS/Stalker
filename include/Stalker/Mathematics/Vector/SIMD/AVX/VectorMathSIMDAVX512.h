@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include <Stalker/Core/Traits/TypeTraits/SIMD/TypeTraitsSIMDAVX512.h>
 #include <Stalker/Mathematics/Vector/SIMD/VectorMathSIMDBase.h>
 #include <Stalker/Memory/SIMD/MemoryOperationsSIMDAVX512.h>
 
@@ -26,78 +25,31 @@ namespace Stalker::Mathematics {
     struct VectorMathSIMD<double, T_SIMD::AVX512>
             : public VectorMathSIMDBase<double, T_SIMD::AVX512, VectorMathSIMD<double, T_SIMD::AVX512>> {
 
-        using Base = VectorMathSIMDBase<double, T_SIMD::AVX512, VectorMathSIMD<double, T_SIMD::AVX512>>;
-        using Traits = TypeTraitsSIMD<double, T_SIMD::AVX512>;
-        using T_simd = typename Traits::typeSIMD;
-        using T_data = typename Traits::typeData;
-        using Memory = MemoryOperationsSIMD<double, T_SIMD::AVX512>;
+        using T_simd = typename TypeTraitsSIMD<double, T_SIMD::AVX512>::typeSIMD;
+        using T_data = typename TypeTraitsSIMD<double, T_SIMD::AVX512>::typeData;
 
     private:
-        friend Base;
+        
+        friend VectorMathSIMDBase<double, T_SIMD::AVX512, VectorMathSIMD<double, T_SIMD::AVX512>>;
 
-        template <bool IsAligned, T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _add(const T_data* a, const T_data* b, T_data* result, std::index_sequence<Is...>,
-                                const T_simd* scalarA = nullptr, const T_simd* scalarB = nullptr) {
-            if constexpr (IsScaled)
-                (Memory::storeOffset<Is, Policy>(result, _mm512_fmadd_pd(Memory::loadOffset<Is, IsAligned>(a), *scalarA,
-                                                           _mm512_mul_pd(Memory::loadOffset<Is, IsAligned>(b), *scalarB))), ...);
-            else
-                (Memory::storeOffset<Is, Policy>(result, _mm512_add_pd(Memory::loadOffset<Is, IsAligned>(a), Memory::loadOffset<Is, IsAligned>(b))), ...);
+        STALKER_FORCE_INLINE static T_simd _add(const T_simd& a, const T_simd& b) {
+            return _mm512_add_pd(a, b);
         }
 
-        template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-        static inline void _axpy(const T_data* a, const T_data* b, T_data* result, std::index_sequence<Is...>, const T_simd* scalar = nullptr) {
-            (Memory::storeOffset<Is, Policy>(result, _mm512_fmadd_pd(Memory::loadOffset<Is, IsAligned>(a), *scalar, Memory::loadOffset<Is, IsAligned>(b))), ...);
+        STALKER_FORCE_INLINE static T_simd _subtract(const T_simd& a, const T_simd& b) {
+            return _mm512_sub_pd(a, b);
         }
 
-        template <bool IsAligned, T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _subtract(const T_data* a, const T_data* b, T_data* result, std::index_sequence<Is...>,
-                                     const T_simd* scalarA = nullptr, const T_simd* scalarB = nullptr) {
-            if constexpr (IsScaled)
-                (Memory::storeOffset<Is, Policy>(result, _mm512_fmadd_pd(Memory::loadOffset<Is, IsAligned>(a), *scalarA,
-                                                           _mm512_mul_pd(Memory::loadOffset<Is, IsAligned>(b), *scalarB))), ...);
-            else
-                (Memory::storeOffset<Is, Policy>(result, _mm512_sub_pd(Memory::loadOffset<Is, IsAligned>(a), Memory::loadOffset<Is, IsAligned>(b))), ...);
+        STALKER_FORCE_INLINE static T_simd _multiply(const T_simd& a, const T_simd& b) {
+            return _mm512_mul_pd(a, b);
         }
 
-        template <bool IsAligned, T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _multiply(const T_data* a, const T_data* b, T_data* result, std::index_sequence<Is...>,
-                                     const T_simd* scalarA = nullptr, const T_simd* scalarB = nullptr) {
-            if constexpr (IsScaled)
-                (Memory::storeOffset<Is, Policy>(result, _mm512_mul_pd(_mm512_mul_pd(Memory::loadOffset<Is, IsAligned>(a), *scalarA),
-                                                                       _mm512_mul_pd(Memory::loadOffset<Is, IsAligned>(b), *scalarB))), ...);
-            else
-                (Memory::storeOffset<Is, Policy>(result, _mm512_mul_pd(Memory::loadOffset<Is, IsAligned>(a), Memory::loadOffset<Is, IsAligned>(b))), ...);
+        STALKER_FORCE_INLINE static T_simd _axpy(const T_simd& a, const T_simd& b, const T_simd& scalar) {
+            return _mm512_fmadd_pd(a, scalar, b);
         }
 
-        template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-        static inline void _scale(const T_data* data, T_data* result, const T_simd* scalar, std::index_sequence<Is...>) {
-            (Memory::storeOffset<Is, Policy>(result, _mm512_mul_pd(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-        }
-
-        template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-        static inline void _scale(__restrict T_data* data, const T_simd* scalar, std::index_sequence<Is...>) {
-            (Memory::storeOffset<Is, Policy>(data, _mm512_mul_pd(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-        }
-
-        template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-        static inline void _addConstant(const T_data* data, T_data* result, const T_simd* scalar, std::index_sequence<Is...>) {
-            (Memory::storeOffset<Is, Policy>(result, _mm512_add_pd(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-        }
-
-        template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-        static inline void _addConstant(__restrict T_data* data, const T_simd* scalar, std::index_sequence<Is...>) {
-            (Memory::storeOffset<Is, Policy>(data, _mm512_add_pd(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-        }
-
-        template <bool IsAligned, size_t... Is>
-        static inline void _sum(const T_data* __restrict data, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-            ((accumulators[Is] = _mm512_add_pd(accumulators[Is], Memory::loadOffset<Is, IsAligned>(data))), ...);
-        }
-
-        template <bool IsAligned, size_t... Is>
-        static inline void _dot(const T_data __restrict* a, const T_data __restrict* b, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-            ((accumulators[Is] = _mm512_fmadd_pd(Memory::loadOffset<Is, IsAligned>(a), Memory::loadOffset<Is, IsAligned>(b), accumulators[Is])), ...);
+        STALKER_FORCE_INLINE static T_simd _axmy(const T_simd& a, const T_simd& b, const T_simd& scalar) {
+            return _mm512_fmsub_pd(a, scalar, b);
         }
     };
 
@@ -105,78 +57,30 @@ namespace Stalker::Mathematics {
     struct VectorMathSIMD<float, T_SIMD::AVX512>
             : public VectorMathSIMDBase<float, T_SIMD::AVX512, VectorMathSIMD<float, T_SIMD::AVX512>> {
 
-        using Base = VectorMathSIMDBase<float, T_SIMD::AVX512, VectorMathSIMD<float, T_SIMD::AVX512>>;
-        using Traits = TypeTraitsSIMD<float, T_SIMD::AVX512>;
-        using T_simd = typename Traits::typeSIMD;
-        using T_data = typename Traits::typeData;
-        using Memory = MemoryOperationsSIMD<float, T_SIMD::AVX512>;
+        using T_simd = typename TypeTraitsSIMD<float, T_SIMD::AVX512>::typeSIMD;
+        using T_data = typename TypeTraitsSIMD<float, T_SIMD::AVX512>::typeData;
 
     private:
-        friend Base;
+        friend VectorMathSIMDBase<float, T_SIMD::AVX512, VectorMathSIMD<float, T_SIMD::AVX512>>;
 
-        template <bool IsAligned, T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _add(const T_data* a, const T_data* b, T_data* result, std::index_sequence<Is...>,
-                                const T_simd* scalarA = nullptr, const T_simd* scalarB = nullptr) {
-            if constexpr (IsScaled)
-                (Memory::storeOffset<Is, Policy>(result, _mm512_fmadd_ps(Memory::loadOffset<Is, IsAligned>(a), *scalarA,
-                                                           _mm512_mul_ps(Memory::loadOffset<Is, IsAligned>(b), *scalarB))), ...);
-            else
-                (Memory::storeOffset<Is, Policy>(result, _mm512_add_ps(Memory::loadOffset<Is, IsAligned>(a), Memory::loadOffset<Is, IsAligned>(b))), ...);
+        STALKER_FORCE_INLINE static T_simd _add(const T_simd& a, const T_simd& b) {
+            return _mm512_add_ps(a, b);
         }
 
-        template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-        static inline void _axpy(const T_data* a, const T_data* b, T_data* result, std::index_sequence<Is...>, const T_simd* scalar = nullptr) {
-            (Memory::storeOffset<Is, Policy>(result, _mm512_fmadd_ps(Memory::loadOffset<Is, IsAligned>(a), *scalar, Memory::loadOffset<Is, IsAligned>(b))), ...);
+        STALKER_FORCE_INLINE static T_simd _subtract(const T_simd& a, const T_simd& b) {
+            return _mm512_sub_ps(a, b);
         }
 
-        template <bool IsAligned, T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _subtract(const T_data* a, const T_data* b, T_data* result, std::index_sequence<Is...>,
-                                     const T_simd* scalarA = nullptr, const T_simd* scalarB = nullptr) {
-            if constexpr (IsScaled)
-                (Memory::storeOffset<Is, Policy>(result, _mm512_fmadd_ps(Memory::loadOffset<Is, IsAligned>(a), *scalarA,
-                                                           _mm512_mul_ps(Memory::loadOffset<Is, IsAligned>(b), *scalarB))), ...);
-            else
-                (Memory::storeOffset<Is, Policy>(result, _mm512_sub_ps(Memory::loadOffset<Is, IsAligned>(a),  Memory::loadOffset<Is, IsAligned>(b))), ...);
+        STALKER_FORCE_INLINE static T_simd _multiply(const T_simd& a, const T_simd& b) {
+            return _mm512_mul_ps(a, b);
         }
 
-        template <bool IsAligned, T_SIMDStore Policy, bool IsScaled, size_t... Is>
-        static inline void _multiply(const T_data* a, const T_data* b, T_data* result, std::index_sequence<Is...>,
-                                     const T_simd* scalarA = nullptr, const T_simd* scalarB = nullptr) {
-            if constexpr (IsScaled)
-                (Memory::storeOffset<Is, Policy>(result, _mm512_mul_ps(_mm512_mul_ps(Memory::loadOffset<Is, IsAligned>(a), *scalarA),
-                                                                       _mm512_mul_ps(Memory::loadOffset<Is, IsAligned>(b), *scalarB))), ...);
-            else
-                (Memory::storeOffset<Is, Policy>(result, _mm512_mul_ps(Memory::loadOffset<Is, IsAligned>(a), Memory::loadOffset<Is, IsAligned>(b))), ...);
+        STALKER_FORCE_INLINE static T_simd _axpy(const T_simd& a, const T_simd& b, const T_simd& scalar) {
+            return _mm512_fmadd_ps(a, scalar, b);
         }
 
-        template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-        static inline void _scale(const T_data* data, T_data* result, const T_simd* scalar, std::index_sequence<Is...>) {
-            (Memory::storeOffset<Is, Policy>(result, _mm512_mul_ps(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-        }
-
-        template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-        static inline void _scale(__restrict T_data* data, const T_simd* scalar, std::index_sequence<Is...>) {
-            (Memory::storeOffset<Is, Policy>(data, _mm512_mul_ps(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-        }
-
-        template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-        static inline void _addConstant(const T_data* data, T_data* result, const T_simd* scalar, std::index_sequence<Is...>) {
-            (Memory::storeOffset<Is, Policy>(result, _mm512_add_ps(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-        }
-
-        template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-        static inline void _addConstant(__restrict T_data* data, const T_simd* scalar, std::index_sequence<Is...>) {
-            (Memory::storeOffset<Is, Policy>(data, _mm512_add_ps(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-        }
-
-        template <bool IsAligned, size_t... Is>
-        static inline void _sum(const T_data* __restrict data, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-            ((accumulators[Is] = _mm512_add_ps(accumulators[Is], Memory::loadOffset<Is, IsAligned>(data))), ...);
-        }
-
-        template <bool IsAligned, size_t... Is>
-        static inline void _dot(const T_data __restrict* a, const T_data __restrict* b, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-            ((accumulators[Is] = _mm512_fmadd_ps(Memory::loadOffset<Is, IsAligned>(a), Memory::loadOffset<Is, IsAligned>(b), accumulators[Is])), ...);
+        STALKER_FORCE_INLINE static T_simd _axmy(const T_simd& a, const T_simd& b, const T_simd& scalar) {
+            return _mm512_fmsub_ps(a, scalar, b);
         }
     };
 
@@ -184,81 +88,31 @@ template<>
 struct VectorMathSIMD<int, T_SIMD::AVX512>
         : public VectorMathSIMDBase<int, T_SIMD::AVX512, VectorMathSIMD<int, T_SIMD::AVX512>> {
     
-    using Base = VectorMathSIMDBase<int, T_SIMD::AVX512, VectorMathSIMD<int, T_SIMD::AVX512>>;
-    using Traits = TypeTraitsSIMD<int, T_SIMD::AVX512>;
-    using T_simd = typename Traits::typeSIMD;
-    using T_data = typename Traits::typeData;
-    using Memory = MemoryOperationsSIMD<int, T_SIMD::AVX512>;
+        using T_simd = typename TypeTraitsSIMD<int, T_SIMD::AVX512>::typeSIMD;
+        using T_data = typename TypeTraitsSIMD<int, T_SIMD::AVX512>::typeData;
 
 private:
     
-    friend Base;
+    friend VectorMathSIMDBase<int, T_SIMD::AVX512, VectorMathSIMD<int, T_SIMD::AVX512>>;
 
-    template<bool IsAligned, T_SIMDStore Policy, bool IsScaled, size_t... Is>
-    static inline void _add(const T_data* a, const T_data* b, T_data* result, std::index_sequence<Is...>, const T_simd* scalarA = nullptr, const T_simd* scalarB = nullptr) {
-        if constexpr (IsScaled) {
-            (Memory::storeOffset<Is, Policy>(result, _mm512_add_epi32(_mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(a), *scalarA),
-                                                                      _mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(b), *scalarB))), ...);
-        }
-        else {
-            (Memory::storeOffset<Is, Policy>(result, _mm512_add_epi32(Memory::loadOffset<Is, IsAligned>(a), Memory::loadOffset<Is, IsAligned>(b))), ...);
-        }
+    STALKER_FORCE_INLINE static T_simd _add(const T_simd& a, const T_simd& b) {
+        return _mm512_add_epi32(a, b);
     }
 
-    template<bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _axpy(const T_data* a, const T_data* b, T_data* result, std::index_sequence<Is...>, const T_simd* scalar = nullptr) {
-        (Memory::storeOffset<Is, Policy>(result, _mm512_add_epi32(_mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(a), *scalar),
-                            Memory::loadOffset<Is, IsAligned>(b))), ...);
+    STALKER_FORCE_INLINE static T_simd _subtract(const T_simd& a, const T_simd& b) {
+        return _mm512_sub_epi32(a, b);
     }
 
-    template<bool IsAligned, T_SIMDStore Policy, bool IsScaled, size_t... Is>
-    static inline void _subtract(const T_data* a, const T_data* b, T_data* result, std::index_sequence<Is...>, const T_simd* scalarA = nullptr, const T_simd* scalarB = nullptr) {
-        if constexpr (IsScaled)
-            (Memory::storeOffset<Is, Policy>(result, _mm512_sub_epi32(_mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(a), *scalarA),
-                                                                      _mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(b), *scalarB))), ...);
-        else
-            (Memory::storeOffset<Is, Policy>(result, _mm512_sub_epi32(Memory::loadOffset<Is, IsAligned>(a), Memory::loadOffset<Is, IsAligned>(b))), ...);
+    STALKER_FORCE_INLINE static T_simd _multiply(const T_simd& a, const T_simd& b) {
+        return _mm512_mullo_epi32(a, b);
     }
 
-    template<bool IsAligned, T_SIMDStore Policy, bool IsScaled, size_t... Is>
-    static inline void _multiply(const T_data* a, const T_data* b, T_data* result, std::index_sequence<Is...>, const T_simd* scalarA = nullptr, const T_simd* scalarB = nullptr) {
-        if constexpr (IsScaled)
-            (Memory::storeOffset<Is, Policy>(
-                result, _mm512_mullo_epi32(_mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(a), *scalarA),
-                                           _mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(b), *scalarB))), ...);
-        else
-            (Memory::storeOffset<Is, Policy>(result, _mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(a), Memory::loadOffset<Is, IsAligned>(b))), ...);
+    STALKER_FORCE_INLINE static T_simd _axpy(const T_simd& a, const T_simd& b, const T_simd& scalar) {
+        return _mm512_add_epi32(_mm512_mullo_epi32(a, scalar), b);
     }
 
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _scale(const T_data *data, T_data *result, const T_simd *scalar, std::index_sequence<Is...>) {
-        (Memory::storeOffset<Is, Policy>(result, _mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-    }
-    
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _scale(__restrict T_data *data, const T_simd *scalar, std::index_sequence<Is...>) {
-        (Memory::storeOffset<Is, Policy>(data, _mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-    }
-
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _addConstant(const T_data *data, T_data *result, const T_simd *scalar, std::index_sequence<Is...>) {
-        (Memory::storeOffset<Is, Policy>(result, _mm512_add_epi32(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-    }
-
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _addConstant(__restrict T_data *data, const T_simd *scalar, std::index_sequence<Is...>) {
-        (Memory::storeOffset<Is, Policy>(data, _mm512_add_epi32(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-    }
-
-    template <bool IsAligned, size_t... Is>
-    static inline void _sum(const T_data* __restrict data, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-        ((accumulators[Is] = _mm512_add_epi32(accumulators[Is], Memory::loadOffset<Is, IsAligned>(data))), ...);
-    }
-    
-    template <bool IsAligned, size_t... Is>
-    static inline void _dot(const T_data __restrict *a, const T_data __restrict *b, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-        ((accumulators[Is] = _mm512_add_epi32(accumulators[Is],_mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(a),
-                                                                                  Memory::loadOffset<Is, IsAligned>(b)))), ...);
+    STALKER_FORCE_INLINE static T_simd _axmy(const T_simd& a, const T_simd& b, const T_simd& scalar) {
+        return _mm512_sub_epi32(_mm512_mullo_epi32(a, scalar), b);
     }
 };
 
@@ -266,82 +120,33 @@ template<>
 struct VectorMathSIMD<unsigned int, T_SIMD::AVX512>
         : public VectorMathSIMDBase<unsigned int, T_SIMD::AVX512, VectorMathSIMD<unsigned int, T_SIMD::AVX512>> {
     
-    using Base = VectorMathSIMDBase<unsigned int, T_SIMD::AVX512, VectorMathSIMD<unsigned int, T_SIMD::AVX512>>;
-    using Traits = TypeTraitsSIMD<unsigned int, T_SIMD::AVX512>;
-    using T_simd = typename Traits::typeSIMD;
-    using T_data = typename Traits::typeData;
-    using Memory = MemoryOperationsSIMD<unsigned int, T_SIMD::AVX512>;
+        using T_simd = typename TypeTraitsSIMD<unsigned int, T_SIMD::AVX512>::typeSIMD;
+        using T_data = typename TypeTraitsSIMD<unsigned int, T_SIMD::AVX512>::typeData;
 
 private:
 
-    friend Base;
+    friend VectorMathSIMDBase<unsigned int, T_SIMD::AVX512, VectorMathSIMD<unsigned int, T_SIMD::AVX512>>;
 
-    template <bool IsAligned, T_SIMDStore Policy, bool IsScaled, size_t... Is>
-    static inline void _add(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>,
-                            const T_simd *scalarA = nullptr, const T_simd *scalarB = nullptr){
-        if constexpr (IsScaled)
-            (Memory::storeOffset<Is, Policy>(result, _mm512_add_epi32(_mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(a), *scalarA),
-                                                                      _mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(b), *scalarB))), ...);
-        else
-            (Memory::storeOffset<Is, Policy>(result, _mm512_add_epi32(Memory::loadOffset<Is, IsAligned>(a), Memory::loadOffset<Is, IsAligned>(b))), ...);
+    STALKER_FORCE_INLINE static T_simd _add(const T_simd& a, const T_simd& b) {
+        return _mm512_add_epi32(a, b);
     }
 
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _axpy(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>, const T_simd *scalar = nullptr) {
-        (Memory::storeOffset<Is, Policy>(result, _mm512_add_epi32(_mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(a), *scalar),
-                                                                                     Memory::loadOffset<Is, IsAligned>(b))), ...);
+
+    STALKER_FORCE_INLINE static T_simd _subtract(const T_simd& a, const T_simd& b) {
+        return _mm512_sub_epi32(a, b);
     }
 
-    template <bool IsAligned, T_SIMDStore Policy, bool IsScaled, size_t... Is>
-    static inline void _subtract(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>,
-                        const T_simd *scalarA = nullptr, const T_simd *scalarB = nullptr){
-        if constexpr (IsScaled)
-            (Memory::storeOffset<Is, Policy>(result, _mm512_sub_epi32(_mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(a), *scalarA),
-                                                                      _mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(b), *scalarB))), ...);
-        else
-            (Memory::storeOffset<Is, Policy>(result, _mm512_sub_epi32(Memory::loadOffset<Is, IsAligned>(a), Memory::loadOffset<Is, IsAligned>(b))), ...);
+
+    STALKER_FORCE_INLINE static T_simd _multiply(const T_simd& a, const T_simd& b) {
+        return _mm512_mullo_epi32(a, b);
     }
 
-    template <bool IsAligned, T_SIMDStore Policy, bool IsScaled, size_t... Is>
-    static inline void _multiply(const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>,
-                                    const T_simd *scalarA = nullptr, const T_simd *scalarB = nullptr)
-    {
-        if constexpr (IsScaled)
-            (Memory::storeOffset<Is, Policy>(result, _mm512_mullo_epi32(_mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(a), *scalarA),
-                                                                                      _mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(b), *scalarB))),...);
-        else
-            (Memory::storeOffset<Is, Policy>(result, _mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(a), Memory::loadOffset<Is, IsAligned>(b))),...);
+    STALKER_FORCE_INLINE static T_simd _axpy(const T_simd& a, const T_simd& b, const T_simd& scalar) {
+        return _mm512_add_epi32(_mm512_mullo_epi32(a, scalar), b);
     }
 
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _scale(const T_data *data, T_data *result, const T_simd *scalar, std::index_sequence<Is...>) {
-        (Memory::storeOffset<Is, Policy>(result, _mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-    }
-
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _scale(__restrict T_data *data, const T_simd *scalar, std::index_sequence<Is...>) {
-        (Memory::storeOffset<Is, Policy>(data, _mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-    }
-
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _addConstant(const T_data *data, T_data *result, const T_simd *scalar, std::index_sequence<Is...>) {
-        (Memory::storeOffset<Is, Policy>(result, _mm512_add_epi32(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-    }
-
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _addConstant(__restrict T_data *data, const T_simd *scalar, std::index_sequence<Is...>) {
-        (Memory::storeOffset<Is, Policy>(data, _mm512_add_epi32(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-    }
-
-    template <bool IsAligned, size_t... Is>
-    static inline void _sum(const T_data* __restrict data, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-        ((accumulators[Is] = _mm512_add_epi32(accumulators[Is], Memory::loadOffset<Is, IsAligned>(data))), ...);
-    }
-
-    template <bool IsAligned, size_t... Is>
-    static inline void _dot(const T_data __restrict *a, const T_data __restrict *b, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-        ((accumulators[Is] = _mm512_add_epi32(accumulators[Is],_mm512_mullo_epi32(Memory::loadOffset<Is, IsAligned>(a),
-                                                                                  Memory::loadOffset<Is, IsAligned>(b)))), ...);
+    STALKER_FORCE_INLINE static T_simd _axmy(const T_simd& a, const T_simd& b, const T_simd& scalar) {
+        return _mm512_sub_epi32(_mm512_mullo_epi32(a, scalar), b);
     }
 };
 
@@ -349,81 +154,32 @@ template<>
 struct VectorMathSIMD<short, T_SIMD::AVX512>
         : public VectorMathSIMDBase<short, T_SIMD::AVX512, VectorMathSIMD<short, T_SIMD::AVX512>> {
     
-    using Base = VectorMathSIMDBase<short, T_SIMD::AVX512, VectorMathSIMD<short, T_SIMD::AVX512>>;
-    using Traits = TypeTraitsSIMD<short, T_SIMD::AVX512>;
-    using T_simd = typename Traits::typeSIMD;
-    using T_data = typename Traits::typeData;
-    using Memory = MemoryOperationsSIMD<short, T_SIMD::AVX512>;
+        using T_simd = typename TypeTraitsSIMD<short, T_SIMD::AVX512>::typeSIMD;
+        using T_data = typename TypeTraitsSIMD<short, T_SIMD::AVX512>::typeData;
 
 private:
     
-    friend Base;
+    friend VectorMathSIMDBase<short, T_SIMD::AVX512, VectorMathSIMD<short, T_SIMD::AVX512>>;
 
-    template<bool IsAligned, T_SIMDStore Policy, bool IsScaled, size_t... Is>
-    static inline void _add(const T_data* a, const T_data* b, T_data* result, std::index_sequence<Is...>, const T_simd* scalarA = nullptr, const T_simd* scalarB = nullptr) {
-        if constexpr (IsScaled)
-            (Memory::storeOffset<Is, Policy>(result,_mm512_add_epi16(_mm512_mullo_epi16(Memory::loadOffset<Is, IsAligned>(a), *scalarA),
-                                                                     _mm512_mullo_epi16(Memory::loadOffset<Is, IsAligned>(b), *scalarB))), ...);
-        else
-            (Memory::storeOffset<Is, Policy>(result, _mm512_add_epi16(Memory::loadOffset<Is, IsAligned>(a),
-                                                            Memory::loadOffset<Is, IsAligned>(b))), ...);
+    STALKER_FORCE_INLINE static T_simd _add(const T_simd& a, const T_simd& b) {
+        return _mm512_add_epi16(a, b);
     }
 
-    template<bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _axpy(const T_data* a, const T_data* b, T_data* result, std::index_sequence<Is...>, const T_simd* scalar = nullptr) {
-        (Memory::storeOffset<Is, Policy>(result, _mm512_add_epi16(_mm512_mullo_epi16(Memory::loadOffset<Is, IsAligned>(a), *scalar), 
-                                                                                     Memory::loadOffset<Is, IsAligned>(b))), ...);
+    STALKER_FORCE_INLINE static T_simd _subtract(const T_simd& a, const T_simd& b) {
+        return _mm512_sub_epi16(a, b);
     }
 
-    template<bool IsAligned, T_SIMDStore Policy, bool IsScaled, size_t... Is>
-    static inline void _subtract(const T_data* a, const T_data* b, T_data* result, std::index_sequence<Is...>, const T_simd* scalarA = nullptr, const T_simd* scalarB = nullptr) {
-        if constexpr (IsScaled)
-            (Memory::storeOffset<Is, Policy>(result, _mm512_sub_epi16(_mm512_mullo_epi16(Memory::loadOffset<Is, IsAligned>(a), *scalarA),
-                                                                      _mm512_mullo_epi16(Memory::loadOffset<Is, IsAligned>(b), *scalarB))), ...);
-        else
-            (Memory::storeOffset<Is, Policy>(result, _mm512_sub_epi16(Memory::loadOffset<Is, IsAligned>(a),
-                                                            Memory::loadOffset<Is, IsAligned>(b))), ...);
+
+    STALKER_FORCE_INLINE static T_simd _multiply(const T_simd& a, const T_simd& b) {
+        return _mm512_mullo_epi16(a, b);
     }
 
-    template<bool IsAligned, T_SIMDStore Policy, bool IsScaled, size_t... Is>
-    static inline void _multiply(const T_data* a, const T_data* b, T_data* result, std::index_sequence<Is...>, const T_simd* scalarA = nullptr, const T_simd* scalarB = nullptr) {
-        if constexpr (IsScaled)
-            (Memory::storeOffset<Is, Policy>(
-                result, _mm512_mullo_epi16(_mm512_mullo_epi16(Memory::loadOffset<Is, IsAligned>(a), *scalarA),
-                                           _mm512_mullo_epi16(Memory::loadOffset<Is, IsAligned>(b), *scalarB))), ...);
-        else
-            (Memory::storeOffset<Is, Policy>(result, _mm512_mullo_epi16(Memory::loadOffset<Is, IsAligned>(a), Memory::loadOffset<Is, IsAligned>(b))), ...);
+    STALKER_FORCE_INLINE static T_simd _axpy(const T_simd& a, const T_simd& b, const T_simd& scalar) {
+        return _mm512_add_epi16(_mm512_mullo_epi16(a, scalar), b);
     }
 
-    template <bool IsAligned, T_SIMDStore Policy, bool IsScaled, size_t... Is>
-    static inline void _scale(const T_data *data, T_data *result, const T_simd *scalar, std::index_sequence<Is...>) {
-        (Memory::storeOffset<Is, Policy>(result, _mm512_mullo_epi16(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-    }
-
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _scale(__restrict T_data *data, const T_simd *scalar, std::index_sequence<Is...>) {
-        (Memory::storeOffset<Is, Policy>(data, _mm512_mullo_epi16(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-    }
-
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _addConstant(const T_data *data, T_data *result, const T_simd *scalar, std::index_sequence<Is...>) {
-        (Memory::storeOffset<Is, Policy>(result, _mm512_add_epi16(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-    }
-
-    template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-    static inline void _addConstant(__restrict T_data *data, const T_simd *scalar, std::index_sequence<Is...>) {
-        (Memory::storeOffset<Is, Policy>(data, _mm512_add_epi16(Memory::loadOffset<Is, IsAligned>(data), *scalar)), ...);
-    }
-
-    template <bool IsAligned, size_t... Is>
-    static inline void _sum(const T_data* __restrict data, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-        ((accumulators[Is] = _mm512_add_epi16(accumulators[Is], Memory::loadOffset<Is, IsAligned>(data))), ...);
-    }
-
-    template <bool IsAligned, size_t... Is>
-    static inline void _dot(const T_data __restrict *a, const T_data __restrict *b, T_simd* __restrict accumulators, std::index_sequence<Is...>) {
-        ((accumulators[Is] = _mm512_add_epi16(accumulators[Is],_mm512_mullo_epi16(Memory::loadOffset<Is, IsAligned>(a),
-                                                                                  Memory::loadOffset<Is, IsAligned>(b)))), ...);
+    STALKER_FORCE_INLINE static T_simd _axmy(const T_simd& a, const T_simd& b, const T_simd& scalar) {
+        return _mm512_sub_epi16(_mm512_mullo_epi16(a, scalar), b);
     }
 };
 

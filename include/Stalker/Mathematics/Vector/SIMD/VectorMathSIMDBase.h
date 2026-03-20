@@ -20,8 +20,7 @@
 
 #pragma once
 
-#include <utility>
-#include <array>
+#include <cmath>
 #include <Stalker/Memory/SIMD/MemoryOperationsSIMDBase.h>
 
 namespace Stalker::Mathematics {
@@ -42,195 +41,257 @@ public:
     static constexpr unsigned registerSize = TypeTraitsSIMD<T, Type>::RegisterSize();
     
     template<typename ExecTrait>
-    inline static void add(size_t size, const T_data *a, const T_data  *b, T_data *result, T_data scaleA, T_data scaleB) {
+    STALKER_FORCE_INLINE static void add(size_t size, const T_data *a, const T_data  *b, T_data *result, T_data scaleA, T_data scaleB) {
         constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
         auto limit = size - (size % blockSize);
         T_simd scalarSIMD1, scalarSIMD2;
         MemoryOps::broadcast(&scalarSIMD1, scaleA);
         MemoryOps::broadcast(&scalarSIMD2, scaleB);
+        auto kernel = [scalarSIMD1, scalarSIMD2](const T_simd &regA, const T_simd &regB) STALKER_FORCE_INLINE {
+            return Child::_axpy(regA, Child::_multiply(regB, scalarSIMD2), scalarSIMD1);
+        };
+
         for (size_t i = 0; i < limit; i += blockSize){
             if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
                 Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(a + i + blockSize);
                 Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(b + i + blockSize);
             }
-            Child::template _add<ExecTrait::IsAligned, ExecTrait::StorePolicy, true>(a + i, b + i, result + i, std::make_index_sequence<ExecTrait::Unroll>{}, &scalarSIMD1, &scalarSIMD2);
+            _unrollBinary<ExecTrait>(kernel, a + i, b + i, result + i, UnrollIndexSequence<ExecTrait::Unroll>{});
         }
         for (size_t i = limit; i < size; ++i)
             result[i] = a[i] * scaleA + b[i] * scaleB;
     }
 
     template<typename ExecTrait>
-    inline static void add(size_t size, const T_data *a, const T_data *b, T_data *result) {
+    STALKER_FORCE_INLINE static void add(size_t size, const T_data *a, const T_data *b, T_data *result) {
         constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
         auto limit = size - (size % blockSize);
+        auto kernel = [](const T_simd &regA, const T_simd &regB) STALKER_FORCE_INLINE {
+            return Child::_add(regA, regB);
+        };
+
         for (size_t i = 0; i < limit; i += blockSize) {
             if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
                 Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(a + i + blockSize);
                 Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(b + i + blockSize);
             }
-            Child::template _add<ExecTrait::IsAligned, ExecTrait::StorePolicy, false>(a + i, b + i, result + i, std::make_index_sequence<ExecTrait::Unroll>{});
+            _unrollBinary<ExecTrait>(kernel, a + i, b + i, result + i, UnrollIndexSequence<ExecTrait::Unroll>{});
         }
         for (size_t i = limit; i < size; ++i)
             result[i] = a[i] + b[i];
     }
 
+    STALKER_FORCE_INLINE static T_simd addRegister(const T_simd& a, const T_simd& b) {
+        return Child::_add(a, b);
+    }
+
     template<typename ExecTrait>
-    inline static void axpy(size_t size, const T_data *a, const T_data  *b, T_data *result, T_data scale) {
+    STALKER_FORCE_INLINE static void axpy(size_t size, const T_data *a, const T_data  *b, T_data *result, T_data scale) {
         constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
         auto limit = size - (size % blockSize);
-        T_simd scalarSIMD;
-        MemoryOps::broadcast(&scalarSIMD, scale);
-        for (size_t i = 0; i < limit; i += blockSize){
+        T_simd scalarReg;
+        MemoryOps::broadcast(&scalarReg, scale);
+        auto kernel = [scalarReg](const T_simd &regA, const T_simd &regB) STALKER_FORCE_INLINE {
+            return Child::_axpy(regA, regB, scalarReg);
+        };
+         for (size_t i = 0; i < limit; i += blockSize) {
             if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
                 Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(a + i + blockSize);
                 Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(b + i + blockSize);
             }
-            Child::template _axpy<ExecTrait::IsAligned, ExecTrait::StorePolicy>(a + i, b + i, result + i, std::make_index_sequence<ExecTrait::Unroll>{}, &scalarSIMD);
+            _unrollBinary<ExecTrait>(kernel, a + i, b + i, result + i, UnrollIndexSequence<ExecTrait::Unroll>{});
         }
         for (size_t i = limit; i < size; ++i)
             result[i] = a[i] * scale + b[i];
     }
 
+    STALKER_FORCE_INLINE static T_simd axpyRegister(const T_simd& a, const T_simd& b, const T_simd& scalar) {
+        return Child::_axpy(a, b, scalar);
+    }
+
     template<typename ExecTrait>
-    inline static void subtract(size_t size, const T_data *a, const T_data  *b, T_data *result, T_data scaleA, T_data scaleB) {
+    STALKER_FORCE_INLINE static void subtract(size_t size, const T_data *a, const T_data  *b, T_data *result, T_data scaleA, T_data scaleB) {
         constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
         auto limit = size - (size % blockSize);
         T_simd scalarSIMD1, scalarSIMD2;
         MemoryOps::broadcast(&scalarSIMD1, scaleA);
-        if constexpr (std::is_floating_point_v<T>)
-            MemoryOps::broadcast(&scalarSIMD2, -scaleB);
-        else
-            MemoryOps::broadcast(&scalarSIMD2, scaleB);
+        MemoryOps::broadcast(&scalarSIMD2, scaleB);
+        auto kernel = [scalarSIMD1, scalarSIMD2](const T_simd &regA, const T_simd &regB) STALKER_FORCE_INLINE {
+            return Child::_axmy(regA, Child::_multiply(regB, scalarSIMD2), scalarSIMD1);
+        };
         for (size_t i = 0; i < limit; i += blockSize) {
             if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
                 Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(a + i + blockSize);
                 Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(b + i + blockSize);
             }
-            Child::template _subtract<ExecTrait::IsAligned, ExecTrait::StorePolicy, true>(a + i, b + i, result + i, std::make_index_sequence<ExecTrait::Unroll>{}, &scalarSIMD1, &scalarSIMD2);
+            _unrollBinary<ExecTrait>(kernel, a + i, b + i, result + i, UnrollIndexSequence<ExecTrait::Unroll>{});
         }
         for (size_t i = limit; i < size; ++i)
             result[i] = a[i] * scaleA - b[i] * scaleB;
     }
 
     template<typename ExecTrait>
-    inline static void subtract(size_t size, const T_data *a, const T_data *b, T_data *result) {
+    STALKER_FORCE_INLINE static void subtract(size_t size, const T_data *a, const T_data *b, T_data *result) {
         constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
         auto limit = size - (size % blockSize);
-        for (size_t i = 0; i < limit; i += blockSize) {
+        auto kernel = [](const T_simd &regA, const T_simd &regB) STALKER_FORCE_INLINE {
+            return Child::_subtract(regA, regB);
+        };
+         for (size_t i = 0; i < limit; i += blockSize) {
             if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
                 Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(a + i + blockSize);
                 Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(b + i + blockSize);
             }
-            Child::template _subtract<ExecTrait::IsAligned, ExecTrait::StorePolicy, false>(a + i, b + i, result + i, std::make_index_sequence<ExecTrait::Unroll>{});
+            _unrollBinary<ExecTrait>(kernel, a + i, b + i, result + i, UnrollIndexSequence<ExecTrait::Unroll>{});
         }
         for (size_t i = limit; i < size; ++i)
             result[i] = a[i] - b[i];
     }
+    
+    STALKER_FORCE_INLINE static T_simd subtractRegister(const T_simd& a, const T_simd& b) {
+        return Child::_subtract(a, b);
+    }   
 
     template<typename ExecTrait>
-    inline static void multiply(size_t size, const T_data *a, const T_data  *b, T_data *result, T_data scaleA, T_data scaleB) {
+    STALKER_FORCE_INLINE static void multiply(size_t size, const T_data *a, const T_data  *b, T_data *result, T_data scaleA, T_data scaleB) {
         constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
         auto limit = size - (size % blockSize);
         T_simd scalarSIMD1, scalarSIMD2;
         MemoryOps::broadcast(&scalarSIMD1, scaleA);
         MemoryOps::broadcast(&scalarSIMD2, scaleB);
+        auto kernel = [scalarSIMD1, scalarSIMD2](const T_simd &regA, const T_simd &regB) STALKER_FORCE_INLINE {
+            return Child::_multiply(Child::_multiply(regA, scalarSIMD1), Child::_multiply(regB, scalarSIMD2));
+        };
         for (size_t i = 0; i < limit; i += blockSize) {
             if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
                 Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(a + i + blockSize);
                 Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(b + i + blockSize);
             }
-            Child::template _multiply<ExecTrait::IsAligned, ExecTrait::StorePolicy, true>(a + i, b + i, result + i, std::make_index_sequence<ExecTrait::Unroll>{}, &scalarSIMD1, &scalarSIMD2);
+            _unrollBinary<ExecTrait>(kernel, a + i, b + i, result + i, UnrollIndexSequence<ExecTrait::Unroll>{});
         }
         for (size_t i = limit; i < size; ++i)
-            result[i] = a[i] * scaleA * b[i] * scaleB;
+            result[i] = (a[i] * scaleA) * (b[i] * scaleB);
     }
 
     template<typename ExecTrait>
-    inline static void multiply(size_t size, const T_data *a, const T_data *b, T_data *result) {
+    STALKER_FORCE_INLINE static void multiply(size_t size, const T_data *a, const T_data *b, T_data *result) {
         constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
         auto limit = size - (size % blockSize);
-        for (size_t i = 0; i < limit; i += blockSize) {
+        auto kernel = [](const T_simd &regA, const T_simd &regB) STALKER_FORCE_INLINE {
+            return Child::_multiply(regA, regB);
+        };
+         for (size_t i = 0; i < limit; i += blockSize) {
             if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
                 Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(a + i + blockSize);
                 Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(b + i + blockSize);
             }
-            Child::template _multiply<ExecTrait::IsAligned, ExecTrait::StorePolicy, false>(a + i, b + i, result + i, std::make_index_sequence<ExecTrait::Unroll>{});
+            _unrollBinary<ExecTrait>(kernel, a + i, b + i, result + i, UnrollIndexSequence<ExecTrait::Unroll>{});
         }
         for (size_t i = limit; i < size; ++i)
             result[i] = a[i] * b[i];
     }
 
-    template<typename ExecTrait>
-    inline static void scale(size_t size, const T_data *data, T_data *result, T scalar){
+    STALKER_FORCE_INLINE static T_simd multiplyRegister(const T_simd& a, const T_simd& b) {
+        return Child::_multiply(a, b);
+    }
+
+    STALKER_FORCE_INLINE static T_simd axmyRegister(const T_simd& a, const T_simd& b, const T_simd& scalar) {
+        return Child::_axmy(a, b, scalar);
+    }
+
+    template<typename ExecTrait> 
+    STALKER_FORCE_INLINE static void scale(size_t size, const T_data * STALKER_RESTRICT data, T_data * STALKER_RESTRICT result, T scalar){
         constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
         auto limit = size - (size % blockSize);
-        T_simd scalarSIMD;
-        MemoryOps::broadcast(&scalarSIMD, scalar);
-        for (size_t i = 0; i < limit; i += blockSize) {
-            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone)
+        T_simd scalarReg;
+        MemoryOps::broadcast(&scalarReg, scalar);
+        auto kernel = [scalarReg](const T_simd &value) STALKER_FORCE_INLINE {
+            return Child::_multiply(value, scalarReg);
+        };
+         for (size_t i = 0; i < limit; i += blockSize) {
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone){
                 Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(data + i + blockSize);
-            Child::template _scale<ExecTrait::IsAligned, ExecTrait::StorePolicy>(data + i, result + i, &scalarSIMD, std::make_index_sequence<ExecTrait::Unroll>{});
+            }
+            _unrollUnary<ExecTrait>(kernel, data + i, result + i, UnrollIndexSequence<ExecTrait::Unroll>{});
         }
         for (size_t i = limit; i < size; ++i)
             result[i] = data[i] * scalar;
     }
 
     template<typename ExecTrait>
-    inline static void scale(size_t size, __restrict T_data *data, T scalar){
+    STALKER_FORCE_INLINE static void scale(size_t size, T_data * STALKER_RESTRICT data, T scalar){
         constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
         auto limit = size - (size % blockSize);
-        T_simd scalarSIMD;
-        MemoryOps::broadcast(&scalarSIMD, scalar);
-        for (size_t i = 0; i < limit; i += blockSize) {
-            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone)
+        T_simd scalarReg;
+        MemoryOps::broadcast(&scalarReg, scalar);
+        auto kernel = [scalarReg](const T_simd &value) STALKER_FORCE_INLINE {
+            return Child::_multiply(value, scalarReg);
+        };
+         for (size_t i = 0; i < limit; i += blockSize) {
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone){
                 Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(data + i + blockSize);
-            Child::template _scale<ExecTrait::IsAligned, ExecTrait::StorePolicy>(data + i, &scalarSIMD, std::make_index_sequence<ExecTrait::Unroll>{});
+            }
+            _unrollUnaryIntoThis<ExecTrait>(kernel, data + i, UnrollIndexSequence<ExecTrait::Unroll>{});
         }
         for (size_t i = limit; i < size; ++i)
             data[i] *= scalar;
     }
 
     template<typename ExecTrait>
-    inline static void addConstant(size_t size, const T_data *data, T_data *result, T constant) {
+    STALKER_FORCE_INLINE static void addConstant(size_t size, const T_data * STALKER_RESTRICT data, T_data * STALKER_RESTRICT result, T constant) {
         constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
         auto limit = size - (size % blockSize);
-        T_simd scalarSIMD;
-        MemoryOps::broadcast(&scalarSIMD, constant);
+        T_simd scalarReg;
+        MemoryOps::broadcast(&scalarReg, constant);
+        auto kernel = [scalarReg](const T_simd &value) STALKER_FORCE_INLINE {
+            return Child::_add(value, scalarReg);
+        };
         for (size_t i = 0; i < limit; i += blockSize) {
-            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone)
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone){
                 Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(data + i + blockSize);
-            Child::template _addConstant<ExecTrait::IsAligned, ExecTrait::StorePolicy>(data + i, result + i, &scalarSIMD, std::make_index_sequence<ExecTrait::Unroll>{});
+            }
+            _unrollUnary<ExecTrait>(kernel, data + i, result + i, UnrollIndexSequence<ExecTrait::Unroll>{});
         }
         for (size_t i = limit; i < size; ++i)
             result[i] = data[i] + constant;
     }
 
     template<typename ExecTrait>
-    inline static void addConstant(size_t size, __restrict T_data *data, T constant) {
+    STALKER_FORCE_INLINE static void addConstant(size_t size, T_data * STALKER_RESTRICT data, T constant) {
         constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
         auto limit = size - (size % blockSize);
-        T_simd scalarSIMD;
-        MemoryOps::broadcast(&scalarSIMD, constant);
+        T_simd scalarReg;
+        MemoryOps::broadcast(&scalarReg, constant);
+        auto kernel = [scalarReg](const T_simd &value) STALKER_FORCE_INLINE {
+            return Child::_add(value, scalarReg);
+        };
         for (size_t i = 0; i < limit; i += blockSize) {
-            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone)
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone){
                 Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(data + i + blockSize);
-            Child::template _addConstant<ExecTrait::IsAligned, ExecTrait::StorePolicy>(data + i, &scalarSIMD, std::make_index_sequence<ExecTrait::Unroll>{});
+            }
+            _unrollUnaryIntoThis<ExecTrait>(kernel, data + i, UnrollIndexSequence<ExecTrait::Unroll>{});
         }
         for (size_t i = limit; i < size; ++i)
             data[i] += constant;
     }
 
     template<typename ExecTrait>
-    inline static T_data sum(size_t size, const T* __restrict data) {
+    STALKER_FORCE_INLINE static T_data sum(size_t size, const T* STALKER_RESTRICT data) {
         constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
         auto limit = size - (size % blockSize);
         T_simd accumulators[ExecTrait::Unroll];
         for (auto& acc : accumulators) 
-            MemoryOps::setZeroRegister(&acc);
+            MemoryOps::zeroRegister(&acc);
+
+        auto kernel = [](T_simd &acc, const T_simd &value) STALKER_FORCE_INLINE {
+            acc = Child::_add(acc, value);
+        };
+
         for (size_t i = 0; i < limit; i += blockSize) {
-            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone)
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone){
                 Prefetcher::prefetch<T, ExecTrait::PrefetchHint, 1>(data + i + blockSize);
-            Child::template _sum<ExecTrait::IsAligned>(data + i, accumulators , std::make_index_sequence<ExecTrait::Unroll>{});
+            }
+            _unrollUnaryReduced<ExecTrait>(kernel, data + i, accumulators, UnrollIndexSequence<ExecTrait::Unroll>{});
         }
         T_data result = _registerSum(accumulators, ExecTrait::Unroll);
         for (size_t i = limit; i < size; ++i)
@@ -239,38 +300,133 @@ public:
     }
 
     template<typename ExecTrait>
-    inline static T_data dot(size_t size, const T* __restrict a, const T* __restrict b) {
+    STALKER_FORCE_INLINE static T_data dot(size_t size, const T* STALKER_RESTRICT a, const T* STALKER_RESTRICT b) {
         constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
         auto limit = size - (size % blockSize);
         T_simd accumulators[ExecTrait::Unroll];
         for (auto& acc : accumulators) 
-            MemoryOps::setZeroRegister(&acc);
+            MemoryOps::zeroRegister(&acc);
+        
+        auto kernel = [](T_simd &acc, const T_simd &regA, const T_simd &regB) STALKER_FORCE_INLINE {
+            acc = Child::_axpy(regA, acc, regB);
+        };
+
         for (size_t i = 0; i < limit; i += blockSize) {
             if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
                 Prefetcher::prefetch<T, ExecTrait::PrefetchHint, 1>(a + i + blockSize);
                 Prefetcher::prefetch<T, ExecTrait::PrefetchHint, 1>(b + i + blockSize);
             }
-            Child::template _dot<ExecTrait::IsAligned>(a + i, b + i, accumulators, std::make_index_sequence<ExecTrait::Unroll>{});
+            _unrollBinaryReduced<ExecTrait>(kernel, a + i, b + i, accumulators, UnrollIndexSequence<ExecTrait::Unroll>{});
         }
         T_data result = _registerSum(accumulators, ExecTrait::Unroll);
         for (size_t i = limit; i < size; ++i)
             result += a[i] * b[i];
         return result;
     }
+
+    template<typename ExecTrait>
+    STALKER_FORCE_INLINE static T_data sumOfSquares(size_t size, const T* STALKER_RESTRICT data) {
+        constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
+        auto limit = size - (size % blockSize);
+        T_simd accumulators[ExecTrait::Unroll];
+        for (auto& acc : accumulators) 
+            MemoryOps::zeroRegister(&acc);
+
+        auto kernel = [](T_simd &acc, const T_simd &value) STALKER_FORCE_INLINE {
+            acc = Child::_axpy(value, acc, value);
+        };
+
+        for (size_t i = 0; i < limit; i += blockSize) {
+            if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
+                Prefetcher::prefetch<T, ExecTrait::PrefetchHint, 1>(data + i + blockSize);
+            }
+            _unrollUnaryReduced<ExecTrait>(kernel, data + i, accumulators, UnrollIndexSequence<ExecTrait::Unroll>{});
+        }
+        T_data result = _registerSum(accumulators, ExecTrait::Unroll);
+        for (size_t i = limit; i < size; ++i)
+            result += data[i] * data[i];
+        return std::sqrt(result);
+    }
+
 protected:
     template <size_t Index>
-    static constexpr inline size_t _registerOffset() { return Index * Traits::RegisterSize(); }
+    static constexpr STALKER_FORCE_INLINE size_t _registerOffset() { return Index * Traits::RegisterSize(); }
 
 private:
-    inline static T _registerSum(const T_simd* __restrict data, size_t size) {
-        T_data result = 0;
-        for (unsigned i = 0; i < size; ++i) {
-            alignas(64) T_data temp[Traits::RegisterSize()];
-            MemoryOps::template store<T_SIMDStore::Cached>(temp, data[i]);
-            for (unsigned j = 0; j < Traits::RegisterSize(); ++j) {
-                result += temp[j];
-            }
+
+    template<typename Trait, typename KernelFn, size_t... Is>
+    constexpr STALKER_FORCE_INLINE static void _unrollBinary(KernelFn &&kernel, const T_data *a, const T_data *b, T_data *result, std::index_sequence<Is...>) {
+        if constexpr (Trait::ILPPolicy == T_ILPPolicy::Grouped) {
+            const T_simd loadedA[] = {MemoryOps::template loadOffset<Is, Trait::IsAligned>(a)...};
+            const T_simd loadedB[] = {MemoryOps::template loadOffset<Is, Trait::IsAligned>(b)...};
+            (MemoryOps::template storeOffset<Is, Trait::StorePolicy>(result, kernel(loadedA[Is], loadedB[Is])), ...);
         }
+        else if constexpr (Trait::ILPPolicy == T_ILPPolicy::Interleaved) {
+            (MemoryOps::template storeOffset<Is, Trait::StorePolicy>(result, kernel(MemoryOps::template loadOffset<Is, Trait::IsAligned>(a),
+                                                                                    MemoryOps::template loadOffset<Is, Trait::IsAligned>(b))), ...);
+        }
+    }
+
+    template<typename Trait, typename KernelFn, size_t... Is>
+    constexpr STALKER_FORCE_INLINE static void _unrollBinaryReduced(KernelFn &&kernel, const T_data *a, const T_data *b, T_simd *accumulators, std::index_sequence<Is...>) {
+        if constexpr (Trait::ILPPolicy == T_ILPPolicy::Grouped) {
+            const T_simd loadedA[] = {MemoryOps::template loadOffset<Is, Trait::IsAligned>(a)...};
+            const T_simd loadedB[] = {MemoryOps::template loadOffset<Is, Trait::IsAligned>(b)...};
+            (kernel(accumulators[Is], loadedA[Is], loadedB[Is]), ...);
+        }
+        else if constexpr (Trait::ILPPolicy == T_ILPPolicy::Interleaved) {
+            (kernel(accumulators[Is], MemoryOps::template loadOffset<Is, Trait::IsAligned>(a), MemoryOps::template loadOffset<Is, Trait::IsAligned>(b)), ...);
+        }
+    }
+
+    template<typename Trait, typename KernelFn, size_t... Is>
+    constexpr STALKER_FORCE_INLINE static void _unrollUnary(KernelFn &&kernel, const T_data *data, T_data *result, std::index_sequence<Is...>) {
+        if constexpr (Trait::ILPPolicy == T_ILPPolicy::Grouped) {
+            const T_simd loaded[] = {MemoryOps::template loadOffset<Is, Trait::IsAligned>(data)...};
+            const T_simd computed[] = {kernel(loaded[Is])...};
+            (MemoryOps::template storeOffset<Is, Trait::StorePolicy>(result, computed[Is]), ...);
+        }
+        else if constexpr (Trait::ILPPolicy == T_ILPPolicy::Interleaved) {
+            (MemoryOps::template storeOffset<Is, Trait::StorePolicy>(result, kernel(MemoryOps::template loadOffset<Is, Trait::IsAligned>(data))), ...);
+        }
+    }
+
+    template<typename Trait, typename KernelFn, size_t... Is>
+    constexpr STALKER_FORCE_INLINE static void _unrollUnaryIntoThis(KernelFn &&kernel, T_data STALKER_RESTRICT *data, std::index_sequence<Is...>) {
+        if constexpr (Trait::ILPPolicy == T_ILPPolicy::Grouped) {
+            const T_simd loaded[] = {MemoryOps::template loadOffset<Is, Trait::IsAligned>(data)...};
+            (MemoryOps::template storeOffset<Is, Trait::StorePolicy>(data, kernel(loaded[Is])), ...);
+        }
+        else if constexpr (Trait::ILPPolicy == T_ILPPolicy::Interleaved) {
+            (MemoryOps::template storeOffset<Is, Trait::StorePolicy>(data, kernel(MemoryOps::template loadOffset<Is, Trait::IsAligned>(data))), ...);
+        }
+    }
+
+    template<typename Trait, typename KernelFn, size_t... Is>
+    constexpr STALKER_FORCE_INLINE static void _unrollUnaryReduced(KernelFn &&kernel, const T_data *data, T_simd *accumulators, std::index_sequence<Is...>) {
+        if constexpr (Trait::ILPPolicy == T_ILPPolicy::Grouped) {
+            const T_simd loaded[] = {MemoryOps::template loadOffset<Is, Trait::IsAligned>(data)...};
+            ((kernel(accumulators[Is], loaded[Is])), ...);
+        }
+        else if constexpr (Trait::ILPPolicy == T_ILPPolicy::Interleaved) {
+            ((kernel(accumulators[Is], MemoryOps::template loadOffset<Is, Trait::IsAligned>(data))), ...);
+        }
+    }
+
+    STALKER_FORCE_INLINE static T _registerSum(const T_simd* STALKER_RESTRICT data, size_t size) {
+        if (size == 0)
+            return static_cast<T_data>(0);
+
+        T_simd total = data[0];
+        for (unsigned i = 1; i < size; ++i)
+            total = Child::_add(total, data[i]);
+
+        alignas(64) T_data temp[Traits::RegisterSize()];
+        MemoryOps::template store<true, T_SIMDStore::Cached>(temp, total);
+
+        T_data result = 0;
+        for (unsigned j = 0; j < Traits::RegisterSize(); ++j)
+            result += temp[j];
         return result;
     }
 };

@@ -80,17 +80,19 @@ namespace Stalker::Core {
              bool            Aligned          = false,
              T_SIMDStore     SIMDStoreT       = DefaultSIMDStore(),
              size_t          UnrollFactor     = DefaultUnroll(),
-             T_PrefetchHints PrefetchH        = DefaultPrefetchHint()>
-    struct ExecutionTraitSIMD : public ExecutionTrait<ExecutionTraitSIMD<SIMDT, Aligned, SIMDStoreT, UnrollFactor, PrefetchH>> {
+             T_PrefetchHints PrefetchT        = DefaultPrefetchHint(),
+             T_ILPPolicy     ILPPolicyT       = DefaultILPPolicy()>
+    struct ExecutionTraitSIMD : public ExecutionTrait<ExecutionTraitSIMD<SIMDT, Aligned, SIMDStoreT, UnrollFactor, PrefetchT, ILPPolicyT>> {
         static constexpr T_SIMD          SIMDArch         = SIMDT;  
         static constexpr bool            IsAligned        = Aligned;
         static constexpr T_SIMDStore     StorePolicy      = SIMDStoreT;
         static constexpr size_t          Unroll           = UnrollFactor;
-        static constexpr T_PrefetchHints PrefetchHint     = PrefetchH;
+        static constexpr T_PrefetchHints PrefetchHint     = PrefetchT;
+        static constexpr T_ILPPolicy     ILPPolicy        = ILPPolicyT;
 
     protected:
 
-        friend ExecutionTrait<ExecutionTraitSIMD<SIMDT, Aligned, SIMDStoreT, UnrollFactor, PrefetchH>>;
+        friend ExecutionTrait<ExecutionTraitSIMD<SIMDT, Aligned, SIMDStoreT, UnrollFactor, PrefetchT, ILPPolicyT>>;
         static constexpr T_ExecTrait _Type() {
             return T_ExecTrait::SIMD;
         }
@@ -108,17 +110,19 @@ namespace Stalker::Core {
         /*---------------- compile-time constants available to API -----*/
         inline static constexpr T_ExecTrait Type = IsSIMDOk() ? T_ExecTrait::SIMD : DefaultUnroll() > 1 ? T_ExecTrait::Unrolled : T_ExecTrait::Scalar;
 
-        static constexpr T_SIMD SIMDArch = (Type == T_ExecTrait::SIMD) ? Config::DefaultSIMDType() : T_SIMD::None;
+        static constexpr T_SIMD             SIMDArch     = (Type == T_ExecTrait::SIMD) ? Config::DefaultSIMDType() : T_SIMD::None;
         
-        static constexpr bool IsAligned = false;
+        static constexpr bool               IsAligned    = false;
 
-        static constexpr T_SIMDStore StorePolicy = (Type == T_ExecTrait::SIMD) ? Config::DefaultSIMDStore() : T_SIMDStore::Streamed;
+        static constexpr T_SIMDStore        StorePolicy  = T_SIMDStore::Streamed;
         
-        static constexpr size_t Unroll = (Type == T_ExecTrait::Unrolled || Type == T_ExecTrait::SIMD) ? Config::DefaultUnroll() : 1;
+        static constexpr size_t             Unroll       = (Type == T_ExecTrait::Unrolled || Type == T_ExecTrait::SIMD) ? Config::DefaultUnroll() : 1;
         
-        static constexpr T_PrefetchHints PrefetchHint =  (Type == T_ExecTrait::SIMD) ? Config::DefaultPrefetchHint() : T_PrefetchHints::HintNone;
+        static constexpr T_PrefetchHints    PrefetchHint = (Type == T_ExecTrait::SIMD) ? Config::DefaultPrefetchHint() : T_PrefetchHints::HintNone;
+
+        static constexpr T_ILPPolicy        ILPPolicy    = DefaultILPPolicy();
         
-        static constexpr bool UseSTD = true;
+        static constexpr bool               UseSTD       = true;
 
     
         /*--- safeguard: catch mis-builds where SIMD is claimed but none set ---*/

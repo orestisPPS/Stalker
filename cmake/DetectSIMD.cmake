@@ -118,6 +118,9 @@ function(stalker_simd_init)
         if(NOT STALKER_SIMD_STORE_POLICY MATCHES "^(stream|cache)$")
             message(FATAL_ERROR "Invalid STALKER_SIMD_STORE_POLICY=${STALKER_SIMD_STORE_POLICY}")
         endif()
+        if(NOT STALKER_SIMD_ILP_POLICY MATCHES "^(interleaved|grouped)$")
+            message(FATAL_ERROR "Invalid STALKER_SIMD_ILP_POLICY=${STALKER_SIMD_ILP_POLICY}")
+        endif()
     endif()
 
     # Build compile definitions only (ISA compile options appended in stalker_compiler_flags_init).
@@ -150,6 +153,13 @@ function(stalker_simd_init)
             list(APPEND defs STALKER_SIMD_STORE_TYPE_STREAM)
         else()
             list(APPEND defs STALKER_SIMD_STORE_TYPE_CACHE)
+        endif()
+
+        # ILP policy macro
+        if(STALKER_SIMD_ILP_POLICY STREQUAL "grouped")
+            list(APPEND defs STALKER_SIMD_ILP_POLICY_GROUPED)
+        else()
+            list(APPEND defs STALKER_SIMD_ILP_POLICY_INTERLEAVED)
         endif()
     else()
         list(APPEND defs STALKER_SIMD_INSTRUCTION_SET_NONE)

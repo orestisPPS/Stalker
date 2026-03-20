@@ -254,6 +254,38 @@ namespace Stalker::Core::Config {
     };
 
     /**
+     * @enum T_ILPPolicy
+     * @brief Specifies the Instruction-Level Parallelism (ILP) strategy for SIMD operations.
+     *
+     * The ILP policy determines how instructions (loads, arithmetic, stores) are scheduled 
+     * within unrolled loops. This allows fine-tuning of register pressure and execution port 
+     * utilization based on the target microarchitecture and unroll factor.
+     *
+     * - T_ILPPolicy::Interleaved : Instructions are interleaved (e.g., load-add-store, load-add-store).
+     * - T_ILPPolicy::Grouped     : Instructions of the same type are grouped (e.g., all loads, then all adds, then all stores).
+     */
+    enum class T_ILPPolicy {
+        /**
+         * @brief Interleaved instruction scheduling.
+         *
+         * Minimizes register pressure by keeping the live range of SIMD registers short.
+         * Relies on the CPU's Out-of-Order (OoO) execution engine to dynamically extract ILP.
+         * Recommended for large unroll factors or architectures with limited registers (e.g., AVX2).
+         */
+        Interleaved,
+
+        /**
+         * @brief Grouped instruction scheduling (Explicit ILP).
+         *
+         * Forces the compiler to issue all instructions of a specific phase (e.g., all loads) 
+         * before moving to the next phase (e.g., all arithmetic). Maximizes execution port 
+         * saturation early in the pipeline but significantly increases register pressure. 
+         * Recommended only for small unroll factors.
+         */
+        Grouped
+    };
+
+    /**
      * @brief Returns true if any SIMD instruction set is enabled at compile time.
      * @return true if SIMD is available; false otherwise.
      */
@@ -369,6 +401,25 @@ namespace Stalker::Core::Config {
             return T_PrefetchHints::STALKER_SIMD_PREFETCH_HINT;
         #else
             return T_PrefetchHints::HintNone;
+        #endif
+    }
+
+    /**
+     * @brief Returns the default ILP policy.
+     * @return T_ILPPolicy::Interleaved or T_ILPPolicy::Grouped
+     *
+     * @details
+     * The preferred ILP policy is selected at compile time using CMake macros:
+     *   - @b STALKER_SIMD_ILP_POLICY_INTERLEAVED : Forces Interleaved loads/stores (default)
+     *   - @b STALKER_SIMD_ILP_POLICY_GROUPED     : Forces Grouped loads/stores
+     */
+    inline constexpr T_ILPPolicy DefaultILPPolicy() {
+        #if defined(STALKER_SIMD_ILP_POLICY_GROUPED)
+            return T_ILPPolicy::Grouped;
+        #elif defined(STALKER_SIMD_ILP_POLICY_INTERLEAVED)
+            return T_ILPPolicy::Interleaved;
+        #else
+            return T_ILPPolicy::Interleaved;
         #endif
     }
 } // namespace Stalker::Core::Config

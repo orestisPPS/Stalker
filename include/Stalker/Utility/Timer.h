@@ -22,6 +22,7 @@
 #include <chrono>
 #include <type_traits>
 #include <Stalker/Core/Units.h>
+#include <Stalker/Core/Config/Compiler.h>
 
 namespace Stalker::Utility {
 
@@ -51,12 +52,12 @@ public:
     Timer() = default;
 
     /// Starts the timer.
-    inline void start() noexcept {
+    STALKER_FORCE_INLINE void start() noexcept {
         _start = Clock::now();
     }
 
     /// Stops the timer.
-    inline void stop() noexcept {
+    STALKER_FORCE_INLINE void stop() noexcept {
         _end = Clock::now();
     }
 
@@ -64,7 +65,7 @@ public:
      * \brief Elapsed duration in seconds.
      * \return `std::chrono::duration<double>` in seconds.
      */
-    std::chrono::duration<double> duration() const {
+    STALKER_FORCE_INLINE std::chrono::duration<double> duration() const {
         return std::chrono::duration<double>(_end - _start);
     }
 
@@ -73,7 +74,7 @@ public:
      * \param unit Target unit (ns, µs, ms, s, min, h, d, w).
      * \return `double` value in \p unit.
      */
-    double durationValue(TimeUnit unit = TimeUnit::seconds) const {
+    STALKER_FORCE_INLINE double durationValue(TimeUnit unit = TimeUnit::seconds) const {
         if (unit == TimeUnit::seconds && _unit != TimeUnit::seconds) {
             unit = _unit;
         }

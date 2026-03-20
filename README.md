@@ -154,6 +154,7 @@ The following CMake cache variables are available to configure the library:
 | `STALKER_SIMD_ENABLE`          | Enable SIMD vectorization                                           | `ON`     |
 | `STALKER_SIMD_INSTRUCTION_SET` | SIMD ISA: `auto`, `avx2`, `avx512`, `none` (auto prefers AVX2)      | `auto`   |
 | `STALKER_SIMD_STORE_POLICY`    | SIMD store policy: `stream` (non-temporal) or `cache`               | `stream` |
+| `STALKER_SIMD_ILP_POLICY`      | SIMD ILP policy: `interleaved` (load-store) or `grouped` (load-load-store-store) | `interleaved` |
 | `STALKER_SIMD_PREFETCH_HINT`   | Prefetch hint: `HintNone`,`HintT0`, `HintT1`, `HintT2`, `HintNTA`              | `HintNone` |
 
 #### Threading
@@ -201,6 +202,7 @@ MSVC equivalents map similarly (`/Od /Zi`, `/O2 /DNDEBUG`, `perf` adds `/Ox /GL 
   -DSTALKER_SIMD_INSTRUCTION_SET=avx2 \
   -DSTALKER_SIMD_PREFETCH_HINT=HintT0 \
   -DSTALKER_SIMD_STORE_POLICY=stream \
+  -DSTALKER_SIMD_ILP_POLICY=interleaved \
   -DSTALKER_THREADING_ENABLE=ON \
   -DSTALKER_THREADING_NUM_THREADS=4 \
   -DSTALKER_THREADING_POSIX_ENABLE=ON \

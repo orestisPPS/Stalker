@@ -36,21 +36,21 @@ using namespace Stalker::Core;
     public:
 
         template<typename ExecTrait>
-        inline static void copy(size_t size, T_data* __restrict destination, const T_data* __restrict source ) {
+        STALKER_FORCE_INLINE static void copy(size_t size, T_data* STALKER_RESTRICT destination, const T_data* STALKER_RESTRICT source ) {
             constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
             auto limit = size - (size % blockSize);
             for (size_t i = 0; i < limit; i += blockSize) {
                 if constexpr (ExecTrait::PrefetchHint != T_PrefetchHints::HintNone) {
                     Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(destination + i + blockSize);
                 }
-                _copy<ExecTrait::IsAligned, ExecTrait::StorePolicy>(source + i, destination + i, std::make_index_sequence<ExecTrait::Unroll>{});
+                _copy<ExecTrait::IsAligned, ExecTrait::StorePolicy, ExecTrait::ILPPolicy>(source + i, destination + i, UnrollIndexSequence<ExecTrait::Unroll>{});
             }
-            for (size_t i = limit; i < size; i++)
+            for (size_t i = limit; i < size; ++i)
                 destination[i] = source[i];
         }
 
         template<typename ExecTrait>
-        inline static void swap(size_t size, T_data* __restrict data1, T_data* __restrict data2) {
+        STALKER_FORCE_INLINE static void swap(size_t size, T_data* STALKER_RESTRICT data1, T_data* STALKER_RESTRICT data2) {
             constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
             auto limit = size - (size % blockSize);
             for (size_t i = 0; i < limit; i += blockSize) {
@@ -58,85 +58,112 @@ using namespace Stalker::Core;
                     Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(data1 + i + blockSize);
                     Prefetcher::prefetch<T_data, ExecTrait::PrefetchHint, 1>(data2 + i + blockSize);
                 }
-                _swap<ExecTrait::IsAligned, ExecTrait::StorePolicy>(data1 + i, data2 + i, std::make_index_sequence<ExecTrait::Unroll>{});
+                _swap<ExecTrait::IsAligned, ExecTrait::StorePolicy, ExecTrait::ILPPolicy>(data1 + i, data2 + i, UnrollIndexSequence<ExecTrait::Unroll>{});
             }
-            for (size_t i = limit; i < size; i++)
+            for (size_t i = limit; i < size; ++i)
                 std::swap(data1[i], data2[i]);
         }
         
         template<typename ExecTrait>
-        inline static void setValue(size_t size, T_data* __restrict data, T_data value) {
+        STALKER_FORCE_INLINE static void setValue(size_t size, T_data* STALKER_RESTRICT data, T_data value) {
             constexpr unsigned blockSize = Traits::template BlockSize<ExecTrait::Unroll>();
             auto limit = size - (size % blockSize);
             T_simd scalarSIMD;
-            Child::template _broadcast(&scalarSIMD, value, std::make_index_sequence<1>{});
+            Child::template _broadcast(&scalarSIMD, value, UnrollIndexSequence<1>{});
             for (size_t i = 0; i < limit; i += blockSize)
-                _setValue<ExecTrait::IsAligned, ExecTrait::StorePolicy>(data + i, scalarSIMD, std::make_index_sequence<ExecTrait::Unroll>{});
+                _setValue<ExecTrait::IsAligned, ExecTrait::StorePolicy>(data + i, scalarSIMD, UnrollIndexSequence<ExecTrait::Unroll>{});
             for (size_t i = limit; i < size; i++)
                 data[i] = value;
         }
 
         template<typename ExecTrait>
-        inline static bool areEqual(size_t size, const T_data* a, const T_data *b){
+        STALKER_FORCE_INLINE static bool areEqual(size_t size, const T_data* a, const T_data *b){
             constexpr unsigned blockSize = Traits::template BlockSize<DefaultUnroll()>();
             auto limit = size - (size % blockSize);
             bool result = true;
             for (size_t i = 0; i < limit; i += blockSize)
-                result = result && Child::template _areEqual(a + i, b + i, std::make_index_sequence<DefaultUnroll()>{});
+                result = result && _areEqualUnrolled<ExecTrait::IsAligned>(a + i, b + i, UnrollIndexSequence<DefaultUnroll()>{});
             for (size_t i = limit; i < size; i++)
                 result = result && (a[i] == b[i]);
             return result;
         }
 
         template <size_t Index, bool IsAligned = false>
-        inline static T_simd loadOffset(const T_data* __restrict data) {
+        STALKER_FORCE_INLINE static T_simd loadOffset(const T_data* STALKER_RESTRICT data) {
             return Child::template _load<IsAligned>(data + Index * Traits::RegisterSize());
         }
         template <size_t Index, bool IsAligned = false>
-        inline static T_simd load(const T_data* __restrict data) {
+        STALKER_FORCE_INLINE static T_simd load(const T_data* STALKER_RESTRICT data) {
             return Child::template _load<IsAligned>(data + Index * Traits::RegisterSize());
         }
         
-        template<T_SIMDStore Policy = DefaultSIMDStore()>
-        inline static void store(T_data* __restrict destination, const T_simd& source) {
+        template<bool IsAligned = false, T_SIMDStore Policy = DefaultSIMDStore()>
+        STALKER_FORCE_INLINE static void store(T_data* STALKER_RESTRICT destination, const T_simd& source) {
             Child::template _store<Policy>(destination, source);
         }
 
         template<size_t Index, T_SIMDStore Policy = DefaultSIMDStore()>
-        inline static void storeOffset(T_data* __restrict destination, const T_simd& source) {
+        STALKER_FORCE_INLINE static void storeOffset(T_data* STALKER_RESTRICT destination, const T_simd& source) {
             Child::template _store<Policy>(destination + Index * Traits::RegisterSize(), source);
         }
         
-        inline static void setZeroRegister(T_simd* __restrict destination) {
+        STALKER_FORCE_INLINE static void zeroRegister(T_simd* STALKER_RESTRICT destination) {
             Child::_setZeroRegister(destination);
         }
 
+        STALKER_FORCE_INLINE static T_simd zeroRegister() {
+            return Child::_setZeroRegister();
+        }
+
         template<unsigned Unroll = 1>
-        inline static void broadcast(T_simd* __restrict destination, T scalar) {
-            Child::_broadcast(destination, scalar, std::make_index_sequence<Unroll>{});
+        STALKER_FORCE_INLINE static void broadcast(T_simd* STALKER_RESTRICT destination, T scalar) {
+            Child::_broadcast(destination, scalar, UnrollIndexSequence<Unroll>{});
+        }
+
+        STALKER_FORCE_INLINE static T_simd broadcast(T scalar) {
+            return Child::_broadcast(scalar);
         }
 
     protected:
 
         template <size_t Index>
-        static constexpr inline size_t _registerOffset() { return Index * Traits::RegisterSize(); }
+        STALKER_FORCE_INLINE constexpr static size_t _registerOffset() { return Index * Traits::RegisterSize(); }
 
-        template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-        static inline void _copy(const T_data* __restrict source, T_data* __restrict destination, std::index_sequence<Is...>) {
-            const T_simd tmp[] = { loadOffset<Is, IsAligned>(source)... };
-            ((storeOffset<Is, Policy>(destination, tmp[Is])), ...);
+        template <bool IsAligned, size_t... Is>
+        STALKER_FORCE_INLINE static bool _areEqualUnrolled(const T_data*  a, const T_data* b, std::index_sequence<Is...>) {
+            bool result = true;
+            ((result = result && Child::_areEqual(loadOffset<Is, IsAligned>(a), loadOffset<Is, IsAligned>(b))), ...);
+            return result;
+        }
+
+        template <bool IsAligned, T_SIMDStore Policy, T_ILPPolicy ILP, size_t... Is>
+        STALKER_FORCE_INLINE static void _copy(const T_data* STALKER_RESTRICT source, T_data* STALKER_RESTRICT destination, std::index_sequence<Is...>) {
+            if constexpr (ILP == T_ILPPolicy::Interleaved) {
+                ((storeOffset<Is, Policy>(destination, loadOffset<Is, IsAligned>(source))), ...);
+            } else if constexpr (ILP == T_ILPPolicy::Grouped) {
+                const T_simd loadedSource[] = { loadOffset<Is, IsAligned>(source)... };
+                ((storeOffset<Is, Policy>(destination, loadedSource[Is])), ...);
+            }
+        }
+
+        template <bool IsAligned, T_SIMDStore Policy, T_ILPPolicy ILP, size_t... Is>
+        STALKER_FORCE_INLINE static void _swap(T_data* STALKER_RESTRICT data1, T_data* STALKER_RESTRICT data2, std::index_sequence<Is...>) {
+            if constexpr (ILP == T_ILPPolicy::Interleaved) {
+                (([] (T_data* d1, T_data* d2) {
+                    T_simd loadedD1 = loadOffset<Is, IsAligned>(d1);
+                    storeOffset<Is, Policy>(d1, loadOffset<Is, IsAligned>(d2));
+                    storeOffset<Is, Policy>(d2, loadedD1);
+                })(data1, data2), ...);
+            } else if constexpr (ILP == T_ILPPolicy::Grouped) {
+                const T_simd loadedD1[] = { loadOffset<Is, IsAligned>(data1)... };
+                const T_simd loadedD2[] = { loadOffset<Is, IsAligned>(data2)... };
+                ((storeOffset<Is, Policy>(data1, loadedD2[Is])), ...);
+                ((storeOffset<Is, Policy>(data2, loadedD1[Is])), ...);
+            }
         }
 
         template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-        static inline void _swap(T_data* __restrict data1, T_data* __restrict data2, std::index_sequence<Is...>) {
-            const T_simd tmp1[] = { loadOffset<Is, IsAligned>(data1)... };
-            const T_simd tmp2[] = { loadOffset<Is, IsAligned>(data2)... };
-            ((storeOffset<Is, Policy>(data1, tmp2[Is])), ...);
-            ((storeOffset<Is, Policy>(data2, tmp1[Is])), ...);
-        }
-
-        template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
-        static inline void _setValue(T_data* __restrict data, const T_simd& scalarSIMD, std::index_sequence<Is...>) {
+        STALKER_FORCE_INLINE static void _setValue(T_data* STALKER_RESTRICT data, const T_simd& scalarSIMD, std::index_sequence<Is...>) {
             (storeOffset<Is, Policy>(data, scalarSIMD), ... );
         }
         
