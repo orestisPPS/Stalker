@@ -43,10 +43,13 @@ private:
             return _mm512_loadu_pd(source);
     }
 
-    template <T_SIMDStore Policy>
+    template <T_SIMDStore Policy, bool IsAligned = false>
     static STALKER_FORCE_INLINE void _store(T_data* STALKER_RESTRICT destination, const T_simd& source) {
         if constexpr (Policy == T_SIMDStore::Cached)
-            _mm512_store_pd(destination, source);
+            if constexpr (IsAligned)
+                _mm512_store_pd(destination, source);
+            else
+                _mm512_storeu_pd(destination, source);
         else
             _mm512_stream_pd(destination, source);
     }
@@ -92,10 +95,13 @@ private:
             return _mm512_loadu_ps(source);
     }
 
-    template <T_SIMDStore Policy>
+    template <T_SIMDStore Policy, bool IsAligned = false>
     static STALKER_FORCE_INLINE void _store(T_data* STALKER_RESTRICT destination, const T_simd& source) {
         if constexpr (Policy == T_SIMDStore::Cached)
-            _mm512_store_ps(destination, source);
+            if constexpr (IsAligned)
+                _mm512_store_ps(destination, source);
+            else
+                _mm512_storeu_ps(destination, source);
         else
             _mm512_stream_ps(destination, source);
     }
@@ -141,10 +147,13 @@ private:
             return _mm512_loadu_si512(reinterpret_cast<const __m512i*>(source));
     }
 
-    template <T_SIMDStore Policy>
+    template <T_SIMDStore Policy, bool IsAligned = false>
     static STALKER_FORCE_INLINE void _store(T_data* STALKER_RESTRICT destination, const T_simd& source) {
         if constexpr (Policy == T_SIMDStore::Cached)
-            _mm512_store_si512(reinterpret_cast<__m512i*>(destination), source);
+            if constexpr (IsAligned)
+                _mm512_store_si512(reinterpret_cast<__m512i*>(destination), source);
+            else
+                _mm512_storeu_si512(reinterpret_cast<__m512i*>(destination), source);
         else
             _mm512_stream_si512(reinterpret_cast<__m512i*>(destination), source);
     }
@@ -192,10 +201,13 @@ private:
             return _mm512_loadu_si512(reinterpret_cast<const __m512i*>(source));
     }
 
-    template <T_SIMDStore Policy>
+    template <T_SIMDStore Policy, bool IsAligned = false>
     static STALKER_FORCE_INLINE void _store(T_data* STALKER_RESTRICT destination, const T_simd& source) {
         if constexpr (Policy == T_SIMDStore::Cached)
-            _mm512_store_si512(reinterpret_cast<__m512i*>(destination), source);
+            if constexpr (IsAligned)
+                _mm512_store_si512(reinterpret_cast<__m512i*>(destination), source);
+            else
+                _mm512_storeu_si512(reinterpret_cast<__m512i*>(destination), source);
         else
             _mm512_stream_si512(reinterpret_cast<__m512i*>(destination), source);
     }
@@ -240,10 +252,13 @@ private:
             return _mm512_loadu_si512(reinterpret_cast<const __m512i*>(source));
     }
 
-    template <T_SIMDStore Policy>
+    template <T_SIMDStore Policy, bool IsAligned = false>
     static STALKER_FORCE_INLINE void _store(T_data* STALKER_RESTRICT destination, const T_simd& source) {
         if constexpr (Policy == T_SIMDStore::Cached)
-            _mm512_store_si512(reinterpret_cast<__m512i*>(destination), source);
+            if constexpr (IsAligned)
+                _mm512_store_si512(reinterpret_cast<__m512i*>(destination), source);
+            else
+                _mm512_storeu_si512(reinterpret_cast<__m512i*>(destination), source);
         else
             _mm512_stream_si512(reinterpret_cast<__m512i*>(destination), source);
     }

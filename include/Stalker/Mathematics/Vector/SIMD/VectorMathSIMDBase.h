@@ -359,10 +359,10 @@ private:
         if constexpr (Trait::ILPPolicy == T_ILPPolicy::Grouped) {
             const T_simd loadedA[] = {MemoryOps::template loadOffset<Is, Trait::IsAligned>(a)...};
             const T_simd loadedB[] = {MemoryOps::template loadOffset<Is, Trait::IsAligned>(b)...};
-            (MemoryOps::template storeOffset<Is, Trait::StorePolicy>(result, kernel(loadedA[Is], loadedB[Is])), ...);
+            (MemoryOps::template storeOffset<Is, Trait::StorePolicy, Trait::IsAligned>(result, kernel(loadedA[Is], loadedB[Is])), ...);
         }
         else if constexpr (Trait::ILPPolicy == T_ILPPolicy::Interleaved) {
-            (MemoryOps::template storeOffset<Is, Trait::StorePolicy>(result, kernel(MemoryOps::template loadOffset<Is, Trait::IsAligned>(a),
+            (MemoryOps::template storeOffset<Is, Trait::StorePolicy, Trait::IsAligned>(result, kernel(MemoryOps::template loadOffset<Is, Trait::IsAligned>(a),
                                                                                     MemoryOps::template loadOffset<Is, Trait::IsAligned>(b))), ...);
         }
     }
@@ -384,10 +384,10 @@ private:
         if constexpr (Trait::ILPPolicy == T_ILPPolicy::Grouped) {
             const T_simd loaded[] = {MemoryOps::template loadOffset<Is, Trait::IsAligned>(data)...};
             const T_simd computed[] = {kernel(loaded[Is])...};
-            (MemoryOps::template storeOffset<Is, Trait::StorePolicy>(result, computed[Is]), ...);
+            (MemoryOps::template storeOffset<Is, Trait::StorePolicy, Trait::IsAligned>(result, computed[Is]), ...);
         }
         else if constexpr (Trait::ILPPolicy == T_ILPPolicy::Interleaved) {
-            (MemoryOps::template storeOffset<Is, Trait::StorePolicy>(result, kernel(MemoryOps::template loadOffset<Is, Trait::IsAligned>(data))), ...);
+            (MemoryOps::template storeOffset<Is, Trait::StorePolicy, Trait::IsAligned>(result, kernel(MemoryOps::template loadOffset<Is, Trait::IsAligned>(data))), ...);
         }
     }
 
@@ -395,10 +395,10 @@ private:
     constexpr STALKER_FORCE_INLINE static void _unrollUnaryIntoThis(KernelFn &&kernel, T_data STALKER_RESTRICT *data, std::index_sequence<Is...>) {
         if constexpr (Trait::ILPPolicy == T_ILPPolicy::Grouped) {
             const T_simd loaded[] = {MemoryOps::template loadOffset<Is, Trait::IsAligned>(data)...};
-            (MemoryOps::template storeOffset<Is, Trait::StorePolicy>(data, kernel(loaded[Is])), ...);
+            (MemoryOps::template storeOffset<Is, Trait::StorePolicy, Trait::IsAligned>(data, kernel(loaded[Is])), ...);
         }
         else if constexpr (Trait::ILPPolicy == T_ILPPolicy::Interleaved) {
-            (MemoryOps::template storeOffset<Is, Trait::StorePolicy>(data, kernel(MemoryOps::template loadOffset<Is, Trait::IsAligned>(data))), ...);
+            (MemoryOps::template storeOffset<Is, Trait::StorePolicy, Trait::IsAligned>(data, kernel(MemoryOps::template loadOffset<Is, Trait::IsAligned>(data))), ...);
         }
     }
 
@@ -422,7 +422,7 @@ private:
             total = Child::_add(total, data[i]);
 
         alignas(64) T_data temp[Traits::RegisterSize()];
-        MemoryOps::template store<true, T_SIMDStore::Cached>(temp, total);
+        MemoryOps::template store<T_SIMDStore::Cached, true>(temp, total);
 
         T_data result = 0;
         for (unsigned j = 0; j < Traits::RegisterSize(); ++j)

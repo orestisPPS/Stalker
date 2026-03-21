@@ -92,6 +92,9 @@ namespace Stalker::Core {
 
     protected:
 
+        static_assert(SIMDT != T_SIMD::None, "SIMD execution trait requires a valid SIMD architecture type.");
+        static_assert(T_SIMDStore == T_SIMDStore::Streamed && !IsAligned, "Streamed SIMD stores require aligned memory. Either set StorePolicy to Cached or ensure Aligned is true.");
+
         friend ExecutionTrait<ExecutionTraitSIMD<SIMDT, Aligned, SIMDStoreT, UnrollFactor, PrefetchT, ILPPolicyT>>;
         static constexpr T_ExecTrait _Type() {
             return T_ExecTrait::SIMD;
@@ -114,7 +117,7 @@ namespace Stalker::Core {
         
         static constexpr bool               IsAligned    = false;
 
-        static constexpr T_SIMDStore        StorePolicy  = T_SIMDStore::Streamed;
+        static constexpr T_SIMDStore        StorePolicy  = T_SIMDStore::Cached;
         
         static constexpr size_t             Unroll       = (Type == T_ExecTrait::Unrolled || Type == T_ExecTrait::SIMD) ? Config::DefaultUnroll() : 1;
         
@@ -126,8 +129,9 @@ namespace Stalker::Core {
 
     
         /*--- safeguard: catch mis-builds where SIMD is claimed but none set ---*/
-        static_assert(!(Type == T_ExecTrait::SIMD && SIMDArch == T_SIMD::None),
-                    "STALKER_SIMD_ENABLE is ON but no SIMD instruction set is active!");
+        static_assert(!(Type == T_ExecTrait::SIMD && SIMDArch == T_SIMD::None), "STALKER_SIMD_ENABLE is ON but no SIMD instruction set is active!");
+        static_assert(T_SIMDStore == T_SIMDStore::Streamed && !IsAligned, "Streamed SIMD stores require aligned memory. Either set StorePolicy to Cached or ensure Aligned is true.");
+
     };
     
 } // namespace Stalker::Core::ExecutionPolicies

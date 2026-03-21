@@ -388,7 +388,7 @@ namespace Stalker::Core::Config {
         #elif defined(STALKER_SIMD_STORE_TYPE_STREAM)
             return T_SIMDStore::Streamed;
         #else
-            return T_SIMDStore::Streamed;
+            return T_SIMDStore::Cached;
         #endif
     }
 

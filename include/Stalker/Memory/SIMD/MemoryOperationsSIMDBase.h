@@ -97,14 +97,14 @@ using namespace Stalker::Core;
             return Child::template _load<IsAligned>(data + Index * Traits::RegisterSize());
         }
         
-        template<bool IsAligned = false, T_SIMDStore Policy = DefaultSIMDStore()>
+        template<T_SIMDStore Policy = DefaultSIMDStore(), bool IsAligned = false>
         STALKER_FORCE_INLINE static void store(T_data* STALKER_RESTRICT destination, const T_simd& source) {
-            Child::template _store<Policy>(destination, source);
+            Child::template _store<Policy, IsAligned>(destination, source);
         }
 
-        template<size_t Index, T_SIMDStore Policy = DefaultSIMDStore()>
+        template<size_t Index, T_SIMDStore Policy = DefaultSIMDStore(), bool IsAligned = false>
         STALKER_FORCE_INLINE static void storeOffset(T_data* STALKER_RESTRICT destination, const T_simd& source) {
-            Child::template _store<Policy>(destination + Index * Traits::RegisterSize(), source);
+            Child::template _store<Policy, IsAligned>(destination + Index * Traits::RegisterSize(), source);
         }
         
         STALKER_FORCE_INLINE static void zeroRegister(T_simd* STALKER_RESTRICT destination) {
@@ -139,10 +139,10 @@ using namespace Stalker::Core;
         template <bool IsAligned, T_SIMDStore Policy, T_ILPPolicy ILP, size_t... Is>
         STALKER_FORCE_INLINE static void _copy(const T_data* STALKER_RESTRICT source, T_data* STALKER_RESTRICT destination, std::index_sequence<Is...>) {
             if constexpr (ILP == T_ILPPolicy::Interleaved) {
-                ((storeOffset<Is, Policy>(destination, loadOffset<Is, IsAligned>(source))), ...);
+                ((storeOffset<Is, Policy, IsAligned>(destination, loadOffset<Is, IsAligned>(source))), ...);
             } else if constexpr (ILP == T_ILPPolicy::Grouped) {
                 const T_simd loadedSource[] = { loadOffset<Is, IsAligned>(source)... };
-                ((storeOffset<Is, Policy>(destination, loadedSource[Is])), ...);
+                ((storeOffset<Is, Policy, IsAligned>(destination, loadedSource[Is])), ...);
             }
         }
 
@@ -151,20 +151,20 @@ using namespace Stalker::Core;
             if constexpr (ILP == T_ILPPolicy::Interleaved) {
                 (([] (T_data* d1, T_data* d2) {
                     T_simd loadedD1 = loadOffset<Is, IsAligned>(d1);
-                    storeOffset<Is, Policy>(d1, loadOffset<Is, IsAligned>(d2));
-                    storeOffset<Is, Policy>(d2, loadedD1);
+                    storeOffset<Is, Policy, IsAligned>(d1, loadOffset<Is, IsAligned>(d2));
+                    storeOffset<Is, Policy, IsAligned>(d2, loadedD1);
                 })(data1, data2), ...);
             } else if constexpr (ILP == T_ILPPolicy::Grouped) {
                 const T_simd loadedD1[] = { loadOffset<Is, IsAligned>(data1)... };
                 const T_simd loadedD2[] = { loadOffset<Is, IsAligned>(data2)... };
-                ((storeOffset<Is, Policy>(data1, loadedD2[Is])), ...);
-                ((storeOffset<Is, Policy>(data2, loadedD1[Is])), ...);
+                ((storeOffset<Is, Policy, IsAligned>(data1, loadedD2[Is])), ...);
+                ((storeOffset<Is, Policy, IsAligned>(data2, loadedD1[Is])), ...);
             }
         }
 
         template <bool IsAligned, T_SIMDStore Policy, size_t... Is>
         STALKER_FORCE_INLINE static void _setValue(T_data* STALKER_RESTRICT data, const T_simd& scalarSIMD, std::index_sequence<Is...>) {
-            (storeOffset<Is, Policy>(data, scalarSIMD), ... );
+            (storeOffset<Is, Policy, IsAligned>(data, scalarSIMD), ... );
         }
         
     };

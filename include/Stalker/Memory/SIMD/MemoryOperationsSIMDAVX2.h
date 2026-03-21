@@ -42,10 +42,13 @@ private:
             return _mm256_loadu_pd(source);
     }
 
-    template <T_SIMDStore Policy>
+    template <T_SIMDStore Policy, bool IsAligned = false>
     static STALKER_FORCE_INLINE void _store(T_data* STALKER_RESTRICT destination, const T_simd& source) {
         if constexpr (Policy == T_SIMDStore::Cached)
-            _mm256_store_pd(destination, source);
+            if constexpr (IsAligned)
+                _mm256_store_pd(destination, source);
+            else
+                _mm256_storeu_pd(destination, source);
         else
             _mm256_stream_pd(destination, source);
     }
@@ -89,10 +92,13 @@ private:
             return _mm256_loadu_ps(source);
     }
 
-    template <T_SIMDStore Policy>
+    template <T_SIMDStore Policy, bool IsAligned = false>
     static STALKER_FORCE_INLINE void _store(T_data* STALKER_RESTRICT destination, const T_simd& source) {
         if constexpr (Policy == T_SIMDStore::Cached)
-            _mm256_store_ps(destination, source);
+            if constexpr (IsAligned)
+                _mm256_store_ps(destination, source);
+            else
+                _mm256_storeu_ps(destination, source);
         else
             _mm256_stream_ps(destination, source);
     }   
@@ -135,10 +141,13 @@ private:
             return _mm256_loadu_si256(reinterpret_cast<const __m256i*>(source));
     }
 
-    template <T_SIMDStore Policy>
+    template <T_SIMDStore Policy, bool IsAligned = false>
     static STALKER_FORCE_INLINE void _store(T_data* STALKER_RESTRICT destination, const T_simd& source) {
         if constexpr (Policy == T_SIMDStore::Cached)
-            _mm256_store_si256(reinterpret_cast<__m256i*>(destination), source);
+            if constexpr (IsAligned)
+                _mm256_store_si256(reinterpret_cast<__m256i*>(destination), source);
+            else
+                _mm256_storeu_si256(reinterpret_cast<__m256i*>(destination), source);
         else
             _mm256_stream_si256(reinterpret_cast<__m256i*>(destination), source);
     }
@@ -186,10 +195,13 @@ private:
             return _mm256_loadu_si256(reinterpret_cast<const __m256i*>(source));
     }
 
-    template <T_SIMDStore Policy>
+    template <T_SIMDStore Policy, bool IsAligned = false>
     static STALKER_FORCE_INLINE void _store(T_data* STALKER_RESTRICT destination, const T_simd& source) {
         if constexpr (Policy == T_SIMDStore::Cached)
-            _mm256_store_si256(reinterpret_cast<__m256i*>(destination), source);
+            if constexpr (IsAligned)
+                _mm256_store_si256(reinterpret_cast<__m256i*>(destination), source);
+            else
+                _mm256_storeu_si256(reinterpret_cast<__m256i*>(destination), source);
         else
             _mm256_stream_si256(reinterpret_cast<__m256i*>(destination), source);
     }
@@ -237,10 +249,13 @@ private:
             return _mm256_loadu_si256(reinterpret_cast<const __m256i*>(source));
     }
 
-    template <T_SIMDStore Policy>
+    template <T_SIMDStore Policy, bool IsAligned = false>
     static STALKER_FORCE_INLINE void _store(T_data* STALKER_RESTRICT destination, const T_simd& source) {
         if constexpr (Policy == T_SIMDStore::Cached)
-            _mm256_store_si256(reinterpret_cast<__m256i*>(destination), source);
+            if constexpr (IsAligned)
+                _mm256_store_si256(reinterpret_cast<__m256i*>(destination), source);
+            else
+                _mm256_storeu_si256(reinterpret_cast<__m256i*>(destination), source);
         else
             _mm256_stream_si256(reinterpret_cast<__m256i*>(destination), source);
     }
@@ -254,7 +269,7 @@ private:
         ((destination[Is] = _mm256_set1_epi16(value)), ...);
     }
 
-    template <bool IsAligned,size_t... Is>
+    template <bool IsAligned, size_t... Is>
     static STALKER_FORCE_INLINE bool _areEqual(const T_data*  a, const T_data* b, std::index_sequence<Is...>) {
         bool result = true;
         ((result = result &&
