@@ -127,6 +127,12 @@ endif()
 # Always build tests and benchmarks by default
 option(STALKER_BUILD_TESTS "Build tests" OFF)
 option(STALKER_BUILD_BENCHMARKS "Build benchmarks" OFF)
+option(STALKER_BUILD_EXAMPLES "Build examples" OFF)
+option(STALKER_BUILD_PYTHON "Build Python bindings" OFF)
+
+if(STALKER_BUILD_PYTHON)
+    add_subdirectory(bindings/python)
+endif()
 
 if(STALKER_BUILD_TESTS)
     add_subdirectory(Tests)
@@ -134,6 +140,10 @@ endif()
 
 if(STALKER_BUILD_BENCHMARKS)
     add_subdirectory(Benchmarks)
+endif()
+
+if(STALKER_BUILD_EXAMPLES)
+    add_subdirectory(Examples)
 endif()
 
 if(NOT CMAKE_SCRIPT_MODE_FILE)
