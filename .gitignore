@@ -58,3 +58,16 @@ temp/
 stalker-venv/
 
 .continue/
+
+# Python-specific
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+*.egg-info/
+.pytest_cache/
+_skbuild/
+build_output.log
+.env
+.venv
