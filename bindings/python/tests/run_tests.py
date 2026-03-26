@@ -331,7 +331,7 @@ def generate_configurations():
         pass
 
     stores = [core.SIMDStorePolicy.Cached, core.SIMDStorePolicy.Streamed]
-    prefetches = [getattr(core.PrefetchHint, "None"), core.PrefetchHint.T0, core.PrefetchHint.NTA]
+    prefetches = [getattr(core.PrefetchHint, "None"), core.PrefetchHint.T0]
     ilps = [core.ILPPolicy.Interleaved, core.ILPPolicy.Grouped]
     alignments = [core.AlignmentPolicy.Auto, core.AlignmentPolicy.Aligned, core.AlignmentPolicy.Unaligned]
 

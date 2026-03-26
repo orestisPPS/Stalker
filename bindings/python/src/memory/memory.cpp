@@ -101,12 +101,12 @@ void bind_memory(nb::module_& m) {
     mem_mod.def("empty_aligned", [](size_t size, size_t alignment, nb::handle dtype) {
         return dispatch_alloc(size, alignment, dtype, false);
     }, "Allocate uninitialized aligned memory array", 
-       nb::arg("size"), nb::arg("alignment") = 32, nb::arg("dtype") = nb::none());
+       nb::arg("size"), nb::arg("alignment") = 64, nb::arg("dtype") = nb::none());
 
     mem_mod.def("zeros_aligned", [](size_t size, size_t alignment, nb::handle dtype) {
         return dispatch_alloc(size, alignment, dtype, true);
     }, "Allocate zero-initialized aligned memory array", 
-       nb::arg("size"), nb::arg("alignment") = 32, nb::arg("dtype") = nb::none());
+       nb::arg("size"), nb::arg("alignment") = 64, nb::arg("dtype") = nb::none());
 
     // Bind operations generically leveraging nanobind's overloading
     bind_memory_ops<double>(mem_mod);

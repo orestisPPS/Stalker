@@ -68,7 +68,7 @@ struct ExecutionTraitPy {
         T_ILPPolicy ilp = Config::T_ILPPolicy::Interleaved,
         AlignmentPolicy aligned = AlignmentPolicy::Auto
     ) {
-        return {T_ExecTrait::SIMD, true, unroll, simd_type, store, prefetch, ilp, aligned};
+        return {T_ExecTrait::SIMD, false, unroll, simd_type, store, prefetch, ilp, aligned};
     }
 };
 void bind_core(nanobind::module_& m);
