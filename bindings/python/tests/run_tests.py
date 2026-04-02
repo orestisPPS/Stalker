@@ -1,8 +1,12 @@
+"""
+Staλκer HPC — Python Binding Test Runner (CLI)
+
+All test logic lives in stalker_tests/. This file is purely the rich
+terminal renderer. Add new operations in stalker_tests/suites.py — they
+will appear here AND in the Streamlit dashboard automatically.
+"""
 import sys
 import gc
-import numpy as np
-from time import perf_counter
-from abc import ABC, abstractmethod
 
 try:
     from rich.console import Console
@@ -15,88 +19,24 @@ except ImportError:
     print("Please install 'rich': pip install rich numpy")
     sys.exit(1)
 
-import stalker
-core = stalker.core
-math_ops = stalker.vector_math
-mem_ops = stalker.memory
+# ── Import shared test logic ─────────────────────────────────────────
+from stalker_tests import generate_configurations, evaluate_memory, evaluate_math, verify_invariants
 
 console = Console()
 
-class DataGenerator:
-    """Manages creation of contiguous, properly-aligned and structurally misaligned buffer views."""
-    @staticmethod
-    def aligned(size: int, dtype: str) -> np.ndarray:
-        if size == 0: return np.array([], dtype=dtype)
-        a = mem_ops.zeros_aligned(size, 64, dtype)
-        if dtype in ['float32', 'float64']:
-            a[:] = np.random.rand(size).astype(dtype) * 100
-        else:
-            a[:] = np.random.randint(0, 100, size, dtype=dtype)
-        return a
 
-    @staticmethod
-    def unaligned(size: int, dtype: str) -> np.ndarray:
-        raw = np.random.rand(size + 1).astype(dtype) * 100.0
-        if dtype not in ['float32', 'float64']:
-            raw = raw.astype(dtype)
-        return raw[1:]
-
-class KernelMeasurer:
-    @staticmethod
-    def measure(op_name, execute_fn, expected, dtype):
-        """Executes the kernel, measures timing, and computes L_inf norm error."""
-        try:
-            t0 = perf_counter()
-            actual = execute_fn()
-            time_us = (perf_counter() - t0) * 1e6
-            
-            if expected is None:
-                err = 0.0
-                rel_err = 0.0
-            else:
-                if np.isscalar(actual) or not hasattr(actual, 'astype'):
-                    err = float(np.abs(float(actual) - float(expected)))
-                    rel_err = err / (float(np.abs(float(expected))) + 1e-8)
-                else:
-                    diff = np.abs(actual.astype(np.float64) - expected.astype(np.float64))
-                    err = float(np.max(diff)) if diff.size > 0 else 0.0
-                    if diff.size > 0:
-                        rel_err = float(np.max(diff / (np.abs(expected.astype(np.float64)) + 1e-8)))
-                    else:
-                        rel_err = 0.0
-
-            is_float = dtype in ['float32', 'float64']
-            tol = 1e-4 if dtype == 'float32' else 1e-7
-            passed = (rel_err <= tol*10 or err <= tol) if is_float else (err == 0.0)
-            
-            return {
-                "op": op_name,
-                "status": "PASS" if passed else "FAIL",
-                "time_us": time_us,
-                "err": rel_err,
-                "msg": "" if passed else "Deviation Limit Exceeded"
-            }
-        except Exception as e:
-            msg = str(e)
-            if "strict alignment" in msg or "inherently require aligned" in msg or "AlignmentPolicy" in msg:
-                return {"op": op_name, "status": "INTERCEPTED", "time_us": 0.0, "err": 0.0, "msg": ""}
-            return {"op": op_name, "status": "FAIL", "time_us": 0.0, "err": 0.0, "msg": msg}
-
-class TestSuite(ABC):
-    """Abstract base class for all test partitions."""
-    def __init__(self, name: str, description: str = ""):
+# ── Suite wrappers (rich rendering around shared evaluate fns) ────────
+class _SuiteRunner:
+    def __init__(self, name: str, description: str, evaluate_fn):
         self.name = name
         self.description = description
+        self.evaluate_fn = evaluate_fn
         self.failed_configs = 0
         self.intercepted_configs = 0
 
-    @abstractmethod
-    def evaluate(self, size: int, dtype: str, config: core.ExecutionConfig, boundary: str) -> list:
-        pass
-
     def run(self, size: int, dtypes: list, boundaries: list, configs: list):
         total_runs = len(configs) * len(dtypes) * len(boundaries)
-        
+
         console.print(Panel(f"[bold white]{self.name}[/]\n[dim grey84]{self.description}[/]", expand=False, border_style="grey37"))
 
         table = Table(title=f"🛡️  Validation ({size:,} elements)", header_style="bold grey84", show_lines=True, border_style="grey37")
@@ -112,24 +52,24 @@ class TestSuite(ABC):
             BarColumn(),
             TimeElapsedColumn(),
             TextColumn("   [progress.description]{task.description}"),
-            console=console
+            console=console,
         ) as progress:
-            
             task = progress.add_task(description="Initializing...", title=f"{self.name}", total=total_runs)
-            
+
             last_conf = None
             for c_name, config in configs:
                 for dt in dtypes:
                     for bound in boundaries:
                         progress.update(task, description=f" | [dim]{c_name} | {dt} | {bound}[/]")
-                        
-                        results = self.evaluate(size, dt, config, bound)
-                        
-                        statuses = [r['status'] for r in results]
-                        
+
+                        results = self.evaluate_fn(size, dt, config, bound, c_name)
+
+                        statuses = [r["status"] for r in results]
+
                         def format_op(r):
-                            if r['status'] == "FAIL": return f"{r['op']}:[bold red]FAIL[/]"
-                            err = r['err']
+                            if r["status"] == "FAIL":
+                                return f"{r['op']}:[bold red]FAIL[/]"
+                            err = r["err"]
                             if err == 0:
                                 err_str = ""
                             elif err <= 1e-7:
@@ -138,7 +78,8 @@ class TestSuite(ABC):
                                 err_str = f"([light_goldenrod3]ε:{err:.1e}[/])"
                             else:
                                 err_str = f"([indian_red1]ε:{err:.1e}[/])"
-                            return f"[grey84]{r['op']}[/]:[dim white]{int(r['time_us'])}μs[/]{err_str}"
+                            py_str = f"|py:{int(r['py_time_us'])}μs" if r.get("py_time_us", 0) > 0 else ""
+                            return f"[grey84]{r['op']}[/]:[dim white]{int(r['time_us'])}μs{py_str}[/]{err_str}"
 
                         if "FAIL" in statuses:
                             diag = "[bold red]FAIL[/]"
@@ -147,14 +88,14 @@ class TestSuite(ABC):
                         elif all(s == "INTERCEPTED" for s in statuses):
                             self.intercepted_configs += 1
                             progress.update(task, advance=1)
-                            continue 
+                            continue
                         else:
                             diag = "[bold dark_sea_green4]PASS[/]"
                             ops_str = " ".join([format_op(r) for r in results])
-                        
+
                         conf_display = c_name if c_name != last_conf else ""
                         last_conf = c_name
-                        
+
                         table.add_row(conf_display, dt, bound, ops_str, diag)
                         progress.update(task, advance=1)
                 gc.collect()
@@ -162,190 +103,8 @@ class TestSuite(ABC):
         console.print(table)
         print()
 
-class MemoryTestSuite(TestSuite):
-    def __init__(self):
-        super().__init__(
-            "Staλκer Memory API", 
-            "Operations: Copy (cpy), Swap (swp), Set Value (set).\nValidates low-level memory block transfers mapping exactly to core Numpy equivalents without precision decay."
-        )
 
-    def evaluate(self, size: int, dtype: str, config: core.ExecutionConfig, boundary: str) -> list:
-        gen = DataGenerator.aligned if boundary.startswith("Aligned") else DataGenerator.unaligned
-        results = []
-        is_float = dtype in ['float32', 'float64']
-
-        # 1. COPY
-        a, b = gen(size, dtype), gen(size, dtype)
-        expected_cpy = b.copy()
-        results.append(KernelMeasurer.measure("cpy", lambda: (mem_ops.copy(a, b, config), a)[1], expected_cpy, dtype))
-
-        # 2. SWAP
-        a, b = gen(size, dtype), gen(size, dtype)
-        expected_swp = b.copy()
-        results.append(KernelMeasurer.measure("swp", lambda: (mem_ops.swap(a, b, config), a)[1], expected_swp, dtype))
-
-        # 3. SET
-        a = gen(size, dtype)
-        val = (42.5 if is_float else 42)
-        expected_set = np.empty_like(a); expected_set.fill(val)
-        results.append(KernelMeasurer.measure("set", lambda: (mem_ops.set_value(a, val, config), a)[1], expected_set, dtype))
-
-        return results
-
-class VectorMathTestSuite(TestSuite):
-    def __init__(self):
-        super().__init__(
-            "Staλκer Vector Mathematics",
-            "Operations: Add, Sub, Mul, Scale, Constant Adds, and Reductions (Sum, Dot).\nValidates arithmetic integrity allowing naturally accumulating IEEE-754 precision deviations."
-        )
-
-    def evaluate(self, size: int, dtype: str, config: core.ExecutionConfig, boundary: str) -> list:
-        gen = DataGenerator.aligned if boundary.startswith("Aligned") else DataGenerator.unaligned
-        results = []
-        is_float = dtype in ['float32', 'float64']
-
-        # Core Additions
-        a, b, res = gen(size, dtype), gen(size, dtype), gen(size, dtype)
-        results.append(KernelMeasurer.measure("add", lambda: (math_ops.add(a, b, res, config), res)[1], a + b, dtype))
-
-        a, b, res = gen(size, dtype), gen(size, dtype), gen(size, dtype)
-        alpha, beta = (2.0, 3.0) if is_float else (2, 3)
-        results.append(KernelMeasurer.measure("asc", lambda: (math_ops.add(a, b, res, alpha, beta, config), res)[1], a * alpha + b * beta, dtype))
-
-        # AXPY
-        a, b, res = gen(size, dtype), gen(size, dtype), gen(size, dtype)
-        alpha_axpy = 2.0 if is_float else 2
-        results.append(KernelMeasurer.measure("axp", lambda: (math_ops.axpy(a, b, res, alpha_axpy, config), res)[1], a * alpha_axpy + b, dtype))
-
-        # Subtractions
-        a, b, res = gen(size, dtype), gen(size, dtype), gen(size, dtype)
-        results.append(KernelMeasurer.measure("sub", lambda: (math_ops.subtract(a, b, res, config), res)[1], a - b, dtype))
-
-        a, b, res = gen(size, dtype), gen(size, dtype), gen(size, dtype)
-        alpha, beta = (2.0, 3.0) if is_float else (2, 3)
-        results.append(KernelMeasurer.measure("ssc", lambda: (math_ops.subtract(a, b, res, alpha, beta, config), res)[1], a * alpha - b * beta, dtype))
-
-        # Multiplications
-        a, b, res = gen(size, dtype), gen(size, dtype), gen(size, dtype)
-        results.append(KernelMeasurer.measure("mul", lambda: (math_ops.multiply(a, b, res, config), res)[1], a * b, dtype))
-
-        a, b, res = gen(size, dtype), gen(size, dtype), gen(size, dtype)
-        alpha, beta = (2.0, 3.0) if is_float else (2, 3)
-        results.append(KernelMeasurer.measure("msc", lambda: (math_ops.multiply(a, b, res, alpha, beta, config), res)[1], (a * alpha) * (b * beta), dtype))
-
-        # Scaling
-        a, res = gen(size, dtype), gen(size, dtype)
-        scalar = 2.5 if is_float else 2
-        results.append(KernelMeasurer.measure("scl", lambda: (math_ops.scale(a, res, scalar, config), res)[1], a * scalar, dtype))
-
-        a = gen(size, dtype)
-        results.append(KernelMeasurer.measure("sci", lambda: (math_ops.scale(a, scalar, config), a)[1], a * scalar, dtype))
-
-        # Constant Adds
-        a, res = gen(size, dtype), gen(size, dtype)
-        const_val = 5.5 if is_float else 5
-        results.append(KernelMeasurer.measure("adc", lambda: (math_ops.addConstant(a, res, const_val, config), res)[1], a + const_val, dtype))
-
-        a = gen(size, dtype)
-        results.append(KernelMeasurer.measure("adi", lambda: (math_ops.addConstant(a, const_val, config), a)[1], a + const_val, dtype))
-
-        # Reductions
-        if is_float:
-            a = gen(size, dtype)
-            results.append(KernelMeasurer.measure("sum", lambda: math_ops.sum(a, config), np.sum(a, dtype=dtype), dtype))
-
-            a, b = gen(size, dtype), gen(size, dtype)
-            results.append(KernelMeasurer.measure("dot", lambda: math_ops.dot(a, b, config), np.dot(a, b), dtype))
-
-        return results
-
-def verify_invariants_and_edge_cases():
-    table = Table(title="☠️ Invariant Violation Exceptions (Predator Checks)", header_style="bold red")
-    table.add_column("Constraint Scenario", style="cyan")
-    table.add_column("Integrity", justify="center")
-    table.add_column("Observation", style="dim")
-
-    config = core.ExecutionConfig.Default()
-    passed = "[bold green]PASS[/]"
-    failed = "[bold red]FAIL[/]"
-    violations = 0
-
-    try:
-        a = DataGenerator.aligned(0, "float32"); b = DataGenerator.aligned(0, "float32")
-        math_ops.add(a, b, a, config)
-        table.add_row("Zero-Length Submisson", passed, "Valid execution without UB dumps")
-    except Exception as e:
-        table.add_row("Zero-Length Submisson", failed, str(e))
-        violations += 1
-
-    try:
-        a = DataGenerator.aligned(100, "float32")
-        a_orig = np.array(a, copy=True)
-        math_ops.add(a, a, a, config)
-        if np.allclose(a, a_orig * 2): table.add_row("Pointer Aliasing Safety", passed, "Destination mutated identically")
-        else:
-            table.add_row("Pointer Aliasing Safety", failed, "Mutation drift invalid")
-            violations += 1
-    except Exception as e:
-        table.add_row("Pointer Aliasing Safety", failed, str(e))
-        violations += 1
-
-    try:
-        a = DataGenerator.aligned(100, "float32"); b = DataGenerator.aligned(99, "float32"); c = DataGenerator.aligned(100, "float32")
-        try:
-            math_ops.add(a, b, c, config); table.add_row("Spatial Shape Equivalence", failed, "No threshold enforced")
-            violations += 1
-        except ValueError: table.add_row("Spatial Shape Equivalence", passed, "Prohibited out-of-bounds mapping")
-    except Exception as e:
-        table.add_row("Spatial Shape Equivalence", failed, str(e))
-        violations += 1
-
-    try:
-        a = DataGenerator.aligned(100, "float32"); b = DataGenerator.aligned(100, "float32")
-        a[50] = np.nan; b[75] = np.inf
-        math_ops.add(a, b, a, config)
-        if np.isnan(a[50]) and np.isinf(a[75]): table.add_row("IEEE-754 Arithmetic Propagation", passed, "Operands strictly propagate flags")
-        else:
-            table.add_row("IEEE-754 Arithmetic Propagation", failed, "Invalid vector flush")
-            violations += 1
-    except Exception as e:
-        table.add_row("IEEE-754 Arithmetic Propagation", failed, str(e))
-        violations += 1
-
-    console.print(table)
-    print()
-    return violations
-
-def generate_configurations():
-    configs = []
-    configs.append(("Scalar (Loop)", core.ExecutionConfig.Scalar(False)))
-    configs.append(("Scalar (STD)", core.ExecutionConfig.Scalar(True)))
-    configs.append(("Unrolled (x2)", core.ExecutionConfig.Unrolled(2)))
-
-    available_simd = [getattr(core.SIMDType, "None"), core.SIMDType.AVX2]
-    try:
-        dummy = np.zeros(1, dtype=np.float32)
-        mem_ops.set_value(dummy, 1.0, core.ExecutionConfig.SIMD(simd_type=core.SIMDType.AVX512))
-        available_simd.append(core.SIMDType.AVX512)
-    except Exception:
-        pass
-
-    stores = [core.SIMDStorePolicy.Cached, core.SIMDStorePolicy.Streamed]
-    prefetches = [getattr(core.PrefetchHint, "None"), core.PrefetchHint.T0]
-    ilps = [core.ILPPolicy.Interleaved, core.ILPPolicy.Grouped]
-    alignments = [core.AlignmentPolicy.Auto, core.AlignmentPolicy.Aligned, core.AlignmentPolicy.Unaligned]
-
-    for simd in available_simd:
-        if simd == getattr(core.SIMDType, "None"): continue
-        for store in stores:
-            for p in prefetches:
-                for ilp in ilps:
-                    for align in alignments:
-                        c = core.ExecutionConfig.SIMD(simd_type=simd, unroll=2, store=store, prefetch=p, ilp=ilp, aligned=align)
-                        name = f"{simd.name} | {store.name} | {p.name} | {ilp.name} | {align.name}"
-                        configs.append((name, c))
-    return configs
-
+# ── Main runner ──────────────────────────────────────────────────────
 class STALKERTestRunner:
     @staticmethod
     def execute():
@@ -355,27 +114,46 @@ class STALKERTestRunner:
         configs = generate_configurations()
         dtypes = ["float32", "float64", "int32", "uint32", "int16"]
         boundaries = ["Aligned (64B)", "Unaligned"]
-        size = 1_000_000 
+        size = 1_000_000
 
         suites = [
-            MemoryTestSuite(),
-            VectorMathTestSuite()
+            _SuiteRunner(
+                "Staλκer Memory API",
+                "Operations: Copy (cpy), Swap (swp), Set Value (set).\nValidates low-level memory block transfers mapping exactly to core Numpy equivalents without precision decay.",
+                evaluate_memory,
+            ),
+            _SuiteRunner(
+                "Staλκer Vector Mathematics",
+                "Operations: Add, Sub, Mul, Scale, Constant Adds, Reductions (Sum, Dot), Norms (L1, LInf), Min/Max, Normalize.\nValidates arithmetic integrity allowing naturally accumulating IEEE-754 precision deviations.",
+                evaluate_math,
+            ),
         ]
 
         total_fails = 0
         total_intercepts = 0
 
-        # Execute Suites Independently
         for suite in suites:
             suite.run(size, dtypes, boundaries, configs)
             total_fails += suite.failed_configs
             total_intercepts += suite.intercepted_configs
 
-        # Edge Cases Base Rules
-        edge_fails = verify_invariants_and_edge_cases()
+        # Edge cases
+        invariant_results = verify_invariants()
+        edge_fails = sum(1 for r in invariant_results if not r["passed"])
+
+        inv_table = Table(title="☠️ Invariant Violation Exceptions (Predator Checks)", header_style="bold red")
+        inv_table.add_column("Constraint Scenario", style="cyan")
+        inv_table.add_column("Integrity", justify="center")
+        inv_table.add_column("Observation", style="dim")
+        for r in invariant_results:
+            icon = "[bold green]PASS[/]" if r["passed"] else "[bold red]FAIL[/]"
+            inv_table.add_row(r["scenario"], icon, r["observation"])
+        console.print(inv_table)
+        print()
+
         total_fails += edge_fails
 
-        # Executive Summary Generation
+        # Summary
         summary = Table(title="📊 Executive Validation Summary", header_style="bold black on white", show_lines=True)
         summary.add_column("Domain Module", justify="left")
         summary.add_column("Failing Faults", style="red", justify="center")
@@ -383,9 +161,8 @@ class STALKERTestRunner:
 
         for suite in suites:
             summary.add_row(suite.name, str(suite.failed_configs), str(suite.intercepted_configs))
-
         summary.add_row("[dim]Core Edge/Invariant Rules[/]", str(edge_fails), "-")
-        
+
         console.print(summary)
         print()
 
