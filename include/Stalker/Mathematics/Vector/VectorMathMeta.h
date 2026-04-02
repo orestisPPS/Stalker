@@ -200,6 +200,20 @@ using namespace Stalker::Core::Config;
             return result;
         }
 
+        template <typename T, size_t Unroll = DefaultUnroll()>
+        STALKER_FORCE_INLINE constexpr static T sumOfSquares(size_t size, const T* STALKER_RESTRICT data) {
+            T result = 0;
+            auto limit = size - (size % Unroll);
+            const T* totalEnd = data + size;
+            const T* end = data + limit;
+            for (; data != end; data += Unroll)
+                _sumOfSquares<T, T>(data, result, UnrollIndexSequence<Unroll>{});
+            for (; data != totalEnd; ++data)
+                result += (*data) * (*data);
+            return result;
+        }
+
+
     private:
         template <typename T, typename R, bool IsScaled, size_t... Indices>
         STALKER_FORCE_INLINE constexpr static void _add(const T* a, const T* b, T* result, std::index_sequence<Indices...>, T scalarA = 1, T scalarB = 1) {
@@ -270,6 +284,11 @@ using namespace Stalker::Core::Config;
         template <typename T, typename R, size_t... Indices>
         STALKER_FORCE_INLINE constexpr static void _dot (const T* a, const T* b, T &result, std::index_sequence<Indices...>) {
             ((result += a[Indices] * b[Indices]), ...);
+        }
+
+        template <typename T, typename R, size_t... Indices>
+        STALKER_FORCE_INLINE constexpr static void _sumOfSquares (const T* STALKER_RESTRICT data, T &result, std::index_sequence<Indices...>) {
+            ((result += data[Indices] * data[Indices]), ...);
         }
     };
 

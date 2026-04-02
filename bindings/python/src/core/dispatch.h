@@ -81,7 +81,7 @@ inline void dispatch_execution(const ExecutionTraitPy& config, Func&& f, Ptrs...
                         constexpr auto store_val = store_ic.value;
                         if constexpr (!align_val && store_val == T_SIMDStore::Streamed) {
                             throw std::invalid_argument("Streamed memory stores inherently require aligned memory.");
-                        }
+                        } else {
                         dispatch_enum<T_PrefetchHints::HintNone, T_PrefetchHints::HintT0, T_PrefetchHints::HintT1, T_PrefetchHints::HintT2, T_PrefetchHints::HintNTA>(config.prefetch_hint, [&](auto prefetch_ic) {
                             constexpr auto prefetch_val = prefetch_ic.value;
                             dispatch_enum<T_ILPPolicy::Interleaved, T_ILPPolicy::Grouped>(config.ilp_policy, [&](auto ilp_ic) {
@@ -95,6 +95,7 @@ inline void dispatch_execution(const ExecutionTraitPy& config, Func&& f, Ptrs...
                                 });
                             });
                         });
+                        }
                     });
                 });
             };

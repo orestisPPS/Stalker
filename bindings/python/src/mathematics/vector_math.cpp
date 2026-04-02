@@ -208,6 +208,113 @@ void bind_vector_math_impl(nb::module_& m) {
         return dot_result;
     }, "Dot product of two vectors",
     nb::arg("a"), nb::arg("b"), nb::arg("config") = ExecutionTraitPy::Default());
+
+
+    // Sum of Squares
+    m.def("sumOfSquares", [](
+        nb::ndarray<const T, nb::c_contig, nb::device::cpu> data,
+        const ExecutionTraitPy& config
+    ) -> T {
+        T result = 0;
+        dispatch_execution(config, [&](auto tag) {
+            using Trait = typename decltype(tag)::type;
+            result = VectorMath::sumOfSquares<T, Trait>(data.size(), data.data());
+        }, data.data());
+        return result;
+    }, "Sum of squares of a vector",
+    nb::arg("data"), nb::arg("config") = ExecutionTraitPy::Default());
+
+    // normL1
+    m.def("normL1", [](
+        nb::ndarray<const T, nb::c_contig, nb::device::cpu> data
+    ) -> double {
+        return VectorMath::normL1<T>(data.size(), data.data());
+    }, "L1 norm of a vector",
+    nb::arg("data"));
+
+    // normL2
+    m.def("normL2", [](
+        nb::ndarray<const T, nb::c_contig, nb::device::cpu> data,
+        const ExecutionTraitPy& config
+    ) -> double {
+        double result = 0;
+        dispatch_execution(config, [&](auto tag) {
+            using Trait = typename decltype(tag)::type;
+            result = VectorMath::normL2<T, Trait>(data.size(), data.data());
+        }, data.data());
+        return result;
+    }, "L2 norm of a vector",
+    nb::arg("data"), nb::arg("config") = ExecutionTraitPy::Default());
+
+    // normLInf
+    m.def("normLInf", [](
+        nb::ndarray<const T, nb::c_contig, nb::device::cpu> data
+    ) -> double {
+        return VectorMath::normLInf<T>(data.size(), data.data());
+    }, "L-Infinity norm of a vector",
+    nb::arg("data"));
+
+    // max
+    m.def("max", [](
+        nb::ndarray<const T, nb::c_contig, nb::device::cpu> data
+    ) -> T {
+        return VectorMath::max<T>(data.size(), data.data());
+    }, "Maximum element in a vector",
+    nb::arg("data"));
+
+    // maxIndex
+    m.def("maxIndex", [](
+        nb::ndarray<const T, nb::c_contig, nb::device::cpu> data
+    ) -> size_t {
+        return VectorMath::maxIndex<T>(data.size(), data.data());
+    }, "Index of the maximum element in a vector",
+    nb::arg("data"));
+
+    // min
+    m.def("min", [](
+        nb::ndarray<const T, nb::c_contig, nb::device::cpu> data
+    ) -> T {
+        return VectorMath::min<T>(data.size(), data.data());
+    }, "Minimum element in a vector",
+    nb::arg("data"));
+
+    // minIndex
+    m.def("minIndex", [](
+        nb::ndarray<const T, nb::c_contig, nb::device::cpu> data
+    ) -> size_t {
+        return VectorMath::minIndex<T>(data.size(), data.data());
+    }, "Index of the minimum element in a vector",
+    nb::arg("data"));
+
+    // Normalize variants (requires floating point ResultT)
+    if constexpr (std::is_floating_point_v<T>) {
+        // Normalize
+        m.def("normalize", [](
+            nb::ndarray<const T, nb::c_contig, nb::device::cpu> data,
+            nb::ndarray<T, nb::c_contig, nb::device::cpu> result,
+            const ExecutionTraitPy& config
+        ) {
+            if (data.size() != result.size()) throw std::invalid_argument("Array sizes must match exactly.");
+            dispatch_execution(config, [&](auto tag) {
+                using Trait = typename decltype(tag)::type;
+                VectorMath::normalize<T, Trait>(data.size(), data.data(), result.data());
+            }, data.data(), result.data());
+        }, "Normalize vector to result: result = data / ||data||_2",
+        nb::arg("data"), nb::arg("result"), nb::arg("config") = ExecutionTraitPy::Default());
+
+        // Normalize in-place
+        m.def("normalize", [](
+            nb::ndarray<T, nb::c_contig, nb::device::cpu> data,
+            const ExecutionTraitPy& config
+        ) {
+            dispatch_execution(config, [&](auto tag) {
+                using Trait = typename decltype(tag)::type;
+                VectorMath::normalize<T, Trait>(data.size(), data.data());
+            }, data.data());
+        }, "Normalize vector in-place: data = data / ||data||_2",
+        nb::arg("data"), nb::arg("config") = ExecutionTraitPy::Default());
+    }
+
 }
 
 void bind_vector_math(nb::module_& m) {

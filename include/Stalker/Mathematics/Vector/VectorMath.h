@@ -99,9 +99,80 @@ namespace Stalker::Mathematics {
         }
         
         template<typename T, typename Trait = DefaultExecutionTrait>
+        STALKER_FORCE_INLINE constexpr static T sumOfSquares(size_t n, const T* STALKER_RESTRICT data) {
+            return Dispatcher<T_Operation::SumOfSquares, T, Trait>::call(n, data);
+        }
+        template<typename T, typename Trait = DefaultExecutionTrait>
         STALKER_FORCE_INLINE constexpr static T dot(size_t n, const T* STALKER_RESTRICT a, const T* STALKER_RESTRICT b) {
             return Dispatcher<T_Operation::DotProduct, T, Trait>::call(n, a, b);
         }
+
+        template <typename T, typename ResultT = T>
+        STALKER_FORCE_INLINE constexpr static ResultT cross2D(size_t, const T* a, const T* b) {
+            return VectorMathScalar::cross2D<T, ResultT>(a, b);
+        }
+
+        template <typename T, typename ResultT = T>
+        STALKER_FORCE_INLINE constexpr static void cross3D(size_t, const T* a, const T* b, ResultT* result) {
+            VectorMathScalar::cross3D<T, ResultT>(0, a, b, result);
+        }
+
+        template <typename T, typename Trait = ExecutionTraitScalar<>>
+        STALKER_FORCE_INLINE constexpr static double normL1(size_t n, const T* STALKER_RESTRICT data) {
+            static_assert(Trait::Type == T_ExecTrait::Scalar, "Operation normL1 is only implemented for scalar execution trait");
+            return Norms::L1<T, Trait::IsSTD>(n, data);
+        }
+
+        template<typename T, typename Trait = DefaultExecutionTrait>
+        STALKER_FORCE_INLINE constexpr static double normL2(size_t n, const T* STALKER_RESTRICT data) {
+            return std::sqrt(Dispatcher<T_Operation::SumOfSquares, T, Trait>::call(n, data));
+        }
+
+        template <typename T, typename Trait = ExecutionTraitScalar<>>
+        STALKER_FORCE_INLINE constexpr static double normLInf(size_t n, const T* STALKER_RESTRICT data) {
+            static_assert(Trait::Type == T_ExecTrait::Scalar, "Operation normLInf is only implemented for scalar execution trait");
+            return Norms::Linf<T, Trait::IsSTD>(n, data);
+        }
+
+        template <typename T, typename Trait = DefaultExecutionTrait, typename ResultT = T>
+        STALKER_FORCE_INLINE constexpr static void normalize(size_t size, const T* STALKER_RESTRICT data, ResultT* STALKER_RESTRICT result) {
+            static_assert(std::is_floating_point<ResultT>::value, "In-place normalization requires floating-point type result vector");
+            double norm = normL2<T, Trait>(size, data);
+            scale<T, Trait>(size, data, result, 1.0 / norm);
+        }
+
+        template <typename T, typename Trait = DefaultExecutionTrait>
+        STALKER_FORCE_INLINE constexpr static void normalize(size_t size, T* STALKER_RESTRICT data) {
+            static_assert(std::is_floating_point<T>::value, "In-place normalization requires floating-point type result vector");
+            double norm = normL2<T, Trait>(size, data);
+            scale<T, Trait>(size, data, 1.0 / norm);
+        }
+
+        template <typename T, typename Trait = ExecutionTraitScalar<>>
+        STALKER_FORCE_INLINE constexpr static T max(size_t size, const T* STALKER_RESTRICT data) {
+            static_assert(Trait::Type == T_ExecTrait::Scalar, "Operation max is only implemented for scalar execution trait");
+            return VectorMathScalar::max<T, Trait::IsSTD>(size, data);
+        }
+
+        template <typename T, typename Trait = ExecutionTraitScalar<>>
+        STALKER_FORCE_INLINE constexpr static size_t maxIndex(size_t size, const T* STALKER_RESTRICT data) {
+            static_assert(Trait::Type == T_ExecTrait::Scalar, "Operation maxIndex is only implemented for scalar execution trait");
+            return VectorMathScalar::maxIndex<T, Trait::IsSTD>(size, data);
+        }
+
+        template <typename T, typename Trait = ExecutionTraitScalar<>>
+        STALKER_FORCE_INLINE constexpr static T min(size_t size, const T* STALKER_RESTRICT data) {
+            static_assert(Trait::Type == T_ExecTrait::Scalar, "Operation min is only implemented for scalar execution trait");
+            return VectorMathScalar::min<T, Trait::IsSTD>(size, data);
+        }
+
+        template <typename T, typename Trait = ExecutionTraitScalar<>>
+        STALKER_FORCE_INLINE constexpr static size_t minIndex(size_t size, const T* STALKER_RESTRICT data) {
+            static_assert(Trait::Type == T_ExecTrait::Scalar, "Operation minIndex is only implemented for scalar execution trait");
+            return VectorMathScalar::minIndex<T, Trait::IsSTD>(size, data);
+        }
+
+
 
         #if defined(STALKER_THREADING_ENABLE) && STALKER_THREADING_ENABLE != 0
 
@@ -187,11 +258,43 @@ namespace Stalker::Mathematics {
         }
 
         template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
+        STALKER_FORCE_INLINE static T sumOfSquares(ThreadTrait& threadTrait, size_t n, const T* STALKER_RESTRICT data) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
+            using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::UnaryReduced>;
+            return Launcher::call(threadTrait, Dispatcher<T_Operation::SumOfSquares, T, Trait>(), n, data);
+        }
+
+        template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
         STALKER_FORCE_INLINE static T dot(ThreadTrait& threadTrait, size_t n, const T* STALKER_RESTRICT a, const T* STALKER_RESTRICT b) {
             threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
             using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::BinaryReduced>;
             return Launcher::call(threadTrait, Dispatcher<T_Operation::DotProduct, T, Trait>(), n, a, b);
         }
+
+        template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
+        STALKER_FORCE_INLINE static double normL2(ThreadTrait& threadTrait, size_t n, const T* STALKER_RESTRICT data) {
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
+            using Launcher = Launcher<T, ThreadTrait, T_ThreadOperation::UnaryReduced>;
+            auto sumOfSquares = Launcher::call(threadTrait, Dispatcher<T_Operation::SumOfSquares, T, Trait>(), n, data);
+            return std::sqrt(sumOfSquares);
+        }
+
+        template<typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait, typename ResultT = T>
+        STALKER_FORCE_INLINE constexpr static void normalize(ThreadTrait& threadTrait, size_t size, const T* STALKER_RESTRICT data, ResultT* STALKER_RESTRICT result) {
+            static_assert(std::is_floating_point<ResultT>::value, "In-place normalization requires floating-point types");
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
+            double norm = normL2<T, ThreadTrait, Trait>(threadTrait, size, data);
+            scale<T, ThreadTrait, Trait>(threadTrait, size, data, result, 1.0 / norm);
+        }
+
+        template <typename T, typename ThreadTrait, typename Trait = DefaultExecutionTrait>
+        STALKER_FORCE_INLINE constexpr static void normalize(ThreadTrait& threadTrait, size_t size, T* STALKER_RESTRICT data) {
+            static_assert(std::is_floating_point<T>::value, "In-place normalization requires floating-point types");
+            threadTrait.setLoopBlockSize(Trait::template BlockSize<T>());
+            double norm = normL2<T, ThreadTrait, Trait>(threadTrait, size, data);
+            scale<T, ThreadTrait, Trait>(threadTrait, size, data, 1.0 / norm);
+        }
+
         #endif
 
     private:
@@ -205,7 +308,8 @@ namespace Stalker::Mathematics {
             Scale,
             AddConstant,
             Sum,
-            DotProduct
+            DotProduct,
+            SumOfSquares
         };
         
         template<typename Child, T_Operation OperationT, typename T, typename Trait>
@@ -322,6 +426,20 @@ namespace Stalker::Mathematics {
         };
 
         template<typename T, typename Trait>
+        struct Dispatcher<T_Operation::SumOfSquares, T, Trait>
+            : public DispatcherBase<Dispatcher<T_Operation::SumOfSquares, T, Trait>, T_Operation::SumOfSquares, T, Trait> {
+            template<typename... Args>
+            STALKER_FORCE_INLINE constexpr static auto call(Args&&... args) {             
+                if constexpr (Trait::Type == T_ExecTrait::SIMD && IsSIMDOk())
+                    return VectorMathSIMD<T, Trait::SIMDArch>::template sumOfSquares<Trait>(std::forward<Args>(args)...);
+                else if constexpr (Trait::Type == T_ExecTrait::Unrolled)
+                    return VectorMathMeta::sumOfSquares<T, Trait::Unroll>(std::forward<Args>(args)...);
+                else
+                    return VectorMathScalar::sumOfSquares<T>(std::forward<Args>(args)...);
+            }
+        };
+
+        template<typename T, typename Trait>
         struct Dispatcher<T_Operation::DotProduct, T, Trait>
             : public DispatcherBase<Dispatcher<T_Operation::DotProduct, T, Trait>, T_Operation::DotProduct, T, Trait> {
             template<typename... Args>
@@ -334,7 +452,6 @@ namespace Stalker::Mathematics {
                     return VectorMathScalar::dot<T>(std::forward<Args>(args)...);
             }
         };
-
     };
         
 };// namespace Stalker::Mathematics::Operations
